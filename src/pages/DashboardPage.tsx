@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -218,9 +218,3 @@ const DashboardPage: React.FC = () => {
 };
 
 export default DashboardPage;
-  );
-};
-
-export default DashboardPage;
-  )
-}
