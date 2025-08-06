@@ -1,26 +1,26 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './shared/components/layout/Header';
-import Footer from './shared/components/layout/Footer';
-import HomePage from './features/static-pages/pages/HomePage';
-import BarberListPage from './features/barber-profiles/pages/BarberListPage';
-import BarberProfilePage from './features/barber-profiles/pages/BarberProfilePage';
-import DashboardPage from './features/dashboard/pages/DashboardPage';
-import BookingFlow from './features/bookings/components/BookingFlow';
-import ClaimFlow from './features/barber-profiles/components/ClaimFlow';
-import LoginForm from './features/auth/components/LoginForm';
-import SignUpForm from './features/auth/components/SignUpForm';
-import ProfileSetupPage from './features/onboarding/pages/ProfileSetupPage';
-import OnboardingPage from './features/onboarding/pages/OnboardingPage';
-import AdminPage from './features/admin/pages/AdminPage';
-import AdminLoginPage from './features/admin/pages/AdminLoginPage';
-import HowItWorksPage from './features/static-pages/pages/HowItWorksPage';
-import PricingPage from './features/static-pages/pages/PricingPage';
-import SupportPage from './features/static-pages/pages/SupportPage';
-import PrivacyPolicyPage from './features/static-pages/pages/PrivacyPolicyPage';
-import TermsOfServicePage from './features/static-pages/pages/TermsOfServicePage';
-import ForgotPassword from './features/auth/components/ForgotPassword';
-import ResetPassword from './features/auth/components/ResetPassword';
+import Header from './components/Layout/Header';
+import Footer from './components/Layout/Footer';
+import HomePage from './pages/HomePage';
+import BarberListPage from './pages/BarberListPage';
+import BarberProfilePage from './pages/BarberProfilePage';
+import DashboardPage from './pages/DashboardPage';
+import BookingFlow from './components/Booking/BookingFlow';
+import ClaimFlow from './components/Barber/ClaimFlow';
+import LoginForm from './components/Auth/LoginForm';
+import SignUpForm from './components/Auth/SignUpForm';
+import ProfileSetupPage from './pages/ProfileSetupPage';
+import OnboardingPage from './pages/OnboardingPage';
+import AdminPage from './pages/AdminPage';
+import AdminLoginPage from './pages/AdminLoginPage';
+import HowItWorksPage from './pages/HowItWorksPage';
+import PricingPage from './pages/PricingPage';
+import SupportPage from './pages/SupportPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+import ForgotPassword from './components/Auth/ForgotPassword';
+import ResetPassword from './components/Auth/ResetPassword';
 
 // Protected Admin Route Component
 const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
