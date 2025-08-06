@@ -213,6 +213,11 @@ const DashboardPage: React.FC = () => {
         <SupabaseConnectionBanner isConnected={isConnected} />
         <FallbackDashboard />
       </div>
+    </div>
+  );
+};
+
+export default DashboardPage;
   );
 };
 
