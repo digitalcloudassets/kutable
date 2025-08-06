@@ -99,29 +99,6 @@ const ClaimFlow: React.FC = () => {
     }
   };
 
-  // Enhanced CSV parsing function
-  const parseCSVLine = (line: string): string[] => {
-    const values: string[] = [];
-    let current = '';
-    let inQuotes = false;
-    
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        values.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    
-    values.push(current.trim());
-    return values;
-  };
-
   const handleVerifyIdentity = () => {
     setStep('details');
   };
