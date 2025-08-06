@@ -85,6 +85,12 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
     }
   };
 
+  const formatDateDisplay = (date: Date) => {
+    if (isToday(date)) return 'Today';
+    if (isTomorrow(date)) return 'Tomorrow';
+    return format(date, 'EEEE, MMM d');
+  };
+
   const getStepTitle = () => {
     switch (step) {
       case 'date': return 'Choose New Date';
