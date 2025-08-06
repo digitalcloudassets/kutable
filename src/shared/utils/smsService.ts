@@ -1,4 +1,5 @@
-import { supabase } from '../lib/supabase';
+import { barberDataService } from '../services/barberDataService';
+import { formatDateDisplay } from './dateHelpers';
 
 export interface SMSMessage {
   to: string;
@@ -12,6 +13,7 @@ export const sendSMS = async (smsData: SMSMessage): Promise<boolean> => {
     // This will be checked in the edge function, but we validate here too
     console.log('Attempting to send SMS:', { to: smsData.to, type: smsData.type });
     
+    const supabase = barberDataService.getSupabaseClient();
     const { data, error } = await supabase.functions.invoke('send-sms', {
       body: smsData
     });
@@ -36,12 +38,7 @@ export const formatBookingConfirmationSMS = (
   customerName: string,
   totalAmount?: number
 ): string => {
-  const appointmentDate = new Date(date);
-  const formattedDate = appointmentDate.toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    month: 'long', 
-    day: 'numeric' 
-  });
+  const formattedDate = formatDateDisplay(new Date(date));
   
   let message = `🎉 Booking Confirmed!\n\nHi ${customerName}! Your ${serviceName} appointment at ${businessName} is confirmed.\n\n📅 ${formattedDate}\n⏰ ${time}`;
   
@@ -62,12 +59,7 @@ export const formatBookingReminderSMS = (
   customerName: string,
   appointmentLocation?: string
 ): string => {
-  const appointmentDate = new Date(date);
-  const formattedDate = appointmentDate.toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    month: 'long', 
-    day: 'numeric' 
-  });
+  const formattedDate = formatDateDisplay(new Date(date));
   
   let message = `⏰ Appointment Reminder\n\nHi ${customerName}! Don't forget about your ${serviceName} appointment at ${businessName}.\n\n📅 ${formattedDate}\n⏰ ${time}`;
   

@@ -18,7 +18,8 @@ import {
   Star,
   Clock
 } from 'lucide-react';
-import { supabase, getRealBarberCount } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import { barberDataService } from '../shared/services/barberDataService';
 import { useSupabaseConnection } from '../hooks/useSupabaseConnection';
 import SupabaseConnectionBanner from '../components/Setup/SupabaseConnectionBanner';
 
@@ -97,13 +98,13 @@ const AdminPage: React.FC = () => {
       setLoading(true);
       
       // Get total barber count from CSV
-      const csvBarberCount = await getRealBarberCount();
+      const totalBarberCount = await barberDataService.getBarberCount();
       
       if (!isConnected) {
         // When Supabase not connected, show CSV directory stats
         setMetrics({
-          totalBarbers: csvBarberCount,
-          activeBarbers: csvBarberCount, // All CSV barbers are considered active
+          totalBarbers: totalBarberCount,
+          activeBarbers: totalBarberCount, // All CSV barbers are considered active
           claimedBarbers: 0, // No claimed barbers without database
           totalBookings: 0,
           totalRevenue: 0,
@@ -122,9 +123,9 @@ const AdminPage: React.FC = () => {
         .from('barber_profiles')
         .select('id, business_name, owner_name, is_claimed, is_active, average_rating');
 
-      const totalBarbers = csvBarberCount + (barbersData?.length || 0);
+      const totalBarbers = totalBarberCount;
       const claimedBarbers = barbersData?.filter(b => b.is_claimed).length || 0;
-      const activeBarbers = csvBarberCount + (barbersData?.filter(b => b.is_active).length || 0);
+      const activeBarbers = totalBarberCount;
 
       // Get booking metrics
       const { data: bookingsData } = await supabase
