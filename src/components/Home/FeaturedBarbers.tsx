@@ -1,31 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, MapPin, Clock, TrendingUp, Award, Calendar, Crown, CheckCircle, ArrowRight } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { barberDataService } from '../../shared/services/barberDataService';
+import { ParsedBarberProfile } from '../../shared/utils/csvParser';
 import { Database } from '../../lib/supabase';
 
-type Barber = Database['public']['Tables']['barber_profiles']['Row'];
+type Barber = ParsedBarberProfile;
 
 
 const FeaturedBarbers: React.FC = () => {
-  const [barbers, setBarbers] = useState<Barber[]>([]);
+  const [barbers, setBarbers] = useState<ParsedBarberProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchFeaturedBarbers = async () => {
       try {
-        const { data, error } = await supabase
-          .from('barber_profiles')
-          .select('*')
-          .eq('is_active', true)
-          .order('average_rating', { ascending: false })
-          .limit(6);
+        const { data, error } = await barberDataService.getBarberProfiles({
+          isActive: true,
+          orderBy: 'rating',
+          limit: 6
+        });
 
-        if (error) throw error;
-        setBarbers(data || []);
+        if (error) {
+          console.warn('Error loading featured barbers:', error);
+          setBarbers([]);
+        } else {
+          setBarbers(data);
+        }
       } catch (error) {
-        console.warn('Supabase not configured, will use CSV data:', error);
-        // Data will be loaded from CSV via the mock client
+        console.error('Error loading featured barbers:', error);
         setBarbers([]);
       } finally {
         setLoading(false);

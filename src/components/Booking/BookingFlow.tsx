@@ -245,12 +245,6 @@ const BookingFlow: React.FC = () => {
     }
   };
 
-  const formatDateDisplay = (date: Date) => {
-    if (isToday(date)) return 'Today';
-    if (isTomorrow(date)) return 'Tomorrow';
-    return format(date, 'EEEE, MMM d');
-  };
-
   if (!barber) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

@@ -10,7 +10,16 @@ import {
   Download
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { format } from 'date-fns';
+import { 
+  getLastNMonthsRange, 
+  getStartOfToday, 
+  getEndOfToday,
+  getStartOfThisMonth,
+  getEndOfThisMonth,
+  isThisMonth,
+  formatShortDate
+} from '../../shared/utils/dateHelpers';
 
 interface AnalyticsData {
   totalRevenue: number;
@@ -53,9 +62,8 @@ const Analytics: React.FC<AnalyticsProps> = ({ barberId }) => {
       setLoading(true);
       
       // Calculate date range
-      const now = new Date();
       const monthsBack = dateRange === '3months' ? 3 : dateRange === '6months' ? 6 : 12;
-      const startDate = subMonths(now, monthsBack);
+      const { start: startDate, end: endDate } = getLastNMonthsRange(monthsBack);
 
       // Fetch bookings data
       const { data: bookingsData, error: bookingsError } = await supabase
@@ -102,11 +110,22 @@ const Analytics: React.FC<AnalyticsProps> = ({ barberId }) => {
       const totalRevenue = bookingsData?.reduce((sum, booking) => 
         booking.status === 'completed' ? sum + Number(booking.total_amount) : sum, 0) || 0;
 
+      const platformFees = bookingsData?.reduce((sum, booking) => 
+        sum + Number(booking.platform_fee), 0) || 0;
+
+      // Calculate today's bookings
+      const todayStr = format(getStartOfToday(), 'yyyy-MM-dd');
+      const bookingsToday = bookingsData?.filter(booking => 
+        booking.created_at.split('T')[0] === todayStr).length || 0;
+
+      // Calculate this month's bookings
+      const bookingsThisMonth = bookingsData?.filter(booking => 
+        isThisMonth(booking.created_at)).length || 0;
+
       // Calculate monthly revenue
       const monthlyRevenue = [];
       for (let i = monthsBack - 1; i >= 0; i--) {
-        const monthStart = startOfMonth(subMonths(now, i));
-        const monthEnd = endOfMonth(subMonths(now, i));
+        const { start: monthStart, end: monthEnd } = getLastNMonthsRange(i + 1);
         const monthBookings = bookingsData?.filter(booking => {
           const bookingDate = new Date(booking.appointment_date);
           return bookingDate >= monthStart && bookingDate <= monthEnd && booking.status === 'completed';

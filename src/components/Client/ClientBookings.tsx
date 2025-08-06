@@ -334,22 +334,12 @@ const ClientBookings: React.FC = () => {
   };
 
   const canCancelBooking = (booking: Booking): boolean => {
-    if (booking.status !== 'pending' && booking.status !== 'confirmed') {
-      return false;
-    }
-    
-    const appointmentDateTime = new Date(`${booking.appointment_date} ${booking.appointment_time}`);
-    const now = new Date();
-    const hoursUntilAppointment = (appointmentDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-    
-    return hoursUntilAppointment >= 24;
+    return (['pending', 'confirmed'].includes(booking.status)) && 
+           canCancelBooking(booking.appointment_date, booking.appointment_time);
   };
 
   const isUpcoming = (booking: Booking): boolean => {
-    const appointmentDate = new Date(booking.appointment_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return isAfter(appointmentDate, today) || appointmentDate.getTime() === today.getTime();
+    return isUpcomingAppointment(booking.appointment_date);
   };
 
   if (loading) {
