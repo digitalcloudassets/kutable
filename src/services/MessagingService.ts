@@ -166,19 +166,13 @@ export class MessagingService {
         } else {
           const barberUserId = booking.barber_profiles?.user_id || '';
           participant = {
-            id: barberUserId,
+            id: barberUserId || booking.barber_profiles?.id || '',
             name: booking.barber_profiles?.business_name || 'Barber',
             type: 'barber' as const,
             avatar: booking.barber_profiles?.profile_image_url || undefined
           };
         }
 
-        // Only skip if *both* user IDs are blank (should be extremely rare)
-        if ((!booking.client_profiles?.user_id || booking.client_profiles?.user_id.trim() === '') &&
-            (!booking.barber_profiles?.user_id || booking.barber_profiles?.user_id.trim() === '')) {
-          console.log('Skipping conversation - both user IDs are blank:', booking.id);
-          continue;
-        }
         console.log('Conversation participant:', {
           bookingId: booking.id,
           participantId: participant.id,
