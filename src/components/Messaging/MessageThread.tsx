@@ -121,6 +121,11 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     e.preventDefault();
     if (!newMessage.trim() || sending || !user) return;
 
+    // Check if participant has a valid user ID
+    if (!conversation.participant.id) {
+      setError('Cannot send message to unclaimed profile. This barber needs to claim their profile first.');
+      return;
+    }
     setSending(true);
     setError('');
 
@@ -332,14 +337,15 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
         )}
         
         <form onSubmit={handleSendMessage} className="flex space-x-3">
-          {!conversation.participant.id && conversation.participant.name === 'Unclaimed Barber' ? (
-            <div className="mb-3 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm flex items-center space-x-2">
+          {!conversation.participant.id ? (
+            <div className="flex-1 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm flex items-center space-x-2">
               <AlertCircle className="h-4 w-4" />
               <span>
                 This barber profile hasn't been claimed yet. Messages can only be sent to claimed profiles.
               </span>
             </div>
           ) : (
+            <>
           <div className="flex-1">
             <textarea
               value={newMessage}
@@ -348,7 +354,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all duration-200"
               rows={newMessage.includes('\n') ? 3 : 1}
               maxLength={1000}
-              disabled={false}
+              disabled={!conversation.participant.id}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -356,11 +362,13 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
                 }
               }}
             />
-            <p className="text-xs text-gray-500 mt-1">
-              This profile hasn't been fully set up yet. Messages may not be delivered.
+            {!conversation.participant.id && (
+              <p className="text-xs text-amber-600 mt-1">
+                This profile hasn't been claimed yet. Messages cannot be sent.
+              </p>
+            )}
             </p>
           </div>
-          )}
           
           <button
             type="submit"
@@ -373,6 +381,8 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               <Send className="h-5 w-5" />
             )}
           </button>
+          </>
+          )}
         </form>
       </div>
     </div>

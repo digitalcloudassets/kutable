@@ -178,22 +178,30 @@ export class MessagingService {
         
         let participant;
         // For barber: show client, for client: show barber
-        if (isBarber) {
-          const clientUserId = booking.client_profiles?.user_id || '';
-          const clientName = `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim();
+        if (isBarber && booking.client_profiles) {
+          const clientUserId = booking.client_profiles.user_id || '';
+          const clientName = `${booking.client_profiles.first_name || ''} ${booking.client_profiles.last_name || ''}`.trim();
           participant = {
             id: clientUserId,
             name: clientName || 'Client',
             type: 'client' as const,
             avatar: undefined
           };
-        } else {
-          const barberUserId = booking.barber_profiles?.user_id || '';
+        } else if (!isBarber && booking.barber_profiles) {
+          const barberUserId = booking.barber_profiles.user_id || '';
           participant = {
-            id: barberUserId || booking.barber_profiles?.id || '',
-            name: booking.barber_profiles?.business_name || 'Barber',
+            id: barberUserId || booking.barber_profiles.id || '',
+            name: booking.barber_profiles.business_name || 'Barber',
             type: 'barber' as const,
-            avatar: booking.barber_profiles?.profile_image_url || undefined
+            avatar: booking.barber_profiles.profile_image_url || undefined
+          };
+        } else {
+          // Fallback for missing data
+          participant = {
+            id: '',
+            name: isBarber ? 'Client' : 'Barber',
+            type: isBarber ? 'client' as const : 'barber' as const,
+            avatar: undefined
           };
         }
 
@@ -470,8 +478,11 @@ export class MessagingService {
         .eq('id', bookingId)
         .single();
 
-      if (!booking) return;
+      if (!booking) {
         console.warn('Booking not found for notification:', bookingId);
+        return;
+      }
+      
       console.log('Booking data for notification:', {
         barberUserId: booking.barber_profiles?.user_id,
         clientUserId: booking.client_profiles?.user_id,
@@ -487,8 +498,10 @@ export class MessagingService {
       const receiverProfile = isFromBarber ? booking.client_profiles : booking.barber_profiles;
       const senderProfile = isFromBarber ? booking.barber_profiles : booking.client_profiles;
 
-      if (!receiverProfile || !senderProfile) return;
+      if (!receiverProfile || !senderProfile) {
         console.warn('Missing profile data:', { receiverProfile: !!receiverProfile, senderProfile: !!senderProfile });
+        return;
+      }
 
       const senderName = isFromBarber 
         ? senderProfile.business_name 
@@ -516,11 +529,11 @@ export class MessagingService {
         });
         
         if (smsError) {
-          console.error('Failed to send SMS notification to', receiverProfile.phone, ':', smsError);
+          console.warn('Failed to send SMS notification to', receiverProfile.phone, ':', smsError.message || smsError);
         } else if (smsResult?.success) {
           console.log('✅ SMS notification sent successfully to:', receiverProfile.phone);
         } else {
-          console.error('SMS failed with result:', smsResult);
+          console.warn('SMS failed with result:', smsResult);
         }
       }
 
@@ -569,11 +582,11 @@ export class MessagingService {
         });
         
         if (emailError) {
-          console.error('Failed to send email notification to', receiverProfile.email, ':', emailError);
+          console.warn('Failed to send email notification to', receiverProfile.email, ':', emailError.message || emailError);
         } else if (emailResult?.success) {
           console.log('✅ Email notification sent successfully to:', receiverProfile.email);
         } else {
-          console.error('Email failed with result:', emailResult);
+          console.warn('Email failed with result:', emailResult);
         }
       }
 
