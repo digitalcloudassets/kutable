@@ -422,9 +422,12 @@ export class MessagingService {
         .eq('id', bookingId)
         .single();
 
-      if (!booking) return;
+      if (!booking) {
         console.warn('Booking not found for notification:', bookingId);
         return; // Exit gracefully without breaking the message flow
+      }
+
+      console.log('Booking data for notification:', {
         barberUserId: booking.barber_profiles?.user_id,
         clientUserId: booking.client_profiles?.user_id,
         barberPhone: booking.barber_profiles?.phone,
@@ -439,9 +442,10 @@ export class MessagingService {
       const receiverProfile = isFromBarber ? booking.client_profiles : booking.barber_profiles;
       const senderProfile = isFromBarber ? booking.barber_profiles : booking.client_profiles;
 
-      if (!receiverProfile || !senderProfile) return;
+      if (!receiverProfile || !senderProfile) {
         console.warn('Missing profile data for notification:', { receiverProfile: !!receiverProfile, senderProfile: !!senderProfile });
         return; // Exit gracefully without breaking the message flow
+      }
 
       const senderName = isFromBarber 
         ? senderProfile.business_name 
