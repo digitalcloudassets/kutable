@@ -142,28 +142,25 @@ export class MessagingService {
 
       for (const booking of uniqueBookings) {
         // Detect if the current user is the barber for this booking
-        // We determine this by checking if the booking came from the barber query
-        const isBarber = barberProfile && booking.barber_profiles?.id === barberProfile.id;
+        const isBarber = barberProfile && booking.barber_id === barberProfile.id;
 
         // Participant logic:  
         // For barbers, always show the client as the conversation participant, 
         // even if client_profiles.user_id is null (unclaimed account)
         let participant;
         if (isBarber) {
-          // For barbers: show the client as the participant
           const clientName = [
             booking.client_profiles?.first_name || '',
             booking.client_profiles?.last_name || ''
           ].join(' ').trim();
-          
+
           participant = {
-            id: booking.client_profiles?.user_id || '',  // Use client's user_id for sending messages
+            id: booking.client_profiles?.user_id || '',  // can be blank if unclaimed
             name: clientName || 'Client',
             type: 'client' as const,
             avatar: undefined
           };
         } else {
-          // For clients: show the barber as the participant
           participant = {
             id: booking.barber_profiles?.user_id || '',
             name: booking.barber_profiles?.business_name || 'Barber',
@@ -188,7 +185,8 @@ export class MessagingService {
           .eq('receiver_id', userId)
           .is('read_at', null);
 
-        // Always include conversations - unclaimed clients still show up for barbers
+        // Always push the conversation even if participant.id is blank, 
+        // so unclaimed clients show up in the list for the barber.
         conversations.push({
           bookingId: booking.id,
           lastMessage: lastMessage || undefined,
