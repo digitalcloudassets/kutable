@@ -234,7 +234,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
             </div>
             
             {/* Service and Date Info */}
-            <div className="flex items-center space-x-1 text-sm text-gray-500 font-medium">
+            <div className="flex items-start space-x-1 text-sm text-gray-500 font-medium">
               <Calendar className="h-3 w-3 flex-shrink-0" style={{ marginTop: '1px' }} />
               <span>{conversation.booking.serviceName}</span>
               <span>•</span>
