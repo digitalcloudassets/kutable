@@ -184,6 +184,19 @@ export class MessagingService {
               avatar: undefined,
               needsClaim: !clientUserId, // Flag if client hasn't claimed profile
             }
+        // Determine the other participant (who the user would message)
+        const participant = isUserBarber 
+          ? {
+              id: clientUserId || `placeholder_${booking.id}`,
+              name: clientUserId 
+                ? `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`
+                : 'Unclaimed Client',
+              type: 'client' as const,
+              avatar: undefined,
+              needsClaim: !clientUserId,
+              hasValidProfile: !!clientUserId,
+              isPlaceholder: !clientUserId
+            }
           : {
               id: barberUserId || `placeholder_${booking.id}`,
               name: barberUserId 
@@ -202,9 +215,16 @@ export class MessagingService {
           userRole: isUserBarber ? 'barber' : 'client',
           participantId: participant.id,
           participantName: participant.name,
+          participantType: participant.type,
+          needsClaim: participant.needsClaim,
+          hasValidProfile: participant.hasValidProfile,
+          isPlaceholder: participant.isPlaceholder
         });
-
-        // Get last message for this booking
+        
+        // Include ALL conversations, even with unclaimed participants
+        // This allows barbers to see all their bookings and understand messaging status
+        
+        // Get last message and unread count for this booking
         const { data: lastMessage } = await supabase
           .from('messages')
           .select('*')
@@ -213,7 +233,6 @@ export class MessagingService {
           .limit(1)
           .maybeSingle();
 
-        // Get unread count for current user
         const { count: unreadCount } = await supabase
           .from('messages')
           .select('*', { count: 'exact' })
@@ -584,122 +603,122 @@ export class MessagingService {
         });
         return; // Exit silently
       }
-        const isFromBarber = senderId === booking.barber_profiles?.user_id;
-        console.log('Message direction:', isFromBarber ? 'Barber → Client' : 'Client → Barber');
+      const isFromBarber = senderId === booking.barber_profiles?.user_id;
+      console.log('Message direction:', isFromBarber ? 'Barber → Client' : 'Client → Barber');
+      
+      const receiverProfile = isFromBarber ? booking.client_profiles : booking.barber_profiles;
+      const senderProfile = isFromBarber ? booking.barber_profiles : booking.client_profiles;
+
+      // Additional safety checks for profile data integrity
+      if (!receiverProfile?.user_id || !senderProfile?.user_id) {
+        console.warn('Notification not sent: incomplete profile data or unclaimed profiles.', { 
+          bookingId, 
+          receiverUserId: receiverProfile?.user_id, 
+          senderUserId: senderProfile?.user_id,
+          isFromBarber,
+          direction: isFromBarber ? 'Barber → Client' : 'Client → Barber'
+        });
+        return; // Exit silently - message still saved
+      }
+
+      const senderName = isFromBarber 
+        ? senderProfile.business_name 
+        : `${senderProfile.first_name} ${senderProfile.last_name}`;
+
+      const receiverName = isFromBarber
+        ? `${receiverProfile.first_name} ${receiverProfile.last_name}`
+        : receiverProfile.business_name;
+
+      console.log('Notification participants:', { senderName, receiverName, receiverPhone: receiverProfile.phone, receiverEmail: receiverProfile.email });
+      // Send SMS notification if user has SMS enabled (default to true for essential notifications)
+      const shouldSendSMS = (receiverProfile.sms_consent !== false) && !!receiverProfile.phone;
+      console.log('SMS notification check:', { shouldSendSMS, smsConsent: receiverProfile.sms_consent, hasPhone: !!receiverProfile.phone });
+      
+      if (shouldSendSMS) {
+        const smsMessage = `💬 New message from ${senderName}:\n\n"${messageText.slice(0, 100)}${messageText.length > 100 ? '...' : ''}"\n\nReply in your Kutable dashboard.\n\n- Kutable`;
         
-        const receiverProfile = isFromBarber ? booking.client_profiles : booking.barber_profiles;
-        const senderProfile = isFromBarber ? booking.barber_profiles : booking.client_profiles;
-
-        // Additional safety checks for profile data integrity
-        if (!receiverProfile?.user_id || !senderProfile?.user_id) {
-          console.warn('Notification not sent: incomplete profile data or unclaimed profiles.', { 
-            bookingId, 
-            receiverUserId: receiverProfile?.user_id, 
-            senderUserId: senderProfile?.user_id,
-            isFromBarber,
-            direction: isFromBarber ? 'Barber → Client' : 'Client → Barber'
-          });
-          return; // Exit silently - message still saved
-        }
-
-        const senderName = isFromBarber 
-          ? senderProfile.business_name 
-          : `${senderProfile.first_name} ${senderProfile.last_name}`;
-
-        const receiverName = isFromBarber
-          ? `${receiverProfile.first_name} ${receiverProfile.last_name}`
-          : receiverProfile.business_name;
-
-        console.log('Notification participants:', { senderName, receiverName, receiverPhone: receiverProfile.phone, receiverEmail: receiverProfile.email });
-        // Send SMS notification if user has SMS enabled (default to true for essential notifications)
-        const shouldSendSMS = (receiverProfile.sms_consent !== false) && !!receiverProfile.phone;
-        console.log('SMS notification check:', { shouldSendSMS, smsConsent: receiverProfile.sms_consent, hasPhone: !!receiverProfile.phone });
-        
-        if (shouldSendSMS) {
-          const smsMessage = `💬 New message from ${senderName}:\n\n"${messageText.slice(0, 100)}${messageText.length > 100 ? '...' : ''}"\n\nReply in your Kutable dashboard.\n\n- Kutable`;
-          
-          console.log('Sending SMS to:', receiverProfile.phone);
-          const { data: smsResult, error: smsError } = await supabase.functions.invoke('send-sms', {
-            body: {
-              to: receiverProfile.phone,
-              message: smsMessage,
-              type: 'booking_update'
-            }
-          });
-          
-          if (smsError) {
-            console.error('Failed to send SMS notification to', receiverProfile.phone, ':', smsError);
-          } else if (smsResult?.success) {
-            console.log('✅ SMS notification sent successfully to:', receiverProfile.phone);
-          } else {
-            console.error('SMS failed with result:', smsResult);
+        console.log('Sending SMS to:', receiverProfile.phone);
+        const { data: smsResult, error: smsError } = await supabase.functions.invoke('send-sms', {
+          body: {
+            to: receiverProfile.phone,
+            message: smsMessage,
+            type: 'booking_update'
           }
-        } else {
-          console.warn('SMS notification skipped:', {
-            reason: !receiverProfile.phone ? 'No phone number' : 'SMS consent disabled',
-            receiverPhone: receiverProfile.phone,
-            smsConsent: receiverProfile.sms_consent
-          });
-        }
-
-        // Send email notification if user has email enabled (default to true for essential notifications)
-        const shouldSendEmail = (receiverProfile.email_consent !== false) && !!receiverProfile.email;
-        console.log('Email notification check:', { shouldSendEmail, emailConsent: receiverProfile.email_consent, hasEmail: !!receiverProfile.email });
+        });
         
-        if (shouldSendEmail) {
-          const emailSubject = `New message from ${senderName} - Kutable`;
-          const emailMessage = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2 style="color: #1f2937;">💬 New Message</h2>
-              <p>Hi ${receiverName},</p>
-              <p>You have a new message from <strong>${senderName}</strong> regarding your ${booking.services?.name} appointment:</p>
-              
-              <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0066ff;">
-                <p style="font-style: italic; margin: 0;">"${messageText}"</p>
-              </div>
+        if (smsError) {
+          console.error('Failed to send SMS notification to', receiverProfile.phone, ':', smsError);
+        } else if (smsResult?.success) {
+          console.log('✅ SMS notification sent successfully to:', receiverProfile.phone);
+        } else {
+          console.error('SMS failed with result:', smsResult);
+        }
+      } else {
+        console.warn('SMS notification skipped:', {
+          reason: !receiverProfile.phone ? 'No phone number' : 'SMS consent disabled',
+          receiverPhone: receiverProfile.phone,
+          smsConsent: receiverProfile.sms_consent
+        });
+      }
 
-              <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <p style="margin: 0; color: #4b5563;"><strong>Appointment:</strong> ${booking.services?.name}</p>
-                <p style="margin: 5px 0 0 0; color: #4b5563;"><strong>Date:</strong> ${new Date(booking.appointment_date).toLocaleDateString()} at ${booking.appointment_time}</p>
-              </div>
-
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="https://kutable.com/dashboard" style="background-color: #0066ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                  Reply in Dashboard
-                </a>
-              </div>
-              
-              <p style="color: #6b7280; font-size: 14px; text-align: center;">
-                This message was sent through Kutable's secure messaging system.
-              </p>
+      // Send email notification if user has email enabled (default to true for essential notifications)
+      const shouldSendEmail = (receiverProfile.email_consent !== false) && !!receiverProfile.email;
+      console.log('Email notification check:', { shouldSendEmail, emailConsent: receiverProfile.email_consent, hasEmail: !!receiverProfile.email });
+      
+      if (shouldSendEmail) {
+        const emailSubject = `New message from ${senderName} - Kutable`;
+        const emailMessage = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #1f2937;">💬 New Message</h2>
+            <p>Hi ${receiverName},</p>
+            <p>You have a new message from <strong>${senderName}</strong> regarding your ${booking.services?.name} appointment:</p>
+            
+            <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0066ff;">
+              <p style="font-style: italic; margin: 0;">"${messageText}"</p>
             </div>
-          `;
 
-          console.log('Sending email to:', receiverProfile.email);
-          const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email', {
-            body: {
-              to: receiverProfile.email,
-              name: receiverName,
-              subject: emailSubject,
-              message: emailMessage,
-              type: 'message_notification'
-            }
-          });
-          
-          if (emailError) {
-            console.error('Failed to send email notification to', receiverProfile.email, ':', emailError);
-          } else if (emailResult?.success) {
-            console.log('✅ Email notification sent successfully to:', receiverProfile.email);
-          } else {
-            console.error('Email failed with result:', emailResult);
+            <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <p style="margin: 0; color: #4b5563;"><strong>Appointment:</strong> ${booking.services?.name}</p>
+              <p style="margin: 5px 0 0 0; color: #4b5563;"><strong>Date:</strong> ${new Date(booking.appointment_date).toLocaleDateString()} at ${booking.appointment_time}</p>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://kutable.com/dashboard" style="background-color: #0066ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                Reply in Dashboard
+              </a>
+            </div>
+            
+            <p style="color: #6b7280; font-size: 14px; text-align: center;">
+              This message was sent through Kutable's secure messaging system.
+            </p>
+          </div>
+        `;
+
+        console.log('Sending email to:', receiverProfile.email);
+        const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email', {
+          body: {
+            to: receiverProfile.email,
+            name: receiverName,
+            subject: emailSubject,
+            message: emailMessage,
+            type: 'message_notification'
           }
+        });
+        
+        if (emailError) {
+          console.error('Failed to send email notification to', receiverProfile.email, ':', emailError);
+        } else if (emailResult?.success) {
+          console.log('✅ Email notification sent successfully to:', receiverProfile.email);
         } else {
-          console.warn('Email notification skipped:', {
-            reason: !receiverProfile.email ? 'No email address' : 'Email consent disabled',
-            receiverEmail: receiverProfile.email,
-            emailConsent: receiverProfile.email_consent
-          });
+          console.error('Email failed with result:', emailResult);
         }
+      } else {
+        console.warn('Email notification skipped:', {
+          reason: !receiverProfile.email ? 'No email address' : 'Email consent disabled',
+          receiverEmail: receiverProfile.email,
+          emailConsent: receiverProfile.email_consent
+        });
+      }
 
     } catch (error) {
       console.error('Error sending message notification:', error);
