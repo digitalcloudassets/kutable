@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { User, Sparkles, Edit, Eye } from 'lucide-react';
+import { User, Edit, Eye } from 'lucide-react';
 
 interface ClientDashboardHeaderProps {
   user: any;

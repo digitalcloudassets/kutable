@@ -5,7 +5,6 @@ import {
   Star, 
   Edit, 
   Eye, 
-  TrendingUp, 
   Users, 
   Phone 
 } from 'lucide-react';

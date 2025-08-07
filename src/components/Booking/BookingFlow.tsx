@@ -15,7 +15,9 @@ import {
   MapPin,
   Shield,
   Lock,
-  AlertCircle
+  AlertCircle,
+  CheckCircle,
+  DollarSign
 } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import { format, addDays, isToday, isTomorrow } from 'date-fns';
