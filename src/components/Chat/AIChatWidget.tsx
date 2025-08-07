@@ -153,13 +153,25 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
     } catch (error: any) {
       console.error('Chat error:', error);
       
-      const errorMessage: ChatMessage = {
-        id: `error_${Date.now()}`,
-        role: 'assistant',
-        content: 'I apologize, but I encountered an error. Please try again or contact our support team at support@kutable.com if the issue persists.',
-        timestamp: new Date().toISOString()
-      };
+      // Handle Supabase Functions errors (non-2xx responses)
+      let errorMessage = 'Sorry, I encountered an error. Please try again.';
       
+      if (error?.name === 'FunctionsHttpError' || error?.message?.includes('Edge Function returned a non-2xx status code')) {
+        // Try to get the actual error from the response
+        try {
+          const errorData = await error.context?.res?.json?.() || {};
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (errorData.details?.includes('OpenAI API key')) {
+            errorMessage = 'AI chat is currently unavailable. Please contact support for assistance.';
+          }
+        } catch {
+          errorMessage = 'AI chat is currently unavailable. Please contact support for assistance.';
+        }
+      } else if (error?.message?.includes('API key')) {
+        errorMessage = 'AI chat is currently unavailable. Please contact support for assistance.';
+      } else if (error?.message?.includes('rate')) {
+        errorMessage = 'Too many requests. Please wait a moment before trying again.';
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
