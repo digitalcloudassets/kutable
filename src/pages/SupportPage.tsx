@@ -16,7 +16,8 @@ import {
   Users,
   Settings,
   AlertCircle,
-  DollarSign
+  DollarSign,
+  CheckCircle
 } from 'lucide-react';
 
 interface FAQ {
@@ -38,6 +39,7 @@ const SupportPage: React.FC = () => {
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
 
   const faqs: FAQ[] = [
     {
@@ -315,15 +317,28 @@ const SupportPage: React.FC = () => {
           {submitted ? (
             <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
               <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Send className="h-8 w-8 text-green-600" />
+                <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
-              <h3 className="text-xl font-semibold text-green-800 mb-2">Message Sent!</h3>
+              <h3 className="text-xl font-semibold text-green-800 mb-2">Thank You!</h3>
               <p className="text-green-700">
-                Thank you for contacting us. We'll respond within 24 hours.
+                Thank you for reaching out. We'll get back to you within 24 hours.
               </p>
+              <button
+                onClick={() => setSubmitted(false)}
+                className="mt-4 text-orange-600 hover:text-orange-500 font-medium"
+              >
+                Submit Another Request
+              </button>
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 flex items-start space-x-2">
+                  <AlertCircle className="h-5 w-5 mt-0.5" />
+                  <span className="text-sm">{error}</span>
+                </div>
+              )}
+              
               <form onSubmit={handleContactSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
