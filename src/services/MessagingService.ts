@@ -70,11 +70,46 @@ export class MessagingService {
 
   async getUserConversations(userId: string): Promise<Conversation[]> {
     if (!isSupabaseConnected()) {
-      console.warn('Supabase not connected - messaging unavailable');
-      return [];
+      console.warn('Supabase not connected - showing demo conversations');
+      // Return demo conversations when Supabase is not connected
+      return [
+        {
+          bookingId: 'demo-booking-1',
+          participant: {
+            id: 'demo-client-1',
+            name: 'Pete Drake',
+            type: 'client',
+            avatar: undefined,
+            needsClaim: true,
+            hasValidProfile: false,
+            isPlaceholder: true,
+            canReceiveMessages: false
+          },
+          booking: {
+            id: 'demo-booking-1',
+            serviceName: 'Haircut',
+            appointmentDate: new Date().toISOString().split('T')[0],
+            appointmentTime: '14:00',
+            status: 'confirmed'
+          },
+          unreadCount: 1,
+          lastMessage: {
+            id: 'demo-message-1',
+            booking_id: 'demo-booking-1',
+            sender_id: 'demo-client-1',
+            receiver_id: userId,
+            message_text: 'Hi! I have a question about my haircut appointment.',
+            read_at: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        }
+      ];
     }
 
     try {
+      console.log('🔍 Loading conversations for user:', userId);
+      
       // First, get user's barber profile if they have one
       const { data: barberProfile } = await supabase
         .from('barber_profiles')
@@ -82,6 +117,7 @@ export class MessagingService {
         .eq('user_id', userId)
         .maybeSingle();
 
+      console.log('👨‍💼 Barber profile check:', { hasBarberProfile: !!barberProfile, barberId: barberProfile?.id });
       // Get user's client profile if they have one
       const { data: clientProfile } = await supabase
         .from('client_profiles')
@@ -89,10 +125,13 @@ export class MessagingService {
         .eq('user_id', userId)
         .maybeSingle();
 
+      console.log('👤 Client profile check:', { hasClientProfile: !!clientProfile, clientId: clientProfile?.id });
       let allBookings: any[] = [];
 
       // Get bookings where user is a barber
       if (barberProfile) {
+        console.log('📅 Fetching bookings for barber:', barberProfile.id);
+        
         const { data: barberBookings, error: barberError } = await supabase
           .from('bookings')
           .select(`
@@ -102,7 +141,7 @@ export class MessagingService {
             status,
             services(name),
             barber_profiles!inner(id, user_id, business_name, owner_name, profile_image_url),
-            client_profiles(id, user_id, first_name, last_name)
+            client_profiles(id, user_id, first_name, last_name, phone, email)
           `)
           .eq('barber_id', barberProfile.id)
           .in('status', ['pending', 'confirmed', 'completed'])
@@ -110,31 +149,53 @@ export class MessagingService {
 
         if (barberError) throw barberError;
         
-        // Filter out invalid bookings but keep ones with unclaimed clients
+        console.log(`📋 Found ${(barberBookings || []).length} barber bookings`);
+        
+        // Log each booking for debugging
+        (barberBookings || []).forEach((booking, index) => {
+          console.log(`📄 Booking ${index + 1}:`, {
+            id: booking.id,
+            clientName: booking.client_profiles ? `${booking.client_profiles.first_name} ${booking.client_profiles.last_name}` : 'No client profile',
+            clientUserId: booking.client_profiles?.user_id,
+            serviceName: booking.services?.name,
+            status: booking.status,
+            date: booking.appointment_date
+          });
+        });
+
+        // Keep ALL bookings with client profiles, even unclaimed ones
         const validBarberBookings = (barberBookings || []).filter(booking => {
-          const clientUserId = booking.client_profiles?.user_id;
-          
-          // Skip if client profile is missing entirely
+          // Must have a client profile
           if (!booking.client_profiles) {
-            console.warn('Skipping booking with missing client profile:', booking.id);
+            console.warn('❌ Excluding booking without client profile:', booking.id);
             return false;
           }
           
-          // Skip if client is the same user as barber (self-messaging)
-          if (clientUserId === userId) {
-            console.warn('Skipping self-messaging booking:', booking.id);
+          // Skip self-messaging (same user is both barber and client)
+          if (booking.client_profiles.user_id === userId) {
+            console.warn('❌ Excluding self-messaging booking:', booking.id);
             return false;
           }
           
-          // Include all other bookings (claimed and unclaimed clients)
+          console.log('✅ Including booking:', {
+            id: booking.id,
+            clientName: `${booking.client_profiles.first_name} ${booking.client_profiles.last_name}`,
+            clientUserId: booking.client_profiles.user_id || 'UNCLAIMED',
+            canMessage: !!booking.client_profiles.user_id
+          });
+          
           return true;
         });
+        
+        console.log(`✅ Valid barber bookings after filtering: ${validBarberBookings.length}`);
         
         allBookings.push(...validBarberBookings);
       }
 
       // Get bookings where user is a client
       if (clientProfile) {
+        console.log('📅 Fetching bookings for client:', clientProfile.id);
+        
         const { data: clientBookings, error: clientError } = await supabase
           .from('bookings')
           .select(`
@@ -148,41 +209,51 @@ export class MessagingService {
           `)
           .eq('client_id', clientProfile.id)
           .in('status', ['pending', 'confirmed', 'completed'])
-          .not('barber_profiles.user_id', 'is', null) // Ensure barber has user_id
-          .neq('barber_profiles.user_id', userId) // Ensure barber is not the same user
           .order('appointment_date', { ascending: false });
 
         if (clientError) throw clientError;
-        allBookings.push(...(clientBookings || []));
+        
+        console.log(`📋 Found ${(clientBookings || []).length} client bookings`);
+        
+        // Filter out self-messaging for client bookings too
+        const validClientBookings = (clientBookings || []).filter(booking => {
+          if (booking.barber_profiles?.user_id === userId) {
+            console.warn('❌ Excluding self-messaging client booking:', booking.id);
+            return false;
+          }
+          return true;
+        });
+        
+        allBookings.push(...validClientBookings);
       }
 
+      console.log(`📊 Total bookings found: ${allBookings.length}`);
       // Deduplicate bookings (in case user is both barber and client)
       const uniqueBookings = Array.from(
         new Map(allBookings.map(booking => [booking.id, booking])).values()
       );
 
+      console.log(`📊 Unique bookings after deduplication: ${uniqueBookings.length}`);
       const conversations: Conversation[] = [];
 
       for (const booking of uniqueBookings) {
-        // Enhanced validation for messaging participants
         const barberUserId = booking.barber_profiles?.user_id;
         const clientUserId = booking.client_profiles?.user_id;
         
-        // Handle missing client profiles by including them with placeholder data
-        const effectiveClientUserId = clientUserId || null;
-        const effectiveClientName = clientUserId 
-          ? `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`
-          : booking.client_profiles?.first_name 
-            ? `${booking.client_profiles.first_name} ${booking.client_profiles.last_name} (Unclaimed)`
-            : 'Unclaimed Client';
+        console.log(`🔍 Processing booking ${booking.id}:`, {
+          barberUserId,
+          clientUserId,
+          currentUserId: userId,
+          clientName: booking.client_profiles ? `${booking.client_profiles.first_name} ${booking.client_profiles.last_name}` : 'No client'
+        });
         
         // Determine user role in this booking
         const isUserBarber = barberUserId === userId;
-        const isUserClient = effectiveClientUserId === userId;
+        const isUserClient = clientUserId === userId;
         
-        // Data integrity check: skip if user is both barber and client
-        if (isUserBarber && isUserClient && barberUserId && clientUserId) {
-          console.warn('Skipping conversation - user is both barber and client:', {
+        // Skip if user is both barber and client (self-messaging)
+        if (isUserBarber && isUserClient) {
+          console.warn('❌ Skipping self-messaging conversation:', {
             bookingId: booking.id,
             userId: userId,
             barberUserId,
@@ -191,9 +262,9 @@ export class MessagingService {
           continue;
         }
         
-        // Skip if user is not involved in this booking at all
+        // User must be involved in this booking
         if (!isUserBarber && !isUserClient) {
-          console.warn('Skipping conversation - user not involved in booking:', {
+          console.warn('❌ Skipping conversation - user not involved:', {
             bookingId: booking.id,
             userId: userId,
             barberUserId,
@@ -202,17 +273,19 @@ export class MessagingService {
           continue;
         }
         
-        // Determine the other participant (who the user would message)
+        // Determine the other participant
         const participant = isUserBarber 
           ? {
-              id: effectiveClientUserId || `placeholder_client_${booking.id}`,
-              name: effectiveClientName,
+              id: clientUserId || `placeholder_client_${booking.id}`,
+              name: clientUserId 
+                ? `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`
+                : `${booking.client_profiles?.first_name || 'Unknown'} ${booking.client_profiles?.last_name || 'Client'} (Unclaimed)`,
               type: 'client' as const,
               avatar: undefined,
-              needsClaim: !effectiveClientUserId,
-              hasValidProfile: !!effectiveClientUserId,
-              isPlaceholder: !effectiveClientUserId,
-              canReceiveMessages: !!effectiveClientUserId && effectiveClientUserId !== userId
+              needsClaim: !clientUserId,
+              hasValidProfile: !!clientUserId,
+              isPlaceholder: !clientUserId,
+              canReceiveMessages: !!clientUserId && clientUserId !== userId
             }
           : {
               id: barberUserId || `placeholder_${booking.id}`,
@@ -227,16 +300,7 @@ export class MessagingService {
               canReceiveMessages: !!barberUserId && barberUserId !== userId
             };
 
-        // Enhanced logging for conversation inclusion
-        console.log('Processing conversation:', {
-          bookingId: booking.id,
-          userRole: isUserBarber ? 'barber' : 'client',
-          participantId: participant.id,
-          participantName: participant.name,
-        });
-
-        // Get last message for this booking
-        const { data: lastMessage } = await supabase
+        console.log(`✅ Creating conversation: ${participant.name} (${participant.type})`);
           .from('messages')
           .select('*')
           .eq('booking_id', booking.id)
@@ -267,6 +331,10 @@ export class MessagingService {
         });
       }
 
+      console.log(`📊 Final conversations count: ${conversations.length}`);
+      conversations.forEach((conv, index) => {
+        console.log(`💬 Conversation ${index + 1}: ${conv.participant.name} (${conv.participant.type}) - ${conv.participant.needsClaim ? 'UNCLAIMED' : 'CLAIMED'}`);
+      });
       return conversations.sort((a, b) => {
         if (a.lastMessage && b.lastMessage) {
           return new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime();
