@@ -102,16 +102,35 @@ export class MessagingService {
             status,
             services(name),
             barber_profiles!inner(id, user_id, business_name, owner_name, profile_image_url),
-            client_profiles!inner(id, user_id, first_name, last_name)
+            client_profiles(id, user_id, first_name, last_name)
           `)
           .eq('barber_id', barberProfile.id)
           .in('status', ['pending', 'confirmed', 'completed'])
-          .not('client_profiles.user_id', 'is', null) // Ensure client has user_id
-          .neq('client_profiles.user_id', userId) // Ensure client is not the same user
           .order('appointment_date', { ascending: false });
 
         if (barberError) throw barberError;
-        allBookings.push(...(barberBookings || []));
+        
+        // Filter out invalid bookings but keep ones with unclaimed clients
+        const validBarberBookings = (barberBookings || []).filter(booking => {
+          const clientUserId = booking.client_profiles?.user_id;
+          
+          // Skip if client profile is missing entirely
+          if (!booking.client_profiles) {
+            console.warn('Skipping booking with missing client profile:', booking.id);
+            return false;
+          }
+          
+          // Skip if client is the same user as barber (self-messaging)
+          if (clientUserId === userId) {
+            console.warn('Skipping self-messaging booking:', booking.id);
+            return false;
+          }
+          
+          // Include all other bookings (claimed and unclaimed clients)
+          return true;
+        });
+        
+        allBookings.push(...validBarberBookings);
       }
 
       // Get bookings where user is a client
@@ -185,15 +204,6 @@ export class MessagingService {
         
         // Determine the other participant (who the user would message)
         const participant = isUserBarber 
-          ? {
-              id: clientUserId || '',
-              name: `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`,
-              type: 'client' as const,
-              avatar: undefined,
-              needsClaim: !clientUserId, // Flag if client hasn't claimed profile
-            }
-        // Determine the other participant (who the user would message)
-        : isUserBarber 
           ? {
               id: effectiveClientUserId || `placeholder_client_${booking.id}`,
               name: effectiveClientName,

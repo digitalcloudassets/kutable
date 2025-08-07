@@ -115,18 +115,18 @@ const ConversationList: React.FC<ConversationListProps> = ({
             <h3 className="text-lg font-medium text-gray-900 mb-2">No conversations</h3>
             <p className="text-gray-600">
               {conversations.length === 0 
-                ? 'Messages will appear here when you have active bookings with claimed profiles'
+                ? 'Messages will appear here when you have active bookings with clients'
                 : searchTerm ? 'No conversations match your search' : 'All conversations filtered out'
               }
             </p>
             {filteredConversations.length === 0 && conversations.length === 0 && (
               <div className="mt-4">
                 <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
-                  <strong>How Messaging Works:</strong><br/>
-                  • <strong>All your bookings appear as conversations</strong><br/>
-                  • <strong>Claimed clients:</strong> Full messaging available<br/>
-                  • <strong>Unclaimed clients:</strong> Marked as "Unclaimed" - contact via phone<br/>
-                  • <strong>Missing profiles:</strong> System error - contact admin
+                  <strong>No conversations yet:</strong><br/>
+                  • You need active bookings to see client conversations<br/>
+                  • Clients will appear here when they book your services<br/>
+                  • Both claimed and unclaimed clients will show up<br/>
+                  • Test data has been created to help you see the messaging interface
                 </p>
               </div>
             )}
