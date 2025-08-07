@@ -137,8 +137,9 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 📞 Support
 
 For support and questions:
-- Email: support@kutable.com
-- Phone: 1-800-KUTABLE
+- **Barbers:** Platform issues - Email support@kutable.com
+- **Clients:** Appointment questions - Contact your barber directly via their profile phone number
+- **Platform Issues:** Email support@kutable.com
 
 ---
 
