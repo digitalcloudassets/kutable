@@ -154,34 +154,45 @@ export class MessagingService {
         // even if client_profiles.user_id is null (unclaimed account)
         let participant;
         if (isUserTheBarber) {
-          // For barbers: participant is the client's Auth UID
+          // For barbers: show the client as the participant
+          const clientFirstName = booking.client_profiles?.first_name || '';
+          const clientLastName = booking.client_profiles?.last_name || '';
+          const clientName = `${clientFirstName} ${clientLastName}`.trim();
+          const clientUserId = booking.client_profiles?.user_id;
+          
+          console.log('🔍 DEBUG - Client data for barber conversation:', {
+            booking_id: booking.id,
+            client_first_name: clientFirstName,
+            client_last_name: clientLastName,
+            client_user_id: clientUserId,
+            final_client_name: clientName
+          });
+          
           participant = {
-            id: booking.client_profiles?.user_id || '', // <-- Use only user_id!
-            name: `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim() || 'Client',
+            id: clientUserId || '',  // Use client's user_id for sending messages
+            name: clientName || 'Client',
             type: 'client' as const,
-            avatar: undefined,
+            avatar: undefined
           };
         } else {
-          // For clients: participant is the barber's Auth UID
+          // For clients: show the barber as the participant
           participant = {
-            id: booking.barber_profiles?.user_id || '', // <-- Use only user_id!
+            id: booking.barber_profiles?.user_id || '',
             name: booking.barber_profiles?.business_name || 'Barber',
             type: 'barber' as const,
-            avatar: booking.barber_profiles?.profile_image_url || undefined,
+            avatar: booking.barber_profiles?.profile_image_url || undefined
           };
         }
 
-        // Debug logging for participant assignment
-        console.log('🔍 DEBUG - Participant assignment:', {
+        console.log('🔍 DEBUG - Final participant for conversation:', {
           booking_id: booking.id,
-          is_user_the_barber: isUserTheBarber,
-          participant_user_id: participant.id,
+          is_barber: isUserTheBarber,
+          participant_id: participant.id,
           participant_name: participant.name,
-          participant_type: participant.type,
-          client_user_id: booking.client_profiles?.user_id,
-          barber_user_id: booking.barber_profiles?.user_id
+          participant_type: participant.type
         });
 
+        // Get last message and unread count
         const { data: lastMessage } = await supabase
           .from('messages')
           .select('*')
@@ -272,7 +283,6 @@ export class MessagingService {
           ...message,
           sender_profile: isFromBarber 
             ? {
-                id: booking.barber_profiles?.user_id || '',
                 name: booking.barber_profiles?.business_name || booking.barber_profiles?.owner_name || 'Barber',
                 type: 'barber'
               }
@@ -283,6 +293,7 @@ export class MessagingService {
               }
         };
       });
+
 
       return enrichedMessages;
 
@@ -411,7 +422,7 @@ export class MessagingService {
             table: 'messages',
             filter: `booking_id=eq.${bookingId}`,
           },
-          async (payload) => {
+          (payload) => {
             try {
               callback(payload.new as Message);
             } catch (callbackError) {

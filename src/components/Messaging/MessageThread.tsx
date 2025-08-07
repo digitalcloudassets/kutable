@@ -393,7 +393,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
           <div className="mb-3 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm flex items-center space-x-2">
             <AlertCircle className="h-4 w-4" />
             <span>
-             This client hasn't linked their booking to a Kutable account yet. Messaging will be available after they sign up.
+             This client hasn't created an account yet. Messaging will be available after they sign up on Kutable.
             </span>
           </div>
         )}
@@ -407,7 +407,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all duration-200"
               rows={newMessage.includes('\n') ? 3 : 1}
               maxLength={1000}
-              disabled={!conversation.participant.id || conversation.participant.id.trim() === ''}
+              disabled={!conversation.participant.id || !conversation.participant.id.trim()}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -422,7 +422,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
           
           <button
             type="submit"
-            disabled={!newMessage.trim() || sending || !conversation.participant.id || conversation.participant.id.trim() === ''}
+            disabled={!newMessage.trim() || sending || !conversation.participant.id || !conversation.participant.id.trim()}
             className="bg-primary-500 text-white p-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           >
             {sending ? (
