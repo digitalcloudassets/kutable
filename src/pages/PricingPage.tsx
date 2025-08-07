@@ -22,7 +22,7 @@ const PricingPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 page-container">
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-20 -mt-24 pt-44">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">
             Built for Barbers, Priced for Success
           </h1>
@@ -34,20 +34,20 @@ const PricingPage: React.FC = () => {
 
       {/* For Customers */}
       <section className="py-16 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
             <Scissors className="h-16 w-16 text-orange-600 mx-auto mb-6" />
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Your Professional Profile</h2>
             <p className="text-xl text-gray-600">Start with a free professional directory listing</p>
           </div>
 
-          <div className="bg-white border-2 border-blue-200 rounded-2xl p-8 shadow-lg">
+          <div className="bg-white border-2 border-blue-200 rounded-2xl p-8 shadow-lg max-w-2xl mx-auto">
             <div className="text-center mb-8">
               <div className="text-6xl font-bold text-blue-600 mb-2">$0</div>
               <div className="text-xl text-gray-600">Free professional listing</div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex items-center space-x-3">
                 <CheckCircle className="h-6 w-6 text-green-500" />
                 <span className="text-gray-700 text-lg">Professional business profile in our directory</span>
@@ -73,7 +73,7 @@ const PricingPage: React.FC = () => {
             <div className="mt-8 text-center">
               <Link
                 to="/signup?type=barber"
-                className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors inline-flex items-center space-x-2"
+                className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-colors inline-flex items-center space-x-2"
               >
                 <span>Create Your Profile</span>
                 <ArrowRight className="h-5 w-5" />
@@ -85,14 +85,14 @@ const PricingPage: React.FC = () => {
 
       {/* For Barbers */}
       <section className="py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
             <CreditCard className="h-16 w-16 text-orange-600 mx-auto mb-6" />
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Accept Online Bookings</h2>
             <p className="text-xl text-gray-600">Upgrade to accept payments and bookings through your profile</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Free Plan */}
             <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 shadow-lg">
               <div className="text-center mb-8">
@@ -101,7 +101,7 @@ const PricingPage: React.FC = () => {
                 <div className="text-gray-600">Forever</div>
               </div>
 
-              <div className="space-y-4 mb-8">
+              <div className="space-y-6 mb-8">
                 <div className="flex items-center space-x-3">
                   <CheckCircle className="h-5 w-5 text-green-500" />
                   <span className="text-gray-700">Professional business listing</span>
@@ -128,7 +128,7 @@ const PricingPage: React.FC = () => {
                 <p className="text-sm text-gray-600 mb-4">Perfect for establishing your online presence</p>
                 <Link
                   to="/signup?type=barber"
-                  className="w-full bg-gray-900 text-white py-3 rounded-lg hover:bg-gray-800 transition-colors font-medium block"
+                  className="w-full bg-gray-900 text-white py-4 rounded-xl hover:bg-gray-800 transition-colors font-medium block"
                 >
                   Create Your Profile
                 </Link>
@@ -152,7 +152,7 @@ const PricingPage: React.FC = () => {
                 <div className="text-sm text-gray-500">Only charged when customers book and pay</div>
               </div>
 
-              <div className="space-y-4 mb-8">
+              <div className="space-y-6 mb-8">
                 <div className="flex items-center space-x-3">
                   <CheckCircle className="h-5 w-5 text-green-500" />
                   <span className="text-gray-700">Everything in Directory Listing</span>
@@ -191,7 +191,7 @@ const PricingPage: React.FC = () => {
                 <p className="text-sm text-gray-600 mb-4">Start accepting bookings immediately</p>
                 <Link
                   to="/signup?type=barber"
-                  className="w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium block"
+                  className="w-full bg-orange-500 text-white py-4 rounded-xl hover:bg-orange-600 transition-colors font-medium block"
                 >
                   Start Accepting Bookings
                 </Link>
@@ -203,15 +203,15 @@ const PricingPage: React.FC = () => {
 
       {/* Fee Breakdown */}
       <section className="py-16 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
             <Calculator className="h-16 w-16 text-green-600 mx-auto mb-6" />
             <h2 className="text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
             <p className="text-xl text-gray-600">Simple, transparent pricing you can understand</p>
           </div>
 
-          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 mb-8">
               <div className="text-center">
                 <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Users className="h-8 w-8 text-blue-600" />
@@ -247,9 +247,9 @@ const PricingPage: React.FC = () => {
             </div>
 
             {/* Example Calculation */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-xl p-8">
               <h4 className="text-lg font-semibold text-gray-900 mb-4 text-center">Example: $50 Haircut</h4>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Service Price</span>
                   <span className="font-medium text-gray-900">$50.00</span>
@@ -262,7 +262,7 @@ const PricingPage: React.FC = () => {
                   <span className="text-gray-500">Stripe Fee (2.9% + $0.30)</span>
                   <span className="text-red-600">-$1.75</span>
                 </div>
-                <div className="border-t pt-3 flex justify-between items-center">
+                <div className="border-t pt-4 flex justify-between items-center">
                   <span className="text-lg font-semibold text-gray-900">You Receive</span>
                   <span className="text-2xl font-bold text-green-600">$47.75</span>
                 </div>
@@ -274,14 +274,14 @@ const PricingPage: React.FC = () => {
 
       {/* Value Proposition */}
       <section className="py-16 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">What You Get</h2>
             <p className="text-xl text-gray-600">Professional tools included with online booking</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <MessageSquare className="h-6 w-6 text-blue-600" />
               </div>
@@ -294,7 +294,7 @@ const PricingPage: React.FC = () => {
               </ul>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <div className="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <DollarSign className="h-6 w-6 text-green-600" />
               </div>
@@ -307,7 +307,7 @@ const PricingPage: React.FC = () => {
               </ul>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <div className="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <Scissors className="h-6 w-6 text-purple-600" />
               </div>
@@ -320,7 +320,7 @@ const PricingPage: React.FC = () => {
               </ul>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <div className="bg-orange-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <BarChart3 className="h-6 w-6 text-orange-600" />
               </div>
@@ -333,7 +333,7 @@ const PricingPage: React.FC = () => {
               </ul>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <div className="bg-red-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <Clock className="h-6 w-6 text-red-600" />
               </div>
@@ -346,7 +346,7 @@ const PricingPage: React.FC = () => {
               </ul>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <div className="bg-indigo-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <Settings className="h-6 w-6 text-indigo-600" />
               </div>
@@ -364,14 +364,14 @@ const PricingPage: React.FC = () => {
 
       {/* Comparison with Competitors */}
       <section className="py-16 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Barbers Choose Kutable</h2>
             <p className="text-xl text-gray-600">Simple, transparent, and built for your success</p>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
+            <table className="w-full border border-gray-200 rounded-xl overflow-hidden shadow-sm">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-medium text-gray-900">Feature</th>
@@ -385,34 +385,34 @@ const PricingPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 <tr>
-                  <td className="px-6 py-4 text-sm text-gray-900">Setup Cost</td>
-                  <td className="px-6 py-4 text-center text-sm font-medium text-green-600">$0</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-600">$99-500+</td>
+                  <td className="px-8 py-4 text-sm text-gray-900">Setup Cost</td>
+                  <td className="px-8 py-4 text-center text-sm font-medium text-green-600">$0</td>
+                  <td className="px-8 py-4 text-center text-sm text-gray-600">$99-500+</td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-4 text-sm text-gray-900">Monthly Subscription</td>
-                  <td className="px-6 py-4 text-center text-sm font-medium text-green-600">$0</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-600">$29-200/mo</td>
+                  <td className="px-8 py-4 text-sm text-gray-900">Monthly Subscription</td>
+                  <td className="px-8 py-4 text-center text-sm font-medium text-green-600">$0</td>
+                  <td className="px-8 py-4 text-center text-sm text-gray-600">$29-200/mo</td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-4 text-sm text-gray-900">Per Booking Fee</td>
-                  <td className="px-6 py-4 text-center text-sm font-medium text-orange-600">4%</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-600">3-5%</td>
+                  <td className="px-8 py-4 text-sm text-gray-900">Per Booking Fee</td>
+                  <td className="px-8 py-4 text-center text-sm font-medium text-orange-600">4%</td>
+                  <td className="px-8 py-4 text-center text-sm text-gray-600">3-5%</td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-4 text-sm text-gray-900">Contract Required</td>
-                  <td className="px-6 py-4 text-center text-sm font-medium text-green-600">No</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-600">Usually</td>
+                  <td className="px-8 py-4 text-sm text-gray-900">Contract Required</td>
+                  <td className="px-8 py-4 text-center text-sm font-medium text-green-600">No</td>
+                  <td className="px-8 py-4 text-center text-sm text-gray-600">Usually</td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-4 text-sm text-gray-900">Share Your Profile</td>
-                  <td className="px-6 py-4 text-center text-sm font-medium text-green-600">Free</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-600">Limited</td>
+                  <td className="px-8 py-4 text-sm text-gray-900">Share Your Profile</td>
+                  <td className="px-8 py-4 text-center text-sm font-medium text-green-600">Free</td>
+                  <td className="px-8 py-4 text-center text-sm text-gray-600">Limited</td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-4 text-sm text-gray-900">SMS Notifications</td>
-                  <td className="px-6 py-4 text-center text-sm font-medium text-green-600">None</td>
-                  <td className="px-6 py-4 text-center text-sm text-gray-600">Extra</td>
+                  <td className="px-8 py-4 text-sm text-gray-900">SMS Notifications</td>
+                  <td className="px-8 py-4 text-center text-sm font-medium text-green-600">Included</td>
+                  <td className="px-8 py-4 text-center text-sm text-gray-600">Extra</td>
                 </tr>
               </tbody>
             </table>
@@ -422,13 +422,13 @@ const PricingPage: React.FC = () => {
 
       {/* FAQ */}
       <section className="py-16 bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Common Questions</h2>
           </div>
 
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+          <div className="space-y-8">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
                 When do I get charged the 4%?
               </h3>
@@ -438,7 +438,7 @@ const PricingPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
                 How do I get customers to my profile?
               </h3>
@@ -448,7 +448,7 @@ const PricingPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
                 How quickly do I get paid?
               </h3>
@@ -458,7 +458,7 @@ const PricingPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
                 Can I still take walk-ins and cash customers?
               </h3>
@@ -473,21 +473,21 @@ const PricingPage: React.FC = () => {
 
       {/* CTA Section */}
       <section className="py-16 bg-gray-900 text-white">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold mb-6">Ready to Modernize Your Business?</h2>
           <p className="text-xl text-gray-300 mb-8">
             Join barbers who are making booking easier for their customers and growing their business.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Link
               to="/signup?type=barber"
-              className="bg-orange-500 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-orange-600 transition-colors"
+              className="bg-orange-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-orange-600 transition-colors"
             >
               Create Your Profile Free
             </Link>
             <Link
               to="/support"
-              className="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-gray-900 transition-colors"
+              className="border-2 border-white text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white hover:text-gray-900 transition-colors"
             >
               Questions? Contact Us
             </Link>

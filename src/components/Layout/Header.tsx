@@ -35,7 +35,7 @@ const Header: React.FC = () => {
         : 'bg-transparent'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="relative">
@@ -52,7 +52,7 @@ const Header: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
             <Link
               to="/barbers"
               className={`font-medium transition-all duration-200 hover:scale-105 px-3 py-2 rounded-lg ${
@@ -80,7 +80,7 @@ const Header: React.FC = () => {
           </nav>
 
           {/* User Actions */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3 lg:space-x-4">
             {loading ? (
               <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
             ) : user ? (
@@ -151,43 +151,43 @@ const Header: React.FC = () => {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden glass-effect border-t border-white/10 mt-4 p-4 rounded-2xl mb-4 animate-scale-in">
-            <nav className="space-y-1">
+            <nav className="space-y-2">
               <Link
                 to="/barbers"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block py-4 px-4 font-medium text-gray-700 hover:text-primary-600 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px] flex items-center"
+                className="block py-4 px-6 font-medium text-gray-700 hover:text-primary-600 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px] flex items-center"
               >
                 Find Barbers
               </Link>
               <Link
                 to="/how-it-works"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block py-4 px-4 font-medium text-gray-600 hover:text-gray-800 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px] flex items-center"
+                className="block py-4 px-6 font-medium text-gray-600 hover:text-gray-800 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px] flex items-center"
               >
                 How It Works
               </Link>
               <Link
                 to="/pricing"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block py-4 px-4 font-medium text-gray-600 hover:text-gray-800 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px] flex items-center"
+                className="block py-4 px-6 font-medium text-gray-600 hover:text-gray-800 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px] flex items-center"
               >
                 Pricing
               </Link>
               
-              <div className="border-t border-gray-200 pt-4 space-y-2 mt-4">
+              <div className="border-t border-gray-200 pt-4 space-y-2 mt-6">
                 {user ? (
                   <>
                     <Link
                       to="/dashboard"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center space-x-3 py-4 px-4 font-medium text-gray-700 hover:text-primary-600 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px]"
+                      className="flex items-center space-x-3 py-4 px-6 font-medium text-gray-700 hover:text-primary-600 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px]"
                     >
                       <User className="h-5 w-5" />
                       <span>Dashboard</span>
                     </Link>
                     <button
                       onClick={handleSignOut}
-                      className="flex items-center space-x-3 py-4 px-4 font-medium text-gray-600 hover:text-gray-800 transition-colors rounded-xl hover:bg-gray-100 w-full text-left min-h-[48px]"
+                      className="flex items-center space-x-3 py-4 px-6 font-medium text-gray-600 hover:text-gray-800 transition-colors rounded-xl hover:bg-gray-100 w-full text-left min-h-[48px]"
                     >
                       <LogOut className="h-4 w-4" />
                       <span>Sign Out</span>
@@ -198,14 +198,14 @@ const Header: React.FC = () => {
                     <Link
                       to="/login"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block py-4 px-4 font-medium text-gray-700 hover:text-primary-600 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px] flex items-center"
+                      className="block py-4 px-6 font-medium text-gray-700 hover:text-primary-600 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px] flex items-center"
                     >
                       Sign In
                     </Link>
                     <Link
                       to="/signup"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="btn-primary w-full justify-center mt-3 min-h-[48px]"
+                      className="btn-primary w-full justify-center mt-4 min-h-[48px]"
                     >
                       Get Started
                     </Link>

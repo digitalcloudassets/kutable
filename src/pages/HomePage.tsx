@@ -28,12 +28,12 @@ const HomePage: React.FC = () => {
       <Hero />
       
       {/* Why Barbers Love Kutable */}
-      <section className="py-12 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
+      <section className="py-16 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Why Barbers Love Kutable
           </h2>
-          <p className="text-xl text-emerald-100 max-w-4xl mx-auto">
+          <p className="text-xl text-emerald-100 max-w-3xl mx-auto">
             No monthly fees. No contracts. Just more bookings and instant payouts.
           </p>
         </div>
@@ -42,10 +42,10 @@ const HomePage: React.FC = () => {
       {/* Value Proposition */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-12">
             Barbers earn 25% more per client, spend less time texting, and get paid automatically with every booking.
           </h2>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-center items-center max-w-4xl mx-auto">
             <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-2xl px-8 py-4">
               <p className="text-emerald-800 font-semibold text-lg">Trusted by thousands of barbers nationwide</p>
             </div>
@@ -57,10 +57,10 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 bg-gray-50 relative overflow-hidden">
+      <section className="py-16 bg-gray-50 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-gray-50"></div>
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
+          <div className="text-center mb-16">
             <div className="inline-flex items-center space-x-2 bg-primary-50 text-primary-700 rounded-full px-6 py-3 mb-6">
               <Target className="h-5 w-5" />
               <span className="font-medium">Simple 3-Step Process</span>
@@ -68,15 +68,14 @@ const HomePage: React.FC = () => {
             <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-6">
               Start Earning in Minutes
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Get your profile online and start accepting bookings immediately.
             </p>
           </div>
 
           {/* Compact Horizontal Stepper */}
-          <div className="bg-white rounded-3xl p-8 shadow-premium mb-16">
-            <div className="flex flex-col md:flex-row items-center justify-between space-y-8 md:space-y-0 md:space-x-8">
-              <div className="flex flex-col md:flex-row items-center space-y-8 md:space-y-0 md:space-x-8 flex-1">
+          <div className="bg-white rounded-3xl p-8 shadow-premium mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
                 {/* Step 1 */}
                 <div className="text-center flex-1">
                   <div className="relative mb-6">
@@ -88,11 +87,6 @@ const HomePage: React.FC = () => {
                   <p className="text-gray-600 text-sm">
                     Locate your business in our directory and claim it for free.
                   </p>
-                </div>
-                
-                {/* Arrow */}
-                <div className="hidden md:block">
-                  <ArrowRight className="h-8 w-8 text-gray-300" />
                 </div>
                 
                 {/* Step 2 */}
@@ -108,11 +102,6 @@ const HomePage: React.FC = () => {
                   </p>
                 </div>
                 
-                {/* Arrow */}
-                <div className="hidden md:block">
-                  <ArrowRight className="h-8 w-8 text-gray-300" />
-                </div>
-                
                 {/* Step 3 */}
                 <div className="text-center flex-1">
                   <div className="relative mb-6">
@@ -125,18 +114,17 @@ const HomePage: React.FC = () => {
                     Share your profile and watch bookings roll in.
                   </p>
                 </div>
-              </div>
             </div>
             
             {/* Microcopy */}
-            <div className="text-center mt-8 pt-6 border-t border-gray-100">
+            <div className="text-center mt-8 pt-8 border-t border-gray-100">
               <p className="text-gray-500 text-sm font-medium">Takes less than 60 seconds to get started</p>
             </div>
           </div>
 
           {/* Demo Preview Placeholder */}
-          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 text-center text-white shadow-premium-lg">
-            <div className="max-w-2xl mx-auto">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 md:p-12 text-center text-white shadow-premium-lg">
+            <div className="max-w-3xl mx-auto">
               <Play className="h-16 w-16 mx-auto mb-6 text-white/80" />
               <h3 className="text-2xl font-bold mb-4">See Kutable In Action</h3>
               <p className="text-gray-300 mb-6">
@@ -151,7 +139,7 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 bg-white">
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <div className="inline-flex items-center space-x-2 bg-accent-50 text-accent-700 rounded-full px-6 py-3 mb-6">
@@ -164,7 +152,7 @@ const HomePage: React.FC = () => {
           </div>
 
           {/* Featured Testimonial */}
-          <div className="bg-gradient-to-br from-primary-50 to-accent-50 border border-primary-200 rounded-3xl p-8 md:p-12 mb-12 max-w-4xl mx-auto">
+          <div className="bg-gradient-to-br from-primary-50 to-accent-50 border border-primary-200 rounded-3xl p-8 md:p-12 mb-16 max-w-5xl mx-auto">
             <div className="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
               <img
                 src="https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=200"
@@ -191,7 +179,7 @@ const HomePage: React.FC = () => {
 
           {/* Rolling Testimonials */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+            <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
               <div className="flex items-center space-x-1 mb-4">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
@@ -202,7 +190,7 @@ const HomePage: React.FC = () => {
               <p className="text-gray-500 text-sm">Fresh Fades, Miami</p>
             </div>
             
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+            <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
               <div className="flex items-center space-x-1 mb-4">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
@@ -213,7 +201,7 @@ const HomePage: React.FC = () => {
               <p className="text-gray-500 text-sm">Classic Cuts, Austin</p>
             </div>
             
-            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+            <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
               <div className="flex items-center space-x-1 mb-4">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
@@ -230,13 +218,13 @@ const HomePage: React.FC = () => {
       {/* Trust Signals & Security */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
               Built for Your Success & Security
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
             <div className="text-center group">
               <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-premium group-hover:scale-110 transition-transform duration-300">
                 <Shield className="h-8 w-8 text-white" />
@@ -265,13 +253,13 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* Enhanced CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
+      <section className="py-16 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute top-20 left-10 w-72 h-72 bg-primary-500/10 rounded-full blur-3xl animate-float"></div>
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
         </div>
         
-        <div className="relative z-10 max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+        <div className="relative z-10 max-w-5xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-6 py-3 mb-8">
             <Sparkles className="h-5 w-5 text-accent-400" />
             <span className="text-white/90 font-medium">Join the Revolution</span>
@@ -280,12 +268,12 @@ const HomePage: React.FC = () => {
           <h2 className="text-4xl md:text-5xl font-bold mb-6">
             Ready to Modernize Your Business?
           </h2>
-          <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto">
             Join thousands of barbers who've transformed their booking process and increased their earnings.
           </p>
           
           {/* Primary CTAs */}
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
+          <div className="flex flex-col sm:flex-row gap-8 justify-center items-center mb-12">
             <a
               href="/signup?type=barber"
               className="group bg-white text-gray-900 px-8 py-4 rounded-2xl text-lg font-semibold hover:bg-gray-100 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-premium-lg hover:shadow-2xl flex items-center space-x-3"
@@ -319,7 +307,7 @@ const HomePage: React.FC = () => {
             <p className="text-xl text-gray-600">Professional tools included with your free profile</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
             <div className="text-center group">
               <div className="bg-primary-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                 <User className="h-8 w-8 text-primary-600" />

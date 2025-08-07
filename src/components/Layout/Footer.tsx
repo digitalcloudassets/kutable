@@ -6,7 +6,7 @@ const Footer: React.FC = () => {
   return (
     <footer className="bg-gray-900 border-t border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 lg:gap-12">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
@@ -17,7 +17,7 @@ const Footer: React.FC = () => {
               />
               <span className="text-xl font-bold text-white">Kutable</span>
             </div>
-            <p className="text-gray-400 text-sm max-w-md">
+            <p className="text-gray-400 text-sm max-w-lg leading-relaxed">
               The modern booking platform built exclusively for barbers. 
               Streamline your business, accept payments, and grow your clientele.
             </p>
@@ -25,8 +25,8 @@ const Footer: React.FC = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
+            <h3 className="text-white font-semibold mb-6">Quick Links</h3>
+            <ul className="space-y-3">
               <li>
                 <Link to="/barbers" className="text-gray-400 hover:text-white transition-colors text-sm">
                   Find Barbers
@@ -52,8 +52,8 @@ const Footer: React.FC = () => {
 
           {/* Contact */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Contact</h3>
-            <ul className="space-y-2">
+            <h3 className="text-white font-semibold mb-6">Contact</h3>
+            <ul className="space-y-3">
               <li className="flex items-center space-x-2 text-gray-400 text-sm">
                 <Mail className="h-4 w-4" />
                 <span>support@kutable.com</span>
@@ -62,11 +62,11 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center">
+        <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
           <p className="text-gray-400 text-sm">
             © 2025 Kutable. All rights reserved.
           </p>
-          <div className="flex space-x-6 mt-4 sm:mt-0">
+          <div className="flex space-x-8">
             <Link to="/privacy" className="text-gray-400 hover:text-white transition-colors text-sm">
               Privacy Policy
             </Link>

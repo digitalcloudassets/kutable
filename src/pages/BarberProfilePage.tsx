@@ -462,7 +462,7 @@ const BarberProfilePage: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main content */}
           <div className="lg:col-span-2">
@@ -479,7 +479,7 @@ const BarberProfilePage: React.FC = () => {
               </p>
 
               {/* Business Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-gray-100">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8 border-t border-gray-100">
                 <div className="text-center group">
                   <div className="bg-gradient-to-br from-yellow-500 to-orange-500 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium group-hover:scale-110 transition-transform duration-300">
                     <Star className="h-8 w-8 text-white" />
@@ -538,7 +538,7 @@ const BarberProfilePage: React.FC = () => {
                     <p className="text-gray-600 font-medium">Loading services...</p>
                   </div>
                 ) : services.length > 0 ? (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     {services.map((service) => (
                       <div key={service.id} className="bg-gray-50 border border-gray-100 rounded-2xl p-6 hover:border-primary-300 hover:shadow-md transition-all duration-200 group">
                         <div className="flex justify-between items-start mb-4">
@@ -555,7 +555,7 @@ const BarberProfilePage: React.FC = () => {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                        <div className="flex items-center justify-between pt-6 border-t border-gray-200">
                           <div className="flex items-center space-x-6">
                             <div className="flex items-center space-x-2">
                               <div className="bg-gray-200 p-1.5 rounded-lg">
@@ -603,15 +603,15 @@ const BarberProfilePage: React.FC = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Contact Info */}
-            <div className="card-premium p-6">
+            <div className="card-premium p-8">
               <h3 className="text-xl font-display font-bold text-gray-900 mb-6">Contact</h3>
               <div className="space-y-4">
                 {barber.phone && (
                   <a 
                     href={`tel:${barber.phone}`}
-                    className="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl hover:bg-primary-50 hover:border-primary-200 border border-transparent transition-all duration-200 group"
+                    className="flex items-center space-x-3 p-6 bg-gray-50 rounded-xl hover:bg-primary-50 hover:border-primary-200 border border-transparent transition-all duration-200 group"
                   >
                     <div className="bg-primary-100 p-2 rounded-lg group-hover:bg-primary-200 transition-colors">
                       <Phone className="h-5 w-5 text-primary-600" />
@@ -625,7 +625,7 @@ const BarberProfilePage: React.FC = () => {
                   </a>
                 )}
                 {barber.address && (
-                  <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-xl border border-transparent">
+                  <div className="flex items-start space-x-3 p-6 bg-gray-50 rounded-xl border border-transparent">
                     <div className="bg-gray-200 p-2 rounded-lg">
                       <MapPin className="h-5 w-5 text-gray-600" />
                     </div>
@@ -644,9 +644,9 @@ const BarberProfilePage: React.FC = () => {
             </div>
 
             {/* Business Hours */}
-            <div className="card-premium p-6">
+            <div className="card-premium p-8">
               <h3 className="text-xl font-display font-bold text-gray-900 mb-6">Business Hours</h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="font-medium text-gray-700">Monday</span>
                   <span className="text-gray-500 font-medium">Contact for hours</span>
@@ -697,7 +697,7 @@ const BarberProfilePage: React.FC = () => {
                   <Crown className="h-5 w-5" />
                   <span>Claim This Listing</span>
                 </Link>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="flex items-center space-x-2 text-emerald-700">
                     <CheckCircle className="h-4 w-4" />
                     <span>Free to claim</span>
@@ -741,7 +741,7 @@ const BarberProfilePage: React.FC = () => {
 
             {/* Location */}
             {barber.address && (
-              <div className="card-premium p-6">
+              <div className="card-premium p-8">
                 <GoogleMap
                   address={barber.address}
                   businessName={barber.business_name}
