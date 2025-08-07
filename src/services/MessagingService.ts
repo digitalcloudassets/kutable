@@ -153,7 +153,7 @@ export class MessagingService {
         // For barbers, always show the client as the conversation participant, 
         // even if client_profiles.user_id is null (unclaimed account)
         let participant;
-        if (isBarber) {
+        if (isUserTheBarber) {
           // For barbers: show the client as the participant
           const clientFirstName = booking.client_profiles?.first_name || '';
           const clientLastName = booking.client_profiles?.last_name || '';
@@ -186,7 +186,7 @@ export class MessagingService {
 
         console.log('🔍 DEBUG - Final participant for conversation:', {
           booking_id: booking.id,
-          is_barber: isBarber,
+          is_barber: isUserTheBarber,
           participant_id: participant.id,
           participant_name: participant.name,
           participant_type: participant.type
@@ -469,56 +469,42 @@ export class MessagingService {
       // Get booking and user details for notification
       const { data: booking } = await supabase
         .from('bookings')
-       // Participant logic: Always determine who the OTHER person is in the conversation
-       let participant;
-       if (isUserTheBarber) {
-         // Current user is the barber, so participant is the client
-         const clientName = [
-           booking.client_profiles?.first_name || '',
-           booking.client_profiles?.last_name || ''
-         ].join(' ').trim();
-         
-         participant = {
-           id: booking.client_profiles?.user_id || '',  // Can be empty if unclaimed
-           name: clientName || 'Client',
-           type: 'client' as const,
-           avatar: undefined
-         };
-         
-         console.log('🔍 DEBUG - Barber viewing client conversation:', {
-           booking_id: booking.id,
-           client_first_name: booking.client_profiles?.first_name,
-           client_last_name: booking.client_profiles?.last_name,
-           client_user_id: booking.client_profiles?.user_id,
-           final_participant_name: participant.name,
-           participant_id: participant.id
-         });
-       } else {
-         // Current user is the client, so participant is the barber
-         participant = {
-           id: booking.barber_profiles?.user_id || '',
-           name: booking.barber_profiles?.business_name || 'Barber',
-           type: 'barber' as const,
-           avatar: booking.barber_profiles?.profile_image_url || undefined
-         };
-         
-         console.log('🔍 DEBUG - Client viewing barber conversation:', {
-           booking_id: booking.id,
-           barber_business_name: booking.barber_profiles?.business_name,
-           barber_user_id: booking.barber_profiles?.user_id,
-           final_participant_name: participant.name,
-           participant_id: participant.id
-         });
-       }
-      }
-       return; // Exit gracefully without breaking the message flow
-     }
+        .select(`
+          id,
+          appointment_date,
+          appointment_time,
+          services(name),
+          barber_profiles(user_id, business_name, phone, email, sms_consent, email_consent),
+          client_profiles(user_id, first_name, last_name, phone, email, sms_consent, email_consent)
+        `)
+        .eq('id', bookingId)
+        .single();
 
-     // Prevent sending notifications to self
-     if (senderProfile.user_id === receiverProfile.user_id) {
-       console.warn('Cannot send notification to self (message still sent successfully)');
-       return; // Exit gracefully without breaking the message flow
-     }
+      if (!booking) {
+        console.warn('Booking not found for notification:', bookingId);
+        return;
+      }
+
+      // Determine sender and receiver profiles
+      const isFromBarber = senderId === booking.barber_profiles?.user_id;
+      const senderProfile = isFromBarber ? booking.barber_profiles : booking.client_profiles;
+      const receiverProfile = isFromBarber ? booking.client_profiles : booking.barber_profiles;
+
+      if (!senderProfile || !receiverProfile) {
+        console.warn('Missing profile data for notification:', { 
+          bookingId, 
+          hasSender: !!senderProfile, 
+          hasReceiver: !!receiverProfile 
+        });
+        return; // Exit gracefully without breaking the message flow
+      }
+
+      // Prevent sending notifications to self
+      if (senderProfile.user_id === receiverProfile.user_id) {
+        console.warn('Cannot send notification to self (message still sent successfully)');
+        return; // Exit gracefully without breaking the message flow
+      }
+
       const senderName = isFromBarber 
         ? senderProfile.business_name 
         : `${senderProfile.first_name} ${senderProfile.last_name}`;
