@@ -54,6 +54,9 @@ export default {
         '4xl': '2rem',
         '5xl': '2.5rem',
       },
+      maxWidth: {
+        '8xl': '90rem',
+      },
       boxShadow: {
         'premium': '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         'premium-lg': '0 20px 40px -12px rgba(0, 0, 0, 0.15), 0 8px 16px -4px rgba(0, 0, 0, 0.1)',
