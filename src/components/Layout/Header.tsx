@@ -28,8 +28,12 @@ const Header: React.FC = () => {
       console.log('Sign out error:', error);
     } finally {
       // Always navigate and close menu, regardless of logout success
+      // Force clear any local storage or session data
+      localStorage.removeItem('sb-' + (import.meta.env.VITE_SUPABASE_URL?.split('://')[1]?.split('.')[0] || 'auth') + '-auth-token');
       navigate('/');
       setMobileMenuOpen(false);
+      // Force a page refresh to ensure clean state
+      window.location.reload();
     }
   };
 
