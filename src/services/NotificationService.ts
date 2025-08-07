@@ -171,22 +171,27 @@ export class NotificationService {
     eventType: NotificationEvent
   ): Promise<boolean> {
     try {
-      const { data, error } = await supabase.functions.invoke('send-sms', {
-        body: {
-          to: phoneNumber,
-          message: message,
-          type: this.mapEventToSMSType(eventType)
-        }
-      });
+      try {
+        const { data, error } = await supabase.functions.invoke('send-sms', {
+          body: {
+            to: phoneNumber,
+            message: message,
+            type: this.mapEventToSMSType(eventType)
+          }
+        });
 
-      if (error) {
-        console.error('SMS sending error:', error);
+        if (error) {
+          console.warn('SMS sending error (expected if Twilio not configured):', error);
+          return false;
+        }
+
+        return data?.success || false;
+      } catch (fetchError) {
+        console.warn('SMS function unavailable (expected if Edge Functions not deployed):', fetchError);
         return false;
       }
-
-      return data?.success || false;
     } catch (error) {
-      console.error('SMS service error:', error);
+      console.warn('SMS service unavailable:', error);
       return false;
     }
   }
@@ -199,24 +204,29 @@ export class NotificationService {
     eventType: NotificationEvent
   ): Promise<boolean> {
     try {
-      const { data, error } = await supabase.functions.invoke('send-email', {
-        body: {
-          to: email,
-          name: name,
-          subject: subject,
-          message: message,
-          type: eventType
-        }
-      });
+      try {
+        const { data, error } = await supabase.functions.invoke('send-email', {
+          body: {
+            to: email,
+            name: name,
+            subject: subject,
+            message: message,
+            type: eventType
+          }
+        });
 
-      if (error) {
-        console.error('Email sending error:', error);
+        if (error) {
+          console.warn('Email sending error (expected if email service not configured):', error);
+          return false;
+        }
+
+        return data?.success || false;
+      } catch (fetchError) {
+        console.warn('Email function unavailable (expected if Edge Functions not deployed):', fetchError);
         return false;
       }
-
-      return data?.success || false;
     } catch (error) {
-      console.error('Email service error:', error);
+      console.warn('Email service unavailable:', error);
       return false;
     }
   }

@@ -33,18 +33,24 @@ export const sendSMS = async (smsData: SMSMessage): Promise<boolean> => {
     // This will be checked in the edge function, but we validate here too
     console.log('Attempting to send SMS:', { to: smsData.to, type: smsData.type });
     
-    const { data, error } = await supabase.functions.invoke('send-sms', {
-      body: smsData
-    });
+    try {
+      const { data, error } = await supabase.functions.invoke('send-sms', {
+        body: smsData
+      });
 
-    if (error) {
-      console.error('SMS service error:', error);
+      if (error) {
+        console.warn('SMS service error (expected if Twilio not configured):', error);
+        return false;
+      }
+
+      return data?.success || false;
+    } catch (fetchError) {
+      // Handle network errors or function not available
+      console.warn('SMS function unavailable (expected if Edge Functions not deployed or Twilio not configured):', fetchError);
       return false;
     }
-
-    return data?.success || false;
   } catch (error) {
-    console.error('Error sending SMS:', error);
+    console.warn('SMS service unavailable:', error);
     return false;
   }
 };
