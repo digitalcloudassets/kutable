@@ -735,11 +735,4 @@ const BarberListPage: React.FC = () => {
   );
 };
 
-// Enhanced Search Panel Component
-const AdvancedSearchPanel: React.FC<any> = (props) => {
-  // This would be the enhanced search panel implementation
-  // For now, keeping the existing implementation
-  return null;
-};
-
 export default BarberListPage;
