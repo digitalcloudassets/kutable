@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  MessageSquare, 
+  MessageSquare,
+  HelpCircle as HelpCircleIcon,
   Phone, 
   Mail, 
   Clock, 
@@ -18,6 +19,7 @@ import {
   AlertCircle,
   DollarSign
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface FAQ {
   question: string;
@@ -167,6 +169,19 @@ const SupportPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 page-container">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-20 -mt-24 pt-44">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <HelpCircleIcon className="h-16 w-16 mx-auto mb-6 text-orange-500" />
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            How Can We Help?
+          </h1>
+          <p className="text-xl text-gray-300 leading-relaxed">
+            Find answers to common questions or get in touch with our support team.
+          </p>
+        </div>
+      </section>
+
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-20 -mt-24 pt-44">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
