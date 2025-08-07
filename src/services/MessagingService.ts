@@ -149,18 +149,28 @@ export class MessagingService {
         // even if client_profiles.user_id is null (unclaimed account)
         let participant;
         if (isBarber) {
-          const clientName = [
-            booking.client_profiles?.first_name || '',
-            booking.client_profiles?.last_name || ''
-          ].join(' ').trim();
-
+          // For barbers: show the client as the participant
+          const clientFirstName = booking.client_profiles?.first_name || '';
+          const clientLastName = booking.client_profiles?.last_name || '';
+          const clientName = `${clientFirstName} ${clientLastName}`.trim();
+          const clientUserId = booking.client_profiles?.user_id;
+          
+          console.log('🔍 DEBUG - Client data for barber conversation:', {
+            booking_id: booking.id,
+            client_first_name: clientFirstName,
+            client_last_name: clientLastName,
+            client_user_id: clientUserId,
+            final_client_name: clientName
+          });
+          
           participant = {
-            id: booking.client_profiles?.user_id || '',  // can be blank if unclaimed
+            id: clientUserId || '',  // Use client's user_id for sending messages
             name: clientName || 'Client',
             type: 'client' as const,
             avatar: undefined
           };
         } else {
+          // For clients: show the barber as the participant
           participant = {
             id: booking.barber_profiles?.user_id || '',
             name: booking.barber_profiles?.business_name || 'Barber',
@@ -168,6 +178,14 @@ export class MessagingService {
             avatar: booking.barber_profiles?.profile_image_url || undefined
           };
         }
+
+        console.log('🔍 DEBUG - Final participant for conversation:', {
+          booking_id: booking.id,
+          is_barber: isBarber,
+          participant_id: participant.id,
+          participant_name: participant.name,
+          participant_type: participant.type
+        });
 
         // Get last message and unread count
         const { data: lastMessage } = await supabase
