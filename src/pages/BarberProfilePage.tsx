@@ -404,9 +404,9 @@ const BarberProfilePage: React.FC = () => {
         <div className="absolute top-6 left-6 z-20">
           <Link
             to="/barbers"
-            className="glass-effect text-white p-4 rounded-2xl hover:bg-white/20 transition-all duration-200 flex items-center space-x-2 group"
+            className="glass-effect text-gray-900 hover:text-white p-4 rounded-2xl hover:bg-white/20 transition-all duration-200 flex items-center space-x-2 group"
           >
-            <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+            <ArrowLeft className="h-5 w-5 text-gray-900 group-hover:text-white group-hover:-translate-x-1 transition-all duration-200" />
             <span className="font-medium">Back to Barbers</span>
           </Link>
         </div>
