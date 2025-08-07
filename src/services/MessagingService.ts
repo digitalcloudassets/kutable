@@ -141,41 +141,50 @@ export class MessagingService {
       const conversations: Conversation[] = [];
 
       for (const booking of uniqueBookings) {
-        // Always determine if *current* user is the barber for this booking
         const isBarber = barberProfile && booking.barber_id === barberProfile.id;
-        let participant;
-        if (isBarber) {
-          // If user is barber, participant is the client (must have user_id)
-          participant = booking.client_profiles && booking.client_profiles.user_id
-            ? {
-                id: booking.client_profiles.user_id,
-                name: `${booking.client_profiles.first_name || ''} ${booking.client_profiles.last_name || ''}`.trim(),
-                type: 'client' as const,
-                avatar: undefined
-              }
-            : null;
-        } else {
-          // If user is client, participant is the barber (must have user_id)
-          participant = booking.barber_profiles && booking.barber_profiles.user_id
-            ? {
-                id: booking.barber_profiles.user_id,
-                name: booking.barber_profiles.business_name || '',
-                type: 'barber' as const,
-                avatar: booking.barber_profiles.profile_image_url || undefined
-              }
-            : null;
-        }
+        
+        // Debug logging
+        console.log('DEBUG - Conversation participant logic:', {
+          bookingId: booking.id,
+          currentUserId: userId,
+          isBarber,
+          barberUserId: booking.barber_profiles?.user_id,
+          clientUserId: booking.client_profiles?.user_id,
+          barberBusiness: booking.barber_profiles?.business_name,
+          clientFirstName: booking.client_profiles?.first_name,
+          clientLastName: booking.client_profiles?.last_name,
+          clientFullName: `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim()
+        });
+        
+        const participant = isBarber 
+          ? {
+              id: booking.client_profiles?.user_id || '',
+              name: `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim(),
+              type: 'client' as const,
+              avatar: undefined
+            }
+          : {
+              id: booking.barber_profiles?.user_id || '',
+              name: booking.barber_profiles?.business_name || '',
+              type: 'barber' as const,
+              avatar: booking.barber_profiles?.profile_image_url || undefined
+            };
+        
+        console.log('DEBUG - Final participant for conversation:', {
+          bookingId: booking.id,
+          participantId: participant.id,
+          participantName: participant.name,
+          participantType: participant.type,
+          isBarberCalculated: isBarber,
+          shouldShowClientName: isBarber,
+          actuallyShowing: participant.name
+        });
 
-        // Skip if we can't find a valid participant (should never be self)
-        if (!participant || !participant.id || participant.id === userId) {
-          console.log('Skipping conversation - invalid participant:', {
-            bookingId: booking.id,
-            participant,
-            userId
-          });
+        // Skip conversations where barber profile is unclaimed (no user_id)
+        if (!participant.id || participant.id.trim() === '') {
+          console.log('Skipping conversation - no participant ID:', booking.id);
           continue;
         }
-
         // Get last message and unread count
         const { data: lastMessage } = await supabase
           .from('messages')
