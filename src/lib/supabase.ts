@@ -58,7 +58,6 @@ const parseCSV = (csvText: string): any[] => {
   
   const headerLine = lines[0];
   const headers = parseCSVLine(headerLine).map(h => h.toLowerCase().trim());
-  console.log('📋 CSV Headers found:', headers);
   
   const data: any[] = [];
   
@@ -212,10 +211,7 @@ const loadCSVDirectory = async (): Promise<any[]> => {
       const csvData = parseCSV(csvText);
       console.log(`📊 Parsed ${csvData.length} rows from CSV`);
       
-      console.log(`📝 After filtering reserved slugs: ${csvData.length} valid profiles`);
-      
       if (csvData.length === 0) {
-        console.warn('⚠️ No valid barber data found in CSV after filtering. Check CSV format and reserved slug conflicts.');
         return [];
       }
       
@@ -256,7 +252,6 @@ const loadCSVDirectory = async (): Promise<any[]> => {
       });
       
       csvDataLoaded = true;
-      console.log(`✅ Successfully loaded ${realBarberDirectory.length} barber profiles from CSV directory`);
       return realBarberDirectory;
       
     } catch (error) {
@@ -364,7 +359,6 @@ if (!hasValidCredentials) {
                 filteredData = filteredData.slice(0, query._limit);
               }
               
-              console.log(`📊 Query executed: returning ${filteredData.length} profiles`);
               resolve({ data: filteredData, error: null });
             } catch (error) {
               console.error('❌ Query execution failed:', error);
@@ -389,7 +383,6 @@ if (!hasValidCredentials) {
               }
               
               const result = filteredData[0] || null;
-              console.log(`📊 Single query executed: ${result ? 'found' : 'not found'}`);
               return { data: result, error: result ? null : { code: 'PGRST116' } };
             } catch (error) {
               console.error('❌ Single query failed:', error);
@@ -413,7 +406,6 @@ if (!hasValidCredentials) {
               }
               
               const result = filteredData[0] || null;
-              console.log(`📊 MaybeSingle query executed: ${result ? 'found' : 'not found'}`);
               return { data: result, error: null };
             } catch (error) {
               console.error('❌ MaybeSingle query failed:', error);
