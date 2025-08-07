@@ -180,7 +180,7 @@ export const withErrorBoundary = (
         if (fallback) {
           const Fallback = fallback;
           return <Fallback 
-            error={this.state.error!} 
+            error={this.state.error as Error} 
             reset={() => this.setState({ hasError: false, error: undefined })} 
           />;
         }
