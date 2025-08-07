@@ -15,7 +15,9 @@ import {
   Scissors,
   Calendar,
   Search,
-  Play
+  Play,
+  DollarSign,
+  User
 } from 'lucide-react';
 
 const HomePage: React.FC = () => {
@@ -29,14 +31,14 @@ const HomePage: React.FC = () => {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20">
             <div className="inline-flex items-center space-x-2 bg-primary-50 text-primary-700 rounded-full px-6 py-3 mb-6">
-              <Zap className="h-5 w-5" />
-              <span className="font-medium">Simple & Fast</span>
+              <Target className="h-5 w-5" />
+              <span className="font-medium">Built for Barbers</span>
             </div>
             <h2 className="font-display text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              How Kutable Works
+              Grow Your Business in 3 Steps
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Three simple steps to your perfect cut. No more phone calls, no more waiting.
+              Get online, accept bookings, and grow your customer base with professional tools.
             </p>
           </div>
 
@@ -48,10 +50,10 @@ const HomePage: React.FC = () => {
                 </div>
                 <div className="absolute -inset-4 bg-gradient-to-r from-primary-500 to-accent-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Discover</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Claim Your Profile</h3>
               <p className="text-gray-600 leading-relaxed">
-                Browse verified barbers in your area. View their work, read authentic reviews, 
-                and find the perfect match for your style.
+                Find your business in our directory and claim it for free. Set up your 
+                professional profile with services, pricing, and photos.
               </p>
             </div>
             
@@ -62,10 +64,10 @@ const HomePage: React.FC = () => {
                 </div>
                 <div className="absolute -inset-4 bg-gradient-to-r from-accent-500 to-primary-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Book Instantly</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Accept Bookings</h3>
               <p className="text-gray-600 leading-relaxed">
-                Select your service, choose an available time slot, and secure your appointment 
-                with instant payment. All in under 60 seconds.
+                Connect your Stripe account and start accepting online bookings. Customers can 
+                book 24/7 with instant payment and automatic confirmations.
               </p>
             </div>
             
@@ -76,10 +78,10 @@ const HomePage: React.FC = () => {
                 </div>
                 <div className="absolute -inset-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Perfect Cut</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Get Paid & Grow</h3>
               <p className="text-gray-600 leading-relaxed">
-                Show up at your scheduled time and enjoy professional service. Rate your 
-                experience and build lasting relationships.
+                Money goes directly to your bank account. Track earnings, manage bookings, 
+                and build customer relationships through our professional dashboard.
               </p>
             </div>
           </div>
@@ -93,32 +95,32 @@ const HomePage: React.FC = () => {
                   <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                 </div>
-                <span className="text-gray-600 font-medium">Kutable Demo</span>
+                <span className="text-gray-600 font-medium">Barber Dashboard Preview</span>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gray-50 rounded-2xl p-6 text-center">
+                <div className="bg-primary-50 rounded-2xl p-6 text-center border border-primary-100">
                   <div className="bg-primary-600 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Search className="h-6 w-6 text-white" />
+                    <User className="h-6 w-6 text-white" />
                   </div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Find Barbers</h4>
-                  <p className="text-gray-600 text-sm">Browse profiles in your area</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">Your Profile</h4>
+                  <p className="text-gray-600 text-sm">Professional online presence</p>
                 </div>
                 
-                <div className="bg-primary-50 rounded-2xl p-6 text-center border border-primary-100">
-                  <div className="bg-primary-500 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <div className="bg-accent-50 rounded-2xl p-6 text-center border border-accent-100">
+                  <div className="bg-accent-500 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <Calendar className="h-6 w-6 text-white" />
                   </div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Book Online</h4>
-                  <p className="text-gray-600 text-sm">Schedule instantly with secure payment</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">Online Bookings</h4>
+                  <p className="text-gray-600 text-sm">24/7 booking with instant payment</p>
                 </div>
                 
-                <div className="bg-accent-100 rounded-2xl p-6 text-center border border-accent-200">
-                  <div className="bg-accent-500 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Scissors className="h-6 w-6 text-white" />
+                <div className="bg-yellow-50 rounded-2xl p-6 text-center border border-yellow-200">
+                  <div className="bg-yellow-500 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <DollarSign className="h-6 w-6 text-white" />
                   </div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Perfect Cut</h4>
-                  <p className="text-gray-600 text-sm">Enjoy professional service</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">Get Paid</h4>
+                  <p className="text-gray-600 text-sm">Direct bank deposits</p>
                 </div>
               </div>
             </div>

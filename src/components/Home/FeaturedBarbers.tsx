@@ -70,14 +70,14 @@ const FeaturedBarbers: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative z-10 text-center mb-16">
           <div className="inline-flex items-center space-x-2 bg-primary-50 text-primary-700 rounded-full px-6 py-3 mb-6">
-            <Crown className="h-5 w-5" />
-            <span className="font-medium">Top Professionals</span>
+            <Star className="h-5 w-5" />
+            <span className="font-medium">Success Stories</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-display font-bold text-gray-900 mb-6">
-            Featured Barbers
+            Barbers Growing with Kutable
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Discover top-rated, verified barbers in your area
+            See how barbers are modernizing their business and increasing earnings
           </p>
         </div>
 
@@ -85,24 +85,24 @@ const FeaturedBarbers: React.FC = () => {
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
           <div className="text-center group">
             <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-premium group-hover:scale-110 transition-transform duration-300">
-              <Award className="h-8 w-8 text-white" />
+              <DollarSign className="h-8 w-8 text-white" />
             </div>
-            <h3 className="text-xl font-display font-bold text-gray-900 mb-3">Verified Professionals</h3>
-            <p className="text-gray-600 leading-relaxed">All barbers are verified with authentic reviews and professional credentials</p>
+            <h3 className="text-xl font-display font-bold text-gray-900 mb-3">Instant Payments</h3>
+            <p className="text-gray-600 leading-relaxed">Get paid when customers book. Money goes directly to your bank account automatically.</p>
           </div>
           <div className="text-center group">
             <div className="bg-gradient-to-br from-primary-500 to-primary-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-premium group-hover:scale-110 transition-transform duration-300">
-              <Calendar className="h-8 w-8 text-white" />
+              <Smartphone className="h-8 w-8 text-white" />
             </div>
-            <h3 className="text-xl font-display font-bold text-gray-900 mb-3">Instant Booking</h3>
-            <p className="text-gray-600 leading-relaxed">Book appointments 24/7 with real-time availability and instant confirmation</p>
+            <h3 className="text-xl font-display font-bold text-gray-900 mb-3">Mobile-First Design</h3>
+            <p className="text-gray-600 leading-relaxed">Share your profile link anywhere. Works perfectly on all devices for your customers.</p>
           </div>
           <div className="text-center group">
             <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-premium group-hover:scale-110 transition-transform duration-300">
               <TrendingUp className="h-8 w-8 text-white" />
             </div>
-            <h3 className="text-xl font-display font-bold text-gray-900 mb-3">Growing Network</h3>
-            <p className="text-gray-600 leading-relaxed">Join thousands of satisfied customers discovering amazing barbers</p>
+            <h3 className="text-xl font-display font-bold text-gray-900 mb-3">Business Growth</h3>
+            <p className="text-gray-600 leading-relaxed">Track earnings, manage bookings, and build customer relationships with analytics.</p>
           </div>
         </div>
         
@@ -156,15 +156,15 @@ const FeaturedBarbers: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-2">
                     <div className="bg-emerald-100 p-1.5 rounded-lg">
-                      <Clock className="h-4 w-4 text-emerald-600" />
+                      <CheckCircle className="h-4 w-4 text-emerald-600" />
                     </div>
-                    <span className="text-emerald-600 font-semibold text-sm">Available Today</span>
+                    <span className="text-emerald-600 font-semibold text-sm">Accepting Bookings</span>
                   </div>
                   <Link
                     to={`/barber/${barber.slug || barber.id}`}
                     className="btn-primary group-hover:scale-110 transition-all duration-200"
                   >
-                    Book Now
+                    View Profile
                   </Link>
                 </div>
               </div>
@@ -174,10 +174,10 @@ const FeaturedBarbers: React.FC = () => {
 
         <div className="relative z-10 text-center mt-16">
           <Link
-            to="/barbers"
+            to="/signup?type=barber"
             className="btn-secondary group mx-auto"
           >
-            <span>Discover All Barbers</span>
+            <span>Join These Success Stories</span>
             <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
