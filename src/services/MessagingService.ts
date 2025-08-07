@@ -168,13 +168,37 @@ export class MessagingService {
             final_client_name: clientName
           });
           
+          // Get client's user_id - this is the key field for messaging validation
+          
+          console.log('🔍 DEBUG - Booking participant data:', {
+            booking_id: booking.id,
+            barber_user_id: booking.barber_profiles?.user_id,
+            client_user_id: clientUserId,
+            client_first_name: booking.client_profiles?.first_name,
+            client_last_name: booking.client_profiles?.last_name,
+            current_user_id: userId,
+            is_user_the_barber: isUserTheBarber
+          });
+
+            // Only set participant.id if client has a valid user account
+            const validClientUserId = clientUserId && clientUserId.trim() !== '' ? clientUserId : '';
+            
+            if (!validClientUserId) {
+              console.warn('🚫 Client profile found but no user_id:', {
+                booking_id: booking.id,
+                client_profile_id: booking.client_profiles?.id,
+                client_name: clientName,
+                message: 'Client needs to create an account to enable messaging'
+              });
+            }
+
           participant = {
-            id: clientUserId || '',  // Use client's user_id for sending messages
-              barber_id,
-              client_id,
+            id: validClientUserId,  // Use client's user_id for sending messages (empty if no account)
+            name: clientName || 'Client',
+            type: 'client' as const,
             avatar: undefined
           };
-              client_profiles(id, user_id, first_name, last_name)
+        } else {
           // For clients: show the barber as the participant
           participant = {
             id: booking.barber_profiles?.user_id || '',
@@ -268,11 +292,11 @@ export class MessagingService {
         throw new Error('Access denied');
       }
 
-              barber_id,
-              client_id,
+      const { data: messages, error } = await supabase
+        .from('messages')
         .select('*')
         .eq('booking_id', bookingId)
-              client_profiles(id, user_id, first_name, last_name)
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
 
@@ -283,6 +307,7 @@ export class MessagingService {
           ...message,
           sender_profile: isFromBarber 
             ? {
+                id: booking.barber_profiles?.user_id || '',
                 name: booking.barber_profiles?.business_name || booking.barber_profiles?.owner_name || 'Barber',
                 type: 'barber'
               }
@@ -290,21 +315,9 @@ export class MessagingService {
                 id: booking.client_profiles?.user_id || '',
                 name: `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim(),
                 type: 'client'
-          // Detect if the current user is the barber for this booking
+              }
+        };
       });
-
-          // Get client's user_id - this is the key field for messaging validation
-          const clientUserId = booking.client_profiles?.user_id;
-          
-          console.log('🔍 DEBUG - Booking participant data:', {
-            booking_id: booking.id,
-            barber_user_id: booking.barber_profiles?.user_id,
-            client_user_id: clientUserId,
-            client_first_name: booking.client_profiles?.first_name,
-            client_last_name: booking.client_profiles?.last_name,
-            current_user_id: userId,
-            is_user_the_barber: isUserTheBarber
-          });
 
       return enrichedMessages;
 
@@ -375,27 +388,27 @@ export class MessagingService {
 
     } catch (error) {
       console.error('Error sending message:', error);
+      throw error;
+    }
+  }
 
   async markAsRead(messageId: string, userId: string): Promise<void> {
     if (!isSupabaseConnected()) {
       return;
     }
 
+    try {
       const { error } = await supabase
-            // Only set participant.id if client has a valid user account
-            const validClientUserId = clientUserId && clientUserId.trim() !== '' ? clientUserId : '';
-            
-            if (!validClientUserId) {
-              console.warn('🚫 Client profile found but no user_id:', {
-                booking_id: booking.id,
-                client_profile_id: booking.client_profiles?.id,
-                client_name: clientName,
-                message: 'Client needs to create an account to enable messaging'
-              });
-            }
+        .from('messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('id', messageId)
+        .eq('receiver_id', userId);
+
+      if (error) throw error;
+    } catch (error) {
       console.error('Error marking message as read:', error);
     }
-              id: validClientUserId,  // Use client's user_id for sending messages (empty if no account)
+  }
 
   async markConversationAsRead(bookingId: string, userId: string): Promise<void> {
     if (!isSupabaseConnected()) {
@@ -410,6 +423,14 @@ export class MessagingService {
         .eq('receiver_id', userId)
         .is('read_at', null);
 
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
+    }
+  }
+
+  subscribeToMessages(bookingId: string, callback: (message: Message) => void): () => void {
+    if (!isSupabaseConnected()) {
       // Return a no-op unsubscribe function
       return () => {};
     }
@@ -418,7 +439,7 @@ export class MessagingService {
       const channel = supabase
         .channel(`messages_${bookingId}`)
         .on(
-          // Always include the conversation - clients without accounts still show in the list
+          'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
