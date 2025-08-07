@@ -41,6 +41,10 @@ export interface Conversation {
     name: string;
     type: 'barber' | 'client';
     avatar?: string;
+    needsClaim?: boolean;
+    hasValidProfile?: boolean;
+    isPlaceholder?: boolean;
+    canReceiveMessages?: boolean;
   };
   booking: {
     id: string;

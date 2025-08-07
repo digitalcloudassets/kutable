@@ -123,10 +123,10 @@ const ConversationList: React.FC<ConversationListProps> = ({
               <div className="mt-4">
                 <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
                   <strong>How Messaging Works:</strong><br/>
-                  • All your bookings appear as conversations<br/>
-                  • Clients who haven't claimed accounts show as "Unclaimed"<br/>
-                  • You can only send messages to users with claimed profiles<br/>
-                  • Contact unclaimed clients using phone numbers from booking details
+                  • <strong>All your bookings appear as conversations</strong><br/>
+                  • <strong>Claimed clients:</strong> Full messaging available<br/>
+                  • <strong>Unclaimed clients:</strong> Marked as "Unclaimed" - contact via phone<br/>
+                  • <strong>Missing profiles:</strong> System error - contact admin
                 </p>
               </div>
             )}
