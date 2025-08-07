@@ -536,8 +536,8 @@ const TermsOfServicePage: React.FC = () => {
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <p className="text-gray-500 text-sm">
                   <strong>Kutable, Inc.</strong><br />
-                  Email: legal@kutable.com<br />
-                  Phone: 1-800-KUTABLE (582-8253)
+                  Legal: legal@kutable.com<br />
+                  Support: support@kutable.com
                 </p>
               </div>
             </div>
