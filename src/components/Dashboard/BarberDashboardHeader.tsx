@@ -6,7 +6,8 @@ import {
   Edit, 
   Eye, 
   Users, 
-  Phone 
+  Phone,
+  Scissors
 } from 'lucide-react';
 import { Database } from '../../lib/supabase';
 

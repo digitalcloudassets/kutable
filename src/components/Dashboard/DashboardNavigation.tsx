@@ -6,7 +6,9 @@ import {
   BarChart3, 
   Settings, 
   User, 
-  Scissors 
+  Scissors,
+  Camera,
+  Clock
 } from 'lucide-react';
 
 interface DashboardNavigationProps {
