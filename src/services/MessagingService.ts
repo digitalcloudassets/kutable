@@ -423,8 +423,8 @@ export class MessagingService {
         .single();
 
       if (!booking) return;
-        console.error('Booking not found for notification:', bookingId);
-      console.log('Booking data for notification:', {
+        console.warn('Booking not found for notification:', bookingId);
+        return; // Exit gracefully without breaking the message flow
         barberUserId: booking.barber_profiles?.user_id,
         clientUserId: booking.client_profiles?.user_id,
         barberPhone: booking.barber_profiles?.phone,
@@ -440,7 +440,8 @@ export class MessagingService {
       const senderProfile = isFromBarber ? booking.barber_profiles : booking.client_profiles;
 
       if (!receiverProfile || !senderProfile) return;
-        console.error('Missing profile data:', { receiverProfile: !!receiverProfile, senderProfile: !!senderProfile });
+        console.warn('Missing profile data for notification:', { receiverProfile: !!receiverProfile, senderProfile: !!senderProfile });
+        return; // Exit gracefully without breaking the message flow
 
       const senderName = isFromBarber 
         ? senderProfile.business_name 
@@ -459,25 +460,32 @@ export class MessagingService {
         const smsMessage = `💬 New message from ${senderName}:\n\n"${messageText.slice(0, 100)}${messageText.length > 100 ? '...' : ''}"\n\nReply in your Kutable dashboard.\n\n- Kutable`;
         
         console.log('Sending SMS to:', receiverProfile.phone);
-        const { data: smsResult, error: smsError } = await supabase.functions.invoke('send-sms', {
+        try {
+          const { data: smsResult, error: smsError } = await supabase.functions.invoke('send-sms', {
           body: {
             to: receiverProfile.phone,
             message: smsMessage,
             type: 'booking_update'
           }
-        });
+          });
         
-        if (smsError) {
-          console.error('Failed to send SMS notification to', receiverProfile.phone, ':', smsError);
-        } else if (smsResult?.success) {
-          console.log('✅ SMS notification sent successfully to:', receiverProfile.phone);
-        } else {
-          console.error('SMS failed with result:', smsResult);
+          if (smsError) {
+            console.warn('Failed to send SMS notification to', receiverProfile.phone, ':', smsError);
+          } else if (smsResult?.success) {
+            console.log('✅ SMS notification sent successfully to:', receiverProfile.phone);
+          } else {
+            console.warn('SMS failed with result:', smsResult);
+          }
+        } catch (smsError) {
+          console.warn('SMS service error (CORS or network issue):', smsError);
+          // Don't break the messaging flow for SMS failures
         }
       }
 
       // Send email notification if user has email enabled (default to true for essential notifications)
-      const shouldSendEmail = (receiverProfile.email_consent !== false) && !!receiverProfile.email;
+      const shouldSendEmail = (receiverProfile.email_consent !== false) && 
+                              !!receiverProfile.email && 
+                              this.isValidEmail(receiverProfile.email);
       console.log('Email notification check:', { shouldSendEmail, emailConsent: receiverProfile.email_consent, hasEmail: !!receiverProfile.email });
       
       if (shouldSendEmail) {
@@ -510,7 +518,8 @@ export class MessagingService {
         `;
 
         console.log('Sending email to:', receiverProfile.email);
-        const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email', {
+        try {
+          const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email', {
           body: {
             to: receiverProfile.email,
             name: receiverName,
@@ -518,21 +527,30 @@ export class MessagingService {
             message: emailMessage,
             type: 'message_notification'
           }
-        });
+          });
         
-        if (emailError) {
-          console.error('Failed to send email notification to', receiverProfile.email, ':', emailError);
-        } else if (emailResult?.success) {
-          console.log('✅ Email notification sent successfully to:', receiverProfile.email);
-        } else {
-          console.error('Email failed with result:', emailResult);
+          if (emailError) {
+            console.warn('Failed to send email notification to', receiverProfile.email, ':', emailError);
+          } else if (emailResult?.success) {
+            console.log('✅ Email notification sent successfully to:', receiverProfile.email);
+          } else {
+            console.warn('Email failed with result:', emailResult);
+          }
+        } catch (emailError) {
+          console.warn('Email service error:', emailError);
+          // Don't break the messaging flow for email failures
         }
       }
 
     } catch (error) {
-      console.error('Error sending message notification:', error);
+      console.warn('Error sending message notification (message still sent successfully):', error);
       // Don't throw - message sending should succeed even if notification fails
     }
+  }
+
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) && email.length <= 254;
   }
 
   async getUnreadMessageCount(userId: string): Promise<number> {
