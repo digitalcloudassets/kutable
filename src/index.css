@@ -121,9 +121,12 @@ body {
 }
 
 .input-premium {
-  @apply w-full pl-4 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400;
+  @apply w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400;
   min-height: var(--touch-target-min);
   font-size: 16px; /* Prevent zoom on iOS */
+  background-image: none !important;
+  background-position: unset !important;
+  padding-right: 1rem !important; /* Override any excessive right padding */
 }
 
 .glass-effect {
@@ -442,23 +445,58 @@ body {
   }
 }
 
-/* Remove any pseudo-elements that might be adding icons to inputs */
+/* Comprehensive browser icon suppression */
 input::-webkit-contacts-auto-fill-button,
-input::-webkit-credentials-auto-fill-button {
+input::-webkit-credentials-auto-fill-button,
+input::-webkit-caps-lock-indicator,
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button,
+input::-webkit-search-cancel-button,
+input::-webkit-search-decoration {
   display: none !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
 }
 
 /* Remove browser-generated icons in input fields */
 input::-ms-clear,
-input::-ms-reveal {
+input::-ms-reveal,
+input::-ms-expand {
   display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
-/* Prevent any pseudo-elements from adding content to inputs */
+/* Prevent pseudo-elements from adding content to inputs */
 input::before,
 input::after,
 textarea::before,
-textarea::after {
+textarea::after,
+.input-premium::before,
+.input-premium::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+}
+
+/* Remove any background images or icons from input containers */
+.relative input,
+div[class*="relative"] input,
+.form-input,
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+input[type="number"],
+textarea {
+  background-image: none !important;
+  background-repeat: no-repeat !important;
+  background-position: unset !important;
+}
+
+/* Ensure input wrappers don't add icons */
+.relative::before,
+.relative::after {
   content: none !important;
   display: none !important;
 }
