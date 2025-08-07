@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
 
     const requestData: CreatePaymentIntentRequest = await req.json()
 
-    // Validate required fields
+    // Enhanced validation for required fields
     const { 
       barberId, 
       clientId,
@@ -79,6 +79,57 @@ Deno.serve(async (req) => {
         },
       )
     }
+
+    // Validate input formats
+    if (typeof totalAmount !== 'number' || totalAmount <= 0 || totalAmount > 10000) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid payment amount'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
+
+    // Validate date format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(appointmentDate)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid date format'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
+
+    // Validate time format
+    if (!/^\d{2}:\d{2}$/.test(appointmentTime)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid time format'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
+
+    // Sanitize client details
+    const sanitizedDetails = {
+      firstName: clientDetails.firstName?.trim().slice(0, 50) || '',
+      lastName: clientDetails.lastName?.trim().slice(0, 50) || '',
+      phone: clientDetails.phone?.replace(/\D/g, '').slice(0, 15) || '',
+      email: clientDetails.email?.trim().slice(0, 254) || '',
+      notes: clientDetails.notes?.trim().slice(0, 500).replace(/<[^>]*>/g, '') || ''
+    };
 
     // Get barber's Stripe account for Connect transfers
     const { data: barberData, error: barberError } = await supabase

@@ -156,19 +156,42 @@ const BookingFlow: React.FC = () => {
 
     if (!selectedService || !barber) return;
 
-    // Validation for required fields
+    // Enhanced validation for required fields
     if (!customerInfo.firstName.trim() || !customerInfo.lastName.trim() || !customerInfo.phone.trim() || !customerInfo.email.trim()) {
       setPaymentError('Please fill in all required fields');
       return;
     }
 
-    // Validate phone number format
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    // Enhanced validation
+    if (customerInfo.firstName.length > 50 || customerInfo.lastName.length > 50) {
+      setPaymentError('Name fields must be 50 characters or less');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customerInfo.email)) {
+      setPaymentError('Please enter a valid email address');
+      return;
+    }
+
+    // Validate phone number format - more strict
+    const phoneRegex = /^[\+]?[1-9][\d]{9,14}$/;
     const cleanPhone = customerInfo.phone.replace(/\D/g, '');
-    if (cleanPhone.length < 10) {
+    if (cleanPhone.length < 10 || cleanPhone.length > 15 || !phoneRegex.test(cleanPhone)) {
       setPaymentError('Please enter a valid phone number with at least 10 digits');
       return;
     }
+
+    // Validate notes field for XSS
+    if (customerInfo.notes.length > 500) {
+      setPaymentError('Notes must be 500 characters or less');
+      return;
+    }
+
+    // Basic XSS prevention for notes
+    const sanitizedNotes = customerInfo.notes.replace(/<[^>]*>/g, '').trim();
+    
     setPaymentLoading(true);
     setPaymentError('');
 
@@ -225,7 +248,10 @@ const BookingFlow: React.FC = () => {
           serviceId: selectedService.id,
           appointmentDate: format(selectedDate, 'yyyy-MM-dd'),
           appointmentTime: selectedTime,
-          clientDetails: customerInfo,
+          clientDetails: {
+            ...customerInfo,
+            notes: sanitizedNotes
+          },
           totalAmount: selectedService.price,
           depositAmount: selectedService.deposit_required ? selectedService.deposit_amount : 0
         }
@@ -241,7 +267,9 @@ const BookingFlow: React.FC = () => {
         throw new Error('Failed to initialize payment');
       }
     } catch (error: any) {
-      setPaymentError(error.message || 'Failed to initialize payment');
+      // Don't expose internal error details
+      console.error('Payment initialization error:', error);
+      setPaymentError('Failed to initialize payment. Please try again.');
     } finally {
       setPaymentLoading(false);
     }

@@ -24,6 +24,29 @@ Deno.serve(async (req) => {
       throw new Error('Missing required fields: to and message are required')
     }
 
+    // Security: Validate input lengths and content
+    if (message.length > 1600) { // SMS limit
+      throw new Error('Message too long for SMS delivery')
+    }
+
+    if (message.length < 1) {
+      throw new Error('Message cannot be empty')
+    }
+
+    // Validate phone number format more strictly
+    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+    const cleanPhone = to.replace(/\D/g, '');
+    
+    if (!phoneRegex.test(cleanPhone) || cleanPhone.length < 10 || cleanPhone.length > 15) {
+      throw new Error('Invalid phone number format')
+    }
+
+    // Validate message type
+    const validTypes = ['booking_confirmation', 'booking_reminder', 'booking_update'];
+    if (!validTypes.includes(type)) {
+      throw new Error('Invalid message type')
+    }
+
     // Get Twilio credentials from environment
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID')
     const authToken = Deno.env.get('TWILIO_AUTH_TOKEN')

@@ -29,15 +29,23 @@ const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children
   React.useEffect(() => {
     const checkAuth = () => {
       const adminAuth = localStorage.getItem('admin_authenticated');
-      const adminUser = localStorage.getItem('admin_user');
+      const adminSession = localStorage.getItem('admin_session');
       
-      if (adminAuth === 'true' && adminUser) {
+      if (adminAuth === 'true' && adminSession) {
         try {
-          JSON.parse(adminUser); // Validate JSON
-          setIsAuthenticated(true);
+          const session = JSON.parse(atob(adminSession));
+          
+          // Check if session has expired
+          if (new Date() <= new Date(session.expires)) {
+            setIsAuthenticated(true);
+          } else {
+            localStorage.removeItem('admin_authenticated');
+            localStorage.removeItem('admin_session');
+            setIsAuthenticated(false);
+          }
         } catch {
           localStorage.removeItem('admin_authenticated');
-          localStorage.removeItem('admin_user');
+          localStorage.removeItem('admin_session');
           setIsAuthenticated(false);
         }
       } else {

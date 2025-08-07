@@ -34,14 +34,48 @@ const SignUpForm: React.FC = () => {
       return;
     }
 
+    // Enhanced validation
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      setError('First name and last name are required');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.firstName.length > 50 || formData.lastName.length > 50) {
+      setError('Name fields must be 50 characters or less');
+      setLoading(false);
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       setLoading(false);
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    // Enhanced password validation
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      setLoading(false);
+      return;
+    }
+
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      setError('Password must contain at least one uppercase letter, one lowercase letter, and one number');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.communicationConsent) {
+      setError('You must consent to receive communications to use this service');
       setLoading(false);
       return;
     }
@@ -52,8 +86,8 @@ const SignUpForm: React.FC = () => {
         password: formData.password,
         options: {
           data: {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
+            first_name: formData.firstName.trim(),
+            last_name: formData.lastName.trim(),
             user_type: formData.userType,
             communication_consent: formData.communicationConsent,
             sms_consent: formData.communicationConsent,
@@ -68,10 +102,17 @@ const SignUpForm: React.FC = () => {
       // Navigate to onboarding for new users
       navigate(`/onboarding?type=${formData.userType}`);
     } catch (error: any) {
-      if (error.message.includes('Supabase not configured')) {
-        setError('Database not connected. Please connect to Supabase to create an account.');
+      // Don't expose internal error details
+      console.error('Signup error:', error);
+      
+      if (error.message?.includes('User already registered')) {
+        setError('An account with this email already exists. Please sign in instead.');
+      } else if (error.message?.includes('Invalid email')) {
+        setError('Please enter a valid email address.');
+      } else if (error.message?.includes('Supabase not configured')) {
+        setError('Service temporarily unavailable. Please try again later.');
       } else {
-        setError(error.message);
+        setError('Failed to create account. Please try again.');
       }
     } finally {
       setLoading(false);

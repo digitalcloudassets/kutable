@@ -78,16 +78,28 @@ const AdminPage: React.FC = () => {
 
   const checkAuth = () => {
     const isAuthenticated = localStorage.getItem('admin_authenticated');
-    const userData = localStorage.getItem('admin_user');
+    const sessionData = localStorage.getItem('admin_session');
     
-    if (!isAuthenticated || !userData) {
+    if (!isAuthenticated || !sessionData) {
       navigate('/admin-login');
       return;
     }
     
     try {
-      setAdminUser(JSON.parse(userData));
+      const session = JSON.parse(atob(sessionData));
+      
+      // Check if session has expired
+      if (new Date() > new Date(session.expires)) {
+        localStorage.removeItem('admin_authenticated');
+        localStorage.removeItem('admin_session');
+        navigate('/admin-login');
+        return;
+      }
+      
+      setAdminUser(session);
     } catch (error) {
+      localStorage.removeItem('admin_authenticated');
+      localStorage.removeItem('admin_session');
       navigate('/admin-login');
     }
   };
@@ -199,7 +211,7 @@ const AdminPage: React.FC = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('admin_authenticated');
-    localStorage.removeItem('admin_user');
+    localStorage.removeItem('admin_session');
     navigate('/admin-login');
   };
 

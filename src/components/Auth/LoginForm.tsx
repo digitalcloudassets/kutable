@@ -24,6 +24,21 @@ const LoginForm: React.FC = () => {
       return;
     }
 
+    // Basic validation
+    if (!email.trim() || !password.trim()) {
+      setError('Please enter both email and password');
+      setLoading(false);
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -34,10 +49,17 @@ const LoginForm: React.FC = () => {
 
       navigate('/dashboard');
     } catch (error: any) {
-      if (error.message.includes('Supabase not configured')) {
-        setError('Database not connected. Please connect to Supabase to sign in.');
+      // Don't expose internal error details
+      console.error('Login error:', error);
+      
+      if (error.message?.includes('Invalid login credentials')) {
+        setError('Invalid email or password. Please try again.');
+      } else if (error.message?.includes('Too many requests')) {
+        setError('Too many login attempts. Please wait a few minutes before trying again.');
+      } else if (error.message?.includes('Supabase not configured')) {
+        setError('Service temporarily unavailable. Please try again later.');
       } else {
-        setError(error.message);
+        setError('Login failed. Please check your credentials and try again.');
       }
     } finally {
       setLoading(false);

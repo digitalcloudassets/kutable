@@ -22,13 +22,42 @@ const MediaUpload: React.FC<MediaUploadProps> = ({ barberId, onUploadComplete })
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
 
-    const validFiles = Array.from(files).filter(file => {
+    // Security: Validate file types and sizes
+    const validFiles = Array.from(files).filter((file, index) => {
+      // Limit number of files
+      if (index >= 10) return false;
+      
       const isImage = file.type.startsWith('image/');
       const isVideo = file.type.startsWith('video/');
-      const isValidSize = file.size <= 50 * 1024 * 1024; // 50MB limit
       
-      return (isImage || isVideo) && isValidSize;
+      // Validate specific MIME types
+      const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      const allowedVideoTypes = ['video/mp4', 'video/mov', 'video/avi'];
+      
+      const isValidImageType = isImage && allowedImageTypes.includes(file.type);
+      const isValidVideoType = isVideo && allowedVideoTypes.includes(file.type);
+      
+      // Size limits: 10MB for images, 50MB for videos
+      const maxImageSize = 10 * 1024 * 1024; // 10MB
+      const maxVideoSize = 50 * 1024 * 1024; // 50MB
+      
+      const isValidSize = isImage ? file.size <= maxImageSize : file.size <= maxVideoSize;
+      
+      // Check file name for suspicious content
+      const hasValidName = !/[<>:"/\\|?*]/.test(file.name) && file.name.length <= 255;
+      
+      if (!hasValidName) {
+        console.warn('Invalid file name:', file.name);
+        return false;
+      }
+      
+      return (isValidImageType || isValidVideoType) && isValidSize;
     });
+
+    if (validFiles.length !== files.length) {
+      const rejected = files.length - validFiles.length;
+      alert(`${rejected} file(s) were rejected. Only JPG, PNG, WebP images (max 10MB) and MP4, MOV, AVI videos (max 50MB) are allowed.`);
+    }
 
     validFiles.forEach(file => {
       const fileType = file.type.startsWith('image/') ? 'image' : 'video';
