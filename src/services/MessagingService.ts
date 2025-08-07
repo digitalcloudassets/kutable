@@ -331,7 +331,7 @@ export class MessagingService {
 
       // Send SMS notification if user has SMS enabled
       if (receiverProfile.sms_consent && receiverProfile.phone) {
-        const smsMessage = `💬 New message from ${senderName}:\n\n"${messageText.slice(0, 100)}${messageText.length > 100 ? '...' : '"}"\n\nReply in your Kutable dashboard.\n\n- Kutable`;
+        const smsMessage = `💬 New message from ${senderName}:\n\n"${messageText.slice(0, 100)}${messageText.length > 100 ? '...' : ''}"\n\nReply in your Kutable dashboard.\n\n- Kutable`;
         
         await supabase.functions.invoke('send-sms', {
           body: {
