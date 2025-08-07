@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { 
   CheckCircle, 
@@ -28,6 +28,7 @@ const ClaimFlow: React.FC = () => {
   const { barberId } = useParams<{ barberId: string }>();
   const { user } = useAuth();
   const { isConnected } = useSupabaseConnection();
+  const location = useLocation();
   const navigate = useNavigate();
   
   const [step, setStep] = useState<'signin' | 'verify' | 'details' | 'complete'>('signin');
@@ -49,11 +50,15 @@ const ClaimFlow: React.FC = () => {
   useEffect(() => {
     if (barberId) {
       fetchBarberProfile();
+      // Store the current claim URL for redirect after authentication
+      localStorage.setItem('claim_return_url', location.pathname);
     }
   }, [barberId]);
 
   useEffect(() => {
     if (user && step === 'signin') {
+      // Clear the stored return URL since user is now authenticated
+      localStorage.removeItem('claim_return_url');
       setStep('verify');
     }
   }, [user, step]);

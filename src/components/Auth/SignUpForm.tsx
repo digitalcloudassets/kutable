@@ -99,8 +99,15 @@ const SignUpForm: React.FC = () => {
 
       if (error) throw error;
 
-      // Navigate to onboarding for new users
-      navigate(`/onboarding?type=${formData.userType}`);
+      // Check if user came from claim flow
+      const claimReturnUrl = localStorage.getItem('claim_return_url');
+      if (claimReturnUrl) {
+        localStorage.removeItem('claim_return_url');
+        navigate(claimReturnUrl);
+      } else {
+        // Navigate to onboarding for new users
+        navigate(`/onboarding?type=${formData.userType}`);
+      }
     } catch (error: any) {
       // Don't expose internal error details
       console.error('Signup error:', error);

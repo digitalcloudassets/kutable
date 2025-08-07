@@ -47,7 +47,14 @@ const LoginForm: React.FC = () => {
 
       if (error) throw error;
 
-      navigate('/dashboard');
+      // Check if user came from claim flow
+      const claimReturnUrl = localStorage.getItem('claim_return_url');
+      if (claimReturnUrl) {
+        localStorage.removeItem('claim_return_url');
+        navigate(claimReturnUrl);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       // Don't expose internal error details
       console.error('Login error:', error);
