@@ -1,6 +1,5 @@
 import React from 'react';
 import Hero from '../components/Home/Hero';
-import FeaturedBarbers from '../components/Home/FeaturedBarbers';
 import { 
   Zap, 
   Shield, 
@@ -17,7 +16,10 @@ import {
   Search,
   Play,
   DollarSign,
-  User
+  User,
+  TrendingUp,
+  Sparkles,
+  Quote
 } from 'lucide-react';
 
 const HomePage: React.FC = () => {
@@ -25,110 +27,350 @@ const HomePage: React.FC = () => {
     <div className="min-h-screen">
       <Hero />
       
-      {/* How It Works Section */}
-      <section className="py-24 bg-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 to-white"></div>
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center space-x-2 bg-primary-50 text-primary-700 rounded-full px-6 py-3 mb-6">
-              <Target className="h-5 w-5" />
-              <span className="font-medium">Built for Barbers</span>
-            </div>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Grow Your Business in 3 Steps
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Get online, accept bookings, and grow your customer base with professional tools.
-            </p>
-          </div>
+      {/* Why Barbers Love Kutable */}
+      <section className="py-12 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">
+            Why Barbers Love Kutable
+          </h2>
+          <p className="text-xl text-emerald-100 max-w-4xl mx-auto">
+            No monthly fees. No contracts. Just more bookings and instant payouts.
+          </p>
+        </div>
+      </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-20">
-            <div className="text-center group">
-              <div className="relative mb-8">
-                <div className="bg-gradient-to-br from-primary-500 to-primary-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-premium-lg group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-3xl font-bold text-white">1</span>
-                </div>
-                <div className="absolute -inset-4 bg-gradient-to-r from-primary-500 to-accent-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Claim Your Profile</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Find your business in our directory and claim it for free. Set up your 
-                professional profile with services, pricing, and photos.
-              </p>
+      {/* Value Proposition */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">
+            Barbers earn 25% more per client, spend less time texting, and get paid automatically with every booking.
+          </h2>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
+            <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-2xl px-8 py-4">
+              <p className="text-emerald-800 font-semibold text-lg">Trusted by thousands of barbers nationwide</p>
             </div>
-            
-            <div className="text-center group">
-              <div className="relative mb-8">
-                <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-premium-lg group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-3xl font-bold text-white">2</span>
-                </div>
-                <div className="absolute -inset-4 bg-gradient-to-r from-accent-500 to-primary-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Accept Bookings</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Connect your Stripe account and start accepting online bookings. Customers can 
-                book 24/7 with instant payment and automatic confirmations.
-              </p>
-            </div>
-            
-            <div className="text-center group">
-              <div className="relative mb-8">
-                <div className="bg-gradient-to-br from-yellow-500 to-orange-500 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-premium-lg group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-3xl font-bold text-white">3</span>
-                </div>
-                <div className="absolute -inset-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-xl"></div>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Get Paid & Grow</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Money goes directly to your bank account. Track earnings, manage bookings, 
-                and build customer relationships through our professional dashboard.
-              </p>
-            </div>
-          </div>
-
-          {/* Demo Preview */}
-          <div className="relative">
-            <div className="bg-gray-50 rounded-2xl p-8 shadow-premium">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="flex items-center space-x-3">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                </div>
-                <span className="text-gray-600 font-medium">Barber Dashboard Preview</span>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-primary-50 rounded-2xl p-6 text-center border border-primary-100">
-                  <div className="bg-primary-600 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <User className="h-6 w-6 text-white" />
-                  </div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Your Profile</h4>
-                  <p className="text-gray-600 text-sm">Professional online presence</p>
-                </div>
-                
-                <div className="bg-accent-50 rounded-2xl p-6 text-center border border-accent-100">
-                  <div className="bg-accent-500 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Calendar className="h-6 w-6 text-white" />
-                  </div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Online Bookings</h4>
-                  <p className="text-gray-600 text-sm">24/7 booking with instant payment</p>
-                </div>
-                
-                <div className="bg-yellow-50 rounded-2xl p-6 text-center border border-yellow-200">
-                  <div className="bg-yellow-500 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <DollarSign className="h-6 w-6 text-white" />
-                  </div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Get Paid</h4>
-                  <p className="text-gray-600 text-sm">Direct bank deposits</p>
-                </div>
-              </div>
+            <div className="bg-gradient-to-r from-primary-50 to-primary-100 border border-primary-200 rounded-2xl px-8 py-4">
+              <p className="text-primary-800 font-semibold text-lg">Over $2.5M processed for barbers</p>
             </div>
           </div>
         </div>
       </section>
 
-      <FeaturedBarbers />
+      {/* How It Works Section */}
+      <section className="py-20 bg-gray-50 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/50 to-gray-50"></div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center space-x-2 bg-primary-50 text-primary-700 rounded-full px-6 py-3 mb-6">
+              <Target className="h-5 w-5" />
+              <span className="font-medium">Simple 3-Step Process</span>
+            </div>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+              Start Earning in Minutes
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Get your profile online and start accepting bookings immediately.
+            </p>
+          </div>
+
+          {/* Compact Horizontal Stepper */}
+          <div className="bg-white rounded-3xl p-8 shadow-premium mb-16">
+            <div className="flex flex-col md:flex-row items-center justify-between space-y-8 md:space-y-0 md:space-x-8">
+              <div className="flex flex-col md:flex-row items-center space-y-8 md:space-y-0 md:space-x-8 flex-1">
+                {/* Step 1 */}
+                <div className="text-center flex-1">
+                  <div className="relative mb-6">
+                    <div className="bg-gradient-to-br from-primary-500 to-primary-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-premium">
+                      <span className="text-2xl font-bold text-white">1</span>
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Find Your Profile</h3>
+                  <p className="text-gray-600 text-sm">
+                    Locate your business in our directory and claim it for free.
+                  </p>
+                </div>
+                
+                {/* Arrow */}
+                <div className="hidden md:block">
+                  <ArrowRight className="h-8 w-8 text-gray-300" />
+                </div>
+                
+                {/* Step 2 */}
+                <div className="text-center flex-1">
+                  <div className="relative mb-6">
+                    <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-premium">
+                      <span className="text-2xl font-bold text-white">2</span>
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Connect Stripe</h3>
+                  <p className="text-gray-600 text-sm">
+                    Link your bank account to start accepting payments.
+                  </p>
+                </div>
+                
+                {/* Arrow */}
+                <div className="hidden md:block">
+                  <ArrowRight className="h-8 w-8 text-gray-300" />
+                </div>
+                
+                {/* Step 3 */}
+                <div className="text-center flex-1">
+                  <div className="relative mb-6">
+                    <div className="bg-gradient-to-br from-yellow-500 to-orange-500 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-premium">
+                      <span className="text-2xl font-bold text-white">3</span>
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Get Bookings</h3>
+                  <p className="text-gray-600 text-sm">
+                    Share your profile and watch bookings roll in.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Microcopy */}
+            <div className="text-center mt-8 pt-6 border-t border-gray-100">
+              <p className="text-gray-500 text-sm font-medium">Takes less than 60 seconds to get started</p>
+            </div>
+          </div>
+
+          {/* Demo Preview Placeholder */}
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 text-center text-white shadow-premium-lg">
+            <div className="max-w-2xl mx-auto">
+              <Play className="h-16 w-16 mx-auto mb-6 text-white/80" />
+              <h3 className="text-2xl font-bold mb-4">See Kutable In Action</h3>
+              <p className="text-gray-300 mb-6">
+                Coming Soon: Watch how top barbers use Kutable to run their business on autopilot.
+              </p>
+              <button className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-8 py-4 rounded-2xl hover:bg-white/20 transition-all duration-200 font-semibold">
+                Watch Demo (Coming Soon)
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center space-x-2 bg-accent-50 text-accent-700 rounded-full px-6 py-3 mb-6">
+              <Star className="h-5 w-5" />
+              <span className="font-medium">Barber Success Stories</span>
+            </div>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+              Real Results from Real Barbers
+            </h2>
+          </div>
+
+          {/* Featured Testimonial */}
+          <div className="bg-gradient-to-br from-primary-50 to-accent-50 border border-primary-200 rounded-3xl p-8 md:p-12 mb-12 max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
+              <img
+                src="https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=200"
+                alt="Marcus Thompson"
+                className="w-24 h-24 rounded-2xl object-cover border-4 border-white shadow-premium"
+              />
+              <div className="text-center md:text-left">
+                <Quote className="h-8 w-8 text-primary-500 mb-4 mx-auto md:mx-0" />
+                <blockquote className="text-xl md:text-2xl font-medium text-gray-900 mb-4 leading-relaxed">
+                  "Kutable doubled my bookings in the first month. I went from chasing payments to having customers pay upfront. Game changer."
+                </blockquote>
+                <div>
+                  <p className="font-bold text-gray-900">Marcus Thompson</p>
+                  <p className="text-gray-600">Elite Cuts Barbershop, Chicago</p>
+                  <div className="flex items-center justify-center md:justify-start space-x-1 mt-2">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Rolling Testimonials */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center space-x-1 mb-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+                ))}
+              </div>
+              <p className="text-gray-700 mb-4">"My customers love the convenience. I love getting paid instantly."</p>
+              <p className="font-semibold text-gray-900">David Rodriguez</p>
+              <p className="text-gray-500 text-sm">Fresh Fades, Miami</p>
+            </div>
+            
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center space-x-1 mb-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+                ))}
+              </div>
+              <p className="text-gray-700 mb-4">"Setup took 2 minutes. First booking came in the same day."</p>
+              <p className="font-semibold text-gray-900">James Wilson</p>
+              <p className="text-gray-500 text-sm">Classic Cuts, Austin</p>
+            </div>
+            
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center space-x-1 mb-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
+                ))}
+              </div>
+              <p className="text-gray-700 mb-4">"No more phone tag with customers. Everything's automated."</p>
+              <p className="font-semibold text-gray-900">Mike Chen</p>
+              <p className="text-gray-500 text-sm">Style Masters, Seattle</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Signals & Security */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Built for Your Success & Security
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center group">
+              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-premium group-hover:scale-110 transition-transform duration-300">
+                <Shield className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-display font-bold text-gray-900 mb-3">Bank-Level Security</h3>
+              <p className="text-gray-600 leading-relaxed">Your money and customer data are protected with enterprise-grade encryption and security.</p>
+            </div>
+            
+            <div className="text-center group">
+              <div className="bg-gradient-to-br from-primary-500 to-primary-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-premium group-hover:scale-110 transition-transform duration-300">
+                <CreditCard className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-display font-bold text-gray-900 mb-3">Stripe-Powered Payouts</h3>
+              <p className="text-gray-600 leading-relaxed">Money goes directly to your bank account within 2-3 business days, powered by Stripe.</p>
+            </div>
+            
+            <div className="text-center group">
+              <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-premium group-hover:scale-110 transition-transform duration-300">
+                <TrendingUp className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-display font-bold text-gray-900 mb-3">Instant Cash Flow</h3>
+              <p className="text-gray-600 leading-relaxed">Get paid when customers book. No waiting, no invoicing, no chasing payments.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Enhanced CTA Section */}
+      <section className="py-20 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-primary-500/10 rounded-full blur-3xl animate-float"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent-500/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
+        </div>
+        
+        <div className="relative z-10 max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-6 py-3 mb-8">
+            <Sparkles className="h-5 w-5 text-accent-400" />
+            <span className="text-white/90 font-medium">Join the Revolution</span>
+          </div>
+          
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            Ready to Modernize Your Business?
+          </h2>
+          <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
+            Join thousands of barbers who've transformed their booking process and increased their earnings.
+          </p>
+          
+          {/* Primary CTAs */}
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
+            <a
+              href="/signup?type=barber"
+              className="group bg-white text-gray-900 px-8 py-4 rounded-2xl text-lg font-semibold hover:bg-gray-100 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-premium-lg hover:shadow-2xl flex items-center space-x-3"
+            >
+              <Scissors className="h-6 w-6 text-primary-600 group-hover:rotate-12 transition-transform" />
+              <span>Start Free Profile</span>
+              <ArrowRight className="h-5 w-5 text-primary-600 group-hover:translate-x-1 transition-transform" />
+            </a>
+            
+            <a
+              href="/how-it-works"
+              className="group bg-gradient-to-r from-accent-500 to-accent-600 text-white px-8 py-4 rounded-2xl text-lg font-semibold hover:from-accent-600 hover:to-accent-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-premium-lg hover:shadow-2xl flex items-center space-x-3"
+            >
+              <Play className="h-6 w-6 group-hover:scale-110 transition-transform" />
+              <span>See How It Works</span>
+            </a>
+          </div>
+          
+          {/* Microcopy */}
+          <p className="text-gray-400 text-lg">
+            <strong className="text-white">Free to start.</strong> Takes less than 60 seconds to get started.
+          </p>
+        </div>
+      </section>
+
+      {/* Original How It Works Content - Condensed */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything You Need to Grow</h2>
+            <p className="text-xl text-gray-600">Professional tools included with your free profile</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="text-center group">
+              <div className="bg-primary-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                <User className="h-8 w-8 text-primary-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Professional Profiles</h3>
+              <p className="text-gray-600">Showcase your work with photos, services, and customer reviews.</p>
+            </div>
+            
+            <div className="text-center group">
+              <div className="bg-accent-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Calendar className="h-8 w-8 text-accent-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">24/7 Online Booking</h3>
+              <p className="text-gray-600">Customers book and pay instantly, even when you're sleeping.</p>
+            </div>
+            
+            <div className="text-center group">
+              <div className="bg-yellow-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                <DollarSign className="h-8 w-8 text-yellow-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Automatic Payments</h3>
+              <p className="text-gray-600">Money hits your bank account automatically. No invoicing required.</p>
+            </div>
+            
+            <div className="text-center group">
+              <div className="bg-blue-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Smartphone className="h-8 w-8 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Mobile-First Design</h3>
+              <p className="text-gray-600">Works perfectly on any device. Share your profile anywhere.</p>
+            </div>
+            
+            <div className="text-center group">
+              <div className="bg-purple-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Users className="h-8 w-8 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Customer Analytics</h3>
+              <p className="text-gray-600">Track earnings, popular services, and customer satisfaction.</p>
+            </div>
+            
+            <div className="text-center group">
+              <div className="bg-indigo-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Clock className="h-8 w-8 text-indigo-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Save Hours Weekly</h3>
+              <p className="text-gray-600">No more phone tag. Automated confirmations and reminders.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 };
