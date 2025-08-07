@@ -101,11 +101,13 @@ export class MessagingService {
             appointment_time,
             status,
             services(name),
-            barber_profiles(id, user_id, business_name, owner_name, profile_image_url),
-            client_profiles(id, user_id, first_name, last_name)
+            barber_profiles!inner(id, user_id, business_name, owner_name, profile_image_url),
+            client_profiles!inner(id, user_id, first_name, last_name)
           `)
           .eq('barber_id', barberProfile.id)
           .in('status', ['pending', 'confirmed', 'completed'])
+          .not('client_profiles.user_id', 'is', null) // Ensure client has user_id
+          .neq('client_profiles.user_id', userId) // Ensure client is not the same user
           .order('appointment_date', { ascending: false });
 
         if (barberError) throw barberError;
@@ -122,11 +124,13 @@ export class MessagingService {
             appointment_time,
             status,
             services(name),
-            barber_profiles(id, user_id, business_name, owner_name, profile_image_url),
-            client_profiles(id, user_id, first_name, last_name)
+            barber_profiles!inner(id, user_id, business_name, owner_name, profile_image_url),
+            client_profiles!inner(id, user_id, first_name, last_name)
           `)
           .eq('client_id', clientProfile.id)
           .in('status', ['pending', 'confirmed', 'completed'])
+          .not('barber_profiles.user_id', 'is', null) // Ensure barber has user_id
+          .neq('barber_profiles.user_id', userId) // Ensure barber is not the same user
           .order('appointment_date', { ascending: false });
 
         if (clientError) throw clientError;
@@ -141,7 +145,28 @@ export class MessagingService {
       const conversations: Conversation[] = [];
 
       for (const booking of uniqueBookings) {
-        const isBarber = barberProfile && booking.barber_id === barberProfile.id;
+        // Determine if current user is the barber for this booking
+        const isUserBarber = booking.barber_profiles?.user_id === userId;
+        
+        // Validate participant data
+        if (!booking.barber_profiles?.user_id || !booking.client_profiles?.user_id) {
+          console.warn('Skipping conversation - missing profile user_id:', {
+            bookingId: booking.id,
+            barberUserId: booking.barber_profiles?.user_id,
+            clientUserId: booking.client_profiles?.user_id
+          });
+          continue;
+        }
+        
+        // Skip if barber and client are the same user (data integrity issue)
+        if (booking.barber_profiles.user_id === booking.client_profiles.user_id) {
+          console.warn('Skipping conversation - barber and client are same user:', {
+            bookingId: booking.id,
+            userId: booking.barber_profiles.user_id
+          });
+          continue;
+        }
+        
         const participant = isBarber 
           ? {
               id: booking.client_profiles?.user_id || '',
@@ -156,8 +181,14 @@ export class MessagingService {
               avatar: booking.barber_profiles?.profile_image_url || undefined
             };
 
-        // Skip conversations where barber profile is unclaimed (no user_id)
-        if (!participant.id || participant.id.trim() === '') {
+        // Final validation: skip if participant ID is invalid or equals current user
+        if (!participant.id || participant.id.trim() === '' || participant.id === userId) {
+          console.warn('Skipping invalid conversation participant:', {
+            bookingId: booking.id,
+            participantId: participant.id,
+            currentUserId: userId,
+            participantType: participant.type
+          });
           continue;
         }
         // Get last message and unread count
@@ -281,7 +312,7 @@ export class MessagingService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Prevent self-messaging
+      // Critical: Prevent self-messaging
       if (receiverId === user.id) {
         console.warn('Attempted self-messaging blocked:', {
           userId: user.id,
@@ -299,6 +330,62 @@ export class MessagingService {
           bookingId
         });
         throw new Error('This client has not activated messaging yet. They need to claim their account first.');
+      }
+
+      // Validate booking participants before sending
+      const { data: bookingValidation, error: validationError } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          barber_profiles!inner(user_id, business_name),
+          client_profiles!inner(user_id, first_name, last_name)
+        `)
+        .eq('id', bookingId)
+        .maybeSingle();
+
+      if (validationError || !bookingValidation) {
+        console.error('Booking validation failed:', validationError);
+        throw new Error('Invalid booking - cannot send message');
+      }
+
+      // Verify user is part of this booking
+      const isBarber = bookingValidation.barber_profiles.user_id === user.id;
+      const isClient = bookingValidation.client_profiles.user_id === user.id;
+      
+      if (!isBarber && !isClient) {
+        console.warn('User not part of booking:', {
+          userId: user.id,
+          bookingId,
+          barberUserId: bookingValidation.barber_profiles.user_id,
+          clientUserId: bookingValidation.client_profiles.user_id
+        });
+        throw new Error('You are not authorized to send messages for this booking');
+      }
+
+      // Verify receiver is the other participant
+      const expectedReceiverId = isBarber 
+        ? bookingValidation.client_profiles.user_id 
+        : bookingValidation.barber_profiles.user_id;
+      
+      if (receiverId !== expectedReceiverId) {
+        console.warn('Receiver ID mismatch:', {
+          providedReceiverId: receiverId,
+          expectedReceiverId,
+          isBarber,
+          bookingId
+        });
+        throw new Error('Invalid message recipient for this booking');
+      }
+
+      // Final check: ensure sender and receiver are different
+      if (user.id === expectedReceiverId) {
+        console.error('Critical: Booking has invalid participant setup - same user as barber and client:', {
+          bookingId,
+          userId: user.id,
+          barberUserId: bookingValidation.barber_profiles.user_id,
+          clientUserId: bookingValidation.client_profiles.user_id
+        });
+        throw new Error('This booking has invalid participant setup. Please contact support to resolve this issue.');
       }
       console.log('Sending message:', { 
         fromUserId: user.id, 

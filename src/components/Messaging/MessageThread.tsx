@@ -30,17 +30,59 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
   const [error, setError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Check if the conversation participant can receive notifications
-  const canReceiveNotifications = conversation.participant.id && conversation.participant.id.trim() !== '';
+  // Enhanced validation for messaging availability
+  const participantId = conversation.participant.id;
+  const canReceiveNotifications = participantId && participantId.trim() !== '';
+  const isSelfMessaging = user?.id === participantId;
+  const isClientUnclaimed = conversation.participant.type === 'client' && (!participantId || participantId.trim() === '');
+  const isBarberUnclaimed = conversation.participant.type === 'barber' && (!participantId || participantId.trim() === '');
   
-  // Check if this would result in self-messaging
-  const isSelfMessaging = user?.id === conversation.participant.id;
+  // Determine messaging status and create appropriate error messages
+  const messagingStatus = React.useMemo(() => {
+    if (isSelfMessaging) {
+      return {
+        disabled: true,
+        type: 'self',
+        message: 'Cannot message yourself',
+        description: 'This indicates the client profile needs to be properly set up.'
+      };
+    }
+    
+    if (isClientUnclaimed) {
+      return {
+        disabled: true,
+        type: 'client_unclaimed',
+        message: 'Client messaging not set up',
+        description: "This client hasn't activated messaging yet. They'll need to claim their account before you can send messages."
+      };
+    }
+    
+    if (isBarberUnclaimed) {
+      return {
+        disabled: true,
+        type: 'barber_unclaimed',
+        message: 'Barber messaging not set up',
+        description: "This barber hasn't claimed their profile yet. They need to set up their account to receive messages."
+      };
+    }
+    
+    if (!canReceiveNotifications) {
+      return {
+        disabled: true,
+        type: 'notifications',
+        message: 'Messaging unavailable',
+        description: 'This user cannot receive notifications. Please contact them directly.'
+      };
+    }
+    
+    return {
+      disabled: false,
+      type: 'available',
+      message: '',
+      description: ''
+    };
+  }, [isSelfMessaging, isClientUnclaimed, isBarberUnclaimed, canReceiveNotifications]);
   
-  // Check if client profile is missing or unclaimed
-  const isClientUnclaimed = conversation.participant.type === 'client' && (!conversation.participant.id || conversation.participant.id.trim() === '');
-  
-  // Determine if messaging should be disabled
-  const messagingDisabled = isSelfMessaging || isClientUnclaimed || !canReceiveNotifications;
   useEffect(() => {
     const initializeMessaging = async () => {
       if (conversation && user) {
@@ -259,39 +301,30 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       </div>
 
       {/* Notification Warning Banner */}
-      {!canReceiveNotifications && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
+      {messagingStatus.disabled && (
+        <div className={`border-b px-4 py-3 ${
+          messagingStatus.type === 'self' 
+            ? 'bg-red-50 border-red-200'
+            : messagingStatus.type === 'client_unclaimed'
+            ? 'bg-blue-50 border-blue-200'
+            : 'bg-amber-50 border-amber-200'
+        }`}>
           <div className="flex items-center space-x-2">
-            <AlertCircle className="h-4 w-4 text-amber-600" />
-            <span className="text-amber-800 text-sm font-medium">
-              {conversation.participant.type === 'client' 
-                ? "This client hasn't set up messaging yet. They won't receive notifications until they claim their profile."
-                : "This barber profile hasn't been claimed yet. They won't receive message notifications."
-              }
-            </span>
-          </div>
-        </div>
-      )}
-      
-      {/* Self-messaging prevention banner */}
-      {isSelfMessaging && (
-        <div className="bg-red-50 border-b border-red-200 px-4 py-3">
-          <div className="flex items-center space-x-2">
-            <AlertCircle className="h-4 w-4 text-red-600" />
-            <span className="text-red-800 text-sm font-medium">
-              Cannot message yourself. This indicates the client profile needs to be properly set up.
-            </span>
-          </div>
-        </div>
-      )}
-      
-      {/* Client unclaimed banner */}
-      {isClientUnclaimed && !isSelfMessaging && (
-        <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
-          <div className="flex items-center space-x-2">
-            <AlertCircle className="h-4 w-4 text-blue-600" />
-            <span className="text-blue-800 text-sm font-medium">
-              This client hasn't activated messaging yet. They'll need to claim their account before you can send messages.
+            <AlertCircle className={`h-4 w-4 ${
+              messagingStatus.type === 'self' 
+                ? 'text-red-600'
+                : messagingStatus.type === 'client_unclaimed'
+                ? 'text-blue-600'
+                : 'text-amber-600'
+            }`} />
+            <span className={`text-sm font-medium ${
+              messagingStatus.type === 'self' 
+                ? 'text-red-800'
+                : messagingStatus.type === 'client_unclaimed'
+                ? 'text-blue-800'
+                : 'text-amber-800'
+            }`}>
+              <strong>{messagingStatus.message}:</strong> {messagingStatus.description}
             </span>
           </div>
         </div>
@@ -404,7 +437,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all duration-200"
               rows={newMessage.includes('\n') ? 3 : 1}
               maxLength={1000}
-              disabled={messagingDisabled}
+              disabled={messagingStatus.disabled}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -414,14 +447,11 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
             />
             <p className="text-xs text-gray-500 mt-1">
               {newMessage.length}/1000 • Press Enter to send, Shift+Enter for new line
-              {messagingDisabled && (
-                <span className="text-red-600 font-medium">
-                  {isSelfMessaging 
-                    ? ' • Cannot message yourself'
-                    : isClientUnclaimed 
-                    ? ' • Client messaging not set up'
-                    : ' • Messaging unavailable'
-                  }
+              {messagingStatus.disabled && (
+                <span className={`font-medium ${
+                  messagingStatus.type === 'self' ? 'text-red-600' : 'text-amber-600'
+                }`}>
+                  • {messagingStatus.message}
                 </span>
               )}
             </p>
@@ -429,7 +459,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
           
           <button
             type="submit"
-            disabled={!newMessage.trim() || sending || messagingDisabled}
+            disabled={!newMessage.trim() || sending || messagingStatus.disabled}
             className="bg-primary-500 text-white p-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           >
             {sending ? (
