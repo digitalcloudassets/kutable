@@ -426,6 +426,7 @@ export class MessagingService {
           }
         });
 
+        const { data: lastMessage } = await supabase
       const unsubscribe = () => {
         try {
           supabase.removeChannel(channel);
