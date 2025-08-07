@@ -104,10 +104,21 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
           setHasUnread(true);
         }
       } else {
-        throw new Error(data?.error || 'Failed to get AI response');
+        // Handle AI service unavailable gracefully
+        const errorMessage: ChatMessage = {
+          id: `error_${Date.now()}`,
+          role: 'assistant',
+          content: data?.error === 'AI chat is currently unavailable. Please contact support.' 
+            ? '🚧 Our AI assistant is temporarily unavailable while we configure the service. For immediate help, please contact support@kutable.com or use the support form.'
+            : (data?.error || 'I apologize, but I encountered an error. Please try again or contact support@kutable.com.'),
+          timestamp: new Date().toISOString()
+        };
+        
+        setMessages(prev => [...prev, errorMessage]);
+        return; // Don't throw error, handle gracefully
       }
-        setError(errorData.error || 'Chat service is temporarily unavailable');
-        return;
+
+    } catch (error: any) {
       console.error('Chat error:', error);
       
       const errorMessage: ChatMessage = {
@@ -116,8 +127,8 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
         content: 'I apologize, but I encountered an error. Please try again or contact our support team at support@kutable.com if the issue persists.',
         timestamp: new Date().toISOString()
       };
-
-      setError('Unable to connect to chat service. Please try again later.');
+      
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
