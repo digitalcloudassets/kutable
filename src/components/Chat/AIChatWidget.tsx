@@ -83,37 +83,11 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
       });
 
       if (error) {
-        console.error('Chat error:', error);
-        const errorResponse = {
-          success: false,
-          response: error.message?.includes('API key') 
-            ? 'AI chat is currently unavailable. Please contact support@kutable.com for assistance.'
-            : 'Sorry, I encountered an error. Please try again or contact support if the issue persists.',
-          timestamp: new Date().toISOString()
-        };
-        
-        setMessages(prev => [...prev, {
-          id: Date.now().toString(),
-          content: errorResponse.response,
-          sender: 'assistant',
-          timestamp: errorResponse.timestamp
-        }]);
-        return;
+        throw error;
       }
 
       if (!data?.success) {
-        console.error('Chat API error:', data?.error);
-        const errorMessage = data?.error?.includes('API key')
-          ? 'AI chat is currently unavailable. Please contact support@kutable.com for assistance.'
-          : data?.error || 'Sorry, I encountered an error. Please try again.';
-          
-        setMessages(prev => [...prev, {
-          id: Date.now().toString(),
-          content: errorMessage,
-          sender: 'assistant',
-          timestamp: new Date().toISOString()
-        }]);
-        return;
+        throw new Error(data?.error || 'AI service returned an error');
       }
 
       if (data?.success) {
@@ -135,19 +109,6 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
         if (!isOpen || isMinimized) {
           setHasUnread(true);
         }
-      } else {
-        // Handle AI service unavailable gracefully
-        const errorMessage: ChatMessage = {
-          id: `error_${Date.now()}`,
-          role: 'assistant',
-          content: data?.error === 'AI chat is currently unavailable. Please contact support.' 
-            ? '🚧 Our AI assistant is temporarily unavailable while we configure the service. For immediate help, please contact support@kutable.com or use the support form.'
-            : (data?.error || 'I apologize, but I encountered an error. Please try again or contact support@kutable.com.'),
-          timestamp: new Date().toISOString()
-        };
-        
-        setMessages(prev => [...prev, errorMessage]);
-        return; // Don't throw error, handle gracefully
       }
 
     } catch (error: any) {
@@ -155,20 +116,32 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
       
       // Handle Supabase Functions errors (non-2xx responses)
       let errorMessage = 'Sorry, I encountered an error. Please try again.';
+      let isConfigurationError = false;
       
       if (error?.name === 'FunctionsHttpError' || error?.message?.includes('Edge Function returned a non-2xx status code')) {
         // Try to get the actual error from the response
         try {
-          const errorData = await error.context?.res?.json?.() || {};
-          if (errorData.error) {
-            errorMessage = errorData.error;
-          } else if (errorData.details?.includes('OpenAI API key')) {
-            errorMessage = 'AI chat is currently unavailable. Please contact support for assistance.';
+          const response = error.context?.res;
+          if (response) {
+            const errorData = await response.json();
+            logEvent('error', 'Edge function error details', errorData);
+            
+            if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+            
+            if (errorData.details?.includes('OpenAI API key') || 
+                errorData.details?.includes('API key not configured')) {
+              isConfigurationError = true;
+              errorMessage = '🚧 AI chat is currently being set up. Please contact support@kutable.com for immediate assistance.';
+            }
           }
         } catch {
-          errorMessage = 'AI chat is currently unavailable. Please contact support for assistance.';
+          // If we can't parse the error response, provide a generic message
+          errorMessage = 'AI service temporarily unavailable. Please try again or contact support.';
         }
       } else if (error?.message?.includes('API key')) {
+        isConfigurationError = true;
         errorMessage = 'AI chat is currently unavailable. Please contact support for assistance.';
       } else if (error?.message?.includes('rate')) {
         errorMessage = 'Too many requests. Please wait a moment before trying again.';
@@ -177,7 +150,9 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
       const errorChatMessage: ChatMessage = {
         id: `error_${Date.now()}`,
         role: 'assistant',
-        content: errorMessage,
+        content: isConfigurationError 
+          ? `${errorMessage}\n\n💡 **Alternative ways to get help:**\n• Email: support@kutable.com\n• Support form: Visit our support page\n• Phone: Contact barbers directly via their profiles`
+          : errorMessage,
         timestamp: new Date().toISOString()
       };
       
