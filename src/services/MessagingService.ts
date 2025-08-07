@@ -142,7 +142,8 @@ export class MessagingService {
 
       for (const booking of uniqueBookings) {
         // Detect if the current user is the barber for this booking
-        const isBarber = barberProfile && booking.barber_id === barberProfile.id;
+        // We determine this by checking if the booking came from the barber query
+        const isBarber = barberProfile && booking.barber_profiles?.id === barberProfile.id;
 
         // Participant logic:  
         // For barbers, always show the client as the conversation participant, 
@@ -150,21 +151,13 @@ export class MessagingService {
         let participant;
         if (isBarber) {
           // For barbers: show the client as the participant
-          const clientFirstName = booking.client_profiles?.first_name || '';
-          const clientLastName = booking.client_profiles?.last_name || '';
-          const clientName = `${clientFirstName} ${clientLastName}`.trim();
-          const clientUserId = booking.client_profiles?.user_id;
-          
-          console.log('🔍 DEBUG - Client data for barber conversation:', {
-            booking_id: booking.id,
-            client_first_name: clientFirstName,
-            client_last_name: clientLastName,
-            client_user_id: clientUserId,
-            final_client_name: clientName
-          });
+          const clientName = [
+            booking.client_profiles?.first_name || '',
+            booking.client_profiles?.last_name || ''
+          ].join(' ').trim();
           
           participant = {
-            id: clientUserId || '',  // Use client's user_id for sending messages
+            id: booking.client_profiles?.user_id || '',  // Use client's user_id for sending messages
             name: clientName || 'Client',
             type: 'client' as const,
             avatar: undefined
@@ -178,14 +171,6 @@ export class MessagingService {
             avatar: booking.barber_profiles?.profile_image_url || undefined
           };
         }
-
-        console.log('🔍 DEBUG - Final participant for conversation:', {
-          booking_id: booking.id,
-          is_barber: isBarber,
-          participant_id: participant.id,
-          participant_name: participant.name,
-          participant_type: participant.type
-        });
 
         // Get last message and unread count
         const { data: lastMessage } = await supabase
@@ -203,8 +188,7 @@ export class MessagingService {
           .eq('receiver_id', userId)
           .is('read_at', null);
 
-        // Always push the conversation even if participant.id is blank, 
-        // so unclaimed clients show up in the list for the barber.
+        // Always include conversations - unclaimed clients still show up for barbers
         conversations.push({
           bookingId: booking.id,
           lastMessage: lastMessage || undefined,
