@@ -209,6 +209,11 @@ export class MessagingService {
               }
         };
       });
+        // Skip conversations with unclaimed/unlinked profiles (empty user IDs)
+        if (!participant.id || participant.id.trim() === '') {
+          continue;
+        }
+
 
       return enrichedMessages;
 
