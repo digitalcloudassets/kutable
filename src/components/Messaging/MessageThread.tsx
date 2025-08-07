@@ -196,19 +196,19 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 p-4 rounded-t-2xl">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-start space-x-4">
           {conversation.participant.avatar ? (
             <img
               src={conversation.participant.avatar}
               alt={conversation.participant.name}
-              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
             />
           ) : (
             <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
               conversation.participant.type === 'barber' 
                 ? 'bg-primary-100' 
                 : 'bg-accent-100'
-            }`}>
+            } flex-shrink-0`}>
               {conversation.participant.type === 'barber' ? (
                 <Building className="h-6 w-6 text-primary-600" />
               ) : (
@@ -217,27 +217,24 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
             </div>
           )}
           
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-gray-900 truncate">
-              {conversation.participant.name}
-            </h3>
-            <div className="flex items-center space-x-1 text-sm text-gray-500">
-              <Calendar className="h-3 w-3" />
+          <div className="flex-1 min-w-0 space-y-2">
+            {/* Participant Name - Full width, no truncation */}
+            <div className="flex items-start justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 leading-tight flex-1 pr-3">
+                {conversation.participant.name}
+              </h3>
+            </div>
+            
+            {/* Service and Date Info */}
+            <div className="flex items-center space-x-1 text-sm text-gray-500 font-medium">
+              <Calendar className="h-3 w-3 flex-shrink-0" style={{ marginTop: '1px' }} />
               <span>{conversation.booking.serviceName}</span>
               <span>•</span>
               <span>{formatAppointmentDate(conversation.booking.appointmentDate)} at {conversation.booking.appointmentTime}</span>
             </div>
+            
+            {/* Status Badge - Third line */}
           </div>
-
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            conversation.booking.status === 'confirmed' 
-              ? 'bg-green-100 text-green-800'
-              : conversation.booking.status === 'pending'
-              ? 'bg-yellow-100 text-yellow-800'
-              : 'bg-gray-100 text-gray-800'
-          }`}>
-            {conversation.booking.status.toUpperCase()}
-          </span>
         </div>
       </div>
 
