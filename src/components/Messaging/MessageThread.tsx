@@ -367,7 +367,6 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
                 This profile hasn't been claimed yet. Messages cannot be sent.
               </p>
             )}
-            </p>
           </div>
           
           <button
