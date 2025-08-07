@@ -17,6 +17,7 @@ import { Database } from '../lib/supabase';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
+type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
 
 const DashboardPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
@@ -90,8 +91,19 @@ const DashboardPage: React.FC = () => {
       } else {
         // Use centralized profile creation to prevent duplicates
         const clientProfile = await getOrCreateClientProfile(user);
+        if (clientProfile) {
+          // Fetch the full profile data
+          const { data: fullProfile, error: fetchError } = await supabase
+            .from('client_profiles')
+            .select('*')
+            .eq('id', clientProfile.id)
+            .single();
+
+          if (!fetchError && fullProfile) {
+            setClientProfile(fullProfile);
+          }
+        }
         setUserType('client');
-        setClientProfile(clientProfile);
         setActiveTab('bookings');
       }
     } catch (error) {
@@ -153,7 +165,7 @@ const DashboardPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-28">
           <SupabaseConnectionBanner isConnected={isConnected} />
           
-          <ClientDashboardHeader user={user} />
+          <ClientDashboardHeader user={user} clientProfile={clientProfile} />
 
           <DashboardNavigation 
             userType="client"
