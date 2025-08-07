@@ -41,10 +41,6 @@ export interface Conversation {
     name: string;
     type: 'barber' | 'client';
     avatar?: string;
-    needsClaim?: boolean;
-    hasValidProfile?: boolean;
-    isPlaceholder?: boolean;
-    canReceiveMessages?: boolean;
   };
   booking: {
     id: string;
@@ -153,17 +149,9 @@ export class MessagingService {
         const barberUserId = booking.barber_profiles?.user_id;
         const clientUserId = booking.client_profiles?.user_id;
         
-        // Handle missing client profiles by including them with placeholder data
-        const effectiveClientUserId = clientUserId || null;
-        const effectiveClientName = clientUserId 
-          ? `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`
-          : booking.client_profiles?.first_name 
-            ? `${booking.client_profiles.first_name} ${booking.client_profiles.last_name} (Unclaimed)`
-            : 'Unclaimed Client';
-        
         // Determine user role in this booking
         const isUserBarber = barberUserId === userId;
-        const isUserClient = effectiveClientUserId === userId;
+        const isUserClient = clientUserId === userId;
         
         // Data integrity check: skip if user is both barber and client
         if (isUserBarber && isUserClient && barberUserId && clientUserId) {
@@ -195,17 +183,6 @@ export class MessagingService {
               type: 'client' as const,
               avatar: undefined,
               needsClaim: !clientUserId, // Flag if client hasn't claimed profile
-        // Determine the other participant (who the user would message)
-        const participant = isUserBarber 
-          ? {
-              id: effectiveClientUserId || `placeholder_client_${booking.id}`,
-              name: effectiveClientName,
-              type: 'client' as const,
-              avatar: undefined,
-              needsClaim: !effectiveClientUserId,
-              hasValidProfile: !!effectiveClientUserId,
-              isPlaceholder: !effectiveClientUserId,
-              canReceiveMessages: !!effectiveClientUserId && effectiveClientUserId !== userId
             }
           : {
               id: barberUserId || `placeholder_${booking.id}`,
@@ -216,8 +193,7 @@ export class MessagingService {
               avatar: booking.barber_profiles?.profile_image_url || undefined,
               needsClaim: !barberUserId,
               hasValidProfile: !!barberUserId,
-              isPlaceholder: !barberUserId,
-              canReceiveMessages: !!barberUserId && barberUserId !== userId
+              isPlaceholder: !barberUserId
             };
 
         // Enhanced logging for conversation inclusion
@@ -226,6 +202,18 @@ export class MessagingService {
           userRole: isUserBarber ? 'barber' : 'client',
           participantId: participant.id,
           participantName: participant.name,
+        });
+
+        // Get last message for this booking
+        const { data: lastMessage } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('booking_id', booking.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        // Get unread count for current user
         const { count: unreadCount } = await supabase
           .from('messages')
           .select('*', { count: 'exact' })
