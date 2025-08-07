@@ -122,8 +122,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
             {conversations.length === 0 && (
               <div className="mt-4">
                 <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
-                  <strong>Note:</strong> You can only message barbers who have claimed their profiles. 
-                  Unclaimed profiles don't have messaging enabled yet.
+                  <strong>Note:</strong> You can only message users who have claimed their profiles and set up their accounts. 
+                  Both barbers and clients need to claim their profiles to enable messaging.
                 </p>
               </div>
             )}
