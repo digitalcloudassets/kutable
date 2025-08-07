@@ -52,32 +52,6 @@ const Header: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6 lg:space-x-8">
-            <Link
-              to="/barbers"
-              className={`font-medium transition-all duration-200 hover:scale-105 px-3 py-2 rounded-lg ${
-                isHomePage && !scrolled ? 'text-white hover:text-accent-300' : 'text-gray-700 hover:text-primary-600'
-              }`}
-            >
-              Find Barbers
-            </Link>
-            <Link
-              to="/how-it-works"
-              className={`font-medium transition-all duration-200 hover:scale-105 px-3 py-2 rounded-lg ${
-                isHomePage && !scrolled ? 'text-white/90 hover:text-white' : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              How It Works
-            </Link>
-            <Link
-              to="/pricing"
-              className={`font-medium transition-all duration-200 hover:scale-105 px-3 py-2 rounded-lg ${
-                isHomePage && !scrolled ? 'text-white/90 hover:text-white' : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              Pricing
-            </Link>
-          </nav>
 
           {/* User Actions */}
           <div className="flex items-center space-x-3 lg:space-x-4">
@@ -152,29 +126,7 @@ const Header: React.FC = () => {
         {mobileMenuOpen && (
           <div className="md:hidden glass-effect border-t border-white/10 mt-4 p-4 rounded-2xl mb-4 animate-scale-in">
             <nav className="space-y-2">
-              <Link
-                to="/barbers"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block py-4 px-6 font-medium text-gray-700 hover:text-primary-600 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px] flex items-center"
-              >
-                Find Barbers
-              </Link>
-              <Link
-                to="/how-it-works"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block py-4 px-6 font-medium text-gray-600 hover:text-gray-800 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px] flex items-center"
-              >
-                How It Works
-              </Link>
-              <Link
-                to="/pricing"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block py-4 px-6 font-medium text-gray-600 hover:text-gray-800 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px] flex items-center"
-              >
-                Pricing
-              </Link>
-              
-              <div className="border-t border-gray-200 pt-4 space-y-2 mt-6">
+              <div className="space-y-2">
                 {user ? (
                   <>
                     <Link
