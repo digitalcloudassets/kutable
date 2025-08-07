@@ -29,30 +29,44 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (conversation && user) {
-      loadMessages();
-      markAsRead();
-      // Also refresh unread count since sending a message means you've seen the conversation
-      await loadUnreadCount();
-      
-      // Subscribe to real-time updates
-      const unsubscribe = messagingService.subscribeToMessages(
-        conversation.bookingId,
-        (newMessage) => {
-          setMessages(prev => [...prev, newMessage]);
-          scrollToBottom();
-          
-          // Mark as read if it's for us
-          if (newMessage.receiver_id === user.id) {
-            setTimeout(() => {
-              messagingService.markAsRead(newMessage.id, user.id);
-            }, 1000);
+    const initializeMessaging = async () => {
+      if (conversation && user) {
+        loadMessages();
+        markAsRead();
+        // Also refresh unread count since sending a message means you've seen the conversation
+        await loadUnreadCount();
+        
+        // Subscribe to real-time updates
+        const unsubscribe = messagingService.subscribeToMessages(
+          conversation.bookingId,
+          (newMessage) => {
+            setMessages(prev => [...prev, newMessage]);
+            scrollToBottom();
+            
+            // Mark as read if it's for us
+            if (newMessage.receiver_id === user.id) {
+              setTimeout(() => {
+                messagingService.markAsRead(newMessage.id, user.id);
+              }, 1000);
+            }
           }
-        }
-      );
+        );
 
-      return () => unsubscribe();
-    }
+        return unsubscribe;
+      }
+    };
+
+    let unsubscribe: (() => void) | undefined;
+    
+    initializeMessaging().then((cleanup) => {
+      unsubscribe = cleanup;
+    });
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [conversation, user]);
 
   useEffect(() => {
