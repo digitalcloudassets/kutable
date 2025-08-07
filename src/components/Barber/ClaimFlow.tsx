@@ -33,6 +33,7 @@ const ClaimFlow: React.FC = () => {
   
   const [step, setStep] = useState<'signin' | 'verify' | 'details' | 'complete'>('signin');
   const [barber, setBarber] = useState<Barber | null>(null);
+  const [isCSVProfile, setIsCSVProfile] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [claimData, setClaimData] = useState({
@@ -50,20 +51,19 @@ const ClaimFlow: React.FC = () => {
   useEffect(() => {
     if (barberId) {
       fetchBarberProfile();
-      // Store the current claim URL for redirect after authentication
-      localStorage.setItem('claim_return_url', location.pathname);
     }
   }, [barberId]);
 
   useEffect(() => {
     if (user && step === 'signin') {
-      // Clear the stored return URL since user is now authenticated
-      localStorage.removeItem('claim_return_url');
       setStep('verify');
     }
   }, [user, step]);
 
   const fetchBarberProfile = async () => {
+    // Always store the claim URL for auth redirect
+    localStorage.setItem('claim_return_url', location.pathname);
+    
     try {
       console.log('🔍 Fetching barber profile for ID:', barberId);
       
@@ -75,6 +75,7 @@ const ClaimFlow: React.FC = () => {
       
       // Check if this is a CSV ID (starts with "csv-")
       if (barberId?.startsWith('csv-')) {
+        setIsCSVProfile(true);
         console.log('📋 Loading CSV barber profile for ID:', barberId);
         
         // Load CSV data directly
@@ -126,6 +127,7 @@ const ClaimFlow: React.FC = () => {
         
         console.log('📋 Found CSV barber profile:', profile.business_name);
         setBarber(profile);
+        setIsCSVProfile(true);
         setClaimData({
           businessName: profile.business_name || '',
           ownerName: profile.owner_name || '',
@@ -140,22 +142,26 @@ const ClaimFlow: React.FC = () => {
         return;
       }
 
-      // For non-CSV IDs, query the database if connected
-      if (!isConnected) {
-        setError('Database not connected and barber ID is not from CSV directory');
-        return;
-      }
-      
+      // For non-CSV IDs, query the database
+      setIsCSVProfile(false);
       const { data, error } = await supabase
         .from('barber_profiles')
         .select('*')
         .eq('id', barberId)
-        .single();
-      if (error) throw error;
+        .maybeSingle();
+      
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+      
+      if (!data) {
+        setError('Barber profile not found');
+        return;
+      }
       
       if (data.is_claimed) {
         console.log('⚠️ Profile already claimed, redirecting...');
-        navigate(`/barber/${barberId}`);
+        navigate(`/barber/${data.slug}`);
         return;
       }
 
@@ -346,13 +352,13 @@ const ClaimFlow: React.FC = () => {
   };
 
   const handleDetailsSubmit = async () => {
-    if (!isConnected) {
-      setError('Please connect to Supabase to claim this profile');
+    if (!user) {
+      setError('Please sign in to continue with claiming');
       return;
     }
 
-    if (!user) {
-      setError('Please sign in to continue with claiming');
+    if (!isConnected) {
+      setError('Please connect to Supabase to claim this profile');
       return;
     }
 
@@ -361,26 +367,19 @@ const ClaimFlow: React.FC = () => {
 
     try {
       // Check if this user already has a barber profile
-      const { data: existingProfile } = await supabase
+      const { data: existingUserProfile } = await supabase
         .from('barber_profiles')
         .select('id, slug')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (existingProfile) {
+      if (existingUserProfile) {
         // User already has a profile, redirect to it
-        navigate(`/barber/${existingProfile.slug}`);
+        navigate(`/barber/${existingUserProfile.slug}`);
         return;
       }
 
-      // Check if someone already claimed the "kutable" slug
-      const { data: slugExists } = await supabase
-        .from('barber_profiles')
-        .select('id')
-        .eq('slug', 'kutable')
-        .maybeSingle();
-
-      // Generate a unique slug - if kutable is taken, create business-based slug
+      // Generate a unique slug
       let finalSlug = claimData.businessName
         .toLowerCase()
         .replace(/[^\w\s-]/g, '')
@@ -389,45 +388,88 @@ const ClaimFlow: React.FC = () => {
         .replace(/^-+|-+$/g, '')
         .trim();
         
-      // For demo "kutable" profile, use "kutable" if available
-      if (barberId === 'demo-kutable' && !slugExists) {
-        finalSlug = 'kutable';
-      } else if (slugExists) {
-        // Add timestamp to make it unique
-        finalSlug = `${finalSlug}-${Date.now()}`;
-      }
-      if (slugExists) {
-        finalSlug = `${finalSlug}-${Date.now()}`;
-      }
-
-      // Create new barber profile (for CSV profiles that don't exist in DB yet)
-      const { data: newProfile, error: createError } = await supabase
+      // Check for slug conflicts and make unique if needed
+      const { data: slugConflict } = await supabase
         .from('barber_profiles')
-        .insert({
-          user_id: user?.id,
-          slug: finalSlug,
-          business_name: claimData.businessName,
-          owner_name: claimData.ownerName,
-          phone: claimData.phone,
-          email: claimData.email,
-          address: claimData.address,
-          city: claimData.city,
-          state: claimData.state,
-          zip_code: claimData.zipCode,
-          bio: claimData.bio,
-          is_claimed: true,
-          is_active: true,
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+        .select('id')
+        .eq('slug', finalSlug)
+        .maybeSingle();
 
-      if (createError) throw createError;
+      if (slugConflict) {
+        finalSlug = `${finalSlug}-${Date.now()}`;
+      }
 
-      // Navigate to the new profile
-      navigate(`/barber/${finalSlug}`);
-      setStep('complete');
+      if (isCSVProfile) {
+        // Create new profile for CSV profiles that don't exist in database
+        const { data: newProfile, error: createError } = await supabase
+          .from('barber_profiles')
+          .insert({
+            user_id: user.id,
+            slug: finalSlug,
+            business_name: claimData.businessName,
+            owner_name: claimData.ownerName,
+            phone: claimData.phone,
+            email: claimData.email,
+            address: claimData.address,
+            city: claimData.city,
+            state: claimData.state,
+            zip_code: claimData.zipCode,
+            bio: claimData.bio,
+            profile_image_url: barber?.profile_image_url || null,
+            banner_image_url: barber?.banner_image_url || null,
+            is_claimed: true,
+            is_active: true,
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        
+        // Clear the stored return URL
+        localStorage.removeItem('claim_return_url');
+        
+        // Set success and navigate
+        setStep('complete');
+        setTimeout(() => {
+          navigate(`/barber/${finalSlug}`);
+        }, 2000);
+      } else {
+        // Update existing database profile
+        const { error: updateError } = await supabase
+          .from('barber_profiles')
+          .update({
+            user_id: user.id,
+            slug: finalSlug,
+            business_name: claimData.businessName,
+            owner_name: claimData.ownerName,
+            phone: claimData.phone,
+            email: claimData.email,
+            address: claimData.address,
+            city: claimData.city,
+            state: claimData.state,
+            zip_code: claimData.zipCode,
+            bio: claimData.bio,
+            is_claimed: true,
+            is_active: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', barberId);
+
+        if (updateError) throw updateError;
+        
+        // Clear the stored return URL
+        localStorage.removeItem('claim_return_url');
+        
+        // Set success and navigate
+        setStep('complete');
+        setTimeout(() => {
+          navigate(`/barber/${finalSlug}`);
+        }, 2000);
+      }
+      
     } catch (error: any) {
+      console.error('Error claiming profile:', error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -511,8 +553,9 @@ const ClaimFlow: React.FC = () => {
               <h2 className="text-3xl font-display font-bold text-gray-900 mb-4">
                 Sign In Required
               </h2>
-              <p className="text-gray-600 mb-6 text-lg leading-relaxed">
-                To claim this barber profile, you need to sign in or create an account first.
+              <p className="text-gray-600 mb-8 text-lg leading-relaxed">
+                To claim <strong>{barber?.business_name}</strong>, you need to sign in or create an account first. 
+                Don't worry - we'll bring you right back to complete the claiming process.
               </p>
               <div className="space-y-3 max-w-sm mx-auto">
                 <Link
@@ -529,7 +572,7 @@ const ClaimFlow: React.FC = () => {
                 </Link>
               </div>
               <p className="text-sm text-gray-500 mt-6">
-                Don't worry - we'll bring you back here after you sign in
+                After signing in, you'll return here to verify and approve your business information
               </p>
             </div>
           )}
@@ -586,9 +629,25 @@ const ClaimFlow: React.FC = () => {
                 <div className="bg-gradient-to-br from-primary-500 to-primary-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-premium animate-float">
                   <Building className="h-10 w-10 text-white" />
                 </div>
-                <h2 className="text-3xl font-display font-bold text-gray-900 mb-4">Update Your Information</h2>
-                <p className="text-gray-600 text-lg">Complete your business details to finalize your profile</p>
+                <h2 className="text-3xl font-display font-bold text-gray-900 mb-4">Review & Update Your Information</h2>
+                <p className="text-gray-600 text-lg">Review the pre-filled information and make any necessary updates</p>
               </div>
+              
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-6 mb-8">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-500 p-2 rounded-xl">
+                    <AlertCircle className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-blue-800 mb-2">Review Your Information</h4>
+                    <p className="text-blue-700 text-sm leading-relaxed">
+                      We've pre-filled this form with your business information from our directory. 
+                      Please review and update any details as needed before claiming your profile.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -760,15 +819,35 @@ const ClaimFlow: React.FC = () => {
                 Profile Claimed Successfully!
               </h2>
               <p className="text-gray-600 mb-8 text-lg leading-relaxed">
-                Your barber profile has been claimed! Complete your setup to start accepting bookings.
+                Congratulations! Your profile for <strong>{claimData.businessName}</strong> has been successfully claimed. 
+                You'll be redirected to your profile shortly.
               </p>
-              <Link
-                to="/onboarding?type=barber"
-                className="btn-primary hover:scale-105 transition-all duration-200"
+              
+              <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-2xl p-6 mb-8">
+                <h4 className="font-semibold text-emerald-800 mb-3">What's Next?</h4>
+                <ul className="text-emerald-700 text-sm space-y-2 text-left">
+                  <li>• Set up your services and pricing</li>
+                  <li>• Configure your business hours</li>
+                  <li>• Add photos to showcase your work</li>
+                  <li>• Connect Stripe to accept payments</li>
+                </ul>
+              </div>
+              
+              <div className="relative mb-6">
+                <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary-100 border-t-primary-500 mx-auto"></div>
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-accent-500 opacity-20 blur-lg"></div>
+              </div>
+              
+              <p className="text-gray-500 font-medium">
+                Redirecting to your profile...
+              </p>
+              
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="btn-secondary mt-6 hover:scale-105 transition-all duration-200"
               >
-                <Sparkles className="h-5 w-5" />
-                Complete Setup
-              </Link>
+                Go to Dashboard Now
+              </button>
             </div>
           )}
         </div>
