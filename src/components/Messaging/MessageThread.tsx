@@ -367,16 +367,11 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
                 }
               }}
             />
-          </div>
-          
-          <button
-            type="submit"
-            disabled={!newMessage.trim() || sending || !conversation.participant.id}
             className="bg-primary-500 text-white p-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           >
             {sending ? (
               <Loader className="h-5 w-5 animate-spin" />
-            ) : (
+            disabled={!newMessage.trim() || sending || !conversation.participant.id}
               <Send className="h-5 w-5" />
             )}
           </button>
