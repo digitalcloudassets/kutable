@@ -24,7 +24,9 @@ import {
   AlertTriangle,
   CreditCard,
   CheckCircle,
-  Scissors
+  Scissors,
+  ExternalLink,
+  Unlink
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Database } from '../../lib/supabase';
@@ -63,6 +65,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [disconnectingStripe, setDisconnectingStripe] = useState(false);
   const { user } = useAuth();
   const { isConnected } = useSupabaseConnection();
   
@@ -195,6 +198,33 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
      NotificationManager.error('Failed to upload banner image. Please check your Supabase storage configuration.');
     } finally {
       setUploadingBanner(false);
+    }
+  };
+
+  const handleStripeDisconnect = async () => {
+    if (!confirm('Are you sure you want to disconnect your Stripe account? This will disable online payments until you connect a new account.')) {
+      return;
+    }
+
+    setDisconnectingStripe(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('disconnect-stripe-account', {
+        body: { barberId: barber.id }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        onUpdate();
+        NotificationManager.success('Stripe account disconnected successfully. You can connect a new account anytime.');
+      } else {
+        throw new Error(data?.error || 'Failed to disconnect Stripe account');
+      }
+    } catch (error: any) {
+      console.error('Error disconnecting Stripe:', error);
+      NotificationManager.error(error.message || 'Failed to disconnect Stripe account. Please try again.');
+    } finally {
+      setDisconnectingStripe(false);
     }
   };
 
@@ -553,6 +583,18 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                 </div>
                 <span className="text-lg font-semibold text-emerald-800">Stripe Connected</span>
                 </div>
+                <button
+                  onClick={handleStripeDisconnect}
+                  disabled={disconnectingStripe}
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center space-x-2"
+                >
+                  {disconnectingStripe ? (
+                    <Loader className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Unlink className="h-4 w-4" />
+                  )}
+                  <span>{disconnectingStripe ? 'Disconnecting...' : 'Change Account'}</span>
+                </button>
               </div>
               <p className="text-emerald-700 leading-relaxed">
                 Your payment processing is set up and ready. You can now accept bookings and receive payments directly to your bank account.
@@ -571,6 +613,35 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
               <p className="text-yellow-700 leading-relaxed mb-4">
                 Complete your Stripe setup to start accepting online payments and bookings from customers.
               </p>
+              
+              {/* Video Tutorial */}
+              <div className="bg-white border border-yellow-300 rounded-xl p-4 mb-4">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="bg-blue-100 p-2 rounded-lg">
+                    <Play className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Watch: Stripe Setup Tutorial</h4>
+                    <p className="text-sm text-gray-600">Learn how to connect your bank account in 3 minutes</p>
+                  </div>
+                </div>
+                <div className="bg-gray-100 rounded-lg p-6 text-center">
+                  <Play className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-gray-600 text-sm mb-3">
+                    Step-by-step video guide coming soon
+                  </p>
+                  <a
+                    href="https://stripe.com/docs/connect/express-accounts"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-500 text-sm font-medium flex items-center justify-center space-x-1"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    <span>View Stripe Documentation</span>
+                  </a>
+                </div>
+              </div>
+              
               <button className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 font-semibold flex items-center space-x-2 shadow-lg hover:scale-105">
                 <CreditCard className="h-5 w-5" />
                 <span>Setup Payments</span>
