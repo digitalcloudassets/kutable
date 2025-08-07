@@ -23,7 +23,6 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import ForgotPassword from './components/Auth/ForgotPassword';
 import ResetPassword from './components/Auth/ResetPassword';
-import AIChatWidget from './components/Chat/AIChatWidget';
 
 // Set up global error handling
 setupGlobalErrorHandling();
@@ -142,8 +141,6 @@ function App() {
           }}
         />
         
-        {/* AI Chat Widget */}
-        <AIChatWidget />
       </div>
     </Router>
   );
