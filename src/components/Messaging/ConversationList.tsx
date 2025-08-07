@@ -211,18 +211,11 @@ const ConversationList: React.FC<ConversationListProps> = ({
                     ? 'bg-yellow-100 text-yellow-800'
                     : 'bg-gray-100 text-gray-800'
                 }`}>
-                  {conversation.booking.status.toUpperCase()}
-                </span>
-                
-                <div className="flex items-center space-x-1">
-                  <MessageSquare className="h-3 w-3 text-gray-400" />
-                  <span className="text-xs text-gray-500">
-                    {conversation.participant.type === 'barber' ? 'Barber' : 'Customer'}
-                  </span>
-                </div>
-              </div>
+            <div className="flex-1 min-w-0">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2 mt-2"></div>
             </div>
-          ))
+          </div>
         )}
       </div>
     </div>
