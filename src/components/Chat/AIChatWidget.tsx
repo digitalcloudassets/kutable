@@ -172,7 +172,16 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
         errorMessage = 'AI chat is currently unavailable. Please contact support for assistance.';
       } else if (error?.message?.includes('rate')) {
         errorMessage = 'Too many requests. Please wait a moment before trying again.';
-      setMessages(prev => [...prev, errorMessage]);
+      }
+      
+      const errorChatMessage: ChatMessage = {
+        id: `error_${Date.now()}`,
+        role: 'assistant',
+        content: errorMessage,
+        timestamp: new Date().toISOString()
+      };
+      
+      setMessages(prev => [...prev, errorChatMessage]);
     } finally {
       setIsLoading(false);
     }
