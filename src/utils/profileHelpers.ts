@@ -6,7 +6,6 @@ export const getOrCreateClientProfile = async (user: User) => {
   if (!user) return null;
 
   try {
-    console.log('🔍 Looking up client profile for user:', user.id, user.email);
     
     // STEP 1: Try to find by user_id first (most reliable)
     let { data: existingProfile } = await supabase
@@ -16,7 +15,6 @@ export const getOrCreateClientProfile = async (user: User) => {
       .maybeSingle();
 
     if (existingProfile) {
-      console.log('✅ Found client profile by user_id:', existingProfile.id);
       return existingProfile;
     }
 
@@ -29,7 +27,6 @@ export const getOrCreateClientProfile = async (user: User) => {
         .maybeSingle();
         
       if (profileByEmail) {
-        console.log('🔧 Found client profile by email, fixing user_id mismatch:', profileByEmail.id);
         
         // Update the user_id to match the authenticated user
         const { data: updatedProfile, error: updateError } = await supabase
@@ -43,7 +40,6 @@ export const getOrCreateClientProfile = async (user: User) => {
           .single();
           
         if (!updateError && updatedProfile) {
-          console.log('✅ Fixed user_id mismatch for profile:', updatedProfile.id);
           return updatedProfile;
         } else {
           console.error('❌ Failed to fix user_id mismatch:', updateError);
@@ -52,7 +48,6 @@ export const getOrCreateClientProfile = async (user: User) => {
     }
 
     // STEP 3: Create new profile only if none exists
-    console.log('📝 Creating new client profile for user:', user.id);
     
     const { data: newProfile, error: createError } = await supabase
       .from('client_profiles')
@@ -68,15 +63,12 @@ export const getOrCreateClientProfile = async (user: User) => {
       .single();
 
     if (createError) {
-      console.error('❌ Failed to create client profile:', createError);
       throw createError;
     }
 
-    console.log('✅ Created new client profile:', newProfile.id);
     return newProfile;
 
   } catch (error) {
-    console.error('❌ Error in getOrCreateClientProfile:', error);
     return null;
   }
 };
@@ -86,7 +78,6 @@ export const cleanupDuplicateClientProfiles = async (userEmail: string) => {
   if (!userEmail) return { success: false, error: 'Email required' };
 
   try {
-    console.log('🧹 Cleaning up duplicate profiles for:', userEmail);
     
     // Find all profiles with this email
     const { data: duplicateProfiles } = await supabase
@@ -96,18 +87,14 @@ export const cleanupDuplicateClientProfiles = async (userEmail: string) => {
       .order('created_at', { ascending: true }); // Oldest first
 
     if (!duplicateProfiles || duplicateProfiles.length <= 1) {
-      console.log('✅ No duplicates found');
       return { success: true, message: 'No duplicates found' };
     }
 
-    console.log(`📊 Found ${duplicateProfiles.length} profiles for ${userEmail}`);
 
     // Keep the first profile (oldest), delete the rest
     const profileToKeep = duplicateProfiles[0];
     const profilesToDelete = duplicateProfiles.slice(1);
 
-    console.log('📌 Keeping profile:', profileToKeep.id, 'created:', profileToKeep.created_at);
-    console.log('🗑️ Deleting profiles:', profilesToDelete.map(p => p.id));
 
     // Delete duplicate profiles
     for (const profile of profilesToDelete) {
@@ -118,8 +105,6 @@ export const cleanupDuplicateClientProfiles = async (userEmail: string) => {
 
       if (deleteError) {
         console.error('❌ Failed to delete duplicate profile:', profile.id, deleteError);
-      } else {
-        console.log('✅ Deleted duplicate profile:', profile.id);
       }
     }
 
@@ -131,7 +116,6 @@ export const cleanupDuplicateClientProfiles = async (userEmail: string) => {
     };
 
   } catch (error) {
-    console.error('❌ Error cleaning up duplicates:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Cleanup failed' };
   }
 };
