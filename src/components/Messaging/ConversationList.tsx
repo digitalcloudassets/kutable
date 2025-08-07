@@ -115,18 +115,15 @@ const ConversationList: React.FC<ConversationListProps> = ({
             <h3 className="text-lg font-medium text-gray-900 mb-2">No conversations</h3>
             <p className="text-gray-600">
               {conversations.length === 0 
-                ? 'Messages will appear here when you have active bookings with clients'
-                : searchTerm ? 'No conversations match your search' : 'All conversations filtered out'
+                ? 'Messages will appear here when you have active bookings with claimed barber profiles'
+                : 'No conversations match your search'
               }
             </p>
-            {filteredConversations.length === 0 && conversations.length === 0 && (
+            {conversations.length === 0 && (
               <div className="mt-4">
                 <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
-                  <strong>No conversations yet:</strong><br/>
-                  • You need active bookings to see client conversations<br/>
-                  • Clients will appear here when they book your services<br/>
-                  • Both claimed and unclaimed clients will show up<br/>
-                  • Test data has been created to help you see the messaging interface
+                  <strong>Note:</strong> You can only message barbers who have claimed their profiles. 
+                  Unclaimed profiles don't have messaging enabled yet.
                 </p>
               </div>
             )}
@@ -216,19 +213,6 @@ const ConversationList: React.FC<ConversationListProps> = ({
                 }`}>
                   {conversation.booking.status}
                 </span>
-                
-                {/* Claim Status Indicator */}
-                {conversation.participant.needsClaim && (
-                  <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-medium ml-2">
-                    {conversation.participant.type === 'client' ? 'Client Unclaimed' : 'Barber Unclaimed'}
-                  </span>
-                )}
-                
-                {!conversation.participant.hasValidProfile && (
-                  <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium ml-2">
-                    Cannot message yet
-                  </span>
-                )}
               </div>
             </div>
           ))

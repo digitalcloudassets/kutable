@@ -717,21 +717,6 @@ const AdminPage: React.FC = () => {
               )}
 
               {/* Export Tab */}
-              {activeTab === 'messaging' && (
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-3 mb-8">
-                    <div className="bg-purple-100 p-3 rounded-2xl">
-                      <MessageSquare className="h-6 w-6 text-purple-600" />
-                    </div>
-                    <h3 className="text-3xl font-display font-bold text-gray-900">
-                    Messaging System Audit
-                    </h3>
-                  </div>
-                  <ConversationAudit />
-                </div>
-              )}
-
-              {/* Export Tab */}
               {activeTab === 'export' && (
                 <div className="space-y-6">
                   <div className="flex items-center space-x-3 mb-8">
