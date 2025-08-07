@@ -447,6 +447,20 @@ export class MessagingService {
         return; // Exit gracefully without breaking the message flow
       }
 
+     // Additional validation for profile user IDs
+     if (!receiverProfile.user_id || !senderProfile.user_id) {
+       console.warn('Missing user IDs in profile data (message still sent successfully):', { 
+         receiverUserId: !!receiverProfile.user_id, 
+         senderUserId: !!senderProfile.user_id 
+       });
+       return; // Exit gracefully without breaking the message flow
+     }
+
+     // Prevent sending notifications to self
+     if (senderProfile.user_id === receiverProfile.user_id) {
+       console.warn('Cannot send notification to self (message still sent successfully)');
+       return; // Exit gracefully without breaking the message flow
+     }
       const senderName = isFromBarber 
         ? senderProfile.business_name 
         : `${senderProfile.first_name} ${senderProfile.last_name}`;
