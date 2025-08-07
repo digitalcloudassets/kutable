@@ -21,9 +21,16 @@ const Header: React.FC = () => {
   }, []);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
-    setMobileMenuOpen(false);
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      // Handle sign out errors gracefully - session may already be invalid
+      console.log('Sign out error:', error);
+    } finally {
+      // Always navigate and close menu, regardless of logout success
+      navigate('/');
+      setMobileMenuOpen(false);
+    }
   };
 
   const isHomePage = location.pathname === '/';
