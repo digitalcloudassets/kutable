@@ -32,6 +32,15 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
 
   // Check if the conversation participant can receive notifications
   const canReceiveNotifications = conversation.participant.id && conversation.participant.id.trim() !== '';
+  
+  // Check if this would result in self-messaging
+  const isSelfMessaging = user?.id === conversation.participant.id;
+  
+  // Check if client profile is missing or unclaimed
+  const isClientUnclaimed = conversation.participant.type === 'client' && (!conversation.participant.id || conversation.participant.id.trim() === '');
+  
+  // Determine if messaging should be disabled
+  const messagingDisabled = isSelfMessaging || isClientUnclaimed || !canReceiveNotifications;
   useEffect(() => {
     const initializeMessaging = async () => {
       if (conversation && user) {
@@ -263,6 +272,30 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
           </div>
         </div>
       )}
+      
+      {/* Self-messaging prevention banner */}
+      {isSelfMessaging && (
+        <div className="bg-red-50 border-b border-red-200 px-4 py-3">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <span className="text-red-800 text-sm font-medium">
+              Cannot message yourself. This indicates the client profile needs to be properly set up.
+            </span>
+          </div>
+        </div>
+      )}
+      
+      {/* Client unclaimed banner */}
+      {isClientUnclaimed && !isSelfMessaging && (
+        <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <span className="text-blue-800 text-sm font-medium">
+              This client hasn't activated messaging yet. They'll need to claim their account before you can send messages.
+            </span>
+          </div>
+        </div>
+      )}
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.length === 0 ? (
@@ -371,7 +404,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all duration-200"
               rows={newMessage.includes('\n') ? 3 : 1}
               maxLength={1000}
-              disabled={!canReceiveNotifications}
+              disabled={messagingDisabled}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -381,15 +414,22 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
             />
             <p className="text-xs text-gray-500 mt-1">
               {newMessage.length}/1000 • Press Enter to send, Shift+Enter for new line
-              {!canReceiveNotifications && (
-                <span className="text-amber-600 font-medium"> • {conversation.participant.type === 'client' ? 'Client' : 'Barber'} won't receive notifications</span>
+              {messagingDisabled && (
+                <span className="text-red-600 font-medium">
+                  {isSelfMessaging 
+                    ? ' • Cannot message yourself'
+                    : isClientUnclaimed 
+                    ? ' • Client messaging not set up'
+                    : ' • Messaging unavailable'
+                  }
+                </span>
               )}
             </p>
           </div>
           
           <button
             type="submit"
-            disabled={!newMessage.trim() || sending || !canReceiveNotifications}
+            disabled={!newMessage.trim() || sending || messagingDisabled}
             className="bg-primary-500 text-white p-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           >
             {sending ? (

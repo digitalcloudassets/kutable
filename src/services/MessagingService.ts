@@ -281,6 +281,25 @@ export class MessagingService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Prevent self-messaging
+      if (receiverId === user.id) {
+        console.warn('Attempted self-messaging blocked:', {
+          userId: user.id,
+          receiverId,
+          bookingId
+        });
+        throw new Error('This client has not set up messaging yet. You cannot message yourself.');
+      }
+
+      // Additional validation for empty or invalid receiver ID
+      if (!receiverId || receiverId.trim() === '') {
+        console.warn('Message blocked - invalid receiver ID:', {
+          userId: user.id,
+          receiverId,
+          bookingId
+        });
+        throw new Error('This client has not activated messaging yet. They need to claim their account first.');
+      }
       console.log('Sending message:', { 
         fromUserId: user.id, 
         toUserId: receiverId, 
