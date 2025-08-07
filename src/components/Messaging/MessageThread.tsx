@@ -204,7 +204,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 p-4 rounded-t-2xl">
-        <div className="flex items-start space-x-4">
+        <div className="space-y-3">
+          {/* Avatar centered at top */}
+          <div className="flex justify-start">
           {conversation.participant.avatar ? (
             <img
               src={conversation.participant.avatar}
@@ -224,24 +226,24 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               )}
             </div>
           )}
+          </div>
           
-          <div className="flex-1 min-w-0 space-y-2">
+          {/* Text content left-aligned below avatar */}
+          <div className="space-y-1">
             {/* Participant Name - Full width, no truncation */}
-            <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 leading-tight flex-1 pr-3">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 leading-tight">
                 {conversation.participant.name}
               </h3>
             </div>
             
             {/* Service and Date Info */}
-            <div className="flex items-start space-x-1 text-sm text-gray-500 font-medium">
+            <div className="flex items-center space-x-1 text-sm text-gray-500 font-medium">
               <Calendar className="h-3 w-3 flex-shrink-0" style={{ marginTop: '1px' }} />
               <span>{conversation.booking.serviceName}</span>
               <span>•</span>
               <span>{formatAppointmentDate(conversation.booking.appointmentDate)} at {conversation.booking.appointmentTime}</span>
             </div>
-            
-            {/* Status Badge - Third line */}
           </div>
         </div>
       </div>
