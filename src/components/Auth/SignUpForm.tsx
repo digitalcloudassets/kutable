@@ -130,42 +130,6 @@ const SignUpForm: React.FC = () => {
 
       if (error) throw error;
 
-      // For clients, create profile immediately after signup
-      if (formData.userType === 'client') {
-        try {
-          // Get the user data from the signup response
-          const { data: { user: newUser } } = await supabase.auth.getUser();
-          
-          if (newUser) {
-            console.log('Creating client profile for new user:', newUser.id);
-            
-            const { error: profileError } = await supabase
-              .from('client_profiles')
-              .insert({
-                user_id: newUser.id,
-                first_name: cleanFirstName,
-                last_name: cleanLastName,
-                email: cleanEmail,
-                phone: '',
-                preferred_contact: 'sms',
-                communication_consent: formData.communicationConsent,
-                sms_consent: formData.communicationConsent,
-                email_consent: formData.communicationConsent,
-                consent_date: new Date().toISOString()
-              });
-
-            if (profileError) {
-              console.warn('Failed to create client profile during signup:', profileError);
-              // Don't fail the entire signup - profile can be created later
-            } else {
-              console.log('Client profile created successfully during signup');
-            }
-          }
-        } catch (profileError) {
-          console.warn('Error creating client profile during signup:', profileError);
-          // Don't fail the entire signup process
-        }
-      }
       // Check if user came from claim flow
       const claimReturnUrl = localStorage.getItem('claim_return_url');
       if (claimReturnUrl) {

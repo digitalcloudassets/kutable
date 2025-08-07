@@ -284,7 +284,7 @@ export class MessagingService {
           sender_profile: isFromBarber 
             ? {
                 id: booking.barber_profiles?.user_id || '',
-                name: booking.barber_profiles?.business_name || 'Barber',
+                name: booking.barber_profiles?.business_name || '',
                 type: 'barber'
               }
             : {
