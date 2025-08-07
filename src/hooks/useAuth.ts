@@ -19,6 +19,10 @@ export const useAuth = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (session === null) {
+          // Clear any stale tokens when session is null
+          await supabase.auth.signOut();
+        }
         setUser(session?.user ?? null);
         setLoading(false);
       }
