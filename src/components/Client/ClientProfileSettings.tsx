@@ -10,7 +10,9 @@ import {
   CheckCircle,
   X,
   Loader,
-  AlertCircle
+  AlertCircle,
+  Camera,
+  Upload
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
@@ -18,7 +20,7 @@ import { Database } from '../../lib/supabase';
 import ConsentManagement from './ConsentManagement';
 import { NotificationManager } from '../../utils/notifications';
 import { getOrCreateClientProfile } from '../../utils/profileHelpers';
-import { validateEmail, validatePhone } from '../../utils/security';
+import { validateEmail, validatePhone, validateFileUpload } from '../../utils/security';
 
 type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
 
@@ -30,13 +32,15 @@ const ClientProfileSettings: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
   
   const [editData, setEditData] = useState({
     first_name: '',
     last_name: '',
     phone: '',
     email: '',
-    preferred_contact: 'sms' as 'sms' | 'email' | 'phone'
+    preferred_contact: 'sms' as 'sms' | 'email' | 'phone',
+    profile_image_url: ''
   });
 
   useEffect(() => {
@@ -71,7 +75,8 @@ const ClientProfileSettings: React.FC = () => {
           last_name: fullProfile.last_name || '',
           phone: fullProfile.phone || '',
           email: fullProfile.email || '',
-          preferred_contact: fullProfile.preferred_contact as 'sms' | 'email' | 'phone' || 'sms'
+          preferred_contact: fullProfile.preferred_contact as 'sms' | 'email' | 'phone' || 'sms',
+          profile_image_url: fullProfile.profile_image_url || ''
         });
       } else {
         throw new Error('Could not create or find client profile');
@@ -120,6 +125,7 @@ const ClientProfileSettings: React.FC = () => {
           phone: editData.phone.trim() || null,
           email: editData.email.trim() || null,
           preferred_contact: editData.preferred_contact,
+          profile_image_url: editData.profile_image_url || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', clientProfile.id);
@@ -134,6 +140,8 @@ const ClientProfileSettings: React.FC = () => {
         phone: editData.phone.trim() || null,
         email: editData.email.trim() || null,
         preferred_contact: editData.preferred_contact,
+        profile_image_url: editData.profile_image_url || null,
+        profile_image_url: editData.profile_image_url || null,
         updated_at: new Date().toISOString()
       } : null);
 
@@ -155,12 +163,67 @@ const ClientProfileSettings: React.FC = () => {
         last_name: clientProfile.last_name || '',
         phone: clientProfile.phone || '',
         email: clientProfile.email || '',
-        preferred_contact: clientProfile.preferred_contact as 'sms' | 'email' | 'phone' || 'sms'
+        preferred_contact: clientProfile.preferred_contact as 'sms' | 'email' | 'phone' || 'sms',
+        profile_image_url: clientProfile.profile_image_url || ''
       });
     }
     setIsEditing(false);
     setError('');
     setSuccessMessage('');
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !clientProfile) return;
+
+    // Validate file
+    const validation = validateFileUpload(file);
+    if (!validation.isValid) {
+      NotificationManager.error(validation.error || 'Invalid file');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const fileName = `${clientProfile.id}/profile-${Date.now()}.jpg`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('barber-images') // Use same bucket as barbers for consistency
+        .upload(fileName, file);
+
+      if (uploadError) {
+        if (uploadError.message.includes('Bucket not found')) {
+          NotificationManager.error('Storage setup required: Please create the "barber-images" bucket in your Supabase Storage dashboard before uploading images.');
+          setUploadingImage(false);
+          return;
+        }
+        throw uploadError;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('barber-images')
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from('client_profiles')
+        .update({ 
+          profile_image_url: urlData.publicUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', clientProfile.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setEditData(prev => ({ ...prev, profile_image_url: urlData.publicUrl }));
+      setClientProfile(prev => prev ? { ...prev, profile_image_url: urlData.publicUrl } : null);
+      
+      NotificationManager.success('Profile photo updated successfully!');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      NotificationManager.error('Failed to upload image. Please check your Supabase storage configuration.');
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const formatPhoneNumber = (phone: string) => {
@@ -255,6 +318,38 @@ const ClientProfileSettings: React.FC = () => {
       {isEditing ? (
         /* Edit Mode */
         <div className="space-y-6">
+          {/* Profile Image Upload */}
+          <div className="text-center">
+            <label className="block text-sm font-medium text-gray-700 mb-4">
+              Profile Photo
+            </label>
+            <div className="relative inline-block">
+              <img
+                src={editData.profile_image_url || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=200'}
+                alt="Profile"
+                className="w-32 h-32 rounded-3xl object-cover border-4 border-white shadow-premium"
+              />
+              <label
+                htmlFor="client-profile-image-upload"
+                className="absolute -bottom-2 -right-2 bg-primary-500 text-white p-3 rounded-xl cursor-pointer hover:bg-primary-600 transition-all duration-200 shadow-lg hover:scale-110"
+              >
+                {uploadingImage ? (
+                  <Loader className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
+              </label>
+              <input
+                id="client-profile-image-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">JPG, PNG • Max 10MB</p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -400,8 +495,15 @@ const ClientProfileSettings: React.FC = () => {
         <div className="space-y-6">
           {/* Profile Header */}
           <div className="flex items-center space-x-6 pb-8 border-b border-gray-100">
-            <div className="bg-gradient-to-br from-primary-500 to-accent-500 w-20 h-20 rounded-2xl flex items-center justify-center shadow-premium">
-              <User className="h-10 w-10 text-white" />
+            <div className="relative">
+              <img
+                src={clientProfile?.profile_image_url || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=200'}
+                alt="Profile"
+                className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-premium"
+              />
+              <div className="absolute -bottom-1 -right-1 bg-accent-500 text-white p-1.5 rounded-lg shadow-lg">
+                <User className="h-3 w-3" />
+              </div>
             </div>
             <div>
               <h3 className="text-2xl font-display font-bold text-gray-900 mb-2">
