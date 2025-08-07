@@ -124,7 +124,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
                 <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
                   <strong>Messaging Requirements:</strong> Conversations appear for all your bookings, but you can only 
                   send messages to users who have claimed their profiles. Unclaimed participants will be marked 
-                  as "Unclaimed" and cannot receive messages until they set up their accounts.
+                  as "Unclaimed\" and cannot receive messages until they set up their accounts.
                 </p>
               </div>
             )}
