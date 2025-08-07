@@ -301,6 +301,9 @@ export class MessagingService {
             };
 
         console.log(`✅ Creating conversation: ${participant.name} (${participant.type})`);
+        
+        // Get last message for this conversation
+        const { data: lastMessage } = await supabase
           .from('messages')
           .select('*')
           .eq('booking_id', booking.id)
