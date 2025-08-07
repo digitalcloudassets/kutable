@@ -193,11 +193,9 @@ const DashboardPage: React.FC = () => {
 
           <BarberDashboardContent 
             activeTab={activeTab}
-            activeSubTab={activeSubTab}
             barber={barber}
             user={user}
             onBarberUpdate={refreshBarberData}
-            onSubTabChange={handleSubTabChange}
             triggerEdit={triggerEdit}
             onTriggerEditChange={handleTriggerEditChange}
           />
