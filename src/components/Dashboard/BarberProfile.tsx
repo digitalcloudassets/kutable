@@ -621,23 +621,31 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                     <Play className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900">Watch: Stripe Setup Tutorial</h4>
+                    <h4 className="font-semibold text-gray-900">How to Set Up Stripe Connect</h4>
                     <p className="text-sm text-gray-600">Learn how to connect your bank account in 3 minutes</p>
                   </div>
                 </div>
                 <div className="bg-gray-100 rounded-lg p-6 text-center">
-                  <Play className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-600 text-sm mb-3">
-                    Step-by-step video guide coming soon
-                  </p>
                   <a
-                    href="https://stripe.com/docs/connect/express-accounts"
+                    href="https://youtu.be/T35k_1IzzO8"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-500 text-sm font-medium flex items-center justify-center space-x-1"
+                    className="inline-flex items-center justify-center w-16 h-16 bg-red-600 hover:bg-red-700 text-white rounded-full mb-4 transition-all duration-200 transform hover:scale-110 shadow-lg"
                   >
-                    <ExternalLink className="h-4 w-4" />
-                    <span>View Stripe Documentation</span>
+                    <Play className="h-8 w-8 ml-1" />
+                  </a>
+                  <h5 className="font-semibold text-gray-900 mb-2">How to Set Up Stripe Connect</h5>
+                  <p className="text-gray-600 text-sm mb-4">
+                    Watch this 3-minute tutorial to learn how to connect your bank account
+                  </p>
+                  <a
+                    href="https://youtu.be/T35k_1IzzO8"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium inline-flex items-center space-x-2"
+                  >
+                    <Play className="h-4 w-4" />
+                    <span>Watch Tutorial</span>
                   </a>
                 </div>
               </div>
