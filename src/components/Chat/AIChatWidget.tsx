@@ -82,7 +82,39 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Chat error:', error);
+        const errorResponse = {
+          success: false,
+          response: error.message?.includes('API key') 
+            ? 'AI chat is currently unavailable. Please contact support@kutable.com for assistance.'
+            : 'Sorry, I encountered an error. Please try again or contact support if the issue persists.',
+          timestamp: new Date().toISOString()
+        };
+        
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          content: errorResponse.response,
+          sender: 'assistant',
+          timestamp: errorResponse.timestamp
+        }]);
+        return;
+      }
+
+      if (!data?.success) {
+        console.error('Chat API error:', data?.error);
+        const errorMessage = data?.error?.includes('API key')
+          ? 'AI chat is currently unavailable. Please contact support@kutable.com for assistance.'
+          : data?.error || 'Sorry, I encountered an error. Please try again.';
+          
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          content: errorMessage,
+          sender: 'assistant',
+          timestamp: new Date().toISOString()
+        }]);
+        return;
+      }
 
       if (data?.success) {
         const assistantMessage: ChatMessage = {
