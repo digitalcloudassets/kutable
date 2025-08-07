@@ -779,20 +779,20 @@ const PaymentStep: React.FC<{
             name: `${clientDetails.firstName} ${clientDetails.lastName}`,
             email: clientDetails.email,
             phone: clientDetails.phone,
-          // Send rescheduling notifications
-          try {
-            const { error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {
-              body: {
-                bookingId: bookingId,
-                event: 'booking_rescheduled'
-              }
-            });
+          },
+        },
+      });
 
-            if (notificationError) {
-              console.warn('Failed to send rescheduling notifications:', notificationError);
-            }
-          } catch (notificationError) {
-            console.warn('Notification error (rescheduling still succeeded):', notificationError);
+      if (stripeError) {
+        throw new Error(stripeError.message || 'Payment failed');
+      }
+
+      if (paymentIntent?.status === 'succeeded') {
+        // Confirm booking via edge function
+        const { data, error } = await supabase.functions.invoke('confirm-booking', {
+          body: {
+            bookingId: bookingId,
+            paymentIntentId: paymentIntent.id
           }
         });
 
