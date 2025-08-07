@@ -156,17 +156,31 @@ export class MessagingService {
           if (!booking.client_profiles && booking.client_id) {
             console.log('Fetching missing client data for booking:', booking.id, 'client_id:', booking.client_id);
             // Fetch client profile separately
-            const { data: clientProfile } = await supabase
+            const { data: clientProfile, error: clientFetchError } = await supabase
               .from('client_profiles')
-              .select('id, user_id, first_name, last_name, profile_image_url')
+              .select('id, user_id, first_name, last_name, profile_image_url, email')
               .eq('id', booking.client_id)
               .maybeSingle();
+              
+            if (clientFetchError) {
+              console.error('Client profile fetch error:', clientFetchError, 'for client_id:', booking.client_id);
+            }
               
             if (clientProfile) {
               booking.client_profiles = clientProfile;
               console.log('Found missing client profile:', clientProfile);
             } else {
-              console.warn('Client profile not found for client_id:', booking.client_id);
+              console.warn('Client profile not found for client_id:', booking.client_id, 'Error:', clientFetchError?.message);
+              // Create a fallback participant using the booking's client_id as a reference
+              console.log('Creating fallback client participant for messaging');
+              booking.client_profiles = {
+                id: booking.client_id,
+                user_id: null, // We don't know the user_id, so messaging won't work
+                first_name: 'Client',
+                last_name: '',
+                profile_image_url: null,
+                email: null
+              };
             }
           }
           enrichedBarberBookings.push(booking);
@@ -252,7 +266,7 @@ export class MessagingService {
           const clientName = `${booking.client_profiles.first_name || ''} ${booking.client_profiles.last_name || ''}`.trim();
           console.log('Setting client participant:', { clientUserId, clientName, avatar: booking.client_profiles.profile_image_url });
           participant = {
-            id: clientUserId || null, // Use actual user_id or null if missing
+            id: clientUserId, // Will be null if we couldn't fetch the profile
             name: clientName || 'Client',
             type: 'client' as const,
             avatar: booking.client_profiles.profile_image_url || undefined
@@ -261,7 +275,7 @@ export class MessagingService {
           const barberUserId = booking.barber_profiles.user_id;
           console.log('Setting barber participant:', { barberUserId, name: booking.barber_profiles.business_name, avatar: booking.barber_profiles.profile_image_url });
           participant = {
-            id: barberUserId || null, // Use actual user_id or null if missing
+            id: barberUserId, // Will be null if we couldn't fetch the profile
             name: booking.barber_profiles.business_name || 'Barber',
             type: 'barber' as const,
             avatar: booking.barber_profiles.profile_image_url || undefined
