@@ -2,6 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User, Eye, EyeOff, Shield, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { 
+  rateLimiter, 
+  bruteForceProtection, 
+  sanitizeInput, 
+  constantTimeCompare,
+  createSecureSession 
+} from '../utils/security';
 
 const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,13 +21,20 @@ const AdminLoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
+  const [honeypot, setHoneypot] = useState(''); // Honeypot field for bot detection
 
-  const MAX_ATTEMPTS = 3;
-  const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_DURATION = 30 * 60 * 1000; // 30 minutes
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Honeypot check - if filled, it's likely a bot
+    if (honeypot) {
+      setError('Invalid request detected');
+      return;
+    }
+
     if (isLocked) {
       setError('Account temporarily locked due to too many failed attempts. Please try again later.');
       return;
@@ -29,9 +43,28 @@ const AdminLoginPage: React.FC = () => {
     setLoading(true);
     setError('');
 
+    // Enhanced input validation and sanitization
+    const cleanUsername = sanitizeInput(credentials.username.trim(), 50);
+    const cleanPassword = credentials.password.trim();
+
     // Validate inputs
-    if (!credentials.username.trim() || !credentials.password.trim()) {
+    if (!cleanUsername || !cleanPassword) {
       setError('Please enter both username and password');
+      setLoading(false);
+      return;
+    }
+
+    // Additional security checks
+    if (cleanUsername.length < 3 || cleanPassword.length < 8) {
+      setError('Invalid credentials format');
+      setLoading(false);
+      return;
+    }
+
+    // Rate limiting
+    const identifier = `admin_${cleanUsername}`;
+    if (rateLimiter.isRateLimited(identifier, 3, 10 * 60 * 1000)) {
+      setError('Too many login attempts. Please wait 10 minutes before trying again.');
       setLoading(false);
       return;
     }
@@ -40,20 +73,26 @@ const AdminLoginPage: React.FC = () => {
     setTimeout(() => {
       // In production, this should check against a secure backend
       // For demo purposes, using environment variables
-      const adminUsername = import.meta.env.VITE_ADMIN_USERNAME || 'Kut@ble';
-      const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'kutable2025!';
+      const adminUsername = import.meta.env.VITE_ADMIN_USERNAME || 'admin';
+      const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'SecureAdminPass2025!@#';
       
-      if (credentials.username === adminUsername && credentials.password === adminPassword) {
+      // Use constant time comparison to prevent timing attacks
+      const usernameMatch = constantTimeCompare(cleanUsername, adminUsername);
+      const passwordMatch = constantTimeCompare(cleanPassword, adminPassword);
+      
+      if (usernameMatch && passwordMatch) {
         // Reset attempts on success
         setAttempts(0);
+        bruteForceProtection.recordAttempt(identifier, true);
         
         // Create secure session token
-        const sessionToken = btoa(JSON.stringify({
-          username: credentials.username,
+        const sessionToken = createSecureSession({
+          username: cleanUsername,
           role: 'Platform Administrator',
           loginTime: new Date().toISOString(),
-          expires: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString() // 8 hours
-        }));
+          ip: 'unknown', // In production, get from headers
+          userAgent: navigator.userAgent.slice(0, 200)
+        }, 2); // 2 hour session
         
         localStorage.setItem('admin_authenticated', 'true');
         localStorage.setItem('admin_session', sessionToken);
@@ -62,10 +101,11 @@ const AdminLoginPage: React.FC = () => {
       } else {
         const newAttempts = attempts + 1;
         setAttempts(newAttempts);
+        bruteForceProtection.recordAttempt(identifier, false);
         
         if (newAttempts >= MAX_ATTEMPTS) {
           setIsLocked(true);
-          setError(`Too many failed attempts. Account locked for ${LOCKOUT_DURATION / 1000 / 60} minutes.`);
+          setError(`Account locked for ${LOCKOUT_DURATION / 1000 / 60} minutes due to multiple failed attempts.`);
           
           // Unlock after lockout duration
           setTimeout(() => {
@@ -73,14 +113,14 @@ const AdminLoginPage: React.FC = () => {
             setAttempts(0);
           }, LOCKOUT_DURATION);
         } else {
-          setError(`Invalid credentials. ${MAX_ATTEMPTS - newAttempts} attempt(s) remaining.`);
+          setError(`Authentication failed. ${MAX_ATTEMPTS - newAttempts} attempt(s) remaining before lockout.`);
         }
         
         // Clear password on failed attempt
         setCredentials(prev => ({ ...prev, password: '' }));
       }
       setLoading(false);
-    }, 1000 + Math.random() * 1000); // Random delay to prevent timing attacks
+    }, 2000 + Math.random() * 2000); // Longer random delay to prevent timing attacks
   };
 
   return (
@@ -109,11 +149,20 @@ const AdminLoginPage: React.FC = () => {
                   <AlertTriangle className="h-5 w-5 text-white" />
                 </div>
                 <span className="text-red-800 font-semibold">
-                  Admin access is monitored and logged
+                  All admin access is monitored, logged, and secured
                 </span>
               </div>
             </div>
 
+            {/* Honeypot field - hidden from users */}
+            <input
+              type="text"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              style={{ display: 'none' }}
+              tabIndex={-1}
+              autoComplete="off"
+            />
             {error && (
               <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-center space-x-3">
                 <div className="bg-red-500 p-1.5 rounded-lg">
@@ -145,10 +194,11 @@ const AdminLoginPage: React.FC = () => {
                   id="username"
                   type="text"
                   value={credentials.username}
-                  onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value }))}
+                  onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value.slice(0, 50) }))}
                   autoComplete="username"
                   required
                   disabled={isLocked}
+                  spellCheck={false}
                   className="input-premium pl-12"
                   placeholder="Enter username"
                 />
@@ -165,7 +215,7 @@ const AdminLoginPage: React.FC = () => {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={credentials.password}
-                  onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
+                  onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value.slice(0, 128) }))}
                   autoComplete="current-password"
                   required
                   disabled={isLocked}

@@ -3,6 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, Scissors, Loader, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
+import { 
+  validatePassword, 
+  validateEmail, 
+  sanitizeInput, 
+  rateLimiter,
+  bruteForceProtection 
+} from '../../utils/security';
 
 const SignUpForm: React.FC = () => {
   const { isConnected: isSupabaseConnected } = useSupabaseConnection();
@@ -21,12 +28,19 @@ const SignUpForm: React.FC = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [passwordValidation, setPasswordValidation] = useState({ isValid: false, errors: [] as string[] });
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Sanitize inputs
+    const cleanFirstName = sanitizeInput(formData.firstName.trim(), 50);
+    const cleanLastName = sanitizeInput(formData.lastName.trim(), 50);
+    const cleanEmail = sanitizeInput(formData.email.trim().toLowerCase(), 254);
+    const cleanPassword = formData.password.trim();
 
     if (!isSupabaseConnected) {
       setError('Database not connected. Please connect to Supabase to create an account.');
@@ -35,41 +49,41 @@ const SignUpForm: React.FC = () => {
     }
 
     // Enhanced validation
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+    if (!cleanFirstName || !cleanLastName) {
       setError('First name and last name are required');
       setLoading(false);
       return;
     }
 
-    if (formData.firstName.length > 50 || formData.lastName.length > 50) {
+    if (cleanFirstName.length < 2 || cleanLastName.length < 2) {
+      setError('Names must be at least 2 characters long');
+      setLoading(false);
+      return;
+    }
+
+    if (cleanFirstName.length > 50 || cleanLastName.length > 50) {
       setError('Name fields must be 50 characters or less');
       setLoading(false);
       return;
     }
 
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
+    if (!validateEmail(cleanEmail)) {
       setError('Please enter a valid email address');
       setLoading(false);
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (cleanPassword !== formData.confirmPassword.trim()) {
       setError('Passwords do not match');
       setLoading(false);
       return;
     }
 
     // Enhanced password validation
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      setLoading(false);
-      return;
-    }
-
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      setError('Password must contain at least one uppercase letter, one lowercase letter, and one number');
+    const passwordCheck = validatePassword(cleanPassword);
+    if (!passwordCheck.isValid) {
+      setError(passwordCheck.errors[0]);
       setLoading(false);
       return;
     }
@@ -80,14 +94,31 @@ const SignUpForm: React.FC = () => {
       return;
     }
 
+    // Rate limiting protection  
+    const identifier = cleanEmail;
+    if (rateLimiter.isRateLimited(identifier, 3, 10 * 60 * 1000)) { // 3 attempts per 10 minutes
+      setError('Too many signup attempts. Please wait 10 minutes before trying again.');
+      setLoading(false);
+      return;
+    }
+
+    // Check for disposable email domains (basic check)
+    const disposableDomains = ['tempmail.com', '10minutemail.com', 'guerrillamail.com', 'mailinator.com'];
+    const emailDomain = cleanEmail.split('@')[1]?.toLowerCase();
+    if (disposableDomains.includes(emailDomain)) {
+      setError('Please use a permanent email address');
+      setLoading(false);
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
+        email: cleanEmail,
+        password: cleanPassword,
         options: {
           data: {
-            first_name: formData.firstName.trim(),
-            last_name: formData.lastName.trim(),
+            first_name: cleanFirstName,
+            last_name: cleanLastName,
             user_type: formData.userType,
             communication_consent: formData.communicationConsent,
             sms_consent: formData.communicationConsent,
@@ -116,6 +147,10 @@ const SignUpForm: React.FC = () => {
         setError('An account with this email already exists. Please sign in instead.');
       } else if (error.message?.includes('Invalid email')) {
         setError('Please enter a valid email address.');
+      } else if (error.message?.includes('Password should be at least')) {
+        setError('Password does not meet security requirements.');
+      } else if (error.message?.includes('Signup is disabled')) {
+        setError('Account creation is temporarily disabled. Please try again later.');
       } else if (error.message?.includes('Supabase not configured')) {
         setError('Service temporarily unavailable. Please try again later.');
       } else {
@@ -123,10 +158,20 @@ const SignUpForm: React.FC = () => {
       }
     } finally {
       setLoading(false);
+      // Clear sensitive data on error
+      if (error) {
+        setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
+      }
     }
   };
 
   const handleInputChange = (field: string, value: string) => {
+    // Real-time password validation
+    if (field === 'password') {
+      const validation = validatePassword(value);
+      setPasswordValidation(validation);
+    }
+    
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -201,8 +246,10 @@ const SignUpForm: React.FC = () => {
                   id="firstName"
                   type="text"
                   value={formData.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
+                  onChange={(e) => handleInputChange('firstName', e.target.value.slice(0, 50))}
                   required
+                  autoComplete="given-name"
+                  spellCheck={false}
                  className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
                   placeholder="First name"
                 />
@@ -215,8 +262,10 @@ const SignUpForm: React.FC = () => {
                   id="lastName"
                   type="text"
                   value={formData.lastName}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
+                  onChange={(e) => handleInputChange('lastName', e.target.value.slice(0, 50))}
                   required
+                  autoComplete="family-name"
+                  spellCheck={false}
                  className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
                   placeholder="Last name"
                 />
@@ -236,8 +285,10 @@ const SignUpForm: React.FC = () => {
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  onChange={(e) => handleInputChange('email', e.target.value.slice(0, 254))}
                   required
+                  autoComplete="email"
+                  spellCheck={false}
                  className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
                   placeholder="Enter your email"
                 />
@@ -257,8 +308,9 @@ const SignUpForm: React.FC = () => {
                   id="password"
                   type={showPassword.password ? 'text' : 'password'}
                   value={formData.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  onChange={(e) => handleInputChange('password', e.target.value.slice(0, 128))}
                   required
+                  autoComplete="new-password"
                  className="w-full pl-12 pr-12 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
                   placeholder="Create a password"
                 />
@@ -276,6 +328,32 @@ const SignUpForm: React.FC = () => {
               </div>
             </div>
 
+            {/* Password Strength Indicator */}
+            {formData.password && (
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Password Strength</span>
+                  <span className={`text-xs font-semibold ${
+                    passwordValidation.isValid ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {passwordValidation.isValid ? 'Strong' : 'Weak'}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  {passwordValidation.errors.length > 0 && (
+                    <ul className="text-xs text-red-600 space-y-1">
+                      {passwordValidation.errors.slice(0, 3).map((error, index) => (
+                        <li key={index}>• {error}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {passwordValidation.isValid && (
+                    <p className="text-xs text-green-600 font-medium">✓ Password meets all requirements</p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Confirm Password */}
             <div>
              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2 text-center">
@@ -289,8 +367,9 @@ const SignUpForm: React.FC = () => {
                   id="confirmPassword"
                   type={showPassword.confirmPassword ? 'text' : 'password'}
                   value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                  onChange={(e) => handleInputChange('confirmPassword', e.target.value.slice(0, 128))}
                   required
+                  autoComplete="new-password"
                  className="w-full pl-12 pr-12 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
                   placeholder="Confirm your password"
                 />

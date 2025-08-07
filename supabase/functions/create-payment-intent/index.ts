@@ -24,12 +24,77 @@ interface CreatePaymentIntentRequest {
   depositAmount?: number;
 }
 
+// Rate limiting map for payment attempts
+const paymentAttempts = new Map<string, { count: number; lastAttempt: number }>();
+
+const isRateLimited = (identifier: string, maxAttempts: number = 5, windowMs: number = 15 * 60 * 1000): boolean => {
+  const now = Date.now();
+  const attempts = paymentAttempts.get(identifier);
+  
+  if (!attempts) {
+    paymentAttempts.set(identifier, { count: 1, lastAttempt: now });
+    return false;
+  }
+  
+  if (now - attempts.lastAttempt > windowMs) {
+    paymentAttempts.set(identifier, { count: 1, lastAttempt: now });
+    return false;
+  }
+  
+  if (attempts.count >= maxAttempts) {
+    return true;
+  }
+  
+  attempts.count++;
+  attempts.lastAttempt = now;
+  paymentAttempts.set(identifier, attempts);
+  
+  return false;
+};
+
+const sanitizeInput = (input: string, maxLength: number = 255): string => {
+  if (typeof input !== 'string') return '';
+  
+  return input
+    .trim()
+    .slice(0, maxLength)
+    .replace(/<[^>]*>/g, '')
+    .replace(/[<>&"']/g, (match) => {
+      const entities: { [key: string]: string } = {
+        '<': '&lt;',
+        '>': '&gt;',
+        '&': '&amp;',
+        '"': '&quot;',
+        "'": '&#x27;'
+      };
+      return entities[match] || match;
+    });
+};
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    // Get client IP for rate limiting
+    const clientIP = req.headers.get('x-forwarded-for') || 
+                    req.headers.get('x-real-ip') || 
+                    'unknown';
+
+    // Rate limiting by IP
+    if (isRateLimited(`payment_${clientIP}`, 5, 15 * 60 * 1000)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Too many payment attempts. Please wait 15 minutes before trying again.'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 429,
+        },
+      )
+    }
+
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -67,6 +132,7 @@ Deno.serve(async (req) => {
       depositAmount = 0
     } = requestData;
 
+    // Comprehensive input validation
     if (!barberId || !clientId || !serviceId || !appointmentDate || !appointmentTime || !clientDetails || !totalAmount) {
       return new Response(
         JSON.stringify({
@@ -80,6 +146,46 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Validate UUIDs
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(barberId) && !barberId.startsWith('csv-')) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid barber identifier'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
+
+    if (!uuidRegex.test(clientId)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid client identifier'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
+
+    if (!uuidRegex.test(serviceId)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid service identifier'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
     // Validate input formats
     if (typeof totalAmount !== 'number' || totalAmount <= 0 || totalAmount > 10000) {
       return new Response(
@@ -94,6 +200,18 @@ Deno.serve(async (req) => {
       )
     }
 
+    if (typeof depositAmount !== 'number' || depositAmount < 0 || depositAmount > totalAmount) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid deposit amount'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
     // Validate date format
     if (!/^\d{4}-\d{2}-\d{2}$/.test(appointmentDate)) {
       return new Response(
@@ -108,6 +226,40 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Validate date is not in the past
+    const appointmentDateObj = new Date(appointmentDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (appointmentDateObj < today) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Cannot book appointments in the past'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
+
+    // Validate date is not too far in the future (90 days)
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 90);
+    
+    if (appointmentDateObj > maxDate) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Cannot book appointments more than 90 days in advance'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
     // Validate time format
     if (!/^\d{2}:\d{2}$/.test(appointmentTime)) {
       return new Response(
@@ -122,15 +274,85 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Validate business hours (basic check)
+    const [hours, minutes] = appointmentTime.split(':').map(Number);
+    if (hours < 6 || hours > 22 || minutes % 15 !== 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid appointment time'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
     // Sanitize client details
     const sanitizedDetails = {
-      firstName: clientDetails.firstName?.trim().slice(0, 50) || '',
-      lastName: clientDetails.lastName?.trim().slice(0, 50) || '',
+      firstName: sanitizeInput(clientDetails.firstName, 50),
+      lastName: sanitizeInput(clientDetails.lastName, 50),
       phone: clientDetails.phone?.replace(/\D/g, '').slice(0, 15) || '',
-      email: clientDetails.email?.trim().slice(0, 254) || '',
-      notes: clientDetails.notes?.trim().slice(0, 500).replace(/<[^>]*>/g, '') || ''
+      email: sanitizeInput(clientDetails.email, 254).toLowerCase(),
+      notes: sanitizeInput(clientDetails.notes || '', 500)
     };
 
+    // Additional validation for sanitized details
+    if (!sanitizedDetails.firstName || sanitizedDetails.firstName.length < 2) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Valid first name is required'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
+
+    if (!sanitizedDetails.lastName || sanitizedDetails.lastName.length < 2) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Valid last name is required'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
+
+    // Enhanced email validation
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    if (!emailRegex.test(sanitizedDetails.email)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Valid email address is required'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
+
+    // Enhanced phone validation
+    const cleanPhone = sanitizedDetails.phone;
+    if (!cleanPhone || cleanPhone.length < 10 || cleanPhone.length > 15 || !/^\d+$/.test(cleanPhone)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Valid phone number is required'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
     // Get barber's Stripe account for Connect transfers
     const { data: barberData, error: barberError } = await supabase
       .from('barber_profiles')
@@ -237,6 +459,19 @@ Deno.serve(async (req) => {
     const platformFeeAmount = Math.round(totalAmount * 0.01 * 100); // in cents
     const amountInCents = Math.round(totalAmount * 100); // Convert to cents for Stripe
 
+    // Validate fee calculations
+    if (platformFeeAmount < 0 || platformFeeAmount > amountInCents * 0.1) { // Max 10% platform fee
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid fee calculation'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
     // Create payment intent with Connect transfer
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountInCents,
@@ -249,13 +484,14 @@ Deno.serve(async (req) => {
       metadata: {
         barber_id: barberId,
         service_id: serviceId,
-        client_name: `${clientDetails.firstName} ${clientDetails.lastName}`,
+        client_name: `${sanitizedDetails.firstName} ${sanitizedDetails.lastName}`,
         appointment_date: appointmentDate,
         appointment_time: appointmentTime,
-        business_name: barberData.business_name
+        business_name: sanitizeInput(barberData.business_name, 100)
       },
       description: `${serviceData.name} at ${barberData.business_name}`,
-      receipt_email: clientDetails.email
+      receipt_email: sanitizedDetails.email,
+      statement_descriptor: 'KUTABLE*' + sanitizeInput(barberData.business_name, 15).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 15)
     })
 
     // Create pending booking record

@@ -12,30 +12,104 @@ interface SMSRequest {
   type: 'booking_confirmation' | 'booking_reminder' | 'booking_update';
 }
 
+// Rate limiting for SMS sends
+const smsAttempts = new Map<string, { count: number; lastAttempt: number }>();
+
+const isRateLimited = (identifier: string, maxAttempts: number = 5, windowMs: number = 60 * 60 * 1000): boolean => {
+  const now = Date.now();
+  const attempts = smsAttempts.get(identifier);
+  
+  if (!attempts) {
+    smsAttempts.set(identifier, { count: 1, lastAttempt: now });
+    return false;
+  }
+  
+  if (now - attempts.lastAttempt > windowMs) {
+    smsAttempts.set(identifier, { count: 1, lastAttempt: now });
+    return false;
+  }
+  
+  if (attempts.count >= maxAttempts) {
+    return true;
+  }
+  
+  attempts.count++;
+  attempts.lastAttempt = now;
+  smsAttempts.set(identifier, attempts);
+  
+  return false;
+};
+
+const sanitizeInput = (input: string, maxLength: number = 255): string => {
+  if (typeof input !== 'string') return '';
+  
+  return input
+    .trim()
+    .slice(0, maxLength)
+    .replace(/<[^>]*>/g, '')
+    .replace(/[<>&"']/g, '');
+};
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    // Get client IP for rate limiting
+    const clientIP = req.headers.get('x-forwarded-for') || 
+                    req.headers.get('x-real-ip') || 
+                    'unknown';
+
+    // Rate limiting by IP
+    if (isRateLimited(`sms_${clientIP}`, 10, 60 * 60 * 1000)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'SMS rate limit exceeded. Please wait before sending more messages.'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 429,
+        },
+      )
+    }
+
     const { to, message, type }: SMSRequest = await req.json()
 
     if (!to || !message) {
       throw new Error('Missing required fields: to and message are required')
     }
 
+    // Enhanced input validation and sanitization
+    const sanitizedMessage = sanitizeInput(message, 1600);
+    const sanitizedTo = to.replace(/[^\d\+\-\(\)\s]/g, '');
+    const sanitizedType = type;
+
     // Security: Validate input lengths and content
-    if (message.length > 1600) { // SMS limit
+    if (sanitizedMessage.length > 1600) { // SMS limit
       throw new Error('Message too long for SMS delivery')
     }
 
-    if (message.length < 1) {
+    if (sanitizedMessage.length < 1) {
       throw new Error('Message cannot be empty')
     }
 
+    // Check for spam patterns in message
+    const spamPatterns = [
+      /click here/gi,
+      /free money/gi,
+      /urgent/gi,
+      /congratulations/gi,
+      /winner/gi,
+      /http[s]?:\/\/(?!kutable\.com)/gi // Block external URLs except our domain
+    ];
+    
+    if (spamPatterns.some(pattern => pattern.test(sanitizedMessage))) {
+      throw new Error('Message contains prohibited content')
+    }
     // Validate phone number format more strictly
     const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-    const cleanPhone = to.replace(/\D/g, '');
+    const cleanPhone = sanitizedTo.replace(/\D/g, '');
     
     if (!phoneRegex.test(cleanPhone) || cleanPhone.length < 10 || cleanPhone.length > 15) {
       throw new Error('Invalid phone number format')
@@ -43,10 +117,14 @@ Deno.serve(async (req) => {
 
     // Validate message type
     const validTypes = ['booking_confirmation', 'booking_reminder', 'booking_update'];
-    if (!validTypes.includes(type)) {
+    if (!validTypes.includes(sanitizedType)) {
       throw new Error('Invalid message type')
     }
 
+    // Additional rate limiting per phone number
+    if (isRateLimited(`phone_${cleanPhone}`, 5, 60 * 60 * 1000)) {
+      throw new Error('Too many messages sent to this number. Please wait before sending more.')
+    }
     // Get Twilio credentials from environment
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID')
     const authToken = Deno.env.get('TWILIO_AUTH_TOKEN')
@@ -94,14 +172,14 @@ Deno.serve(async (req) => {
     const body = new URLSearchParams({
       To: formattedPhone,
       From: fromNumber,
-      Body: message,
+      Body: sanitizedMessage,
     })
 
     console.log('Sending SMS via Twilio:', {
       to: formattedPhone,
       from: fromNumber,
-      type: type,
-      messageLength: message.length
+      type: sanitizedType,
+      messageLength: sanitizedMessage.length
     });
     const response = await fetch(twilioUrl, {
       method: 'POST',

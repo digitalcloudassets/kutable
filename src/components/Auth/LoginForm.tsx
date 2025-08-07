@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Loader, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
+import { rateLimiter, bruteForceProtection, sanitizeInput, validateEmail } from '../../utils/security';
 
 const LoginForm: React.FC = () => {
   const { isConnected: isSupabaseConnected } = useSupabaseConnection();
@@ -11,12 +12,17 @@ const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [attemptCount, setAttemptCount] = useState(0);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Enhanced input validation and sanitization
+    const cleanEmail = sanitizeInput(email.trim().toLowerCase(), 254);
+    const cleanPassword = password.trim();
 
     if (!isSupabaseConnected) {
       setError('Database not connected. Please connect to Supabase to sign in.');
@@ -25,27 +31,49 @@ const LoginForm: React.FC = () => {
     }
 
     // Basic validation
-    if (!email.trim() || !password.trim()) {
+    if (!cleanEmail || !cleanPassword) {
       setError('Please enter both email and password');
       setLoading(false);
       return;
     }
 
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!validateEmail(cleanEmail)) {
       setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    // Rate limiting protection
+    const identifier = cleanEmail;
+    if (rateLimiter.isRateLimited(identifier, 5, 15 * 60 * 1000)) { // 5 attempts per 15 minutes
+      setError('Too many login attempts. Please wait 15 minutes before trying again.');
+      setLoading(false);
+      return;
+    }
+
+    // Brute force protection
+    if (bruteForceProtection.isBlocked(identifier)) {
+      setError('Account temporarily locked due to multiple failed attempts. Please try again later.');
       setLoading(false);
       return;
     }
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: cleanEmail,
+        password: cleanPassword,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Record failed attempt
+        bruteForceProtection.recordAttempt(identifier, false);
+        setAttemptCount(prev => prev + 1);
+        throw error;
+      }
+
+      // Record successful attempt
+      bruteForceProtection.recordAttempt(identifier, true);
 
       // Check if user came from claim flow
       const claimReturnUrl = localStorage.getItem('claim_return_url');
@@ -60,16 +88,22 @@ const LoginForm: React.FC = () => {
       console.error('Login error:', error);
       
       if (error.message?.includes('Invalid login credentials')) {
-        setError('Invalid email or password. Please try again.');
+        setError(`Invalid email or password. ${attemptCount >= 2 ? 'Account will be temporarily locked after multiple failed attempts.' : ''}`);
       } else if (error.message?.includes('Too many requests')) {
         setError('Too many login attempts. Please wait a few minutes before trying again.');
       } else if (error.message?.includes('Supabase not configured')) {
         setError('Service temporarily unavailable. Please try again later.');
+      } else if (error.message?.includes('Email not confirmed')) {
+        setError('Please check your email and confirm your account before signing in.');
       } else {
         setError('Login failed. Please check your credentials and try again.');
       }
     } finally {
       setLoading(false);
+      // Clear password field on any error for security
+      if (error) {
+        setPassword('');
+      }
     }
   };
 
@@ -113,8 +147,10 @@ const LoginForm: React.FC = () => {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value.slice(0, 254))}
                   required
+                  autoComplete="email"
+                  spellCheck={false}
                   className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
                   placeholder="Enter your email"
                 />
@@ -133,8 +169,9 @@ const LoginForm: React.FC = () => {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value.slice(0, 128))}
                   required
+                  autoComplete="current-password"
                   className="w-full pl-12 pr-12 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
                   placeholder="Enter your password"
                 />

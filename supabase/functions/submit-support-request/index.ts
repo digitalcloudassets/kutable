@@ -15,12 +15,70 @@ interface SupportRequest {
   userId?: string;
 }
 
+// Rate limiting for support requests
+const supportAttempts = new Map<string, { count: number; lastAttempt: number }>();
+
+const isRateLimited = (identifier: string, maxAttempts: number = 3, windowMs: number = 60 * 60 * 1000): boolean => {
+  const now = Date.now();
+  const attempts = supportAttempts.get(identifier);
+  
+  if (!attempts) {
+    supportAttempts.set(identifier, { count: 1, lastAttempt: now });
+    return false;
+  }
+  
+  if (now - attempts.lastAttempt > windowMs) {
+    supportAttempts.set(identifier, { count: 1, lastAttempt: now });
+    return false;
+  }
+  
+  if (attempts.count >= maxAttempts) {
+    return true;
+  }
+  
+  attempts.count++;
+  attempts.lastAttempt = now;
+  supportAttempts.set(identifier, attempts);
+  
+  return false;
+};
+
+const sanitizeInput = (input: string, maxLength: number = 255): string => {
+  if (typeof input !== 'string') return '';
+  
+  return input
+    .trim()
+    .slice(0, maxLength)
+    .replace(/<[^>]*>/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/data:/gi, '')
+    .replace(/[<>&"']/g, '');
+};
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    // Get client IP for rate limiting
+    const clientIP = req.headers.get('x-forwarded-for') || 
+                    req.headers.get('x-real-ip') || 
+                    'unknown';
+
+    // Rate limiting by IP
+    if (isRateLimited(`support_${clientIP}`, 3, 60 * 60 * 1000)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Too many support requests. Please wait an hour before submitting another request.'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 429,
+        },
+      )
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -56,12 +114,27 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Validate input lengths and content
-    if (name.length > 100 || subject.length > 200 || message.length > 2000) {
+    // Enhanced validation for each field
+    if (typeof name !== 'string' || typeof email !== 'string' || 
+        typeof category !== 'string' || typeof subject !== 'string' || 
+        typeof message !== 'string') {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Input too long. Name: 100 chars, Subject: 200 chars, Message: 2000 chars max.'
+          error: 'Invalid input format'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
+    // Validate input lengths and content
+    if (name.length > 100 || subject.length > 200 || message.length > 5000) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Input too long. Name: 100 chars, Subject: 200 chars, Message: 5000 chars max.'
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -70,8 +143,21 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Validate minimum lengths
+    if (name.length < 2 || subject.length < 5 || message.length < 10) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Input too short. Please provide meaningful content.'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
     if (!emailRegex.test(email)) {
       return new Response(
         JSON.stringify({
@@ -85,9 +171,57 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Sanitize inputs (basic XSS prevention)
-    const sanitizeInput = (input: string) => input.replace(/<[^>]*>/g, '').trim();
+    // Validate category
+    const validCategories = ['general', 'booking', 'payment', 'barber', 'technical', 'billing'];
+    if (!validCategories.includes(category)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid category selected'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
+
+    // Check for spam content
+    const spamPatterns = [
+      /free money/gi,
+      /click here/gi,
+      /urgent.*action/gi,
+      /limited.*time/gi,
+      /congratulations.*winner/gi
+    ];
     
+    const contentToCheck = `${subject} ${message}`.toLowerCase();
+    if (spamPatterns.some(pattern => pattern.test(contentToCheck))) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Request contains prohibited content'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
+    }
+
+    // Rate limiting per email
+    if (isRateLimited(`email_${email}`, 2, 60 * 60 * 1000)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Too many requests from this email. Please wait an hour before submitting another request.'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 429,
+        },
+      )
+    }
     const sanitizedData = {
       name: sanitizeInput(name),
       email: sanitizeInput(email),
