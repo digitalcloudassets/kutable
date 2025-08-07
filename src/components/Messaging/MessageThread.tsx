@@ -40,27 +40,70 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
           await refreshUnreadCount();
         }
         
-        // Subscribe to real-time updates
-        const unsubscribe = messagingService.subscribeToMessages(
-          conversation.bookingId,
-          (newMessage) => {
-            setMessages(prev => [...prev, newMessage]);
-            scrollToBottom();
-            
-            // Mark as read if it's for us
-            if (newMessage.receiver_id === user.id) {
-              setTimeout(() => {
-                messagingService.markAsRead(newMessage.id, user.id);
-                // Refresh unread count after marking as read
-                if (refreshUnreadCount) {
-                  refreshUnreadCount();
-                }
-              }, 1000);
+        // Subscribe to real-time updates with better error handling
+        try {
+          const unsubscribe = messagingService.subscribeToMessages(
+            conversation.bookingId,
+            (newMessage) => {
+              setMessages(prev => [...prev, newMessage]);
+              scrollToBottom();
+              
+              // Mark as read if it's for us
+              if (newMessage.receiver_id === user.id) {
+                setTimeout(() => {
+                  messagingService.markAsRead(newMessage.id, user.id);
+                  // Refresh unread count after marking as read
+                  if (refreshUnreadCount) {
+                    refreshUnreadCount();
+                  }
+                }, 1000);
+              }
             }
-          }
-        );
+          );
 
-        return unsubscribe;
+          return unsubscribe;
+        } catch (realtimeError) {
+          console.warn('Real-time subscription failed, falling back to polling:', realtimeError);
+          
+          // Fallback: Poll for new messages every 3 seconds
+          const pollInterval = setInterval(async () => {
+            try {
+              const latestMessages = await messagingService.getMessagesForBooking(
+                conversation.bookingId,
+                user.id
+              );
+              
+              setMessages(prev => {
+                const lastMessageTime = prev.length > 0 ? prev[prev.length - 1].created_at : '';
+                const newMessages = latestMessages.filter(msg => msg.created_at > lastMessageTime);
+                
+                if (newMessages.length > 0) {
+                  scrollToBottom();
+                  
+                  // Mark new messages as read if they're for us
+                  newMessages.forEach(msg => {
+                    if (msg.receiver_id === user.id) {
+                      setTimeout(() => {
+                        messagingService.markAsRead(msg.id, user.id);
+                        if (refreshUnreadCount) {
+                          refreshUnreadCount();
+                        }
+                      }, 1000);
+                    }
+                  });
+                  
+                  return latestMessages;
+                }
+                
+                return prev;
+              });
+            } catch (pollError) {
+              console.warn('Message polling failed:', pollError);
+            }
+          }, 3000);
+          
+          return () => clearInterval(pollInterval);
+        }
       }
     };
 
