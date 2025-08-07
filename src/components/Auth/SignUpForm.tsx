@@ -134,7 +134,13 @@ const SignUpForm: React.FC = () => {
       const claimReturnUrl = localStorage.getItem('claim_return_url');
       if (claimReturnUrl) {
         localStorage.removeItem('claim_return_url');
-        navigate(claimReturnUrl);
+        // Only redirect to claim flow if user is a barber and URL is a claim URL
+        if (formData.userType === 'barber' && claimReturnUrl.includes('/claim/')) {
+          navigate(claimReturnUrl);
+        } else {
+          // Navigate to onboarding for new users
+          navigate(`/onboarding?type=${formData.userType}`);
+        }
       } else {
         // Navigate to onboarding for new users
         navigate(`/onboarding?type=${formData.userType}`);

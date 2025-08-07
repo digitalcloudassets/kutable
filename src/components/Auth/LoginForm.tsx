@@ -79,7 +79,12 @@ const LoginForm: React.FC = () => {
       const claimReturnUrl = localStorage.getItem('claim_return_url');
       if (claimReturnUrl) {
         localStorage.removeItem('claim_return_url');
-        navigate(claimReturnUrl);
+        // Only redirect to claim flow if the URL is actually a claim URL
+        if (claimReturnUrl.includes('/claim/')) {
+          navigate(claimReturnUrl);
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         navigate('/dashboard');
       }

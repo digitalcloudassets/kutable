@@ -55,13 +55,15 @@ const ClaimFlow: React.FC = () => {
   });
 
   useEffect(() => {
-    // Store claim URL for auth redirect
-    localStorage.setItem('claim_return_url', location.pathname);
+    // Store claim URL for auth redirect only if user is not already logged in
+    if (!user) {
+      localStorage.setItem('claim_return_url', location.pathname);
+    }
     
     if (barberId) {
       fetchBarberProfile();
     }
-  }, [barberId]);
+  }, [barberId, user]);
 
   useEffect(() => {
     // Enable editing when user logs in
