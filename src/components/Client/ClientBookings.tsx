@@ -23,6 +23,7 @@ import DatePicker from 'react-datepicker';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import RescheduleModal from '../Booking/RescheduleModal';
+import { NotificationManager, BookingNotifications } from '../../utils/notifications';
 import 'react-datepicker/dist/react-datepicker.css';
 
 interface Booking {
@@ -193,7 +194,7 @@ const ClientBookings: React.FC = () => {
     const hoursUntilAppointment = (appointmentDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
     if (hoursUntilAppointment < 24) {
-      alert('Bookings can only be cancelled at least 24 hours in advance. Please contact the barber directly for last-minute changes.');
+      NotificationManager.error('Bookings can only be cancelled at least 24 hours in advance. Please contact the barber directly for last-minute changes.');
       return;
     }
 
@@ -235,9 +236,11 @@ const ClientBookings: React.FC = () => {
         console.warn('Failed to send SMS notification:', smsError);
       }
 
+      BookingNotifications.bookingCancelled();
+
     } catch (error) {
       console.error('Error cancelling booking:', error);
-      alert('Failed to cancel booking. Please try again.');
+      NotificationManager.error('Failed to cancel booking. Please try again.');
     } finally {
       setCancellingBooking(null);
     }
@@ -305,8 +308,14 @@ const ClientBookings: React.FC = () => {
         }
       }
       
+      BookingNotifications.bookingRescheduled(
+        format(newDate, 'EEEE, MMM d'),
+        newTime
+      );
+      
     } catch (error) {
       console.error('Error rescheduling booking:', error);
+      NotificationManager.error('Failed to reschedule booking. Please try again.');
       throw error;
     }
   };
