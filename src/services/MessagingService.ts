@@ -41,6 +41,10 @@ export interface Conversation {
     name: string;
     type: 'barber' | 'client';
     avatar?: string;
+    needsClaim?: boolean;
+    hasValidProfile?: boolean;
+    isPlaceholder?: boolean;
+    canReceiveMessages?: boolean;
   };
   booking: {
     id: string;
@@ -186,15 +190,6 @@ export class MessagingService {
         // Determine the other participant (who the user would message)
         const participant = isUserBarber 
           ? {
-              id: clientUserId || '',
-              name: `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`,
-              type: 'client' as const,
-              avatar: undefined,
-              needsClaim: !clientUserId, // Flag if client hasn't claimed profile
-            }
-        // Determine the other participant (who the user would message)
-        : isUserBarber 
-          ? {
               id: effectiveClientUserId || `placeholder_client_${booking.id}`,
               name: effectiveClientName,
               type: 'client' as const,
@@ -223,6 +218,7 @@ export class MessagingService {
           userRole: isUserBarber ? 'barber' : 'client',
           participantId: participant.id,
           participantName: participant.name,
+          canReceiveMessages: participant.canReceiveMessages
         });
 
         // Get last message for this booking
