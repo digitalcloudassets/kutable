@@ -45,26 +45,31 @@ const DashboardNavigation = React.memo<DashboardNavigationProps>(({
   ];
 
   const barberNavButtons: NavButton[] = [
-    { id: 'profile', label: 'Profile', icon: Building },
+    { id: 'profile', label: 'Profile', icon: User },
     { id: 'bookings', label: 'Bookings', icon: Calendar },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'services', label: 'Services', icon: Scissors },
+    { id: 'gallery', label: 'Gallery', icon: Camera },
+    { id: 'hours', label: 'Hours', icon: Clock },
     { id: 'privacy', label: 'Privacy', icon: Settings }
   ];
 
   const navButtons = userType === 'client' ? clientNavButtons : barberNavButtons;
 
   return (
-    <div className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 mb-8">
-      <div className={`grid gap-2 ${
+    <div className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 mb-8 overflow-x-auto">
+      <div className={`${
         userType === 'client' 
-          ? 'grid-cols-3' 
-          : 'grid-cols-2 lg:grid-cols-4'
+          ? 'grid grid-cols-3 gap-2' 
+          : 'flex space-x-2 lg:grid lg:grid-cols-7 lg:gap-2 lg:space-x-0'
       }`}>
         {navButtons.map((button) => (
           <button
             key={button.id}
             onClick={() => handleTabClick(button.id, button.action, button.to)}
-            className={`flex-1 py-4 px-6 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
+            className={`${
+              userType === 'barber' ? 'flex-shrink-0 min-w-[120px] lg:flex-1' : 'flex-1'
+            } py-4 px-3 lg:px-6 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
               activeTab === button.id
                 ? 'bg-primary-500 text-white shadow-lg'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
