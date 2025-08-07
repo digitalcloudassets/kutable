@@ -387,9 +387,9 @@ const BarberProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 page-container">
+    <div className="min-h-screen bg-gray-50">
       {/* Header with background image */}
-      <div className="relative h-96 bg-gray-900 overflow-hidden -mt-24 pt-24">
+      <div className="relative h-96 bg-gray-900 overflow-hidden mt-20">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"></div>
         
@@ -401,7 +401,7 @@ const BarberProfilePage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
         
         {/* Back button */}
-        <div className="absolute top-6 left-6">
+        <div className="absolute top-6 left-6 z-20">
           <Link
             to="/barbers"
             className="glass-effect text-white p-4 rounded-2xl hover:bg-white/20 transition-all duration-200 flex items-center space-x-2 group"
@@ -449,10 +449,10 @@ const BarberProfilePage: React.FC = () => {
 
         {/* Claim Button */}
         {!barber.is_claimed && !isReservedSlug(barber.slug) && (
-          <div className="absolute top-6 right-6">
+          <div className="absolute top-6 right-6 z-20">
             <Link
               to={`/claim/${barber.id}`}
-              className="bg-gradient-to-r from-accent-500 to-accent-600 text-white px-8 py-4 rounded-2xl hover:from-accent-600 hover:to-accent-700 transition-all duration-200 font-semibold flex items-center space-x-3 shadow-premium-lg hover:scale-105"
+              className="bg-gradient-to-r from-accent-500 to-accent-600 text-white px-6 py-3 rounded-2xl hover:from-accent-600 hover:to-accent-700 transition-all duration-200 font-semibold flex items-center space-x-2 shadow-premium-lg hover:scale-105 whitespace-nowrap"
             >
               <Crown className="h-5 w-5" />
               <span>Claim This Listing</span>
