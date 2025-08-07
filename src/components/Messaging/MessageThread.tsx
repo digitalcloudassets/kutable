@@ -40,8 +40,8 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
           await refreshUnreadCount();
         }
         
-        // Subscribe to real-time updates
-        const unsubscribe = messagingService.subscribeToMessages(
+        // Subscribe to real-time updates using the new method
+        const unsubscribe = messagingService.subscribeToBookingMessages(
           conversation.bookingId,
           (newMessage) => {
             setMessages(prev => [...prev, newMessage]);
@@ -86,13 +86,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
 
     try {
       setLoading(true);
-      const messageData = await messagingService.getMessagesForBooking(
-        conversation.bookingId, 
-        user.id
-      );
+      const messageData = await messagingService.getMessagesForBooking(conversation.bookingId);
       setMessages(messageData);
     } catch (error) {
-      console.error('Error loading messages:', error);
       setError('Failed to load messages');
     } finally {
       setLoading(false);
@@ -155,7 +151,6 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
         await refreshUnreadCount();
       }
     } catch (error: any) {
-      console.error('Error sending message:', error);
       setError(error.message || 'Failed to send message');
     } finally {
       setSending(false);

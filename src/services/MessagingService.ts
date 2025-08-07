@@ -401,6 +401,29 @@ export class MessagingService {
     }
   }
 
+  async getMessagesForBooking(bookingId: string): Promise<Message[]> {
+    if (!isSupabaseConnected()) {
+      return [];
+    }
+
+    if (!bookingId || bookingId.length < 10) {
+      throw new Error('Invalid bookingId');
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('id, booking_id, sender_id, receiver_id, message_text, created_at, read_at')
+        .eq('booking_id', bookingId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return (data || []) as Message[];
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async sendMessage({ bookingId, receiverId, messageText }: SendMessageRequest): Promise<Message> {
     if (!isSupabaseConnected()) {
       throw new Error('Messaging is not available - please connect to Supabase');
@@ -496,6 +519,35 @@ export class MessagingService {
     } catch (error) {
       console.error('Error marking conversation as read:', error);
     }
+  }
+
+  subscribeToBookingMessages(bookingId: string, onInsert: (message: Message) => void): () => void {
+    if (!isSupabaseConnected()) {
+      return () => {};
+    }
+
+    const channel = supabase
+      .channel(`messages:booking:${bookingId}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'messages', 
+          filter: `booking_id=eq.${bookingId}` 
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          onInsert(newMessage);
+        }
+      )
+      .subscribe();
+
+    const unsubscribe = () => {
+      supabase.removeChannel(channel);
+    };
+
+    return unsubscribe;
   }
 
   subscribeToMessages(bookingId: string, callback: (message: Message) => void): () => void {
