@@ -200,7 +200,6 @@ const ConversationList: React.FC<ConversationListProps> = ({
                         {conversation.unreadCount}
                       </span>
                     )}
-                    </span>
                   </div>
 
                   {/* Last message */}
