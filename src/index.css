@@ -121,7 +121,7 @@ body {
 }
 
 .input-premium {
-  @apply w-full pl-4 pr-14 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400;
+  @apply w-full pl-4 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400;
   min-height: var(--touch-target-min);
   font-size: 16px; /* Prevent zoom on iOS */
 }
@@ -337,10 +337,9 @@ body {
   }
   
   .input-premium {
-    @apply py-4 text-base pr-16;
+    @apply py-4 text-base pr-4;
     font-size: 16px !important; /* Prevent zoom on iOS */
     min-height: 48px !important;
-    padding-right: 4rem !important; /* Extra space for copy/paste icons */
   }
   
   /* Navigation adjustments */
@@ -442,6 +441,28 @@ body {
     @apply mx-4;
   }
 }
+
+/* Remove any pseudo-elements that might be adding icons to inputs */
+input::-webkit-contacts-auto-fill-button,
+input::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
+
+/* Remove browser-generated icons in input fields */
+input::-ms-clear,
+input::-ms-reveal {
+  display: none !important;
+}
+
+/* Prevent any pseudo-elements from adding content to inputs */
+input::before,
+input::after,
+textarea::before,
+textarea::after {
+  content: none !important;
+  display: none !important;
+}
+
 /* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
   .dark-mode {
