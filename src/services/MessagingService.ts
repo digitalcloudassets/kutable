@@ -145,55 +145,68 @@ export class MessagingService {
       const conversations: Conversation[] = [];
 
       for (const booking of uniqueBookings) {
-        // Determine if current user is the barber for this booking
-        const isUserBarber = booking.barber_profiles?.user_id === userId;
+        // Enhanced validation for messaging participants
+        const barberUserId = booking.barber_profiles?.user_id;
+        const clientUserId = booking.client_profiles?.user_id;
         
-        // Validate participant data
-        if (!booking.barber_profiles?.user_id || !booking.client_profiles?.user_id) {
-          console.warn('Skipping conversation - missing profile user_id:', {
+        // Determine user role in this booking
+        const isUserBarber = barberUserId === userId;
+        const isUserClient = clientUserId === userId;
+        
+        // Data integrity check: skip if user is both barber and client
+        if (isUserBarber && isUserClient && barberUserId && clientUserId) {
+          console.warn('Skipping conversation - user is both barber and client:', {
             bookingId: booking.id,
-            barberUserId: booking.barber_profiles?.user_id,
-            clientUserId: booking.client_profiles?.user_id
+            userId: userId,
+            barberUserId,
+            clientUserId
           });
           continue;
         }
         
-        // Skip if barber and client are the same user (data integrity issue)
-        if (booking.barber_profiles.user_id === booking.client_profiles.user_id) {
-          console.warn('Skipping conversation - barber and client are same user:', {
+        // Skip if user is not involved in this booking at all
+        if (!isUserBarber && !isUserClient) {
+          console.warn('Skipping conversation - user not involved in booking:', {
             bookingId: booking.id,
-            userId: booking.barber_profiles.user_id
+            userId: userId,
+            barberUserId,
+            clientUserId
           });
           continue;
         }
         
-        const participant = isBarber 
+        // Determine the other participant (who the user would message)
+        const participant = isUserBarber 
           ? {
-              id: booking.client_profiles?.user_id || '',
+              id: clientUserId || '',
               name: `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`,
               type: 'client' as const,
-              avatar: undefined
+              avatar: undefined,
+              needsClaim: !clientUserId, // Flag if client hasn't claimed profile
+              hasValidProfile: !!clientUserId
             }
           : {
-              id: booking.barber_profiles?.user_id || '',
+              id: barberUserId || '',
               name: booking.barber_profiles?.business_name || '',
               type: 'barber' as const,
-              avatar: booking.barber_profiles?.profile_image_url || undefined
+              avatar: booking.barber_profiles?.profile_image_url || undefined,
+              needsClaim: !barberUserId, // Flag if barber hasn't claimed profile
+              hasValidProfile: !!barberUserId
             };
 
-        // Final validation: skip if participant ID is invalid or equals current user
-        if (!participant.id || participant.id.trim() === '' || participant.id === userId) {
-          console.warn('Skipping invalid conversation participant:', {
-            bookingId: booking.id,
-            participantId: participant.id,
-            currentUserId: userId,
-            participantType: participant.type
-          });
-          continue;
-        }
-        // Get last message and unread count
-        const { data: lastMessage } = await supabase
-          .from('messages')
+        // Enhanced logging for conversation inclusion
+        console.log('Processing conversation:', {
+          bookingId: booking.id,
+          userRole: isUserBarber ? 'barber' : 'client',
+          participantId: participant.id,
+          participantName: participant.name,
+          participantType: participant.type,
+          needsClaim: participant.needsClaim,
+          hasValidProfile: participant.hasValidProfile
+        });
+        
+        // Include conversation even if participant needs to claim profile
+        // This allows UI to show appropriate warnings instead of hiding conversations
           .select('*')
           .eq('booking_id', booking.id)
           .order('created_at', { ascending: false })
