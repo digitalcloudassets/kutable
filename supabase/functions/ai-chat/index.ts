@@ -408,6 +408,43 @@ What would you like to know about Kutable?`;
       if (!conversation) {
         logEvent('info', `[${requestId}] Creating new conversation`);
         try {
+          // Check if chat_conversations table exists
+          const { data: tableCheck, error: tableError } = await supabase
+            .from('chat_conversations')
+            .select('id')
+            .limit(1);
+          
+          if (tableError) {
+            logEvent('error', `[${requestId}] chat_conversations table not accessible`, {
+              error: tableError.message,
+              errorCode: tableError.code,
+              errorDetails: tableError.details,
+              errorHint: tableError.hint
+            });
+            
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: "Chat database not set up. Please run database migrations first.",
+                details: `Table access error: ${tableError.message || 'chat_conversations table missing'}`,
+                requestId,
+                debug: {
+                  errorCode: tableError.code,
+                  errorDetails: tableError.details,
+                  errorHint: tableError.hint,
+                  timestamp: new Date().toISOString(),
+                  solution: "Run supabase migrations to create chat tables"
+                }
+              }),
+              {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 503,
+              },
+            );
+          }
+          
+          logEvent('info', `[${requestId}] chat_conversations table is accessible`);
+          
           const { data: newConversation, error: conversationError } = await supabase
             .from('chat_conversations')
             .insert({
@@ -429,7 +466,7 @@ What would you like to know about Kutable?`;
               JSON.stringify({
                 success: false,
                 error: "Failed to create chat conversation",
-                details: `Database error: ${conversationError.message || 'Unknown database error'}`,
+                details: `Database error: ${conversationError?.message || conversationError?.details || conversationError?.hint || 'Unknown database error - check if migrations are applied'}`,
                 requestId,
                 debug: {
                   errorCode: conversationError.code,
@@ -456,7 +493,7 @@ What would you like to know about Kutable?`;
           });
           
           // Ensure we always have an error message
-          const errorMessage = conversationCreateError.message || 
+          const errorMessage = conversationCreateError?.message || 
                               conversationCreateError.toString() || 
                               'Unknown database error occurred';
           
@@ -464,11 +501,12 @@ What would you like to know about Kutable?`;
             JSON.stringify({
               success: false,
               error: "Failed to create chat conversation",
-              details: `Database error: ${errorMessage}`,
+              details: `Exception error: ${errorMessage}`,
               requestId,
               debug: {
-                errorType: conversationCreateError.constructor.name,
+                errorType: conversationCreateError?.constructor?.name || 'UnknownError',
                 originalError: conversationCreateError.toString(),
+                stackTrace: conversationCreateError?.stack || 'No stack trace available',
                 timestamp: new Date().toISOString()
               }
             }),
