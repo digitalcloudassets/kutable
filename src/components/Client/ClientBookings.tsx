@@ -82,14 +82,37 @@ const ClientBookings: React.FC = () => {
     if (!user) return;
 
     try {
-      // First, ensure user has a client profile
+      // First, find or fix the client profile for this user
       let clientProfile;
-      const { data: existingProfile } = await supabase
+      
+      // Try to find profile by user_id first
+      let { data: existingProfile } = await supabase
         .from('client_profiles')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
 
+      // If no profile found by user_id, try to find by email as fallback
+      if (!existingProfile) {
+        const { data: profileByEmail } = await supabase
+          .from('client_profiles')
+          .select('id, user_id')
+          .eq('email', user.email)
+          .maybeSingle();
+          
+        if (profileByEmail) {
+          // Update the user_id to match the authenticated user
+          const { error: updateError } = await supabase
+            .from('client_profiles')
+            .update({ user_id: user.id })
+            .eq('id', profileByEmail.id);
+            
+          if (!updateError) {
+            existingProfile = { id: profileByEmail.id };
+            console.log('Fixed client profile user_id mismatch');
+          }
+        }
+      }
       if (existingProfile) {
         clientProfile = existingProfile;
       } else {

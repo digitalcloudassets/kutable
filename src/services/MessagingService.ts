@@ -86,13 +86,37 @@ export class MessagingService {
 
       console.log('User barber profile:', barberProfile?.id || 'none');
       
-      // Get user's client profile if they have one
-      const { data: clientProfile } = await supabase
+      // Get user's client profile - try by user_id first, then by email as fallback
+      let { data: clientProfile } = await supabase
         .from('client_profiles')
         .select('id')
         .eq('user_id', userId)
         .maybeSingle();
 
+      // If no client profile found by user_id, try by email as fallback
+      if (!clientProfile) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          const { data: profileByEmail } = await supabase
+            .from('client_profiles')
+            .select('id, user_id')
+            .eq('email', user.email)
+            .maybeSingle();
+            
+          if (profileByEmail) {
+            // Update the user_id to match the authenticated user
+            const { error: updateError } = await supabase
+              .from('client_profiles')
+              .update({ user_id: userId })
+              .eq('id', profileByEmail.id);
+              
+            if (!updateError) {
+              clientProfile = { id: profileByEmail.id };
+              console.log('Fixed client profile user_id mismatch in messaging');
+            }
+          }
+        }
+      }
       console.log('User client profile:', clientProfile?.id || 'none');
       
       let allBookings: any[] = [];
