@@ -222,15 +222,17 @@ const ClientBookings: React.FC = () => {
       ));
       // Send rescheduling notifications
       try {
-        const { error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {
+        const { data: notificationResult, error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {
           body: {
             bookingId: bookingId,
-            event: 'booking_rescheduled'
+            event: 'booking_cancelled'
           }
         });
 
         if (notificationError) {
           console.warn('Failed to send rescheduling notifications:', notificationError);
+        } else if (notificationResult?.success) {
+          console.log('Cancellation notifications sent successfully');
         }
       } catch (notificationError) {
         console.warn('Notification error (rescheduling still succeeded):', notificationError);

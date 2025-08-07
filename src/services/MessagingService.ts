@@ -401,8 +401,8 @@ export class MessagingService {
           appointment_date,
           appointment_time,
           services(name),
-          barber_profiles(business_name, owner_name, user_id, phone, email, sms_consent, email_consent),
-          client_profiles(first_name, last_name, user_id, phone, email, sms_consent, email_consent)
+          barber_profiles(business_name, owner_name, user_id, phone, email, sms_consent, email_consent, communication_consent),
+          client_profiles(first_name, last_name, user_id, phone, email, sms_consent, email_consent, communication_consent)
         `)
         .eq('id', bookingId)
         .single();
@@ -423,21 +423,29 @@ export class MessagingService {
         ? `${receiverProfile.first_name} ${receiverProfile.last_name}`
         : receiverProfile.business_name;
 
-      // Send SMS notification if user has SMS enabled
-      if (receiverProfile.sms_consent && receiverProfile.phone) {
+      // Send SMS notification if user has SMS enabled (default to true for essential notifications)
+      const shouldSendSMS = (receiverProfile.sms_consent !== false) && receiverProfile.phone;
+      if (shouldSendSMS) {
         const smsMessage = `💬 New message from ${senderName}:\n\n"${messageText.slice(0, 100)}${messageText.length > 100 ? '...' : ''}"\n\nReply in your Kutable dashboard.\n\n- Kutable`;
         
-        await supabase.functions.invoke('send-sms', {
+        const { data: smsResult, error: smsError } = await supabase.functions.invoke('send-sms', {
           body: {
             to: receiverProfile.phone,
             message: smsMessage,
             type: 'booking_update'
           }
         });
+        
+        if (smsError) {
+          console.error('Failed to send SMS notification:', smsError);
+        } else if (smsResult?.success) {
+          console.log('SMS notification sent successfully to:', receiverProfile.phone);
+        }
       }
 
-      // Send email notification if user has email enabled
-      if (receiverProfile.email_consent && receiverProfile.email) {
+      // Send email notification if user has email enabled (default to true for essential notifications)
+      const shouldSendEmail = (receiverProfile.email_consent !== false) && receiverProfile.email;
+      if (shouldSendEmail) {
         const emailSubject = `New message from ${senderName} - Kutable`;
         const emailMessage = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -466,7 +474,7 @@ export class MessagingService {
           </div>
         `;
 
-        await supabase.functions.invoke('send-email', {
+        const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email', {
           body: {
             to: receiverProfile.email,
             name: receiverName,
@@ -475,6 +483,12 @@ export class MessagingService {
             type: 'message_notification'
           }
         });
+        
+        if (emailError) {
+          console.error('Failed to send email notification:', emailError);
+        } else if (emailResult?.success) {
+          console.log('Email notification sent successfully to:', receiverProfile.email);
+        }
       }
 
     } catch (error) {

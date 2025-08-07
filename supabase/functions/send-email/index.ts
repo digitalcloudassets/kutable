@@ -136,12 +136,12 @@ Deno.serve(async (req) => {
     // For now, we'll use Supabase's built-in email functionality
     // In production, you would integrate with SendGrid, Mailgun, or similar
     
-    console.log('Email would be sent:', {
+    console.log('Email notification (simulated):', {
       to: sanitizedTo,
       name: sanitizedName,
       subject: sanitizedSubject,
       type: sanitizedType,
-      messageLength: sanitizedMessage.length,
+      preview: sanitizedMessage.slice(0, 100) + '...',
       timestamp: new Date().toISOString()
     });
 

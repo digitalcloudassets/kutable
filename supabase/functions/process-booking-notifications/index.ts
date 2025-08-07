@@ -125,8 +125,15 @@ Deno.serve(async (req) => {
     if ((recipients === 'both' || recipients === 'barber') && booking.barber_profiles) {
       const barber = booking.barber_profiles;
       
+      console.log('Attempting to send notifications to barber:', {
+        phone: barber.phone,
+        email: barber.email,
+        sms_consent: barber.sms_consent,
+        email_consent: barber.email_consent
+      });
+      
       // SMS to barber
-      if (!skipSMS && barber.sms_consent && barber.phone) {
+      if (!skipSMS && (barber.sms_consent !== false) && barber.phone) {
         try {
           const smsMessage = this.generateBarberSMS(event, booking, formattedDate);
           const smsResponse = await fetch(`${supabaseUrl}/functions/v1/send-sms`, {
@@ -144,13 +151,19 @@ Deno.serve(async (req) => {
 
           const smsResult = await smsResponse.json();
           results.sms.barber = smsResult.success || false;
+          
+          if (smsResult.success) {
+            console.log('SMS sent successfully to barber:', barber.phone);
+          } else {
+            console.error('SMS failed to barber:', smsResult.error);
+          }
         } catch (error) {
           console.error('Error sending SMS to barber:', error);
         }
       }
 
       // Email to barber
-      if (!skipEmail && barber.email_consent && barber.email) {
+      if (!skipEmail && (barber.email_consent !== false) && barber.email) {
         try {
           const emailSubject = this.generateBarberEmailSubject(event, booking);
           const emailMessage = this.generateBarberEmailMessage(event, booking, formattedDate);
@@ -172,6 +185,12 @@ Deno.serve(async (req) => {
 
           const emailResult = await emailResponse.json();
           results.email.barber = emailResult.success || false;
+          
+          if (emailResult.success) {
+            console.log('Email sent successfully to barber:', barber.email);
+          } else {
+            console.error('Email failed to barber:', emailResult.error);
+          }
         } catch (error) {
           console.error('Error sending email to barber:', error);
         }
@@ -182,8 +201,15 @@ Deno.serve(async (req) => {
     if ((recipients === 'both' || recipients === 'client') && booking.client_profiles) {
       const client = booking.client_profiles;
       
+      console.log('Attempting to send notifications to client:', {
+        phone: client.phone,
+        email: client.email,
+        sms_consent: client.sms_consent,
+        email_consent: client.email_consent
+      });
+      
       // SMS to client
-      if (!skipSMS && client.sms_consent && client.phone) {
+      if (!skipSMS && (client.sms_consent !== false) && client.phone) {
         try {
           const smsMessage = this.generateClientSMS(event, booking, formattedDate);
           const smsResponse = await fetch(`${supabaseUrl}/functions/v1/send-sms`, {
@@ -201,13 +227,19 @@ Deno.serve(async (req) => {
 
           const smsResult = await smsResponse.json();
           results.sms.client = smsResult.success || false;
+          
+          if (smsResult.success) {
+            console.log('SMS sent successfully to client:', client.phone);
+          } else {
+            console.error('SMS failed to client:', smsResult.error);
+          }
         } catch (error) {
           console.error('Error sending SMS to client:', error);
         }
       }
 
       // Email to client
-      if (!skipEmail && client.email_consent && client.email) {
+      if (!skipEmail && (client.email_consent !== false) && client.email) {
         try {
           const emailSubject = this.generateClientEmailSubject(event, booking);
           const emailMessage = this.generateClientEmailMessage(event, booking, formattedDate);
@@ -229,12 +261,25 @@ Deno.serve(async (req) => {
 
           const emailResult = await emailResponse.json();
           results.email.client = emailResult.success || false;
+          
+          if (emailResult.success) {
+            console.log('Email sent successfully to client:', client.email);
+          } else {
+            console.error('Email failed to client:', emailResult.error);
+          }
         } catch (error) {
           console.error('Error sending email to client:', error);
         }
       }
     }
 
+    console.log('Notification results:', {
+      event,
+      bookingId,
+      results,
+      timestamp: new Date().toISOString()
+    });
+    
     return new Response(
       JSON.stringify({
         success: true,

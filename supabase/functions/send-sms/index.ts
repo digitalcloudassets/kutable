@@ -179,15 +179,13 @@ Deno.serve(async (req) => {
 
     // Note: In production, we should check SMS consent before sending
     // For now, we'll log this requirement
-    console.log('SMS consent should be verified before sending:', {
+    console.log('Sending SMS with Twilio:', {
       to: formattedPhone,
       type: type,
-      note: 'Check user SMS consent in client_profiles or barber_profiles'
+      messagePreview: sanitizedMessage.slice(0, 50) + '...'
     });
     // Create Twilio API request
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`
-    
-    console.log('Twilio API URL:', twilioUrl.substring(0, 50) + '...');
     
     const body = new URLSearchParams({
       To: formattedPhone,
@@ -195,12 +193,6 @@ Deno.serve(async (req) => {
       Body: sanitizedMessage,
     })
 
-    console.log('Sending SMS via Twilio:', {
-      to: formattedPhone,
-      from: fromNumber,
-      type: sanitizedType,
-      messageLength: sanitizedMessage.length
-    });
     const response = await fetch(twilioUrl, {
       method: 'POST',
       headers: {
@@ -215,13 +207,13 @@ Deno.serve(async (req) => {
       console.error('Twilio API error:', {
         status: response.status,
         statusText: response.statusText,
-        error: error
+        error: error.slice(0, 200) // Limit error log size
       });
       
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `Twilio API error: ${response.status} - ${error}`,
+          error: `SMS service error: ${response.status}`,
           warning: 'Booking was successful but SMS notification could not be sent'
         }),
         {

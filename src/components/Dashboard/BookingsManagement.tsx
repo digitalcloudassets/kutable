@@ -126,6 +126,8 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
 
         if (notificationError) {
           console.warn('Failed to send status change notifications:', notificationError);
+        } else {
+          console.log('Status change notifications sent successfully for booking:', bookingId);
         }
       } catch (notificationError) {
         console.warn('Notification error (status change still succeeded):', notificationError);

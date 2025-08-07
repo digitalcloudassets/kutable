@@ -22,7 +22,7 @@ interface MessageThreadProps {
 
 const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) => {
   const { user } = useAuth();
-  const { refreshUnreadCount } = useMessaging();
+  const { refreshUnreadCount, refreshConversations } = useMessaging();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -35,8 +35,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       if (conversation && user) {
         loadMessages();
         markAsRead();
-        // Also refresh unread count since sending a message means you've seen the conversation
-        await refreshUnreadCount();
+        // Refresh unread count and conversations when viewing thread
+        if (refreshUnreadCount) {
+          await refreshUnreadCount();
+        }
         
         // Subscribe to real-time updates
         const unsubscribe = messagingService.subscribeToMessages(
@@ -49,6 +51,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
             if (newMessage.receiver_id === user.id) {
               setTimeout(() => {
                 messagingService.markAsRead(newMessage.id, user.id);
+                // Refresh unread count after marking as read
+                if (refreshUnreadCount) {
+                  refreshUnreadCount();
+                }
               }, 1000);
             }
           }
@@ -69,7 +75,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
         unsubscribe();
       }
     };
-  }, [conversation, user]);
+  }, [conversation, user, refreshUnreadCount]);
 
   useEffect(() => {
     scrollToBottom();
@@ -98,6 +104,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     
     try {
       await messagingService.markConversationAsRead(conversation.bookingId, user.id);
+      // Refresh unread count after marking as read
+      if (refreshUnreadCount) {
+        await refreshUnreadCount();
+      }
     } catch (error) {
       console.error('Error marking conversation as read:', error);
     }
@@ -127,6 +137,14 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       
       // Mark conversation as read since user is actively participating
       await messagingService.markConversationAsRead(conversation.bookingId, user.id);
+      
+      // Refresh conversations and unread count
+      if (refreshConversations) {
+        await refreshConversations();
+      }
+      if (refreshUnreadCount) {
+        await refreshUnreadCount();
+      }
     } catch (error: any) {
       console.error('Error sending message:', error);
       setError(error.message || 'Failed to send message');

@@ -801,7 +801,7 @@ const PaymentStep: React.FC<{
         if (data?.booking) {
          // Send booking confirmation notifications
          try {
-           const { error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {
+           const { data: notificationResult, error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {
              body: {
                bookingId: data.booking.id,
                event: 'booking_confirmed'
@@ -810,6 +810,8 @@ const PaymentStep: React.FC<{
 
            if (notificationError) {
              console.warn('Failed to send booking notifications:', notificationError);
+           } else if (notificationResult?.success) {
+             console.log('Booking confirmation notifications sent successfully');
            }
          } catch (notificationError) {
            console.warn('Notification error (booking still succeeded):', notificationError);
