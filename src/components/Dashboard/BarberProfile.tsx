@@ -401,7 +401,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                       type="text"
                       value={editData.business_name}
                       onChange={(e) => setEditData(prev => ({ ...prev, business_name: e.target.value }))}
-                      className="input-premium pl-12"
+                      className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 pl-12"
                     />
                   </div>
                 </div>
@@ -416,7 +416,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                       type="text"
                       value={editData.owner_name}
                       onChange={(e) => setEditData(prev => ({ ...prev, owner_name: e.target.value }))}
-                      className="input-premium pl-12"
+                      className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 pl-12"
                     />
                   </div>
                 </div>
@@ -431,7 +431,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                       type="tel"
                       value={editData.phone}
                       onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
-                      className="input-premium pl-12"
+                      className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 pl-12"
                     />
                   </div>
                 </div>
@@ -446,7 +446,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                       type="email"
                       value={editData.email}
                       onChange={(e) => setEditData(prev => ({ ...prev, email: e.target.value }))}
-                      className="input-premium pl-12"
+                      className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 pl-12"
                     />
                   </div>
                 </div>
@@ -462,7 +462,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                     type="text"
                     value={editData.address}
                     onChange={(e) => setEditData(prev => ({ ...prev, address: e.target.value }))}
-                    className="input-premium pl-12"
+                    className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 pl-12"
                   />
                 </div>
               </div>
@@ -474,7 +474,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                     type="text"
                     value={editData.city}
                     onChange={(e) => setEditData(prev => ({ ...prev, city: e.target.value }))}
-                    className="input-premium"
+                    className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                   />
                 </div>
                 <div>
@@ -483,7 +483,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                     type="text"
                     value={editData.state}
                     onChange={(e) => setEditData(prev => ({ ...prev, state: e.target.value }))}
-                    className="input-premium"
+                    className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                   />
                 </div>
                 <div>
@@ -492,7 +492,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                     type="text"
                     value={editData.zip_code}
                     onChange={(e) => setEditData(prev => ({ ...prev, zip_code: e.target.value }))}
-                    className="input-premium"
+                    className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                   />
                 </div>
               </div>
@@ -507,7 +507,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                     value={editData.bio}
                     onChange={(e) => setEditData(prev => ({ ...prev, bio: e.target.value }))}
                     rows={4}
-                    className="input-premium pl-12"
+                    className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 pl-12"
                     placeholder="Tell customers about your experience and specialties..."
                   />
                 </div>

@@ -287,7 +287,7 @@ const ClientProfileSettings: React.FC = () => {
                   type="text"
                   value={editData.first_name}
                   onChange={(e) => setEditData(prev => ({ ...prev, first_name: e.target.value }))}
-                  className="input-premium pl-10"
+                  className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 pl-10"
                   placeholder="First name"
                 />
               </div>
@@ -303,7 +303,7 @@ const ClientProfileSettings: React.FC = () => {
                   type="text"
                   value={editData.last_name}
                   onChange={(e) => setEditData(prev => ({ ...prev, last_name: e.target.value }))}
-                  className="input-premium pl-10"
+                  className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 pl-10"
                   placeholder="Last name"
                 />
               </div>
@@ -319,7 +319,7 @@ const ClientProfileSettings: React.FC = () => {
                   type="email"
                   value={editData.email}
                   onChange={(e) => setEditData(prev => ({ ...prev, email: e.target.value }))}
-                  className="input-premium pl-10"
+                  className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 pl-10"
                   placeholder="email@example.com"
                 />
               </div>
@@ -335,7 +335,7 @@ const ClientProfileSettings: React.FC = () => {
                   type="tel"
                   value={editData.phone}
                   onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
-                  className="input-premium pl-10"
+                  className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 pl-10"
                   placeholder="(555) 123-4567"
                 />
               </div>

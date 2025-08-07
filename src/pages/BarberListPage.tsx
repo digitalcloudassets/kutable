@@ -476,7 +476,7 @@ const BarberListPage: React.FC = () => {
                     placeholder="Search barbers or businesses..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="input-premium pl-14 pr-16 py-4 text-lg min-h-[56px] w-full"
+                    className="w-full pl-14 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-lg min-h-[56px]"
                   />
                 </div>
 
@@ -503,7 +503,7 @@ const BarberListPage: React.FC = () => {
                     <select
                       value={selectedCity}
                       onChange={(e) => setSelectedCity(e.target.value)}
-                      className="input-premium pl-14 pr-16 py-4 bg-white w-full font-medium min-h-[52px]"
+                      className="w-full pl-14 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white font-medium min-h-[52px]"
                     >
                       <option value="">All Cities</option>
                       {cities.map(city => (
