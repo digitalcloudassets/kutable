@@ -53,7 +53,7 @@ const sanitizeInput = (input: string, maxLength: number = 2000): string => {
     .replace(/data:/gi, '');
 };
 
-// Enhanced logging function
+// Enhanced logging function with detailed context
 const logEvent = (level: 'info' | 'warn' | 'error', message: string, data?: any) => {
   const timestamp = new Date().toISOString();
   const logData = data ? JSON.stringify(data, null, 2) : '';
@@ -64,62 +64,127 @@ const logEvent = (level: 'info' | 'warn' | 'error', message: string, data?: any)
   }
 };
 
+// Function startup logging
+console.log('='.repeat(80));
+console.log('🚀 AI Chat Edge Function Starting Up');
+console.log('='.repeat(80));
+
+// Log environment variable status on startup
+const envCheck = {
+  hasOpenaiKey: !!Deno.env.get("OPENAI_API_KEY"),
+  hasSupabaseUrl: !!Deno.env.get("SUPABASE_URL"),
+  hasSupabaseServiceKey: !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+  openaiKeyFormat: Deno.env.get("OPENAI_API_KEY")?.substring(0, 7) || 'not-set',
+  supabaseUrlFormat: Deno.env.get("SUPABASE_URL")?.includes('.supabase.co') || false
+};
+
+logEvent('info', 'Environment variables check on startup', envCheck);
+
+// Add unhandled rejection handler for Deno
+self.addEventListener("unhandledrejection", (event) => {
+  logEvent('error', 'UNHANDLED PROMISE REJECTION', {
+    reason: event.reason,
+    type: typeof event.reason,
+    message: event.reason?.message || 'No message',
+    stack: event.reason?.stack || 'No stack trace'
+  });
+  
+  // Prevent the default handling (which would terminate the function)
+  event.preventDefault();
+});
+
+// Add global error handler
+self.addEventListener("error", (event) => {
+  logEvent('error', 'GLOBAL ERROR', {
+    message: event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+    error: event.error
+  });
+});
+
+console.log('✅ AI Chat Edge Function initialized with error handlers');
+console.log('='.repeat(80));
+
 Deno.serve(async (req) => {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
   
-  // Log incoming request
-  logEvent('info', `[${requestId}] Incoming AI chat request`, {
-    method: req.method,
-    url: req.url,
-    headers: Object.fromEntries(req.headers.entries())
-  });
-
-  if (req.method === 'OPTIONS') {
-    logEvent('info', `[${requestId}] OPTIONS request handled`);
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  let requestBody: ChatRequest;
-  
+  // Top-level try/catch to handle ALL errors
   try {
-    // Parse and validate request body
-    requestBody = await req.json();
-    logEvent('info', `[${requestId}] Request body parsed`, {
-      messageLength: requestBody.message?.length,
-      hasConversationId: !!requestBody.conversationId,
-      hasSessionId: !!requestBody.sessionId,
-      hasUserId: !!requestBody.userId
+    logEvent('info', `[${requestId}] === NEW REQUEST STARTED ===`);
+    logEvent('info', `[${requestId}] Request details`, {
+      method: req.method,
+      url: req.url,
+      headers: Object.fromEntries(req.headers.entries()),
+      timestamp: new Date().toISOString()
     });
-  } catch (error) {
-    logEvent('error', `[${requestId}] Failed to parse request body`, { error: error.message });
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: 'Invalid request format - unable to parse JSON body'
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      },
-    );
-  }
 
-  try {
+    if (req.method === 'OPTIONS') {
+      logEvent('info', `[${requestId}] OPTIONS preflight request - returning CORS headers`);
+      return new Response('ok', { 
+        headers: corsHeaders,
+        status: 200
+      });
+    }
+
+    // Parse request body with error handling
+    let requestBody: ChatRequest;
+    try {
+      const bodyText = await req.text();
+      logEvent('info', `[${requestId}] Raw request body received`, {
+        bodyLength: bodyText.length,
+        bodyPreview: bodyText.substring(0, 200)
+      });
+      
+      requestBody = JSON.parse(bodyText);
+      logEvent('info', `[${requestId}] Request body parsed successfully`, {
+        messageLength: requestBody.message?.length,
+        hasConversationId: !!requestBody.conversationId,
+        hasSessionId: !!requestBody.sessionId,
+        hasUserId: !!requestBody.userId
+      });
+    } catch (parseError) {
+      logEvent('error', `[${requestId}] Failed to parse request body`, {
+        error: parseError.message,
+        errorType: parseError.constructor.name
+      });
+      
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid request format - unable to parse JSON body',
+          details: `Parse error: ${parseError.message}`,
+          requestId
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      );
+    }
+
     // Get client IP for rate limiting
     const clientIP = req.headers.get('x-forwarded-for') || 
                     req.headers.get('x-real-ip') || 
                     'unknown';
 
-    logEvent('info', `[${requestId}] Client IP: ${clientIP}`);
+    logEvent('info', `[${requestId}] Client IP identified: ${clientIP}`);
 
     // Rate limiting by IP
     if (isRateLimited(`chat_${clientIP}`, 20, 60 * 60 * 1000)) {
-      logEvent('warn', `[${requestId}] Rate limit exceeded for IP: ${clientIP}`);
+      logEvent('warn', `[${requestId}] Rate limit exceeded`, {
+        clientIP,
+        rateLimitType: 'chat_requests_per_hour'
+      });
+      
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Too many chat requests. Please wait before sending more messages.'
+          error: 'Too many chat requests. Please wait before sending more messages.',
+          details: 'Rate limit: 20 requests per hour per IP',
+          requestId
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -128,26 +193,41 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get and validate environment variables
+    // Get and validate environment variables with detailed logging
     const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    logEvent('info', `[${requestId}] Environment variables check`, {
+    logEvent('info', `[${requestId}] Environment variables validation`, {
       hasOpenaiKey: !!openaiApiKey,
       hasSupabaseUrl: !!supabaseUrl,
       hasSupabaseServiceKey: !!supabaseServiceKey,
-      openaiKeyPrefix: openaiApiKey?.substring(0, 7) || 'not-set',
-      supabaseUrlFormat: supabaseUrl?.includes('.supabase.co') || false
+      openaiKeyFormat: openaiApiKey ? `${openaiApiKey.substring(0, 7)}...` : 'not-set',
+      openaiKeyLength: openaiApiKey?.length || 0,
+      supabaseUrlFormat: supabaseUrl?.includes('.supabase.co') || false,
+      supabaseServiceKeyFormat: supabaseServiceKey ? `${supabaseServiceKey.substring(0, 10)}...` : 'not-set'
     });
 
+    // Check for missing environment variables
     if (!openaiApiKey || openaiApiKey.trim() === '') {
-      logEvent('error', `[${requestId}] OpenAI API key not configured`);
+      logEvent('error', `[${requestId}] OpenAI API key not configured`, {
+        keyExists: !!openaiApiKey,
+        keyEmpty: openaiApiKey === '',
+        keyTrimmedEmpty: openaiApiKey?.trim() === ''
+      });
+      
       return new Response(
         JSON.stringify({
           success: false,
-          error: "AI chat is currently unavailable - OpenAI API key not configured. Please contact support.",
-          details: "OpenAI API key is missing or empty in environment variables"
+          error: "AI chat is currently unavailable - OpenAI API key not configured",
+          details: "The OpenAI API key is missing or empty in environment variables. Please add OPENAI_API_KEY to your Supabase Edge Functions environment.",
+          requestId,
+          configurationHelp: {
+            step1: "Go to your Supabase project dashboard",
+            step2: "Navigate to Edge Functions settings",
+            step3: "Add OPENAI_API_KEY environment variable",
+            step4: "Get your API key from https://platform.openai.com/api-keys"
+          }
         }),
         { 
           status: 503,
@@ -159,13 +239,16 @@ Deno.serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey) {
       logEvent('error', `[${requestId}] Supabase configuration missing`, {
         hasUrl: !!supabaseUrl,
-        hasServiceKey: !!supabaseServiceKey
+        hasServiceKey: !!supabaseServiceKey,
+        urlFormat: supabaseUrl?.includes('.supabase.co') || false
       });
+      
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Service temporarily unavailable - database connection not configured.",
-          details: "Supabase configuration is missing"
+          error: "Database connection not configured",
+          details: "Supabase URL or service key is missing in environment variables",
+          requestId
         }),
         { 
           status: 503,
@@ -174,20 +257,28 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Initialize services with logging
+    // Initialize services with comprehensive error handling
     let openai: OpenAI;
     try {
+      logEvent('info', `[${requestId}] Initializing OpenAI client`);
       openai = new OpenAI({
         apiKey: openaiApiKey,
       });
       logEvent('info', `[${requestId}] OpenAI client initialized successfully`);
-    } catch (error) {
-      logEvent('error', `[${requestId}] Failed to initialize OpenAI client`, { error: error.message });
+    } catch (openaiInitError) {
+      logEvent('error', `[${requestId}] Failed to initialize OpenAI client`, {
+        error: openaiInitError.message,
+        errorType: openaiInitError.constructor.name,
+        apiKeyLength: openaiApiKey.length,
+        apiKeyPrefix: openaiApiKey.substring(0, 7)
+      });
+      
       return new Response(
         JSON.stringify({
           success: false,
-          error: "AI service initialization failed - invalid API key format.",
-          details: "OpenAI client could not be initialized"
+          error: "AI service initialization failed",
+          details: `OpenAI client initialization error: ${openaiInitError.message}`,
+          requestId
         }),
         { 
           status: 503,
@@ -196,18 +287,47 @@ Deno.serve(async (req) => {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    logEvent('info', `[${requestId}] Supabase client initialized`);
-
-    const { message, conversationId, sessionId, userId } = requestBody;
-
-    // Validate input
-    if (!message || typeof message !== 'string') {
-      logEvent('warn', `[${requestId}] Invalid message input`, { messageType: typeof message });
+    let supabase;
+    try {
+      logEvent('info', `[${requestId}] Initializing Supabase client`);
+      supabase = createClient(supabaseUrl, supabaseServiceKey);
+      logEvent('info', `[${requestId}] Supabase client initialized successfully`);
+    } catch (supabaseInitError) {
+      logEvent('error', `[${requestId}] Failed to initialize Supabase client`, {
+        error: supabaseInitError.message,
+        errorType: supabaseInitError.constructor.name
+      });
+      
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Message is required and must be a string'
+          error: "Database connection failed",
+          details: `Supabase client initialization error: ${supabaseInitError.message}`,
+          requestId
+        }),
+        { 
+          status: 503,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
+
+    const { message, conversationId, sessionId, userId } = requestBody;
+
+    // Input validation with detailed logging
+    if (!message || typeof message !== 'string') {
+      logEvent('warn', `[${requestId}] Invalid message input`, {
+        messageExists: !!message,
+        messageType: typeof message,
+        messageLength: message?.length || 0
+      });
+      
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Message is required and must be a string',
+          details: `Received: ${typeof message}, expected: string`,
+          requestId
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -219,11 +339,17 @@ Deno.serve(async (req) => {
     const sanitizedMessage = sanitizeInput(message, 2000);
     
     if (sanitizedMessage.length < 1) {
-      logEvent('warn', `[${requestId}] Empty message after sanitization`);
+      logEvent('warn', `[${requestId}] Empty message after sanitization`, {
+        originalLength: message.length,
+        sanitizedLength: sanitizedMessage.length
+      });
+      
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Message cannot be empty'
+          error: 'Message cannot be empty after sanitization',
+          details: 'Message contained only invalid characters or was too long',
+          requestId
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -232,105 +358,187 @@ Deno.serve(async (req) => {
       );
     }
 
-    logEvent('info', `[${requestId}] Message validated`, {
+    logEvent('info', `[${requestId}] Message validated and sanitized`, {
       originalLength: message.length,
       sanitizedLength: sanitizedMessage.length,
-      preview: sanitizedMessage.substring(0, 100)
+      messagePreview: sanitizedMessage.substring(0, 100) + (sanitizedMessage.length > 100 ? '...' : '')
     });
 
     // Generate session ID if not provided
     const finalSessionId = sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    logEvent('info', `[${requestId}] Session ID: ${finalSessionId}`);
+    logEvent('info', `[${requestId}] Session ID determined: ${finalSessionId}`);
 
-    // Get or create conversation
+    // Get or create conversation with error handling
     let conversation;
     if (conversationId) {
       logEvent('info', `[${requestId}] Looking up existing conversation: ${conversationId}`);
-      const { data, error } = await supabase
-        .from('chat_conversations')
-        .select('*')
-        .eq('id', conversationId)
-        .single();
-      
-      if (error) {
-        logEvent('warn', `[${requestId}] Failed to find conversation`, { error: error.message });
-      } else {
-        conversation = data;
-        logEvent('info', `[${requestId}] Found existing conversation`);
+      try {
+        const { data, error } = await supabase
+          .from('chat_conversations')
+          .select('*')
+          .eq('id', conversationId)
+          .single();
+        
+        if (error) {
+          logEvent('warn', `[${requestId}] Failed to find existing conversation`, {
+            conversationId,
+            error: error.message,
+            errorCode: error.code
+          });
+        } else {
+          conversation = data;
+          logEvent('info', `[${requestId}] Found existing conversation successfully`);
+        }
+      } catch (conversationLookupError) {
+        logEvent('error', `[${requestId}] Exception during conversation lookup`, {
+          error: conversationLookupError.message,
+          conversationId
+        });
       }
     }
 
     if (!conversation) {
       logEvent('info', `[${requestId}] Creating new conversation`);
-      const { data: newConversation, error: conversationError } = await supabase
-        .from('chat_conversations')
-        .insert({
-          user_id: userId || null,
-          session_id: finalSessionId
-        })
-        .select()
-        .single();
+      try {
+        const { data: newConversation, error: conversationError } = await supabase
+          .from('chat_conversations')
+          .insert({
+            user_id: userId || null,
+            session_id: finalSessionId
+          })
+          .select()
+          .single();
 
-      if (conversationError) {
-        logEvent('error', `[${requestId}] Failed to create conversation`, { error: conversationError.message });
-        throw conversationError;
+        if (conversationError) {
+          logEvent('error', `[${requestId}] Failed to create conversation`, {
+            error: conversationError.message,
+            errorCode: conversationError.code,
+            errorDetails: conversationError.details
+          });
+          throw conversationError;
+        }
+        
+        conversation = newConversation;
+        logEvent('info', `[${requestId}] Created new conversation successfully`, {
+          conversationId: conversation.id
+        });
+      } catch (conversationCreateError) {
+        logEvent('error', `[${requestId}] Exception during conversation creation`, {
+          error: conversationCreateError.message,
+          errorType: conversationCreateError.constructor.name
+        });
+        
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Failed to create chat conversation",
+            details: `Database error: ${conversationCreateError.message}`,
+            requestId
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500,
+          },
+        );
       }
-      
-      conversation = newConversation;
-      logEvent('info', `[${requestId}] Created new conversation: ${conversation.id}`);
     }
 
-    // Step 1: Generate embedding for the user's question
-    logEvent('info', `[${requestId}] Generating embedding for user question`);
+    // Step 1: Generate embedding with comprehensive error handling
+    logEvent('info', `[${requestId}] Starting OpenAI embedding generation`);
     let embeddingResponse;
     try {
       embeddingResponse = await openai.embeddings.create({
         model: 'text-embedding-ada-002',
         input: sanitizedMessage,
       });
-      logEvent('info', `[${requestId}] Embedding generated successfully`, {
-        embeddingLength: embeddingResponse.data[0].embedding.length
+      
+      logEvent('info', `[${requestId}] OpenAI embedding generated successfully`, {
+        model: 'text-embedding-ada-002',
+        inputLength: sanitizedMessage.length,
+        embeddingLength: embeddingResponse.data[0].embedding.length,
+        usage: embeddingResponse.usage
       });
-    } catch (error) {
+    } catch (embeddingError) {
       logEvent('error', `[${requestId}] OpenAI embedding API error`, {
-        error: error.message,
-        type: error.type,
-        code: error.code
+        error: embeddingError.message,
+        type: embeddingError.type,
+        code: embeddingError.code,
+        status: embeddingError.status,
+        param: embeddingError.param,
+        apiKeyPrefix: openaiApiKey.substring(0, 7),
+        model: 'text-embedding-ada-002',
+        inputLength: sanitizedMessage.length
       });
+      
+      let userMessage = 'AI service error occurred while processing your message';
+      let statusCode = 502;
+      
+      if (embeddingError.code === 'insufficient_quota') {
+        userMessage = 'AI service quota exceeded. Please contact support.';
+        statusCode = 503;
+      } else if (embeddingError.code === 'invalid_api_key') {
+        userMessage = 'AI service configuration error. Please contact support.';
+        statusCode = 503;
+      } else if (embeddingError.code === 'rate_limit_exceeded') {
+        userMessage = 'AI service rate limit exceeded. Please wait a moment and try again.';
+        statusCode = 429;
+      } else if (embeddingError.status >= 400 && embeddingError.status < 500) {
+        userMessage = `AI service error: ${embeddingError.message}`;
+        statusCode = 400;
+      }
       
       return new Response(
         JSON.stringify({
           success: false,
-          error: `AI service error: ${error.message}`,
-          details: `OpenAI embedding API failed: ${error.type || 'unknown_error'}`
+          error: userMessage,
+          details: `OpenAI embedding API error: ${embeddingError.type || 'unknown'} - ${embeddingError.code || 'no_code'}`,
+          requestId
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 502,
+          status: statusCode,
         },
       );
     }
 
     const questionEmbedding = embeddingResponse.data[0].embedding;
 
-    // Step 2: Perform similarity search in knowledge base
+    // Step 2: Knowledge base search with error handling
     logEvent('info', `[${requestId}] Searching knowledge base`);
-    const { data: relevantDocs, error: searchError } = await supabase.rpc(
-      'match_knowledge_base',
-      {
-        query_embedding: questionEmbedding,
-        match_threshold: 0.7,
-        match_count: 3
-      }
-    );
+    let relevantDocs;
+    try {
+      const { data: searchResults, error: searchError } = await supabase.rpc(
+        'match_knowledge_base',
+        {
+          query_embedding: questionEmbedding,
+          match_threshold: 0.7,
+          match_count: 3
+        }
+      );
 
-    if (searchError) {
-      logEvent('warn', `[${requestId}] Knowledge base search failed`, { error: searchError.message });
-    } else {
-      logEvent('info', `[${requestId}] Knowledge base search completed`, {
-        resultsFound: relevantDocs?.length || 0,
-        topMatch: relevantDocs?.[0]?.title || 'none'
+      if (searchError) {
+        logEvent('warn', `[${requestId}] Knowledge base search failed`, {
+          error: searchError.message,
+          errorCode: searchError.code,
+          errorDetails: searchError.details
+        });
+        // Continue without context rather than failing
+        relevantDocs = [];
+      } else {
+        relevantDocs = searchResults;
+        logEvent('info', `[${requestId}] Knowledge base search completed`, {
+          resultsFound: relevantDocs?.length || 0,
+          topMatch: relevantDocs?.[0]?.title || 'none',
+          matchSimilarities: relevantDocs?.map((doc: any) => doc.similarity) || []
+        });
+      }
+    } catch (searchException) {
+      logEvent('error', `[${requestId}] Exception during knowledge base search`, {
+        error: searchException.message,
+        errorType: searchException.constructor.name
       });
+      // Continue without context
+      relevantDocs = [];
     }
 
     // Step 3: Prepare context for LLM
@@ -339,12 +547,16 @@ Deno.serve(async (req) => {
       context = relevantDocs
         .map((doc: any) => `**${doc.title}**\n${doc.content}`)
         .join('\n\n');
-      logEvent('info', `[${requestId}] Context prepared`, { contextLength: context.length });
+      logEvent('info', `[${requestId}] Context prepared from knowledge base`, {
+        contextLength: context.length,
+        sourcesUsed: relevantDocs.length,
+        sourcesList: relevantDocs.map((doc: any) => doc.title)
+      });
     } else {
-      logEvent('info', `[${requestId}] No relevant context found`);
+      logEvent('info', `[${requestId}] No relevant context found, proceeding with general knowledge`);
     }
 
-    // Step 4: Generate AI response
+    // Step 4: Generate AI response with comprehensive error handling
     const systemPrompt = `You are Kutable's helpful AI assistant. Kutable is a professional barber booking platform that connects customers with barbers.
 
 Key Information about Kutable:
@@ -367,10 +579,12 @@ Instructions:
 
 User Question: ${sanitizedMessage}`;
 
-    logEvent('info', `[${requestId}] Sending request to OpenAI`, {
+    logEvent('info', `[${requestId}] Preparing OpenAI chat completion request`, {
       model: 'gpt-3.5-turbo',
       systemPromptLength: systemPrompt.length,
-      userMessage: sanitizedMessage.substring(0, 100)
+      userMessageLength: sanitizedMessage.length,
+      maxTokens: 500,
+      temperature: 0.7
     });
 
     let completion;
@@ -391,33 +605,41 @@ User Question: ${sanitizedMessage}`;
         temperature: 0.7,
       });
       
-      logEvent('info', `[${requestId}] OpenAI response received`, {
+      logEvent('info', `[${requestId}] OpenAI chat completion successful`, {
         choices: completion.choices?.length || 0,
         usage: completion.usage,
-        finishReason: completion.choices?.[0]?.finish_reason
+        finishReason: completion.choices?.[0]?.finish_reason,
+        responseLength: completion.choices?.[0]?.message?.content?.length || 0
       });
-    } catch (error) {
+    } catch (completionError) {
       logEvent('error', `[${requestId}] OpenAI chat completion API error`, {
-        error: error.message,
-        type: error.type,
-        code: error.code,
-        status: error.status
+        error: completionError.message,
+        type: completionError.type,
+        code: completionError.code,
+        status: completionError.status,
+        param: completionError.param,
+        apiKeyPrefix: openaiApiKey.substring(0, 7),
+        requestDetails: {
+          model: 'gpt-3.5-turbo',
+          maxTokens: 500,
+          temperature: 0.7
+        }
       });
       
       let userFriendlyError = 'AI service temporarily unavailable. Please try again.';
       let statusCode = 502;
       
-      if (error.code === 'insufficient_quota') {
-        userFriendlyError = 'AI service quota exceeded. Please contact support.';
+      if (completionError.code === 'insufficient_quota') {
+        userFriendlyError = 'AI service quota exceeded. Please contact support at support@kutable.com';
         statusCode = 503;
-      } else if (error.code === 'invalid_api_key') {
-        userFriendlyError = 'AI service configuration error. Please contact support.';
+      } else if (completionError.code === 'invalid_api_key') {
+        userFriendlyError = 'AI service configuration error. Please contact support at support@kutable.com';
         statusCode = 503;
-      } else if (error.code === 'rate_limit_exceeded') {
+      } else if (completionError.code === 'rate_limit_exceeded') {
         userFriendlyError = 'AI service rate limit exceeded. Please wait a moment and try again.';
         statusCode = 429;
-      } else if (error.status >= 400 && error.status < 500) {
-        userFriendlyError = `AI service error: ${error.message}`;
+      } else if (completionError.status >= 400 && completionError.status < 500) {
+        userFriendlyError = `AI service error: ${completionError.message}`;
         statusCode = 400;
       }
       
@@ -425,7 +647,8 @@ User Question: ${sanitizedMessage}`;
         JSON.stringify({
           success: false,
           error: userFriendlyError,
-          details: `OpenAI API error: ${error.type || 'unknown'} - ${error.code || 'no_code'}`
+          details: `OpenAI API error: ${completionError.type || 'unknown'} - ${completionError.code || 'no_code'}`,
+          requestId
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -434,38 +657,59 @@ User Question: ${sanitizedMessage}`;
       );
     }
 
-    const aiResponse = completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response. Please try again or contact our support team.';
+    const aiResponse = completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response. Please try again or contact our support team at support@kutable.com';
     
-    logEvent('info', `[${requestId}] AI response generated`, {
+    logEvent('info', `[${requestId}] AI response generated successfully`, {
       responseLength: aiResponse.length,
-      responsePreview: aiResponse.substring(0, 100)
+      responsePreview: aiResponse.substring(0, 150) + (aiResponse.length > 150 ? '...' : ''),
+      tokensUsed: completion.usage
     });
 
-    // Step 5: Save conversation messages
-    logEvent('info', `[${requestId}] Saving messages to database`);
-    const messagesToSave = [
-      {
-        conversation_id: conversation.id,
-        role: 'user',
-        content: sanitizedMessage,
-        context_used: null
-      },
-      {
-        conversation_id: conversation.id,
-        role: 'assistant',
-        content: aiResponse,
-        context_used: relevantDocs ? { sources: relevantDocs.map((doc: any) => ({ title: doc.title, similarity: doc.similarity })) } : null
+    // Step 5: Save conversation messages with error handling
+    logEvent('info', `[${requestId}] Saving conversation messages to database`);
+    try {
+      const messagesToSave = [
+        {
+          conversation_id: conversation.id,
+          role: 'user',
+          content: sanitizedMessage,
+          context_used: null
+        },
+        {
+          conversation_id: conversation.id,
+          role: 'assistant',
+          content: aiResponse,
+          context_used: relevantDocs ? { 
+            sources: relevantDocs.map((doc: any) => ({ 
+              title: doc.title, 
+              similarity: doc.similarity 
+            })) 
+          } : null
+        }
+      ];
+
+      const { error: messagesError } = await supabase
+        .from('chat_messages')
+        .insert(messagesToSave);
+
+      if (messagesError) {
+        logEvent('error', `[${requestId}] Failed to save chat messages`, {
+          error: messagesError.message,
+          errorCode: messagesError.code,
+          errorDetails: messagesError.details,
+          conversationId: conversation.id
+        });
+        // Don't fail the entire request for database save issues
+      } else {
+        logEvent('info', `[${requestId}] Messages saved to database successfully`);
       }
-    ];
-
-    const { error: messagesError } = await supabase
-      .from('chat_messages')
-      .insert(messagesToSave);
-
-    if (messagesError) {
-      logEvent('error', `[${requestId}] Failed to save chat messages`, { error: messagesError.message });
-    } else {
-      logEvent('info', `[${requestId}] Messages saved successfully`);
+    } catch (messageSaveException) {
+      logEvent('error', `[${requestId}] Exception during message save`, {
+        error: messageSaveException.message,
+        errorType: messageSaveException.constructor.name,
+        conversationId: conversation.id
+      });
+      // Continue - don't fail for database issues
     }
 
     // Step 6: Return successful response
@@ -475,14 +719,17 @@ User Question: ${sanitizedMessage}`;
       conversationId: conversation.id,
       sessionId: finalSessionId,
       sources: relevantDocs ? relevantDocs.slice(0, 2) : [],
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      requestId
     };
 
     const processingTime = Date.now() - startTime;
-    logEvent('info', `[${requestId}] Request completed successfully`, {
+    logEvent('info', `[${requestId}] === REQUEST COMPLETED SUCCESSFULLY ===`, {
       processingTimeMs: processingTime,
       responseLength: aiResponse.length,
-      sourcesCount: relevantDocs?.length || 0
+      sourcesCount: relevantDocs?.length || 0,
+      conversationId: conversation.id,
+      sessionId: finalSessionId
     });
 
     return new Response(
@@ -493,36 +740,57 @@ User Question: ${sanitizedMessage}`;
       },
     );
 
-  } catch (error) {
+  } catch (globalError) {
+    // TOP-LEVEL ERROR HANDLER - catches any unhandled errors
     const processingTime = Date.now() - startTime;
-    logEvent('error', `[${requestId}] Unexpected error in AI chat function`, {
-      error: error.message,
-      stack: error.stack,
-      processingTimeMs: processingTime
+    logEvent('error', `[${requestId}] === GLOBAL ERROR HANDLER TRIGGERED ===`, {
+      error: globalError.message,
+      errorType: globalError.constructor.name,
+      stack: globalError.stack,
+      processingTimeMs: processingTime,
+      requestMethod: req.method,
+      requestUrl: req.url
     });
     
-    // Don't expose internal errors to users
-    let userMessage = 'I encountered an unexpected error. Please try again.';
+    // Provide detailed error information for debugging
+    let userMessage = 'An unexpected error occurred while processing your request. Please try again.';
     let statusCode = 500;
+    let errorDetails = `Internal error: ${globalError.message}`;
     
-    if (error instanceof Error) {
-      if (error.message.includes('API key')) {
-        userMessage = 'AI service configuration error. Please contact support.';
+    // Categorize errors for better user messaging
+    if (globalError instanceof Error) {
+      if (globalError.message.includes('API key') || globalError.message.includes('authentication')) {
+        userMessage = 'AI service configuration error. Please contact support at support@kutable.com';
         statusCode = 503;
-      } else if (error.message.includes('rate')) {
+        errorDetails = 'Authentication/API key error';
+      } else if (globalError.message.includes('rate') || globalError.message.includes('quota')) {
         userMessage = 'Service temporarily overloaded. Please wait a moment and try again.';
         statusCode = 429;
-      } else if (error.message.includes('network') || error.message.includes('timeout')) {
-        userMessage = 'Network error. Please check your connection and try again.';
+        errorDetails = 'Rate limiting or quota error';
+      } else if (globalError.message.includes('network') || globalError.message.includes('timeout') || globalError.message.includes('fetch')) {
+        userMessage = 'Network error occurred. Please check your connection and try again.';
         statusCode = 502;
+        errorDetails = 'Network connectivity error';
+      } else if (globalError.message.includes('JSON') || globalError.message.includes('parse')) {
+        userMessage = 'Invalid request format. Please refresh the page and try again.';
+        statusCode = 400;
+        errorDetails = 'JSON parsing error';
       }
     }
     
+    // Always return a JSON response, never throw
     return new Response(
       JSON.stringify({
         success: false,
         error: userMessage,
-        details: `Internal error ID: ${requestId}`
+        details: errorDetails,
+        requestId: requestId || 'unknown',
+        timestamp: new Date().toISOString(),
+        debug: {
+          errorType: globalError.constructor.name,
+          processingTime: processingTime,
+          environmentOk: envCheck
+        }
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

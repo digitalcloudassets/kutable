@@ -117,36 +117,67 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
       // Handle Supabase Functions errors (non-2xx responses)
       let errorMessage = 'Sorry, I encountered an error. Please try again.';
       let isConfigurationError = false;
-      
-      if (error?.name === 'FunctionsHttpError' || error?.message?.includes('Edge Function returned a non-2xx status code')) {
-        // Try to get the actual error from the response
-        try {
-          const response = error.context?.res;
-          if (response) {
-            const errorData = await response.json();
-            logEvent('error', 'Edge function error details', errorData);
-            
-            if (errorData.error) {
-              errorMessage = errorData.error;
-            }
-            
-            if (errorData.details?.includes('OpenAI API key') || 
-                errorData.details?.includes('API key not configured')) {
-              isConfigurationError = true;
-              errorMessage = '🚧 AI chat is currently being set up. Please contact support@kutable.com for immediate assistance.';
-            }
-          }
-        } catch {
-          // If we can't parse the error response, provide a generic message
-          errorMessage = 'AI service temporarily unavailable. Please try again or contact support.';
-        }
-      } else if (error?.message?.includes('API key')) {
+       console.log('Chat error details:', {
+         name: error?.name,
+         message: error?.message,
+         type: typeof error,
+         hasContext: !!error?.context,
+         contextKeys: error?.context ? Object.keys(error.context) : []
+       });
+       
+       // Handle Supabase Functions errors
+       if (error?.name === 'FunctionsHttpError' || 
+           error?.message?.includes('Edge Function returned a non-2xx status code') ||
+           error?.message?.includes('FunctionsHttpError')) {
+         
+         console.log('Handling FunctionsHttpError');
+         
+         // The error object should contain the response data directly
+         if (error?.context?.response || error?.response) {
+           console.log('Error has response context');
+         }
+         
+         // For FunctionsHttpError, the error details might be in different places
+         let errorData = null;
+         try {
+           // Try multiple ways to get the error data
+           if (error?.body) {
+             errorData = typeof error.body === 'string' ? JSON.parse(error.body) : error.body;
+           } else if (error?.context?.body) {
+             errorData = typeof error.context.body === 'string' ? JSON.parse(error.context.body) : error.context.body;
+           } else if (error?.message?.includes('{')) {
+             // Sometimes the error message contains JSON
+             const jsonMatch = error.message.match(/\{.*\}/);
+             if (jsonMatch) {
+               errorData = JSON.parse(jsonMatch[0]);
+             }
+           }
+           
+           console.log('Parsed error data:', errorData);
+           
+           if (errorData?.error) {
+             errorMessage = errorData.error;
+             
+             if (errorData.details?.includes('OpenAI API key') || 
+                 errorData.details?.includes('API key not configured') ||
+                 errorData.error?.includes('API key not configured')) {
+               isConfigurationError = true;
+               errorMessage = '🚧 AI chat is currently being set up. Please contact support@kutable.com for immediate assistance.';
+             }
+           }
+         } catch (parseError) {
+           console.error('Failed to parse edge function error:', parseError);
+           errorMessage = 'AI service temporarily unavailable. Please try again or contact support.';
+         }
+       } else if (error?.message?.includes('API key')) {
         isConfigurationError = true;
         errorMessage = 'AI chat is currently unavailable. Please contact support for assistance.';
       } else if (error?.message?.includes('rate')) {
         errorMessage = 'Too many requests. Please wait a moment before trying again.';
       }
       
+       console.log('Final error message:', errorMessage);
+       
       const errorChatMessage: ChatMessage = {
         id: `error_${Date.now()}`,
         role: 'assistant',
