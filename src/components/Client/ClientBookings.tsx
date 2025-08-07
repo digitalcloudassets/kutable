@@ -394,7 +394,7 @@ const ClientBookings: React.FC = () => {
               placeholder="Search bookings..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-premium pl-12 w-full sm:w-64"
+              className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 sm:w-64"
             />
           </div>
           
@@ -403,7 +403,7 @@ const ClientBookings: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="input-premium pl-12 pr-12 bg-white font-medium w-full"
+              className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white font-medium"
             >
               <option value="all">All Bookings</option>
               <option value="upcoming">Upcoming</option>
