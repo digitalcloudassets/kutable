@@ -324,26 +324,30 @@ const AdminDataExport: React.FC = () => {
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Export Configuration */}
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-            <Download className="h-5 w-5 text-orange-500 mr-2" />
+        <div className="card-premium p-8">
+          <div className="flex items-center space-x-3 mb-8">
+            <div className="bg-purple-100 p-3 rounded-2xl">
+              <Download className="h-6 w-6 text-purple-600" />
+            </div>
+            <h3 className="text-2xl font-display font-bold text-gray-900">
             Export Configuration
-          </h3>
+            </h3>
+          </div>
 
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Data Type Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-sm font-semibold text-gray-700 mb-4">
                 Select Data Type
               </label>
-              <div className="grid grid-cols-1 gap-3">
+              <div className="space-y-4">
                 {exportTypes.map(type => (
                   <label
                     key={type.id}
-                    className={`flex items-start p-4 border rounded-lg cursor-pointer transition-all ${
+                    className={`flex items-start p-6 border rounded-2xl cursor-pointer transition-all duration-200 hover:scale-[1.01] ${
                       exportOptions.type === type.id
-                        ? 'border-orange-500 bg-orange-50'
-                        : 'border-gray-200 hover:border-orange-300'
+                        ? 'border-primary-500 bg-primary-50 shadow-md'
+                        : 'border-gray-200 hover:border-primary-300 hover:shadow-sm'
                     }`}
                   >
                     <input
@@ -358,12 +362,12 @@ const AdminDataExport: React.FC = () => {
                       className="sr-only"
                     />
                     <div className="flex items-start space-x-3">
-                      <div className="bg-gray-100 p-2 rounded-lg">
-                        <type.icon className="h-5 w-5 text-gray-600" />
+                      <div className="bg-gray-100 p-3 rounded-xl">
+                        <type.icon className="h-6 w-6 text-gray-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{type.label}</p>
-                        <p className="text-sm text-gray-600">{type.description}</p>
+                        <p className="font-display font-bold text-gray-900 text-lg mb-1">{type.label}</p>
+                        <p className="text-gray-600 font-medium">{type.description}</p>
                       </div>
                     </div>
                   </label>
@@ -373,7 +377,7 @@ const AdminDataExport: React.FC = () => {
 
             {/* Date Range */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-sm font-semibold text-gray-700 mb-4">
                 Date Range
               </label>
               <select
@@ -382,7 +386,7 @@ const AdminDataExport: React.FC = () => {
                   ...prev, 
                   dateRange: e.target.value as any 
                 }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                className="input-premium"
               >
                 <option value="last_month">Last Month</option>
                 <option value="last_3_months">Last 3 Months</option>
@@ -393,9 +397,9 @@ const AdminDataExport: React.FC = () => {
 
             {/* Custom Date Range */}
             {exportOptions.dateRange === 'custom' && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Start Date
                   </label>
                   <input
@@ -405,11 +409,11 @@ const AdminDataExport: React.FC = () => {
                       ...prev, 
                       startDate: e.target.value ? new Date(e.target.value) : undefined 
                     }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="input-premium"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     End Date
                   </label>
                   <input
@@ -419,7 +423,7 @@ const AdminDataExport: React.FC = () => {
                       ...prev, 
                       endDate: e.target.value ? new Date(e.target.value) : undefined 
                     }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="input-premium"
                   />
                 </div>
               </div>
@@ -427,11 +431,11 @@ const AdminDataExport: React.FC = () => {
 
             {/* Format Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-sm font-semibold text-gray-700 mb-4">
                 Export Format
               </label>
-              <div className="flex space-x-4">
-                <label className="flex items-center">
+              <div className="grid grid-cols-2 gap-4">
+                <label className="flex items-center p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-primary-300 transition-colors">
                   <input
                     type="radio"
                     name="format"
@@ -441,11 +445,11 @@ const AdminDataExport: React.FC = () => {
                       ...prev, 
                       format: e.target.value as any 
                     }))}
-                    className="w-4 h-4 text-orange-600 border-gray-300 focus:ring-orange-500"
+                    className="w-5 h-5 text-primary-600 border-gray-300 focus:ring-primary-500"
                   />
-                  <span className="ml-2 text-sm text-gray-700">CSV (Excel compatible)</span>
+                  <span className="ml-3 text-sm text-gray-700 font-medium">CSV (Excel compatible)</span>
                 </label>
-                <label className="flex items-center">
+                <label className="flex items-center p-4 border border-gray-200 rounded-xl cursor-pointer hover:border-primary-300 transition-colors">
                   <input
                     type="radio"
                     name="format"
@@ -455,9 +459,9 @@ const AdminDataExport: React.FC = () => {
                       ...prev, 
                       format: e.target.value as any 
                     }))}
-                    className="w-4 h-4 text-orange-600 border-gray-300 focus:ring-orange-500"
+                    className="w-5 h-5 text-primary-600 border-gray-300 focus:ring-primary-500"
                   />
-                  <span className="ml-2 text-sm text-gray-700">JSON (Developer format)</span>
+                  <span className="ml-3 text-sm text-gray-700 font-medium">JSON (Developer format)</span>
                 </label>
               </div>
             </div>
@@ -465,16 +469,21 @@ const AdminDataExport: React.FC = () => {
         </div>
 
         {/* Export Actions */}
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">
+        <div className="card-premium p-8">
+          <div className="flex items-center space-x-3 mb-8">
+            <div className="bg-accent-100 p-3 rounded-2xl">
+              <Download className="h-6 w-6 text-accent-600" />
+            </div>
+            <h3 className="text-2xl font-display font-bold text-gray-900">
             Export Actions
-          </h3>
+            </h3>
+          </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             <button
               onClick={() => exportData(exportOptions.type)}
               disabled={!!exporting}
-              className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {exporting === exportOptions.type ? (
                 <>
@@ -490,16 +499,16 @@ const AdminDataExport: React.FC = () => {
             </button>
 
             {/* Quick Export Buttons */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               {exportTypes.filter(t => t.id !== exportOptions.type).map(type => (
                 <button
                   key={type.id}
                   onClick={() => exportData(type.id)}
                   disabled={!!exporting}
-                  className="bg-gray-100 text-gray-700 py-2 px-3 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="btn-secondary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {exporting === type.id ? (
-                    <Loader className="h-4 w-4 animate-spin" />
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-transparent" />
                   ) : (
                     <type.icon className="h-4 w-4" />
                   )}
@@ -511,18 +520,20 @@ const AdminDataExport: React.FC = () => {
 
           {/* Export History */}
           {exportHistory.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <h4 className="text-sm font-medium text-gray-900 mb-4">Recent Exports</h4>
-              <div className="space-y-2">
+            <div className="mt-8 pt-8 border-t border-gray-100">
+              <h4 className="text-lg font-display font-bold text-gray-900 mb-6">Recent Exports</h4>
+              <div className="space-y-4">
                 {exportHistory.map((export_, index) => (
-                  <div key={index} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span className="text-gray-700 capitalize">{export_.type}</span>
+                  <div key={index} className="flex items-center justify-between bg-gray-50 p-4 rounded-xl">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-emerald-500 p-1.5 rounded-lg">
+                        <CheckCircle className="h-4 w-4 text-white" />
+                      </div>
+                      <span className="text-gray-900 capitalize font-semibold">{export_.type}</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-gray-600">{export_.records} records</p>
-                      <p className="text-gray-500 text-xs">{export_.date}</p>
+                      <p className="text-gray-900 font-semibold">{export_.records} records</p>
+                      <p className="text-gray-500 text-sm font-medium">{export_.date}</p>
                     </div>
                   </div>
                 ))}
@@ -533,12 +544,14 @@ const AdminDataExport: React.FC = () => {
       </div>
 
       {/* Export Instructions */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <div className="flex items-start space-x-3">
-          <FileText className="h-6 w-6 text-blue-600 mt-1" />
+      <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-8">
+        <div className="flex items-start space-x-4">
+          <div className="bg-blue-500 p-3 rounded-2xl">
+            <FileText className="h-6 w-6 text-white" />
+          </div>
           <div>
-            <h4 className="font-medium text-blue-900 mb-2">Export Guidelines</h4>
-            <ul className="space-y-1 text-blue-800 text-sm">
+            <h4 className="font-display font-bold text-blue-900 mb-4 text-lg">Export Guidelines</h4>
+            <ul className="space-y-2 text-blue-800 font-medium">
               <li>• CSV files can be opened in Excel, Google Sheets, or any spreadsheet application</li>
               <li>• JSON files are ideal for developers and technical analysis</li>
               <li>• Exported data includes all records within the selected date range</li>

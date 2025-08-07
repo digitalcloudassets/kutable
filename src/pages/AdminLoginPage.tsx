@@ -84,53 +84,63 @@ const AdminLoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 page-container">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 flex items-center justify-center px-4 page-container relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-primary-500/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent-500/5 rounded-full blur-3xl"></div>
+      </div>
+      
       <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <div className="bg-orange-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Shield className="h-8 w-8 text-white" />
+        <div className="text-center relative z-10">
+          <div className="bg-gradient-to-br from-primary-500 to-accent-500 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-premium animate-float">
+            <Shield className="h-10 w-10 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900">Kutable Admin</h2>
-          <p className="mt-2 text-gray-600">Platform Management Dashboard</p>
+          <h2 className="text-4xl font-display font-bold text-gray-900 mb-3">Kutable Admin</h2>
+          <p className="text-xl text-gray-600 font-medium">Platform Management Dashboard</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md border border-gray-100 p-8">
+        <div className="card-premium p-8 relative z-10">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Security Warning */}
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-                <span className="text-red-800 text-sm font-medium">
+            <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-2xl p-6">
+              <div className="flex items-center space-x-3">
+                <div className="bg-red-500 p-2 rounded-xl">
+                  <AlertTriangle className="h-5 w-5 text-white" />
+                </div>
+                <span className="text-red-800 font-semibold">
                   Admin access is monitored and logged
                 </span>
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-center space-x-2">
-                <AlertTriangle className="h-4 w-4" />
+              <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-center space-x-3">
+                <div className="bg-red-500 p-1.5 rounded-lg">
+                  <AlertTriangle className="h-4 w-4 text-white" />
+                </div>
                 <span>{error}</span>
               </div>
             )}
 
             {attempts > 0 && !isLocked && (
-              <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 text-yellow-800 px-6 py-4 rounded-2xl font-medium">
                 {attempts} failed attempt(s). Account will be locked after {MAX_ATTEMPTS} failed attempts.
               </div>
             )}
 
             {isLocked && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 text-red-600 px-6 py-4 rounded-2xl font-medium">
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-3">
                 Username
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   id="username"
                   type="text"
@@ -139,18 +149,18 @@ const AdminLoginPage: React.FC = () => {
                   autoComplete="username"
                   required
                   disabled={isLocked}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                  className="input-premium pl-12"
                   placeholder="Enter username"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-3">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -159,13 +169,13 @@ const AdminLoginPage: React.FC = () => {
                   autoComplete="current-password"
                   required
                   disabled={isLocked}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 placeholder-gray-500"
+                  className="input-premium pl-12 pr-12"
                   placeholder="Enter password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -179,11 +189,11 @@ const AdminLoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading || isLocked}
-              className="w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
                   <span>Authenticating...</span>
                 </>
               ) : (
@@ -196,18 +206,20 @@ const AdminLoginPage: React.FC = () => {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-xs text-gray-500">
+            <p className="text-sm text-gray-500 font-medium">
               Authorized personnel only
             </p>
           </div>
 
           {/* Security Notice */}
-          <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <div className="flex items-start space-x-2">
-              <Shield className="h-4 w-4 text-gray-600 mt-0.5" />
+          <div className="mt-8 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-2xl p-6">
+            <div className="flex items-start space-x-3">
+              <div className="bg-gray-500 p-2 rounded-xl">
+                <Shield className="h-4 w-4 text-white" />
+              </div>
               <div>
-                <p className="text-xs text-gray-600 font-medium mb-1">Security Notice</p>
-                <ul className="text-xs text-gray-500 space-y-1">
+                <p className="text-sm text-gray-900 font-semibold mb-2">Security Notice</p>
+                <ul className="text-sm text-gray-600 space-y-1 font-medium">
                   <li>• All admin actions are logged and monitored</li>
                   <li>• Sessions expire after 8 hours of inactivity</li>
                   <li>• Failed login attempts are tracked</li>
