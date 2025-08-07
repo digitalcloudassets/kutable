@@ -171,13 +171,16 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
            }
          } catch (parseError) {
            console.error('Failed to parse edge function error:', parseError);
-           errorMessage = 'AI service temporarily unavailable. Please try again or contact support.';
+          errorMessage = 'AI service temporarily unavailable. Please contact support@kutable.com for immediate assistance.';
          }
        } else if (error?.message?.includes('API key')) {
-        isConfigurationError = true;
-        errorMessage = 'AI chat is currently unavailable. Please contact support for assistance.';
+        errorMessage = '🚧 AI chat is being set up. Please contact support@kutable.com for immediate assistance.';
       } else if (error?.message?.includes('rate')) {
         errorMessage = 'Too many requests. Please wait a moment before trying again.';
+      } else if (error?.message?.includes('database')) {
+        errorMessage = 'Chat service temporarily unavailable. Please email support@kutable.com for assistance.';
+      } else if (error?.message?.includes('network')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
       }
       
        console.log('Final error message:', errorMessage);
@@ -185,9 +188,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
       const errorChatMessage: ChatMessage = {
         id: `error_${Date.now()}`,
         role: 'assistant',
-        content: isConfigurationError 
-          ? `${errorMessage}\n\n💡 **Alternative ways to get help:**\n• Email: support@kutable.com\n• Support form: Visit our support page\n• Phone: Contact barbers directly via their profiles`
-          : errorMessage,
+        content: `${errorMessage}\n\n💡 **Alternative ways to get help:**\n• Email: support@kutable.com\n• Support form: Visit our support page\n• Phone: Contact barbers directly via their profiles\n• FAQ: Check our how-it-works and support pages`,
         timestamp: new Date().toISOString()
       };
       
@@ -214,7 +215,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
       const welcomeMessage: ChatMessage = {
         id: 'welcome',
         role: 'assistant',
-        content: "👋 Hi! I'm Kutable's AI assistant. I can help you with:\n\n• Booking appointments\n• Finding barbers\n• Platform questions\n• Pricing information\n• Technical support\n\nWhat can I help you with today?",
+        content: "👋 Hi! I'm Kutable's AI assistant. I can help you with:\n\n• **Booking appointments** - How to find and book barbers\n• **For Barbers** - Claiming profiles, fees, payment setup\n• **Platform features** - SMS notifications, mobile app, security\n• **Pricing & payments** - Customer and barber costs\n• **Support** - Getting help and contacting us\n\nWhat can I help you with today?",
         timestamp: new Date().toISOString()
       };
       setMessages([welcomeMessage]);
