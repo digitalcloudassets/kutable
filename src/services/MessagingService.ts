@@ -283,15 +283,12 @@ export class MessagingService {
           ...message,
           sender_profile: isFromBarber 
             ? {
-                id: booking.barber_profiles?.user_id || '',
-          final_client_name: clientName,
-          client_profile_exists: !!booking.client_profiles,
-          has_valid_user_id: !!(clientUserId && clientUserId.trim())
+                name: booking.barber_profiles?.business_name || booking.barber_profiles?.owner_name || 'Barber',
                 type: 'barber'
               }
             : {
-          id: clientUserId && clientUserId.trim() ? clientUserId : '',  // Only use valid user_id
-                name: `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`,
+                id: booking.client_profiles?.user_id || '',
+                name: `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim(),
                 type: 'client'
               }
         };
