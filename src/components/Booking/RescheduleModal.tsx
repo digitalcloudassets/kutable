@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import { format, addDays, isToday, isTomorrow } from 'date-fns';
-import { generateMockAvailableSlots } from '../../utils/searchFilters';
+import { createAvailabilityManager } from '../../utils/availabilityManager';
+import { NotificationManager } from '../../utils/notifications';
 import 'react-datepicker/dist/react-datepicker.css';
 
 interface RescheduleModalProps {
@@ -41,7 +42,8 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('');
-  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<import('../../utils/availabilityManager').TimeSlot[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'date' | 'time' | 'confirm'>('date');
 
@@ -56,10 +58,29 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
 
   React.useEffect(() => {
     if (selectedDate && step === 'time') {
-      // Generate available slots for the selected date
-      setAvailableSlots(generateMockAvailableSlots());
+      loadAvailableSlots();
     }
   }, [selectedDate, step]);
+
+  const loadAvailableSlots = async () => {
+    if (!booking.barber_profiles?.id) return;
+
+    setLoadingSlots(true);
+    try {
+      const availabilityManager = createAvailabilityManager(booking.barber_profiles.id);
+      const slots = await availabilityManager.getAvailableSlots(
+        selectedDate, 
+        booking.services?.duration_minutes || 30
+      );
+      setAvailableSlots(slots);
+    } catch (error) {
+      console.error('Error loading available slots:', error);
+      NotificationManager.error('Failed to load available time slots');
+      setAvailableSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
@@ -196,19 +217,31 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
                 Available Times - {formatDateDisplay(selectedDate)}
               </h3>
               
-              {availableSlots.length > 0 ? (
+              {loadingSlots ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-orange-500 border-t-transparent mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading available times...</p>
+                </div>
+              ) : availableSlots.length > 0 ? (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-64 overflow-y-auto">
                   {availableSlots.map((slot) => (
                     <button
                       key={slot}
-                      onClick={() => handleTimeSelect(slot)}
+                      onClick={() => slot.available && handleTimeSelect(slot.time)}
+                      disabled={!slot.available}
                       className={`p-3 text-sm rounded-lg border transition-all ${
                         selectedTime === slot
-                          ? 'bg-orange-500 text-white border-orange-500 shadow-md'
-                          : 'border-gray-300 hover:border-orange-500 hover:bg-orange-50'
+                          ? 'bg-orange-500 text-white border-orange-500 shadow-md' 
+                          : slot.available
+                          ? 'border-gray-300 hover:border-orange-500 hover:bg-orange-50'
+                          : 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
                       }`}
+                      title={!slot.available ? slot.reason : undefined}
                     >
                       {slot}
+                      {!slot.available && slot.reason && (
+                        <div className="text-xs text-gray-400 mt-1">{slot.reason}</div>
+                      )}
                     </button>
                   ))}
                 </div>

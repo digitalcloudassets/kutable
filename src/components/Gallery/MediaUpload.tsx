@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Image as ImageIcon, Video, X, Loader } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { NotificationManager } from '../../utils/notifications';
+import { validateFileUpload } from '../../utils/security';
 
 interface MediaUploadProps {
   barberId: string;
@@ -22,41 +24,28 @@ const MediaUpload: React.FC<MediaUploadProps> = ({ barberId, onUploadComplete })
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
 
-    // Security: Validate file types and sizes
-    const validFiles = Array.from(files).filter((file, index) => {
+    const validFiles: File[] = [];
+    const rejectedFiles: string[] = [];
+
+    Array.from(files).forEach((file, index) => {
       // Limit number of files
-      if (index >= 10) return false;
-      
-      const isImage = file.type.startsWith('image/');
-      const isVideo = file.type.startsWith('video/');
-      
-      // Validate specific MIME types
-      const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      const allowedVideoTypes = ['video/mp4', 'video/mov', 'video/avi'];
-      
-      const isValidImageType = isImage && allowedImageTypes.includes(file.type);
-      const isValidVideoType = isVideo && allowedVideoTypes.includes(file.type);
-      
-      // Size limits: 10MB for images, 50MB for videos
-      const maxImageSize = 10 * 1024 * 1024; // 10MB
-      const maxVideoSize = 50 * 1024 * 1024; // 50MB
-      
-      const isValidSize = isImage ? file.size <= maxImageSize : file.size <= maxVideoSize;
-      
-      // Check file name for suspicious content
-      const hasValidName = !/[<>:"/\\|?*]/.test(file.name) && file.name.length <= 255;
-      
-      if (!hasValidName) {
-        console.warn('Invalid file name:', file.name);
-        return false;
+      if (index >= 10) {
+        rejectedFiles.push(`${file.name} (file limit exceeded)`);
+        return;
       }
       
-      return (isValidImageType || isValidVideoType) && isValidSize;
+      const validation = validateFileUpload(file);
+      if (validation.isValid) {
+        validFiles.push(file);
+      } else {
+        rejectedFiles.push(`${file.name} (${validation.error})`);
+      }
     });
 
-    if (validFiles.length !== files.length) {
-      const rejected = files.length - validFiles.length;
-      alert(`${rejected} file(s) were rejected. Only JPG, PNG, WebP images (max 10MB) and MP4, MOV, AVI videos (max 50MB) are allowed.`);
+    if (rejectedFiles.length > 0) {
+      NotificationManager.error(
+        `${rejectedFiles.length} file(s) rejected: ${rejectedFiles.slice(0, 3).join(', ')}${rejectedFiles.length > 3 ? '...' : ''}`
+      );
     }
 
     validFiles.forEach(file => {
@@ -119,7 +108,7 @@ const MediaUpload: React.FC<MediaUploadProps> = ({ barberId, onUploadComplete })
       if (uploadError) {
         clearInterval(progressInterval);
         if (uploadError.message.includes('Bucket not found')) {
-          alert(`Storage setup required: Please create the "${bucket}" bucket in your Supabase Storage dashboard before uploading ${uploadingFile.type}s.`);
+          NotificationManager.error(`Storage setup required: Please create the "${bucket}" bucket in your Supabase Storage dashboard before uploading ${uploadingFile.type}s.`);
           setUploadingFiles(prev => prev.filter(f => f.file !== uploadingFile.file));
           URL.revokeObjectURL(uploadingFile.preview);
           return;
@@ -167,11 +156,12 @@ const MediaUpload: React.FC<MediaUploadProps> = ({ barberId, onUploadComplete })
         setUploadingFiles(prev => prev.filter(f => f.file !== uploadingFile.file));
         URL.revokeObjectURL(uploadingFile.preview);
         onUploadComplete();
+        NotificationManager.success(`${uploadingFile.type === 'image' ? 'Image' : 'Video'} uploaded successfully!`);
       }, 500);
 
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Failed to upload file. Please check your Supabase storage configuration.');
+      NotificationManager.error('Failed to upload file. Please check your Supabase storage configuration.');
       setUploadingFiles(prev => prev.filter(f => f.file !== uploadingFile.file));
       URL.revokeObjectURL(uploadingFile.preview);
     }

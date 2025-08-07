@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Search, MapPin, Star, Filter, Clock, DollarSign, Calendar, MapIcon, X, SlidersHorizontal, Scissors, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { shouldSkipCSVRecord, isReservedSlug } from '../lib/reservedSlugs';
+import { applySearchFilters, SearchFilters, DEFAULT_FILTERS } from '../utils/searchFilters';
+import { NotificationManager } from '../utils/notifications';
 
 interface BarberProfile {
   id: string;
@@ -23,16 +25,6 @@ interface BarberProfile {
   total_reviews: number;
 }
 
-interface FilterState {
-  priceMin: number;
-  priceMax: number;
-  minRating: number;
-  serviceTypes: string[];
-  availableToday: boolean;
-  availableThisWeek: boolean;
-  distance: number;
-  sortBy: 'rating' | 'reviews' | 'name' | 'newest';
-}
 
 const BarberListPage: React.FC = () => {
   const [barbers, setBarbers] = useState<BarberProfile[]>([]);
@@ -45,16 +37,8 @@ const BarberListPage: React.FC = () => {
   const [cities, setCities] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<FilterState>({
-    priceMin: 0,
-    priceMax: 200,
-    minRating: 0,
-    serviceTypes: [],
-    availableToday: false,
-    availableThisWeek: false,
-    distance: 50,
-    sortBy: 'rating'
-  });
+  const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
+  const [applyingFilters, setApplyingFilters] = useState(false);
   const [availableServiceTypes] = useState([
     'Haircut', 'Beard Trim', 'Shave', 'Hair Wash', 'Styling', 'Fade', 'Buzz Cut', 'Line Up'
   ]);
@@ -327,66 +311,49 @@ const BarberListPage: React.FC = () => {
 
   // Filter barbers based on search and city
   useEffect(() => {
-    let filtered = [...barbers];
-    
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(barber => 
-        barber.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        barber.owner_name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    // Apply city filter
-    if (selectedCity) {
-      filtered = filtered.filter(barber => barber.city === selectedCity);
-    }
-    
-    // Apply rating filter
-    if (filters.minRating > 0) {
-      filtered = filtered.filter(barber => barber.average_rating >= filters.minRating);
-    }
-    
-    // Apply availability filters
-    if (filters.availableToday || filters.availableThisWeek) {
-      // For demo purposes, randomly show some as available
-      filtered = filtered.filter(() => Math.random() > 0.3);
-    }
-    
-    // Apply sorting
-    filtered.sort((a, b) => {
-      switch (filters.sortBy) {
-        case 'rating':
-          return b.average_rating - a.average_rating;
-        case 'reviews':
-          return b.total_reviews - a.total_reviews;
-        case 'name':
-          return a.business_name.localeCompare(b.business_name);
-        case 'newest':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        default:
-          return b.average_rating - a.average_rating;
+    const applyFiltersAsync = async () => {
+      if (barbers.length === 0) return;
+      
+      setApplyingFilters(true);
+      try {
+        const filtered = await applySearchFilters(barbers, filters, searchTerm, selectedCity);
+        setFilteredBarbers(filtered);
+        setDisplayedBarbers(filtered.slice(0, PROFILES_PER_PAGE));
+        setCurrentPage(1);
+      } catch (error) {
+        console.error('Error applying filters:', error);
+        NotificationManager.error('Error applying filters. Using basic search only.');
+        
+        // Fallback to basic filtering
+        let basicFiltered = [...barbers];
+        
+        if (searchTerm) {
+          basicFiltered = basicFiltered.filter(barber => 
+            barber.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            barber.owner_name.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
+        
+        if (selectedCity) {
+          basicFiltered = basicFiltered.filter(barber => barber.city === selectedCity);
+        }
+        
+        setFilteredBarbers(basicFiltered);
+        setDisplayedBarbers(basicFiltered.slice(0, PROFILES_PER_PAGE));
+        setCurrentPage(1);
+      } finally {
+        setApplyingFilters(false);
       }
-    });
-    
-    setFilteredBarbers(filtered);
-    setDisplayedBarbers(filtered.slice(0, PROFILES_PER_PAGE));
-    setCurrentPage(1);
+    };
+
+    applyFiltersAsync();
   }, [searchTerm, selectedCity, barbers, filters]);
 
   const clearAllFilters = () => {
-    setFilters({
-      priceMin: 0,
-      priceMax: 200,
-      minRating: 0,
-      serviceTypes: [],
-      availableToday: false,
-      availableThisWeek: false,
-      distance: 50,
-      sortBy: 'rating'
-    });
+    setFilters(DEFAULT_FILTERS);
     setSelectedCity('');
     setSearchTerm('');
+    NotificationManager.info('All filters cleared');
   };
 
   const activeFilterCount = [
@@ -545,7 +512,16 @@ const BarberListPage: React.FC = () => {
           <>
             <div className="mb-6">
               <p className="text-gray-600 mobile-body font-medium">
-                Showing {displayedBarbers.length.toLocaleString()} of {filteredBarbers.length.toLocaleString()} barber{filteredBarbers.length !== 1 ? 's' : ''} 
+                {applyingFilters ? (
+                  <span className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-orange-500 border-t-transparent" />
+                    <span>Applying filters...</span>
+                  </span>
+                ) : (
+                  <>
+                    Showing {displayedBarbers.length.toLocaleString()} of {filteredBarbers.length.toLocaleString()} barber{filteredBarbers.length !== 1 ? 's' : ''} 
+                  </>
+                )}
                 {selectedCity && ` in ${selectedCity}`}
                 {filters.minRating > 0 && ` with ${filters.minRating}+ stars`}
                 {(filters.availableToday || filters.availableThisWeek) && ` with availability`}

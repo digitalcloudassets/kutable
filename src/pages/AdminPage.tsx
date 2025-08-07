@@ -21,6 +21,8 @@ import {
 import { supabase, getRealBarberCount } from '../lib/supabase';
 import { useSupabaseConnection } from '../hooks/useSupabaseConnection';
 import SupabaseConnectionBanner from '../components/Setup/SupabaseConnectionBanner';
+import AdminDataExport from '../components/Admin/AdminDataExport';
+import { NotificationManager, AdminNotifications } from '../utils/notifications';
 
 interface PlatformMetrics {
   totalBarbers: number;
@@ -64,7 +66,7 @@ const AdminPage: React.FC = () => {
     topPerformingBarbers: []
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'barbers' | 'bookings' | 'payments'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'barbers' | 'bookings' | 'payments' | 'export'>('overview');
 
   useEffect(() => {
     checkAuth();
@@ -220,8 +222,11 @@ const AdminPage: React.FC = () => {
   };
 
   const exportData = (type: string) => {
-    // Placeholder for export functionality
-    console.log(`Exporting ${type} data...`);
+    try {
+      AdminNotifications.dataExported(type);
+    } catch (error) {
+      NotificationManager.error(`Failed to export ${type} data`);
+    }
   };
 
   if (loading) {
@@ -334,7 +339,8 @@ const AdminPage: React.FC = () => {
                   { id: 'overview', label: 'Overview', icon: BarChart3 },
                   { id: 'barbers', label: 'Barbers', icon: Users },
                   { id: 'bookings', label: 'Bookings', icon: Calendar },
-                  { id: 'payments', label: 'Payments', icon: CreditCard }
+                  { id: 'payments', label: 'Payments', icon: CreditCard },
+                  { id: 'export', label: 'Export', icon: Download }
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -591,41 +597,20 @@ const AdminPage: React.FC = () => {
                   )}
                 </div>
               )}
+
+              {/* Export Tab */}
+              {activeTab === 'export' && (
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Download className="h-5 w-5 text-orange-500" />
+                    Data Export Center
+                  </h3>
+                  <AdminDataExport />
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Export Actions */}
-          <div className="bg-white border border-gray-100 rounded-lg p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-              <Download className="h-5 w-5 text-orange-500" />
-              Data Export
-            </h3>
-            <p className="text-gray-600 text-sm mb-6">Export platform data for analysis</p>
-            
-            <div className="flex flex-wrap gap-4">
-              <button 
-                onClick={() => exportData('bookings')}
-                className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
-              >
-                <Download className="h-4 w-4" />
-                <span>Export Bookings CSV</span>
-              </button>
-              <button 
-                onClick={() => exportData('revenue')}
-                className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
-              >
-                <Download className="h-4 w-4" />
-                <span>Export Revenue Report</span>
-              </button>
-              <button 
-                onClick={() => exportData('barbers')}
-                className="border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
-              >
-                <Download className="h-4 w-4" />
-                <span>Export Barber Data</span>
-              </button>
-            </div>
-          </div>
         </div>
       </main>
     </div>

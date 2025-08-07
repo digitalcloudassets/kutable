@@ -16,6 +16,8 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { Database } from '../../lib/supabase';
 import ConsentManagement from './ConsentManagement';
+import { NotificationManager } from '../../utils/notifications';
+import { validateEmail, validatePhone } from '../../utils/security';
 
 type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
 
@@ -111,17 +113,17 @@ const ClientProfileSettings: React.FC = () => {
 
     // Validation
     if (!editData.first_name.trim() || !editData.last_name.trim()) {
-      setError('First name and last name are required');
+      NotificationManager.error('First name and last name are required');
       return;
     }
 
-    if (editData.email && !editData.email.includes('@')) {
-      setError('Please enter a valid email address');
+    if (editData.email && !validateEmail(editData.email)) {
+      NotificationManager.error('Please enter a valid email address');
       return;
     }
 
-    if (editData.phone && editData.phone.length < 10) {
-      setError('Please enter a valid phone number');
+    if (editData.phone && !validatePhone(editData.phone)) {
+      NotificationManager.error('Please enter a valid phone number');
       return;
     }
 
@@ -156,14 +158,11 @@ const ClientProfileSettings: React.FC = () => {
       } : null);
 
       setIsEditing(false);
-      setSuccessMessage('Profile updated successfully!');
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(''), 3000);
+      NotificationManager.success('Profile updated successfully!');
       
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      setError('Failed to update profile. Please try again.');
+      NotificationManager.error('Failed to update profile. Please try again.');
     } finally {
       setSaving(false);
     }

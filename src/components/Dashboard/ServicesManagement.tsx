@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Clock, DollarSign, Save, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Database } from '../../lib/supabase';
+import { NotificationManager } from '../../utils/notifications';
 
 type Service = Database['public']['Tables']['services']['Row'];
 
@@ -45,6 +46,11 @@ const ServicesManagement: React.FC<ServicesManagementProps> = ({ barberId }) => 
   };
 
   const createService = async () => {
+    if (!newService.name.trim() || newService.price <= 0) {
+      NotificationManager.error('Please provide a service name and valid price');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('services')
@@ -68,12 +74,19 @@ const ServicesManagement: React.FC<ServicesManagementProps> = ({ barberId }) => 
         deposit_amount: 0
       });
       setIsCreating(false);
+      NotificationManager.success(`Service "${newService.name}" created successfully!`);
     } catch (error) {
       console.error('Error creating service:', error);
+      NotificationManager.error('Failed to create service. Please try again.');
     }
   };
 
   const updateService = async (service: Service) => {
+    if (!service.name.trim() || service.price <= 0) {
+      NotificationManager.error('Please provide a service name and valid price');
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('services')
@@ -92,13 +105,18 @@ const ServicesManagement: React.FC<ServicesManagementProps> = ({ barberId }) => 
       
       setServices(prev => prev.map(s => s.id === service.id ? service : s));
       setEditingService(null);
+      NotificationManager.success('Service updated successfully!');
     } catch (error) {
       console.error('Error updating service:', error);
+      NotificationManager.error('Failed to update service. Please try again.');
     }
   };
 
   const deleteService = async (serviceId: string) => {
-    if (!confirm('Are you sure you want to delete this service?')) return;
+    const service = services.find(s => s.id === serviceId);
+    if (!service) return;
+    
+    if (!confirm(`Are you sure you want to delete "${service.name}"? This action cannot be undone.`)) return;
 
     try {
       const { error } = await supabase
@@ -109,12 +127,17 @@ const ServicesManagement: React.FC<ServicesManagementProps> = ({ barberId }) => 
       if (error) throw error;
       
       setServices(prev => prev.filter(s => s.id !== serviceId));
+      NotificationManager.success(`Service "${service.name}" deleted successfully`);
     } catch (error) {
       console.error('Error deleting service:', error);
+      NotificationManager.error('Failed to delete service. Please try again.');
     }
   };
 
   const toggleServiceStatus = async (serviceId: string, isActive: boolean) => {
+    const service = services.find(s => s.id === serviceId);
+    if (!service) return;
+
     try {
       const { error } = await supabase
         .from('services')
@@ -126,8 +149,13 @@ const ServicesManagement: React.FC<ServicesManagementProps> = ({ barberId }) => 
       setServices(prev => prev.map(s => 
         s.id === serviceId ? { ...s, is_active: !isActive } : s
       ));
+      
+      NotificationManager.success(
+        `Service "${service.name}" ${!isActive ? 'activated' : 'deactivated'} successfully`
+      );
     } catch (error) {
       console.error('Error toggling service status:', error);
+      NotificationManager.error('Failed to update service status. Please try again.');
     }
   };
 

@@ -33,6 +33,7 @@ import MediaGallery from '../Gallery/MediaGallery';
 import ServicesManagement from './ServicesManagement';
 import { useAuth } from '../../hooks/useAuth';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
+import { NotificationManager } from '../../utils/notifications';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -172,8 +173,10 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
 
       setIsEditing(false);
       onUpdate();
+     NotificationManager.success('Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
+     NotificationManager.error('Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -192,7 +195,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
 
       if (uploadError) {
         if (uploadError.message.includes('Bucket not found')) {
-          alert('Storage setup required: Please create the "barber-images" bucket in your Supabase Storage dashboard before uploading images.');
+          NotificationManager.error('Storage setup required: Please create the "barber-images" bucket in your Supabase Storage dashboard before uploading images.');
           setUploadingImage(false);
           return;
         }
@@ -214,9 +217,10 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
       if (updateError) throw updateError;
 
       onUpdate();
+      NotificationManager.success('Profile photo updated successfully!');
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image. Please check your Supabase storage configuration.');
+      NotificationManager.error('Failed to upload image. Please check your Supabase storage configuration.');
     } finally {
       setUploadingImage(false);
     }
@@ -235,7 +239,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
 
       if (uploadError) {
         if (uploadError.message.includes('Bucket not found')) {
-          alert('Storage setup required: Please create the "barber-images" bucket in your Supabase Storage dashboard before uploading images.');
+         NotificationManager.error('Storage setup required: Please create the "barber-images" bucket in your Supabase Storage dashboard before uploading images.');
           setUploadingBanner(false);
           return;
         }
@@ -257,15 +261,20 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
       if (updateError) throw updateError;
 
       onUpdate();
+     NotificationManager.success('Banner image updated successfully!');
     } catch (error) {
       console.error('Error uploading banner image:', error);
-      alert('Failed to upload banner image. Please check your Supabase storage configuration.');
+     NotificationManager.error('Failed to upload banner image. Please check your Supabase storage configuration.');
     } finally {
       setUploadingBanner(false);
     }
   };
 
   const saveAvailability = async () => {
+    if (!isConnected) {
+      NotificationManager.error('Please connect to Supabase to save availability');
+      return;
+    }
     setLoading(true);
     try {
       // Delete existing availability
@@ -294,8 +303,10 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
       }
 
       await fetchAvailability();
+      NotificationManager.success('Business hours updated successfully!');
     } catch (error) {
       console.error('Error saving availability:', error);
+      NotificationManager.error('Failed to save business hours. Please try again.');
     } finally {
       setLoading(false);
     }

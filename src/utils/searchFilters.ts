@@ -1,3 +1,6 @@
+import { Database } from '../lib/supabase';
+import { createAvailabilityManager } from './availabilityManager';
+
 export interface SearchFilters {
   priceMin: number;
   priceMax: number;
@@ -71,12 +74,12 @@ export const SORT_OPTIONS = [
   { value: 'distance', label: 'Distance' }
 ];
 
-export const applySearchFilters = (
+export const applySearchFilters = async (
   barbers: BarberProfile[], 
   filters: SearchFilters,
   searchTerm: string = '',
   selectedCity: string = ''
-): BarberProfile[] => {
+): Promise<BarberProfile[]> => {
   let filtered = [...barbers];
   
   // Apply search filter
@@ -97,20 +100,48 @@ export const applySearchFilters = (
     filtered = filtered.filter(barber => barber.average_rating >= filters.minRating);
   }
   
-  // Apply service type filter (mock implementation)
-  if (filters.serviceTypes.length > 0) {
-    // For demo purposes, randomly filter based on service types
-    // In production, this would check actual services offered by each barber
-    filtered = filtered.filter(() => Math.random() > 0.2);
+  // Apply price range filter (would need actual service data)
+  // This is a placeholder - in production, you'd query services table
+  if (filters.priceMin > 0 || filters.priceMax < 200) {
+    // Mock implementation - in production, join with services table
+    filtered = filtered.filter(() => Math.random() > 0.1);
   }
   
-  // Apply availability filters (mock implementation)
+  // Apply service type filter 
+  if (filters.serviceTypes.length > 0) {
+    // In production, this would query the services table
+    // For now, using a more intelligent mock based on business names
+    filtered = filtered.filter(barber => {
+      const businessName = barber.business_name.toLowerCase();
+      return filters.serviceTypes.some(serviceType => {
+        const type = serviceType.toLowerCase();
+        if (type === 'haircut') return true; // Most barbers do haircuts
+        if (type === 'beard trim' && businessName.includes('beard')) return true;
+        if (type === 'fade' && businessName.includes('fade')) return true;
+        return Math.random() > 0.6; // Some chance for other services
+      });
+    });
+  }
+  
+  // Apply availability filters
   if (filters.availableToday) {
-    filtered = filtered.filter(() => Math.random() > 0.4);
+    const availabilityPromises = filtered.map(async (barber) => {
+      const isAvailable = await isBarberAvailableToday(barber);
+      return isAvailable ? barber : null;
+    });
+    
+    const availabilityResults = await Promise.all(availabilityPromises);
+    filtered = availabilityResults.filter(barber => barber !== null) as BarberProfile[];
   }
   
   if (filters.availableThisWeek) {
-    filtered = filtered.filter(() => Math.random() > 0.2);
+    const availabilityPromises = filtered.map(async (barber) => {
+      const isAvailable = await isBarberAvailableThisWeek(barber);
+      return isAvailable ? barber : null;
+    });
+    
+    const availabilityResults = await Promise.all(availabilityPromises);
+    filtered = availabilityResults.filter(barber => barber !== null) as BarberProfile[];
   }
   
   // Apply sorting
@@ -157,26 +188,44 @@ export const formatDistanceFilter = (distance: number): string => {
   return `Within ${distance} miles`;
 };
 
-export const generateMockAvailableSlots = (): string[] => {
-  const slots = [];
-  for (let hour = 9; hour <= 17; hour++) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      if (Math.random() > 0.3) { // 70% chance slot is available
-        slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+export const generateAvailableSlots = async (
+  barberId: string, 
+  date: Date, 
+  serviceDuration: number = 30
+): Promise<import('./availabilityManager').TimeSlot[]> => {
+  const availabilityManager = createAvailabilityManager(barberId);
+  return await availabilityManager.getAvailableSlots(date, serviceDuration);
+};
+
+export const isBarberAvailableToday = async (barber: BarberProfile): Promise<boolean> => {
+  try {
+    const availabilityManager = createAvailabilityManager(barber.id);
+    return await availabilityManager.isBarberAvailableOn(new Date());
+  } catch (error) {
+    console.error('Error checking today availability:', error);
+    return false;
+  }
+};
+
+export const isBarberAvailableThisWeek = async (barber: BarberProfile): Promise<boolean> => {
+  try {
+    const availabilityManager = createAvailabilityManager(barber.id);
+    const today = new Date();
+    
+    for (let i = 0; i < 7; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(today.getDate() + i);
+      
+      if (await availabilityManager.isBarberAvailableOn(checkDate)) {
+        return true;
       }
     }
+    
+    return false;
+  } catch (error) {
+    console.error('Error checking week availability:', error);
+    return false;
   }
-  return slots;
-};
-
-export const isBarberAvailableToday = (barber: BarberProfile): boolean => {
-  // Mock implementation - in production, this would check actual availability
-  return Math.random() > 0.4;
-};
-
-export const isBarberAvailableThisWeek = (barber: BarberProfile): boolean => {
-  // Mock implementation - in production, this would check actual availability
-  return Math.random() > 0.2;
 };
 
 export const calculateDistance = (

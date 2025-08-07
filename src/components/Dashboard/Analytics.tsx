@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { RevenueChart, ServicePerformanceChart, BookingTrendsChart, HourlyBookingsChart } from '../Analytics/Charts';
+import { NotificationManager } from '../../utils/notifications';
 
 interface AnalyticsData {
   totalRevenue: number;
@@ -19,6 +21,8 @@ interface AnalyticsData {
   totalReviews: number;
   monthlyRevenue: Array<{ month: string; revenue: number; bookings: number }>;
   servicePerformance: Array<{ name: string; bookings: number; revenue: number }>;
+  dailyTrends: Array<{ date: string; bookings: number; revenue: number }>;
+  hourlyDistribution: Array<{ hour: string; bookings: number }>;
   recentReviews: Array<{
     rating: number;
     comment: string | null;
@@ -39,6 +43,8 @@ const Analytics: React.FC<AnalyticsProps> = ({ barberId }) => {
     totalReviews: 0,
     monthlyRevenue: [],
     servicePerformance: [],
+    dailyTrends: [],
+    hourlyDistribution: [],
     recentReviews: []
   });
   const [loading, setLoading] = useState(true);
@@ -137,6 +143,40 @@ const Analytics: React.FC<AnalyticsProps> = ({ barberId }) => {
         ...stats
       }));
 
+      // Calculate daily trends (last 30 days)
+      const dailyTrends = [];
+      for (let i = 29; i >= 0; i--) {
+        const date = subMonths(now, 0);
+        date.setDate(date.getDate() - i);
+        const dateStr = format(date, 'yyyy-MM-dd');
+        const dayBookings = bookingsData?.filter(booking => 
+          booking.appointment_date === dateStr && booking.status === 'completed'
+        ) || [];
+        
+        dailyTrends.push({
+          date: format(date, 'MMM d'),
+          bookings: dayBookings.length,
+          revenue: dayBookings.reduce((sum, booking) => sum + Number(booking.total_amount), 0)
+        });
+      }
+
+      // Calculate hourly distribution
+      const hourlyStats: { [key: string]: number } = {};
+      bookingsData?.forEach(booking => {
+        if (booking.status === 'completed') {
+          const hour = booking.appointment_time.split(':')[0];
+          hourlyStats[hour] = (hourlyStats[hour] || 0) + 1;
+        }
+      });
+
+      const hourlyDistribution = Array.from({ length: 12 }, (_, i) => {
+        const hour = (i + 8).toString(); // 8 AM to 7 PM
+        return {
+          hour: `${hour}:00`,
+          bookings: hourlyStats[hour.padStart(2, '0')] || 0
+        };
+      });
+
       // Process reviews
       const recentReviews = reviewsData?.map(review => ({
         rating: review.rating,
@@ -158,6 +198,8 @@ const Analytics: React.FC<AnalyticsProps> = ({ barberId }) => {
         totalReviews: reviewsData?.length || 0,
         monthlyRevenue,
         servicePerformance,
+        dailyTrends,
+        hourlyDistribution,
         recentReviews
       });
 
@@ -169,18 +211,24 @@ const Analytics: React.FC<AnalyticsProps> = ({ barberId }) => {
   };
 
   const exportData = () => {
-    const csvContent = [
-      ['Month', 'Revenue', 'Bookings'],
-      ...data.monthlyRevenue.map(month => [month.month, month.revenue, month.bookings])
-    ].map(row => row.join(',')).join('\n');
+    try {
+      const csvContent = [
+        ['Month', 'Revenue', 'Bookings'],
+        ...data.monthlyRevenue.map(month => [month.month, month.revenue, month.bookings])
+      ].map(row => row.join(',')).join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `analytics-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `analytics-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      NotificationManager.success('Analytics data exported successfully!');
+    } catch (error) {
+      NotificationManager.error('Failed to export analytics data');
+    }
   };
 
   if (loading) {
@@ -276,74 +324,50 @@ const Analytics: React.FC<AnalyticsProps> = ({ barberId }) => {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="space-y-8">
         {/* Monthly Revenue Chart */}
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 col-span-2">
           <div className="flex items-center mb-6">
             <BarChart3 className="h-6 w-6 text-orange-600 mr-2" />
             <h3 className="text-lg font-semibold text-gray-900">Monthly Revenue</h3>
           </div>
-          
-          <div className="space-y-4">
-            {data.monthlyRevenue.map((month, index) => {
-              const maxRevenue = Math.max(...data.monthlyRevenue.map(m => m.revenue));
-              const percentage = maxRevenue > 0 ? (month.revenue / maxRevenue) * 100 : 0;
-              
-              return (
-                <div key={index}>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium text-gray-700">{month.month}</span>
-                    <span className="text-sm font-bold text-gray-900">${month.revenue.toFixed(2)}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-orange-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">{month.bookings} bookings</p>
-                </div>
-              );
-            })}
+          <RevenueChart data={data.monthlyRevenue} />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Service Performance */}
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center mb-6">
+              <PieChart className="h-6 w-6 text-blue-600 mr-2" />
+              <h3 className="text-lg font-semibold text-gray-900">Service Performance</h3>
+            </div>
+            {data.servicePerformance.length > 0 ? (
+              <ServicePerformanceChart data={data.servicePerformance} />
+            ) : (
+              <div className="text-center py-8">
+                <PieChart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No service data available</p>
+              </div>
+            )}
+          </div>
+
+          {/* Hourly Distribution */}
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center mb-6">
+              <BarChart3 className="h-6 w-6 text-purple-600 mr-2" />
+              <h3 className="text-lg font-semibold text-gray-900">Hourly Booking Distribution</h3>
+            </div>
+            <HourlyBookingsChart data={data.hourlyDistribution} />
           </div>
         </div>
 
-        {/* Service Performance */}
+        {/* Daily Trends Chart */}
         <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
           <div className="flex items-center mb-6">
-            <PieChart className="h-6 w-6 text-blue-600 mr-2" />
-            <h3 className="text-lg font-semibold text-gray-900">Service Performance</h3>
+            <TrendingUp className="h-6 w-6 text-emerald-600 mr-2" />
+            <h3 className="text-lg font-semibold text-gray-900">Daily Booking Trends (Last 30 Days)</h3>
           </div>
-          
-          <div className="space-y-4">
-            {data.servicePerformance.map((service, index) => {
-              const maxRevenue = Math.max(...data.servicePerformance.map(s => s.revenue));
-              const percentage = maxRevenue > 0 ? (service.revenue / maxRevenue) * 100 : 0;
-              
-              return (
-                <div key={index}>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-medium text-gray-700">{service.name}</span>
-                    <span className="text-sm font-bold text-gray-900">${service.revenue.toFixed(2)}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">{service.bookings} bookings</p>
-                </div>
-              );
-            })}
-          </div>
-
-          {data.servicePerformance.length === 0 && (
-            <div className="text-center py-8">
-              <PieChart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No service data available</p>
-            </div>
-          )}
+          <BookingTrendsChart data={data.dailyTrends} />
         </div>
       </div>
 

@@ -27,6 +27,8 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { calculateFees } from '../../lib/stripe';
 import { Database } from '../../lib/supabase';
+import { createAvailabilityManager } from '../../utils/availabilityManager';
+import { NotificationManager } from '../../utils/notifications';
 import 'react-datepicker/dist/react-datepicker.css';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
@@ -64,7 +66,8 @@ const BookingFlow: React.FC = () => {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('');
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [timeSlots, setTimeSlots] = useState<import('../../utils/availabilityManager').TimeSlot[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [customerInfo, setCustomerInfo] = useState({
     firstName: user?.user_metadata?.first_name || '',
     lastName: user?.user_metadata?.last_name || '',
@@ -88,7 +91,7 @@ const BookingFlow: React.FC = () => {
 
   useEffect(() => {
     if (selectedService && selectedDate) {
-      generateTimeSlots();
+      loadAvailableTimeSlots();
     }
   }, [selectedService, selectedDate]);
 
@@ -126,16 +129,24 @@ const BookingFlow: React.FC = () => {
     }
   };
 
-  const generateTimeSlots = () => {
-    // Generate time slots from 9 AM to 6 PM
-    const slots: TimeSlot[] = [];
-    for (let hour = 9; hour <= 18; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        slots.push({ time, available: Math.random() > 0.3 }); // Mock availability
-      }
+  const loadAvailableTimeSlots = async () => {
+    if (!barber || !selectedService) return;
+
+    setLoadingSlots(true);
+    try {
+      const availabilityManager = createAvailabilityManager(barber.id);
+      const slots = await availabilityManager.getAvailableSlots(
+        selectedDate, 
+        selectedService.duration_minutes
+      );
+      setTimeSlots(slots);
+    } catch (error) {
+      console.error('Error loading time slots:', error);
+      NotificationManager.error('Failed to load available time slots');
+      setTimeSlots([]);
+    } finally {
+      setLoadingSlots(false);
     }
-    setTimeSlots(slots);
   };
 
   const handleServiceSelect = (service: Service) => {
@@ -393,24 +404,45 @@ const BookingFlow: React.FC = () => {
                   <h3 className="font-semibold text-gray-900 mb-3">
                     Available Times - {formatDateDisplay(selectedDate)}
                   </h3>
-                  <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                    {timeSlots.map((slot) => (
-                      <button
-                        key={slot.time}
-                        onClick={() => setSelectedTime(slot.time)}
-                        disabled={!slot.available}
-                        className={`p-2 text-sm rounded border transition-colors ${
-                          selectedTime === slot.time
-                            ? 'bg-orange-500 text-white border-orange-500'
-                            : slot.available
-                            ? 'border-gray-300 hover:border-orange-500'
-                            : 'border-gray-200 text-gray-400 cursor-not-allowed'
-                        }`}
-                      >
-                        {slot.time}
-                      </button>
-                    ))}
-                  </div>
+                  
+                  {loadingSlots ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-orange-500 border-t-transparent mx-auto mb-4"></div>
+                      <p className="text-gray-600">Loading available times...</p>
+                    </div>
+                  ) : timeSlots.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                      {timeSlots.map((slot) => (
+                        <button
+                          key={slot.time}
+                          onClick={() => setSelectedTime(slot.time)}
+                          disabled={!slot.available}
+                          className={`p-3 text-sm rounded-lg border transition-colors ${
+                            selectedTime === slot.time
+                              ? 'bg-orange-500 text-white border-orange-500 shadow-md'
+                              : slot.available
+                              ? 'border-gray-300 hover:border-orange-500 hover:bg-orange-50'
+                              : 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
+                          }`}
+                          title={!slot.available ? slot.reason : undefined}
+                        >
+                          {slot.time}
+                          {!slot.available && slot.reason && (
+                            <div className="text-xs text-gray-400 mt-1">{slot.reason}</div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h4 className="text-lg font-medium text-gray-900 mb-2">No Available Times</h4>
+                      <p className="text-gray-600 text-sm">
+                        This barber doesn't have any available slots on {formatDateDisplay(selectedDate)}. 
+                        Please try a different date.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="mt-6 flex justify-between">
