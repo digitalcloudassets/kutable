@@ -124,9 +124,6 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     // Check if participant has a valid user ID
     if (!conversation.participant.id) {
       const errorMessage = conversation.participant.type === 'barber' 
-        ? 'Cannot send message - this barber profile needs to be claimed first.'
-        : 'Cannot send message - client profile is not properly linked.';
-      setError(errorMessage);
       return;
     }
     setSending(true);
@@ -369,9 +366,14 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
             />
             className="bg-primary-500 text-white p-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           >
+          <button
+            type="submit"
+            disabled={!newMessage.trim() || sending || !conversation.participant.id}
+            className="bg-primary-500 text-white p-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+          >
             {sending ? (
               <Loader className="h-5 w-5 animate-spin" />
-            disabled={!newMessage.trim() || sending || !conversation.participant.id}
+            ) : (
               <Send className="h-5 w-5" />
             )}
           </button>
