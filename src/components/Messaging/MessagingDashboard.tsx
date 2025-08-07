@@ -38,7 +38,7 @@ const MessagingDashboard: React.FC = () => {
     <div className="h-[600px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="h-full flex">
         {/* Conversation List - Desktop: Always visible, Mobile: Hidden when thread open */}
-        <div className={`w-full lg:w-1/3 xl:w-1/4 border-r border-gray-200 ${
+        <div className={`w-full lg:w-1/4 xl:w-1/5 border-r border-gray-200 ${
           showMobileThread ? 'hidden lg:block' : 'block'
         }`}>
           <div className="h-full flex flex-col">
