@@ -421,9 +421,28 @@ What would you like to know about Kutable?`;
             logEvent('error', `[${requestId}] Failed to create conversation`, {
               error: conversationError.message,
               errorCode: conversationError.code,
-              errorDetails: conversationError.details
+              errorDetails: conversationError.details,
+              errorHint: conversationError.hint
             });
-            throw conversationError;
+            
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: "Failed to create chat conversation",
+                details: `Database error: ${conversationError.message || 'Unknown database error'}`,
+                requestId,
+                debug: {
+                  errorCode: conversationError.code,
+                  errorDetails: conversationError.details,
+                  errorHint: conversationError.hint,
+                  timestamp: new Date().toISOString()
+                }
+              }),
+              {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 500,
+              },
+            );
           }
           
           conversation = newConversation;
@@ -436,12 +455,22 @@ What would you like to know about Kutable?`;
             errorType: conversationCreateError.constructor.name
           });
           
+          // Ensure we always have an error message
+          const errorMessage = conversationCreateError.message || 
+                              conversationCreateError.toString() || 
+                              'Unknown database error occurred';
+          
           return new Response(
             JSON.stringify({
               success: false,
               error: "Failed to create chat conversation",
-              details: `Database error: ${conversationCreateError.message}`,
-              requestId
+              details: `Database error: ${errorMessage}`,
+              requestId,
+              debug: {
+                errorType: conversationCreateError.constructor.name,
+                originalError: conversationCreateError.toString(),
+                timestamp: new Date().toISOString()
+              }
             }),
             {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
