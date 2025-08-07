@@ -75,13 +75,17 @@ export class MessagingService {
     }
 
     try {
-      // First, get user's barber profile if they have one
+      console.log('Loading conversations for user:', userId);
+      
+      // Get user's barber profile if they have one
       const { data: barberProfile } = await supabase
         .from('barber_profiles')
         .select('id')
         .eq('user_id', userId)
         .maybeSingle();
 
+      console.log('User barber profile:', barberProfile?.id || 'none');
+      
       // Get user's client profile if they have one
       const { data: clientProfile } = await supabase
         .from('client_profiles')
@@ -89,6 +93,8 @@ export class MessagingService {
         .eq('user_id', userId)
         .maybeSingle();
 
+      console.log('User client profile:', clientProfile?.id || 'none');
+      
       let allBookings: any[] = [];
 
       // Get bookings where user is a barber
@@ -110,6 +116,7 @@ export class MessagingService {
 
         if (barberError) throw barberError;
         allBookings.push(...(barberBookings || []));
+        console.log('Added barber bookings:', barberBookings?.length || 0);
       }
 
       // Get bookings where user is a client
@@ -131,6 +138,7 @@ export class MessagingService {
 
         if (clientError) throw clientError;
         allBookings.push(...(clientBookings || []));
+        console.log('Added client bookings:', clientBookings?.length || 0);
       }
 
       // Deduplicate bookings (in case user is both barber and client)
@@ -142,6 +150,8 @@ export class MessagingService {
 
       for (const booking of uniqueBookings) {
         const isBarber = barberProfile && booking.barber_id === barberProfile.id;
+        console.log('Processing booking:', booking.id, 'isBarber:', isBarber);
+        
         const participant = isBarber 
           ? {
               id: booking.client_profiles?.user_id || '',
@@ -156,10 +166,22 @@ export class MessagingService {
               avatar: booking.barber_profiles?.profile_image_url || undefined
             };
 
+        console.log('Conversation participant:', {
+          bookingId: booking.id,
+          participantId: participant.id,
+          participantName: participant.name,
+          participantType: participant.type,
+          isBarber,
+          barberUserId: booking.barber_profiles?.user_id,
+          clientUserId: booking.client_profiles?.user_id
+        });
+        
         // Skip conversations where barber profile is unclaimed (no user_id)
         if (!participant.id || participant.id.trim() === '') {
+          console.log('Skipping conversation - no participant ID for booking:', booking.id);
           continue;
         }
+        
         // Get last message and unread count
         const { data: lastMessage } = await supabase
           .from('messages')
@@ -191,6 +213,7 @@ export class MessagingService {
         });
       }
 
+      console.log('Final conversations:', conversations.length);
       return conversations.sort((a, b) => {
         if (a.lastMessage && b.lastMessage) {
           return new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime();
