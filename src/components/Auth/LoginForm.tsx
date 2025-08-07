@@ -75,14 +75,19 @@ const LoginForm: React.FC = () => {
       // Record successful attempt
       bruteForceProtection.recordAttempt(identifier, true);
 
+      // Check user type and handle claim URL accordingly
+      const { data: { user: authenticatedUser } } = await supabase.auth.getUser();
+      const userType = authenticatedUser?.user_metadata?.user_type;
+      
       // Check if user came from claim flow
       const claimReturnUrl = localStorage.getItem('claim_return_url');
       if (claimReturnUrl) {
         localStorage.removeItem('claim_return_url');
-        // Only redirect to claim flow if the URL is actually a claim URL
-        if (claimReturnUrl.includes('/claim/')) {
+        // Only redirect to claim flow if user is a barber and URL is a claim URL
+        if (userType === 'barber' && claimReturnUrl.includes('/claim/')) {
           navigate(claimReturnUrl);
         } else {
+          // Clear inappropriate claim URLs for clients
           navigate('/dashboard');
         }
       } else {

@@ -55,8 +55,9 @@ const ClaimFlow: React.FC = () => {
   });
 
   useEffect(() => {
-    // Store claim URL for auth redirect only if user is not already logged in
-    if (!user) {
+    // Only store claim URL for auth redirect if user is not logged in
+    // and we don't already have one stored (prevents overwriting)
+    if (!user && !localStorage.getItem('claim_return_url')) {
       localStorage.setItem('claim_return_url', location.pathname);
     }
     
@@ -68,6 +69,14 @@ const ClaimFlow: React.FC = () => {
   useEffect(() => {
     // Enable editing when user logs in
     if (user && barber && !isEditing) {
+      // Check if this user should be claiming profiles
+      const userType = user.user_metadata?.user_type;
+      if (userType === 'client') {
+        // Clients shouldn't be claiming profiles - redirect them away
+        localStorage.removeItem('claim_return_url');
+        navigate('/dashboard');
+        return;
+      }
       setIsEditing(true);
     }
   }, [user, barber]);
