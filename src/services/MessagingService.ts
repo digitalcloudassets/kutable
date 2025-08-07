@@ -190,7 +190,7 @@ export class MessagingService {
           const clientName = `${booking.client_profiles.first_name || ''} ${booking.client_profiles.last_name || ''}`.trim();
           console.log('Setting client participant:', { clientUserId, clientName, avatar: booking.client_profiles.profile_image_url });
           participant = {
-            id: clientUserId,
+            id: clientUserId || booking.client_profiles.id, // Fallback to profile ID if user_id is missing
             name: clientName || 'Client',
             type: 'client' as const,
             avatar: booking.client_profiles.profile_image_url || undefined
@@ -199,7 +199,7 @@ export class MessagingService {
           const barberUserId = booking.barber_profiles.user_id || '';
           console.log('Setting barber participant:', { barberUserId, name: booking.barber_profiles.business_name, avatar: booking.barber_profiles.profile_image_url });
           participant = {
-            id: barberUserId || booking.barber_profiles.id || '',
+            id: barberUserId, // Only use user_id for barbers since they must be claimed
             name: booking.barber_profiles.business_name || 'Barber',
             type: 'barber' as const,
             avatar: booking.barber_profiles.profile_image_url || undefined
@@ -208,7 +208,7 @@ export class MessagingService {
           console.log('Using fallback participant logic. isBarber:', isBarber, 'has client_profiles:', !!booking.client_profiles, 'has barber_profiles:', !!booking.barber_profiles);
           // Fallback for missing data
           participant = {
-            id: '',
+            id: isBarber ? 'client-fallback' : '', // Give clients a fallback ID so messaging works
             name: isBarber ? 'Client' : 'Barber',
             type: isBarber ? 'client' as const : 'barber' as const,
             avatar: undefined
