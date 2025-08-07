@@ -207,6 +207,20 @@ export class MessagingService {
         
         // Include conversation even if participant needs to claim profile
         // This allows UI to show appropriate warnings instead of hiding conversations
+        if (!participant.hasValidProfile) {
+          console.warn('Conversation included but participant needs to claim profile:', {
+            bookingId: booking.id,
+            participantId: participant.id,
+            currentUserId: userId,
+            participantType: participant.type
+          });
+          continue;
+        }
+        // Get last message and unread count
+        const { data: lastMessage } = await supabase
+          .from('messages')
+        const { data: lastMessage } = await supabase
+          .from('messages')
           .select('*')
           .eq('booking_id', booking.id)
           .order('created_at', { ascending: false })
@@ -325,23 +339,24 @@ export class MessagingService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Enhanced validation: Prevent self-messaging with better error messages
-      if (!receiverId || receiverId.trim() === '') {
-        console.warn('Message blocked - empty receiver ID:', {
-          userId: user.id,
-          receiverId,
-          bookingId
-        });
-        throw new Error('This user has not set up messaging yet. They need to claim their account to receive messages.');
-      }
-      
+      // Critical: Prevent self-messaging
       if (receiverId === user.id) {
         console.warn('Attempted self-messaging blocked:', {
           userId: user.id,
           receiverId,
           bookingId
         });
-        throw new Error('Cannot send messages to yourself. This indicates a profile setup issue - please contact support.');
+        throw new Error('This client has not set up messaging yet. You cannot message yourself.');
+      }
+
+      // Additional validation for empty or invalid receiver ID
+      if (!receiverId || receiverId.trim() === '') {
+        console.warn('Message blocked - invalid receiver ID:', {
+          userId: user.id,
+          receiverId,
+          bookingId
+        });
+        throw new Error('This client has not activated messaging yet. They need to claim their account first.');
       }
 
       // Validate booking participants before sending
@@ -379,19 +394,6 @@ export class MessagingService {
         ? bookingValidation.client_profiles.user_id 
         : bookingValidation.barber_profiles.user_id;
       
-      // Enhanced receiver validation with better error messages
-      if (!expectedReceiverId) {
-        const missingType = isBarber ? 'client' : 'barber';
-        console.warn(`Message blocked - ${missingType} profile not claimed:`, {
-          bookingId,
-          userId: user.id,
-          isBarber,
-          expectedReceiverId,
-          providedReceiverId: receiverId
-        });
-        throw new Error(`This ${missingType} has not claimed their profile yet. They need to set up their account to receive messages.`);
-      }
-      
       if (receiverId !== expectedReceiverId) {
         console.warn('Receiver ID mismatch:', {
           providedReceiverId: receiverId,
@@ -399,19 +401,18 @@ export class MessagingService {
           isBarber,
           bookingId
         });
-        throw new Error('Message recipient does not match the booking participants. Please refresh and try again.');
+        throw new Error('Invalid message recipient for this booking');
       }
 
-      // Final safety check: prevent self-messaging at database level
+      // Final check: ensure sender and receiver are different
       if (user.id === expectedReceiverId) {
-        console.error('Critical: Invalid booking participant setup detected:', {
+        console.error('Critical: Booking has invalid participant setup - same user as barber and client:', {
           bookingId,
           userId: user.id,
-          expectedReceiverId,
           barberUserId: bookingValidation.barber_profiles.user_id,
           clientUserId: bookingValidation.client_profiles.user_id
         });
-        throw new Error('Invalid booking setup detected. Please contact support to resolve this data integrity issue.');
+        throw new Error('This booking has invalid participant setup. Please contact support to resolve this issue.');
       }
       console.log('Sending message:', { 
         fromUserId: user.id, 
