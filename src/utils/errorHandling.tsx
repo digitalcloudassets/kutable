@@ -1,4 +1,6 @@
 import React from 'react';
+import { NotificationService, BookingNotificationData, NotificationEvent } from '../services/NotificationService';
+import { supabase } from '../lib/supabase';
 
 // Production-ready error handling and logging
 

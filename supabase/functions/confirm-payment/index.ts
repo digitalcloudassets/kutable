@@ -67,50 +67,20 @@ Deno.serve(async (req) => {
         throw new Error('Failed to confirm booking')
       }
 
-      // Send SMS confirmation if client has phone number
-      if (booking.client_profiles?.phone) {
-        try {
-          // Format the phone number for SMS (remove any formatting)
-          const cleanPhone = booking.client_profiles.phone.replace(/\D/g, '');
-          const formattedPhone = cleanPhone.startsWith('1') ? `+${cleanPhone}` : `+1${cleanPhone}`;
-          
-          // Create a detailed confirmation message
-          const appointmentDate = new Date(booking.appointment_date);
-          const formattedDate = appointmentDate.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            month: 'long', 
-            day: 'numeric' 
-          });
-          
-          const smsMessage = `🎉 Booking Confirmed!\n\nHi ${booking.client_profiles.first_name}! Your ${booking.services?.name} appointment at ${booking.barber_profiles?.business_name} is confirmed.\n\n📅 ${formattedDate}\n⏰ ${booking.appointment_time}\n💰 $${booking.total_amount}\n\nWe'll send you a reminder 24hrs before. Questions? Reply STOP to opt out.\n\n- Kutable Team`;
-          
-          const smsResponse = await fetch(`${supabaseUrl}/functions/v1/send-sms`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${supabaseServiceKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              to: formattedPhone,
-              message: smsMessage,
-              type: 'booking_confirmation'
-            })
-          })
-          
-          const smsResult = await smsResponse.json();
-          
-          if (smsResult.success) {
-            console.log('SMS confirmation sent successfully to:', formattedPhone);
-          } else {
-            console.warn('SMS sending failed:', smsResult.error);
+      // Send comprehensive notifications using the backend processor
+      try {
+        const { error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {
+          body: {
+            bookingId: booking.id,
+            event: 'booking_confirmed'
           }
-          
-        } catch (smsError) {
-          console.warn('SMS sending failed:', smsError)
-          // Don't fail the entire process if SMS fails
+        });
+
+        if (notificationError) {
+          console.warn('Failed to send booking notifications:', notificationError);
         }
-      } else {
-        console.log('No phone number provided for SMS confirmation');
+      } catch (notificationError) {
+        console.warn('Notification error (booking still succeeded):', notificationError);
       }
 
       return new Response(

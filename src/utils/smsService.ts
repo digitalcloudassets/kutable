@@ -1,10 +1,31 @@
 import { supabase } from '../lib/supabase';
+import { notificationService, BookingNotificationData } from '../services/NotificationService';
 
 export interface SMSMessage {
   to: string;
   message: string;
   type: 'booking_confirmation' | 'booking_reminder' | 'booking_update';
 }
+
+// Enhanced SMS service with centralized notification handling
+export const sendBookingNotificationSMS = async (
+  event: 'booking_created' | 'booking_confirmed' | 'booking_cancelled' | 'booking_rescheduled' | 'appointment_reminder',
+  bookingData: BookingNotificationData,
+  recipientOverride?: 'barber' | 'client' | 'both'
+): Promise<boolean> => {
+  try {
+    const results = await notificationService.sendNotifications(event, bookingData, {
+      skipEmail: true, // Only send SMS
+      recipientOverride
+    });
+
+    // Return true if at least one SMS was sent successfully
+    return results.sms.barber || results.sms.client;
+  } catch (error) {
+    console.error('Error sending booking notification SMS:', error);
+    return false;
+  }
+};
 
 export const sendSMS = async (smsData: SMSMessage): Promise<boolean> => {
   try {

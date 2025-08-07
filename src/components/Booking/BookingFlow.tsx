@@ -779,26 +779,42 @@ const PaymentStep: React.FC<{
             name: `${clientDetails.firstName} ${clientDetails.lastName}`,
             email: clientDetails.email,
             phone: clientDetails.phone,
-          },
-        },
-      });
+          // Send rescheduling notifications
+          try {
+            const { error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {
+              body: {
+                bookingId: bookingId,
+                event: 'booking_rescheduled'
+              }
+            });
 
-      if (stripeError) {
-        throw new Error(stripeError.message);
-      }
-
-      if (paymentIntent?.status === 'succeeded') {
-        // Confirm booking via edge function
-        const { data, error } = await supabase.functions.invoke('confirm-payment', {
-          body: {
-            paymentIntentId: paymentIntent.id,
-            bookingId: bookingId
+            if (notificationError) {
+              console.warn('Failed to send rescheduling notifications:', notificationError);
+            }
+          } catch (notificationError) {
+            console.warn('Notification error (rescheduling still succeeded):', notificationError);
           }
         });
 
         if (error) throw error;
 
         if (data?.booking) {
+         // Send booking confirmation notifications
+         try {
+           const { error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {
+             body: {
+               bookingId: data.booking.id,
+               event: 'booking_confirmed'
+             }
+           });
+
+           if (notificationError) {
+             console.warn('Failed to send booking notifications:', notificationError);
+           }
+         } catch (notificationError) {
+           console.warn('Notification error (booking still succeeded):', notificationError);
+         }
+
           onPaymentSuccess(data.booking);
         } else {
           throw new Error('Failed to confirm booking');

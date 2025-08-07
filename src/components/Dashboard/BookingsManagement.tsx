@@ -110,6 +110,26 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
       setBookings(prev => prev.map(booking => 
         booking.id === bookingId ? { ...booking, status: newStatus as any } : booking
       ));
+
+      // Send status change notifications
+      try {
+        let event = 'booking_confirmed';
+        if (newStatus === 'cancelled') event = 'booking_cancelled';
+        else if (newStatus === 'completed') return; // No notification for completed
+
+        const { error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {
+          body: {
+            bookingId: bookingId,
+            event: event
+          }
+        });
+
+        if (notificationError) {
+          console.warn('Failed to send status change notifications:', notificationError);
+        }
+      } catch (notificationError) {
+        console.warn('Notification error (status change still succeeded):', notificationError);
+      }
     } catch (error) {
       console.error('Error updating booking status:', error);
     }

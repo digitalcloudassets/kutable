@@ -136,11 +136,16 @@ export class NotificationManager {
 
 // Booking-specific notifications
 export const BookingNotifications = {
-  bookingCreated: (barberName: string, date: string, time: string) => 
+  bookingCreated: (barberName: string, date: string, time: string) =>
     NotificationManager.success(
       `Booking confirmed with ${barberName} on ${date} at ${time}!`
     ),
   
+  bookingRequestSubmitted: (barberName: string, date: string, time: string) =>
+    NotificationManager.info(
+      `Booking request sent to ${barberName} for ${date} at ${time}. Awaiting confirmation.`
+    ),
+
   bookingCancelled: () => 
     NotificationManager.info('Booking cancelled successfully'),
   
@@ -177,6 +182,14 @@ export const BookingNotifications = {
   
   availabilityUpdated: () => 
     NotificationManager.success('Availability updated successfully!'),
+
+  notificationsSent: (smsCount: number, emailCount: number) =>
+    NotificationManager.success(
+      `Notifications sent: ${smsCount} SMS, ${emailCount} emails`
+    ),
+
+  notificationsFailed: () =>
+    NotificationManager.error('Some notifications failed to send. Check your settings.'),
 };
 
 // Admin-specific notifications

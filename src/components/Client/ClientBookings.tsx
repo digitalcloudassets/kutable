@@ -220,20 +220,20 @@ const ClientBookings: React.FC = () => {
           ? { ...booking, status: 'cancelled' as const }
           : booking
       ));
-
-      // Send SMS notification to barber if possible
+      // Send rescheduling notifications
       try {
-        if (booking.barber_profiles?.phone) {
-          await supabase.functions.invoke('send-sms', {
-            body: {
-              to: booking.barber_profiles.phone,
-              message: `Booking cancelled: ${booking.services?.name} on ${format(new Date(booking.appointment_date), 'MMM d')} at ${booking.appointment_time}. Client: ${user?.user_metadata?.first_name || 'Customer'}`,
-              type: 'booking_update'
-            }
-          });
+        const { error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {
+          body: {
+            bookingId: bookingId,
+            event: 'booking_rescheduled'
+          }
+        });
+
+        if (notificationError) {
+          console.warn('Failed to send rescheduling notifications:', notificationError);
         }
-      } catch (smsError) {
-        console.warn('Failed to send SMS notification:', smsError);
+      } catch (notificationError) {
+        console.warn('Notification error (rescheduling still succeeded):', notificationError);
       }
 
       BookingNotifications.bookingCancelled();
@@ -294,17 +294,20 @@ const ClientBookings: React.FC = () => {
 
       // Send SMS notification to barber
       const booking = bookings.find(b => b.id === bookingId);
-      if (booking?.barber_profiles?.phone) {
+      if (booking) {
         try {
-          await supabase.functions.invoke('send-sms', {
+          const { error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {
             body: {
-              to: booking.barber_profiles.phone,
-              message: `Booking rescheduled: ${booking.services?.name} moved to ${format(newDate, 'MMM d')} at ${newTime}. Client: ${user?.user_metadata?.first_name || 'Customer'}`,
-              type: 'booking_update'
+              bookingId: booking.id,
+              event: 'booking_cancelled'
             }
           });
-        } catch (smsError) {
-          console.warn('Failed to send SMS notification:', smsError);
+
+          if (notificationError) {
+            console.warn('Failed to send cancellation notifications:', notificationError);
+          }
+        } catch (notificationError) {
+          console.warn('Notification error (cancellation still succeeded):', notificationError);
         }
       }
       
