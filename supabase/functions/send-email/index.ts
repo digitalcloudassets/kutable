@@ -136,56 +136,71 @@ Deno.serve(async (req) => {
     // For now, we'll use Supabase's built-in email functionality
     // In production, you would integrate with SendGrid, Mailgun, or similar
     
-    console.log('Email notification (simulated):', {
+    // Send email using Resend
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const resendFromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'notifications@mail.kutable.com';
+    const resendFromName = Deno.env.get('RESEND_FROM_NAME') || 'Kutable Notifications';
+
+    if (!resendApiKey || resendApiKey === 'your_resend_api_key_here') {
+      console.log('Email notification (simulated - Resend not configured):', {
+        to: sanitizedTo,
+        name: sanitizedName,
+        subject: sanitizedSubject,
+        type: sanitizedType,
+        preview: sanitizedMessage.slice(0, 100) + '...',
+        timestamp: new Date().toISOString()
+      });
+      
+      // Return success but indicate configuration needed
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          emailId: `sim_${Date.now()}`,
+          to: sanitizedTo,
+          subject: sanitizedSubject,
+          timestamp: new Date().toISOString(),
+          warning: 'Email service not configured - Resend API key missing'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        },
+      )
+    }
+
+    // Send email via Resend
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: `${resendFromName} <${resendFromEmail}>`,
+        to: [{ email: sanitizedTo, name: sanitizedName }],
+        subject: sanitizedSubject,
+        html: sanitizedMessage
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Resend API error:', response.status, errorData);
+      throw new Error(`Resend API error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Email sent via Resend:', {
+      emailId: result.id,
       to: sanitizedTo,
-      name: sanitizedName,
       subject: sanitizedSubject,
-      type: sanitizedType,
-      preview: sanitizedMessage.slice(0, 100) + '...',
       timestamp: new Date().toISOString()
     });
 
-    // Simulate email sending - replace with actual email service in production
-    // Example with SendGrid:
-    /*
-    const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY');
-    if (sendGridApiKey) {
-      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${sendGridApiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          personalizations: [{
-            to: [{ email: sanitizedTo, name: sanitizedName }],
-            subject: sanitizedSubject
-          }],
-          from: { 
-            email: 'notifications@kutable.com', 
-            name: 'Kutable Notifications' 
-          },
-          content: [{
-            type: 'text/html',
-            value: sanitizedMessage
-          }]
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`SendGrid API error: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log('Email sent via SendGrid:', result);
-    }
-    */
-
-    // For now, return success (in production, check actual email service response)
     return new Response(
       JSON.stringify({ 
         success: true, 
-        emailId: `sim_${Date.now()}`,
+        emailId: result.id,
         to: sanitizedTo,
         subject: sanitizedSubject,
         timestamp: new Date().toISOString()
