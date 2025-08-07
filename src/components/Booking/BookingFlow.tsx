@@ -484,7 +484,7 @@ const BookingFlow: React.FC = () => {
                       </p>
                     </div>
                   )}
-                        className="mt-6 text-primary-600 hover:text-primary-500 font-semibold bg-primary-50 px-6 py-3 rounded-xl hover:bg-primary-100 transition-all duration-200"
+                </div>
               </div>
               <div className="mt-8 flex justify-between">
                 <button
