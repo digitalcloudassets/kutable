@@ -555,7 +555,7 @@ const ClaimFlow: React.FC = () => {
               </h2>
               <p className="text-gray-600 mb-8 text-lg leading-relaxed">
                 To claim <strong>{barber?.business_name}</strong>, you need to sign in or create an account first. 
-                Don't worry - we'll bring you right back to complete the claiming process.
+                Don't worry - we\'ll bring you right back to complete the claiming process.
               </p>
               <div className="space-y-3 max-w-sm mx-auto">
                 <Link
