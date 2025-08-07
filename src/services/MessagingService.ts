@@ -374,49 +374,29 @@ export class MessagingService {
       return () => {};
     }
 
-    try {
-      const channel = supabase
-        .channel(`messages_${bookingId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages',
-            filter: `booking_id=eq.${bookingId}`,
-          },
-          (payload) => {
-            try {
-              callback(payload.new as Message);
-            } catch (callbackError) {
-              console.warn('Message callback error:', callbackError);
-            }
-          }
-        )
-        .subscribe((status) => {
-          console.log(`Real-time subscription status for booking ${bookingId}:`, status);
-          
-          if (status === 'SUBSCRIPTION_ERROR') {
-            console.warn('Real-time subscription failed for booking:', bookingId);
-          }
-        });
-
-      const unsubscribe = () => {
-        try {
-          supabase.removeChannel(channel);
-          this.subscriptions.delete(bookingId);
-        } catch (error) {
-          console.warn('Error unsubscribing from real-time channel:', error);
+    const channel = supabase
+      .channel(`messages_${bookingId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `booking_id=eq.${bookingId}`,
+        },
+        (payload) => {
+          callback(payload.new as Message);
         }
-      };
+      )
+      .subscribe();
 
-      this.subscriptions.set(bookingId, unsubscribe);
-      return unsubscribe;
-    } catch (subscriptionError) {
-      console.warn('Failed to set up real-time subscription:', subscriptionError);
-      // Return a no-op unsubscribe function
-      return () => {};
-    }
+    const unsubscribe = () => {
+      supabase.removeChannel(channel);
+      this.subscriptions.delete(bookingId);
+    };
+
+    this.subscriptions.set(bookingId, unsubscribe);
+    return unsubscribe;
   }
 
   private async sendMessageNotification(
