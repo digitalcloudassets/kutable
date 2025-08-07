@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, MapPin, Clock, TrendingUp, Award, Calendar, Crown, CheckCircle, ArrowRight } from 'lucide-react';
+import { Star, MapPin, Clock, TrendingUp, Award, Calendar, Crown, CheckCircle, ArrowRight, DollarSign, Smartphone } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Database } from '../../lib/supabase';
 
