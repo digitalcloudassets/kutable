@@ -97,6 +97,7 @@ export class MessagingService {
 
       const conversations: Conversation[] = [];
 
+      for (const booking of uniqueBookings) {
         const isBarber = booking.barber_profiles?.user_id === userId;
         const participant = isBarber 
           ? {
