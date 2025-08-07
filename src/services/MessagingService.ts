@@ -325,24 +325,23 @@ export class MessagingService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Critical: Prevent self-messaging
+      // Enhanced validation: Prevent self-messaging with better error messages
+      if (!receiverId || receiverId.trim() === '') {
+        console.warn('Message blocked - empty receiver ID:', {
+          userId: user.id,
+          receiverId,
+          bookingId
+        });
+        throw new Error('This user has not set up messaging yet. They need to claim their account to receive messages.');
+      }
+      
       if (receiverId === user.id) {
         console.warn('Attempted self-messaging blocked:', {
           userId: user.id,
           receiverId,
           bookingId
         });
-        throw new Error('This client has not set up messaging yet. You cannot message yourself.');
-      }
-
-      // Additional validation for empty or invalid receiver ID
-      if (!receiverId || receiverId.trim() === '') {
-        console.warn('Message blocked - invalid receiver ID:', {
-          userId: user.id,
-          receiverId,
-          bookingId
-        });
-        throw new Error('This client has not activated messaging yet. They need to claim their account first.');
+        throw new Error('Cannot send messages to yourself. This indicates a profile setup issue - please contact support.');
       }
 
       // Validate booking participants before sending
@@ -380,6 +379,19 @@ export class MessagingService {
         ? bookingValidation.client_profiles.user_id 
         : bookingValidation.barber_profiles.user_id;
       
+      // Enhanced receiver validation with better error messages
+      if (!expectedReceiverId) {
+        const missingType = isBarber ? 'client' : 'barber';
+        console.warn(`Message blocked - ${missingType} profile not claimed:`, {
+          bookingId,
+          userId: user.id,
+          isBarber,
+          expectedReceiverId,
+          providedReceiverId: receiverId
+        });
+        throw new Error(`This ${missingType} has not claimed their profile yet. They need to set up their account to receive messages.`);
+      }
+      
       if (receiverId !== expectedReceiverId) {
         console.warn('Receiver ID mismatch:', {
           providedReceiverId: receiverId,
@@ -387,18 +399,19 @@ export class MessagingService {
           isBarber,
           bookingId
         });
-        throw new Error('Invalid message recipient for this booking');
+        throw new Error('Message recipient does not match the booking participants. Please refresh and try again.');
       }
 
-      // Final check: ensure sender and receiver are different
+      // Final safety check: prevent self-messaging at database level
       if (user.id === expectedReceiverId) {
-        console.error('Critical: Booking has invalid participant setup - same user as barber and client:', {
+        console.error('Critical: Invalid booking participant setup detected:', {
           bookingId,
           userId: user.id,
+          expectedReceiverId,
           barberUserId: bookingValidation.barber_profiles.user_id,
           clientUserId: bookingValidation.client_profiles.user_id
         });
-        throw new Error('This booking has invalid participant setup. Please contact support to resolve this issue.');
+        throw new Error('Invalid booking setup detected. Please contact support to resolve this data integrity issue.');
       }
       console.log('Sending message:', { 
         fromUserId: user.id, 

@@ -449,7 +449,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               {newMessage.length}/1000 • Press Enter to send, Shift+Enter for new line
               {messagingStatus.disabled && (
                 <span className={`font-medium ${
-                  messagingStatus.type === 'self' ? 'text-red-600' : 'text-amber-600'
+                  messagingStatus.type === 'self' ? 'text-red-600' : 
+                  messagingStatus.type === 'client_unclaimed' || messagingStatus.type === 'barber_unclaimed' ? 'text-blue-600' :
+                  'text-amber-600'
                 }`}>
                   • {messagingStatus.message}
                 </span>
