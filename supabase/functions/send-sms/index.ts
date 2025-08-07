@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
       messagePreview: sanitizedMessage.slice(0, 50) + '...'
     });
     // Create Twilio API request
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid.trim()}/Messages.json`
     
     const body = new URLSearchParams({
       To: formattedPhone,

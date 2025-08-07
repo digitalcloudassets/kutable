@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
     }
 
     // Enhanced input validation and sanitization
-    const sanitizedTo = sanitizeInput(to, 254).toLowerCase();
+    const sanitizedTo = to.trim().toLowerCase();
     const sanitizedName = sanitizeInput(name, 100);
     const sanitizedSubject = sanitizeInput(subject, 200);
     const sanitizedMessage = message.slice(0, 10000); // Allow longer content for emails
