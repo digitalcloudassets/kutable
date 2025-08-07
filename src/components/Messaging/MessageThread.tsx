@@ -32,10 +32,15 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
 
   // Enhanced validation for messaging availability
   const participantId = conversation.participant.id;
-  const canReceiveNotifications = participantId && participantId.trim() !== '';
+  const canReceiveNotifications = participantId && 
+    participantId.trim() !== '' && 
+    !participantId.startsWith('placeholder_') &&
+    conversation.participant.hasValidProfile;
   const isSelfMessaging = user?.id === participantId;
-  const isClientUnclaimed = conversation.participant.type === 'client' && (!participantId || participantId.trim() === '');
-  const isBarberUnclaimed = conversation.participant.type === 'barber' && (!participantId || participantId.trim() === '');
+  const isClientUnclaimed = conversation.participant.type === 'client' && 
+    (conversation.participant.needsClaim || conversation.participant.isPlaceholder);
+  const isBarberUnclaimed = conversation.participant.type === 'barber' && 
+    (conversation.participant.needsClaim || conversation.participant.isPlaceholder);
   
   // Determine messaging status and create appropriate error messages
   const messagingStatus = React.useMemo(() => {
@@ -53,7 +58,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
         disabled: true,
         type: 'client_unclaimed',
         message: 'Client messaging not set up',
-        description: "This client hasn't activated messaging yet. They'll need to claim their account before you can send messages."
+        description: "This client hasn't claimed their account yet. They need to create an account and link it to this booking to receive messages. Contact them directly using their phone number from the booking details."
       };
     }
     
@@ -62,7 +67,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
         disabled: true,
         type: 'barber_unclaimed',
         message: 'Barber messaging not set up',
-        description: "This barber hasn't claimed their profile yet. They need to set up their account to receive messages."
+        description: "This barber hasn't claimed their profile yet. They need to complete their profile setup to receive messages. Try contacting them using their business phone number."
       };
     }
     
