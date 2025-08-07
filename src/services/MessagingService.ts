@@ -132,7 +132,7 @@ export class MessagingService {
             status,
             services(name),
             barber_profiles(id, user_id, business_name, owner_name, profile_image_url),
-            client_profiles(id, user_id, first_name, last_name)
+            client_profiles(id, user_id, first_name, last_name, profile_image_url)
           `)
           .eq('barber_id', barberProfile.id)
           .in('status', ['pending', 'confirmed', 'completed'])
@@ -154,7 +154,7 @@ export class MessagingService {
             status,
             services(name),
             barber_profiles(id, user_id, business_name, owner_name, profile_image_url),
-            client_profiles(id, user_id, first_name, last_name)
+            client_profiles(id, user_id, first_name, last_name, profile_image_url)
           `)
           .eq('client_id', clientProfile.id)
           .in('status', ['pending', 'confirmed', 'completed'])
@@ -185,7 +185,7 @@ export class MessagingService {
             id: clientUserId,
             name: clientName || 'Client',
             type: 'client' as const,
-            avatar: undefined
+            avatar: booking.client_profiles.profile_image_url || undefined
           };
         } else if (!isBarber && booking.barber_profiles) {
           const barberUserId = booking.barber_profiles.user_id || '';
