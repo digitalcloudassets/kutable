@@ -22,7 +22,7 @@ interface MessageThreadProps {
 
 const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) => {
   const { user } = useAuth();
-  const { loadUnreadCount } = useMessaging();
+  const { refreshUnreadCount } = useMessaging();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
         loadMessages();
         markAsRead();
         // Also refresh unread count since sending a message means you've seen the conversation
-        await loadUnreadCount();
+        await refreshUnreadCount();
         
         // Subscribe to real-time updates
         const unsubscribe = messagingService.subscribeToMessages(
