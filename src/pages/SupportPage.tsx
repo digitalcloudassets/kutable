@@ -118,9 +118,32 @@ const SupportPage: React.FC = () => {
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setError('');
     
-    // Simulate form submission
-    setTimeout(() => {
+    try {
+      // Get current user if logged in
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase.functions.invoke('submit-support-request', {
+        body: {
+          name: contactForm.name.trim(),
+          email: contactForm.email.trim(),
+          category: contactForm.category,
+          subject: contactForm.subject.trim(),
+          message: contactForm.message.trim(),
+          userId: user?.id || null
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to submit support request');
+      }
+    
+      // Success - show confirmation
       setSubmitting(false);
       setSubmitted(true);
       setContactForm({
@@ -130,7 +153,15 @@ const SupportPage: React.FC = () => {
         message: '',
         category: 'general'
       });
-    }, 1000);
+      
+    } catch (error: any) {
+      console.error('Support request submission error:', error);
+      setSubmitting(false);
+      setError(error.message || 'Failed to submit support request. Please try again.');
+      
+      // Scroll to error message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -138,30 +169,6 @@ const SupportPage: React.FC = () => {
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-20 -mt-24 pt-44">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            How Can We Help?
-          </h1>
-          <p className="text-xl text-gray-300 leading-relaxed mb-8">
-            Find answers to common questions or get in touch with our support team.
-          </p>
-          
-          {/* Quick Contact */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="mailto:support@kutable.com"
-              className="bg-orange-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center justify-center space-x-2"
-            >
-              <Mail className="h-5 w-5" />
-              <span>Email Support</span>
-            </a>
-            <a
-              href="tel:1-800-582-8253"
-              className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-gray-900 transition-colors flex items-center justify-center space-x-2"
-            >
-              <Phone className="h-5 w-5" />
-              <span>Call 1-800-KUTABLE</span>
-            </a>
-          </div>
         </div>
       </section>
 
@@ -173,21 +180,22 @@ const SupportPage: React.FC = () => {
             <p className="text-xl text-gray-600">Choose the best way to reach us</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="text-center bg-gray-50 rounded-lg p-6">
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="h-8 w-8 text-green-600" />
+              <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Mail className="h-8 w-8 text-orange-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Email Support</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Platform Support</h3>
               <p className="text-gray-600 mb-4">
-                Send us a detailed message and we'll respond within 24 hours. For barbers: email us directly for platform issues. For clients: contact your barber directly for appointment questions.
+                <strong>For Barbers:</strong> Platform issues, account problems, or technical difficulties - email us directly and we'll respond within 24 hours.
               </p>
               <div className="text-sm text-gray-500 mb-4">
                 support@kutable.com
               </div>
               <a
                 href="mailto:support@kutable.com"
-                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors inline-block"
+                className="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors inline-block font-medium"
               >
                 Send Email
               </a>
@@ -195,21 +203,22 @@ const SupportPage: React.FC = () => {
 
             <div className="text-center bg-gray-50 rounded-lg p-6">
               <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="h-8 w-8 text-blue-600" />
+                <Phone className="h-8 w-8 text-blue-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Contact Your Barber</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Contact Your Barber Directly</h3>
               <p className="text-gray-600 mb-4">
-                For appointment questions, changes, or service inquiries, contact your barber directly using their phone number listed on their profile.
+                <strong>For Clients:</strong> Appointment questions, scheduling changes, or service inquiries - contact your barber directly using their phone number on their profile page.
               </p>
               <div className="text-sm text-gray-500 mb-4">
                 Find phone numbers on barber profile pages
               </div>
               <a
                 href="/barbers"
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-block"
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-block font-medium"
               >
                 Find Barbers
               </a>
+            </div>
             </div>
           </div>
         </div>
