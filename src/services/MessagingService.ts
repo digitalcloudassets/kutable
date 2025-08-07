@@ -100,8 +100,6 @@ export class MessagingService {
             appointment_date,
             appointment_time,
             status,
-           barber_id,
-           client_id,
             services(name),
             barber_profiles(id, user_id, business_name, owner_name, profile_image_url),
             client_profiles(id, user_id, first_name, last_name)
@@ -123,8 +121,6 @@ export class MessagingService {
             appointment_date,
             appointment_time,
             status,
-           barber_id,
-           client_id,
             services(name),
             barber_profiles(id, user_id, business_name, owner_name, profile_image_url),
             client_profiles(id, user_id, first_name, last_name)
@@ -145,15 +141,14 @@ export class MessagingService {
       const conversations: Conversation[] = [];
 
       for (const booking of uniqueBookings) {
-       // Detect if the current user is the barber for this booking
-       // Use the barber_id from the booking directly, not the nested profile
-       const isUserTheBarber = barberProfile && booking.barber_id === barberProfile.id;
+        // Detect if the current user is the barber for this booking
+        const isBarber = barberProfile && booking.barber_id === barberProfile.id;
 
         // Participant logic:  
         // For barbers, always show the client as the conversation participant, 
         // even if client_profiles.user_id is null (unclaimed account)
         let participant;
-        if (isUserTheBarber) {
+        if (isBarber) {
           // For barbers: show the client as the participant
           const clientFirstName = booking.client_profiles?.first_name || '';
           const clientLastName = booking.client_profiles?.last_name || '';
@@ -186,7 +181,7 @@ export class MessagingService {
 
         console.log('🔍 DEBUG - Final participant for conversation:', {
           booking_id: booking.id,
-          is_barber: isUserTheBarber,
+          is_barber: isBarber,
           participant_id: participant.id,
           participant_name: participant.name,
           participant_type: participant.type
@@ -208,7 +203,8 @@ export class MessagingService {
           .eq('receiver_id', userId)
           .is('read_at', null);
 
-       // Always include the conversation - unclaimed clients still show in the list
+        // Always push the conversation even if participant.id is blank, 
+        // so unclaimed clients show up in the list for the barber.
         conversations.push({
           bookingId: booking.id,
           lastMessage: lastMessage || undefined,
@@ -474,37 +470,51 @@ export class MessagingService {
           appointment_date,
           appointment_time,
           services(name),
-          barber_profiles(user_id, business_name, phone, email, sms_consent, email_consent),
-          client_profiles(user_id, first_name, last_name, phone, email, sms_consent, email_consent)
+          barber_profiles(business_name, owner_name, user_id, phone, email, sms_consent, email_consent, communication_consent),
+          client_profiles(first_name, last_name, user_id, phone, email, sms_consent, email_consent, communication_consent)
         `)
         .eq('id', bookingId)
         .single();
 
       if (!booking) {
         console.warn('Booking not found for notification:', bookingId);
-        return;
+        return; // Exit gracefully without breaking the message flow
       }
 
-      // Determine sender and receiver profiles
+      console.log('Booking data for notification:', {
+        barberUserId: booking.barber_profiles?.user_id,
+        clientUserId: booking.client_profiles?.user_id,
+        barberPhone: booking.barber_profiles?.phone,
+        clientPhone: booking.client_profiles?.phone,
+        senderId,
+        receiverId
+      });
+
       const isFromBarber = senderId === booking.barber_profiles?.user_id;
-      const senderProfile = isFromBarber ? booking.barber_profiles : booking.client_profiles;
+      console.log('Message direction:', isFromBarber ? 'Barber → Client' : 'Client → Barber');
+      
       const receiverProfile = isFromBarber ? booking.client_profiles : booking.barber_profiles;
+      const senderProfile = isFromBarber ? booking.barber_profiles : booking.client_profiles;
 
-      if (!senderProfile || !receiverProfile) {
-        console.warn('Missing profile data for notification:', { 
-          bookingId, 
-          hasSender: !!senderProfile, 
-          hasReceiver: !!receiverProfile 
-        });
+      if (!receiverProfile || !senderProfile) {
+        console.warn('Missing profile data for notification:', { receiverProfile: !!receiverProfile, senderProfile: !!senderProfile });
         return; // Exit gracefully without breaking the message flow
       }
 
-      // Prevent sending notifications to self
-      if (senderProfile.user_id === receiverProfile.user_id) {
-        console.warn('Cannot send notification to self (message still sent successfully)');
-        return; // Exit gracefully without breaking the message flow
-      }
+     // Additional validation for profile user IDs
+     if (!receiverProfile.user_id || !senderProfile.user_id) {
+       console.warn('Missing user IDs in profile data (message still sent successfully):', { 
+         receiverUserId: !!receiverProfile.user_id, 
+         senderUserId: !!senderProfile.user_id 
+       });
+       return; // Exit gracefully without breaking the message flow
+     }
 
+     // Prevent sending notifications to self
+     if (senderProfile.user_id === receiverProfile.user_id) {
+       console.warn('Cannot send notification to self (message still sent successfully)');
+       return; // Exit gracefully without breaking the message flow
+     }
       const senderName = isFromBarber 
         ? senderProfile.business_name 
         : `${senderProfile.first_name} ${senderProfile.last_name}`;

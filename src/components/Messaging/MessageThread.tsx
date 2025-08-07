@@ -393,7 +393,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
           <div className="mb-3 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm flex items-center space-x-2">
             <AlertCircle className="h-4 w-4" />
             <span>
-             This client hasn't created an account yet. Messaging will be available after they sign up on Kutable.
+              This client hasn't claimed their account yet. Messaging will be available after they sign up.
             </span>
           </div>
         )}
