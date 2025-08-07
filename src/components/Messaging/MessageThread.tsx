@@ -228,9 +228,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
             {/* Service and Date Info */}
             <div className="flex items-center space-x-1 text-sm text-gray-500 font-medium">
               <Calendar className="h-3 w-3 flex-shrink-0" style={{ marginTop: '1px' }} />
-              <span>{conversation.booking.serviceName}</span>
-              <span>•</span>
-              <span>{formatAppointmentDate(conversation.booking.appointmentDate)} at {conversation.booking.appointmentTime}</span>
+              <span>{conversation.booking.serviceName} • {format(new Date(conversation.booking.appointmentDate), 'MMM d')} at {format(new Date(`2000-01-01T${conversation.booking.appointmentTime}`), 'h:mm a')}</span>
             </div>
             
             {/* Status Badge - Third line */}
