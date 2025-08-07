@@ -30,6 +30,8 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
   const [error, setError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Check if the conversation participant can receive notifications
+  const canReceiveNotifications = conversation.participant.id && conversation.participant.id.trim() !== '';
   useEffect(() => {
     const initializeMessaging = async () => {
       if (conversation && user) {
@@ -149,9 +151,12 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       }
     } catch (error: any) {
       console.error('Error sending message:', error);
-      // Don't show error for notification failures - message still sent successfully
-      if (error.message?.includes('Booking not found')) {
-        console.warn('Notification failed but message was sent:', error.message);
+      // Handle different types of errors appropriately
+      if (error.message?.includes('Booking not found') || 
+          error.message?.includes('notification') || 
+          error.message?.includes('profile')) {
+        console.warn('Notification failed but message was sent successfully:', error.message);
+        // Don't show error to user - message was still saved
       } else {
         setError(error.message || 'Failed to send message');
       }
@@ -244,6 +249,20 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
         </div>
       </div>
 
+      {/* Notification Warning Banner */}
+      {!canReceiveNotifications && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <span className="text-amber-800 text-sm font-medium">
+              {conversation.participant.type === 'client' 
+                ? "This client hasn't set up messaging yet. They won't receive notifications until they claim their profile."
+                : "This barber profile hasn't been claimed yet. They won't receive message notifications."
+              }
+            </span>
+          </div>
+        </div>
+      )}
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.length === 0 ? (
@@ -255,6 +274,13 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
             <p className="text-gray-600">
               Send a message to {conversation.participant.type === 'barber' ? 'your barber' : 'your customer'} about your upcoming appointment.
             </p>
+            {!canReceiveNotifications && (
+              <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3 max-w-sm mx-auto">
+                <p className="text-amber-800 text-sm">
+                  <strong>Note:</strong> {conversation.participant.type === 'client' ? 'This client' : 'This barber'} won't receive notifications for your messages until they set up their account.
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           messages.map((message, index) => {
@@ -337,15 +363,6 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
         )}
         
         <form onSubmit={handleSendMessage} className="flex items-end space-x-3">
-          {!conversation.participant.id && (
-            <div className="mb-3 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm flex items-center space-x-2">
-              <AlertCircle className="h-4 w-4" />
-              <span>
-                This barber profile hasn't been claimed yet. Messages can only be sent to claimed profiles.
-              </span>
-            </div>
-          )}
-          
           <div className="flex-1">
             <textarea
               value={newMessage}
@@ -354,7 +371,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all duration-200"
               rows={newMessage.includes('\n') ? 3 : 1}
               maxLength={1000}
-              disabled={!conversation.participant.id}
+              disabled={!canReceiveNotifications}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -364,12 +381,15 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
             />
             <p className="text-xs text-gray-500 mt-1">
               {newMessage.length}/1000 • Press Enter to send, Shift+Enter for new line
+              {!canReceiveNotifications && (
+                <span className="text-amber-600 font-medium"> • {conversation.participant.type === 'client' ? 'Client' : 'Barber'} won't receive notifications</span>
+              )}
             </p>
           </div>
           
           <button
             type="submit"
-            disabled={!newMessage.trim() || sending || !conversation.participant.id}
+            disabled={!newMessage.trim() || sending || !canReceiveNotifications}
             className="bg-primary-500 text-white p-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           >
             {sending ? (

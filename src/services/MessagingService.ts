@@ -436,21 +436,50 @@ export class MessagingService {
         receiverId
       });
 
+      // Enhanced validation for profile completeness
+      if (!booking.barber_profiles || !booking.client_profiles) {
+        console.warn('Notification not sent: missing barber or client profile data.', { 
+          bookingId, 
+          hasBarberProfile: !!booking.barber_profiles,
+          hasClientProfile: !!booking.client_profiles 
+        });
+        return; // Exit silently - message still saved
+      }
+
+      // Check if profiles have user_id (claimed status)
+      if (!booking.barber_profiles.user_id) {
+        console.warn('Notification not sent: barber profile not claimed or missing user_id.', { 
+          bookingId, 
+          barberId: booking.barber_profiles.business_name,
+          barberUserId: booking.barber_profiles.user_id 
+        });
+        return; // Exit silently
+      }
+
+      if (!booking.client_profiles.user_id) {
+        console.warn('Notification not sent: client profile not claimed or missing user_id. Message saved but no notification sent.', { 
+          bookingId, 
+          clientName: `${booking.client_profiles.first_name} ${booking.client_profiles.last_name}`,
+          clientUserId: booking.client_profiles.user_id 
+        });
+        return; // Exit silently
+      }
       const isFromBarber = senderId === booking.barber_profiles?.user_id;
       console.log('Message direction:', isFromBarber ? 'Barber → Client' : 'Client → Barber');
       
       const receiverProfile = isFromBarber ? booking.client_profiles : booking.barber_profiles;
       const senderProfile = isFromBarber ? booking.barber_profiles : booking.client_profiles;
 
-      if (!receiverProfile || !senderProfile) {
-        console.error('Missing profile data for notification:', { 
+      // Additional safety checks for profile data integrity
+      if (!receiverProfile?.user_id || !senderProfile?.user_id) {
+        console.warn('Notification not sent: incomplete profile data or unclaimed profiles.', { 
           bookingId, 
-          receiverProfile: !!receiverProfile, 
-          senderProfile: !!senderProfile,
-          barberUserId: booking.barber_profiles?.user_id,
-          clientUserId: booking.client_profiles?.user_id
+          receiverUserId: receiverProfile?.user_id, 
+          senderUserId: senderProfile?.user_id,
+          isFromBarber,
+          direction: isFromBarber ? 'Barber → Client' : 'Client → Barber'
         });
-        return;
+        return; // Exit silently - message still saved
       }
 
       const senderName = isFromBarber 
@@ -485,6 +514,12 @@ export class MessagingService {
         } else {
           console.error('SMS failed with result:', smsResult);
         }
+      } else {
+        console.warn('SMS notification skipped:', {
+          reason: !receiverProfile.phone ? 'No phone number' : 'SMS consent disabled',
+          receiverPhone: receiverProfile.phone,
+          smsConsent: receiverProfile.sms_consent
+        });
       }
 
       // Send email notification if user has email enabled (default to true for essential notifications)
@@ -538,11 +573,23 @@ export class MessagingService {
         } else {
           console.error('Email failed with result:', emailResult);
         }
+      } else {
+        console.warn('Email notification skipped:', {
+          reason: !receiverProfile.email ? 'No email address' : 'Email consent disabled',
+          receiverEmail: receiverProfile.email,
+          emailConsent: receiverProfile.email_consent
+        });
       }
 
     } catch (error) {
       console.error('Error sending message notification:', error);
-      // Don't throw - message sending should succeed even if notification fails
+      // Log the error but don't throw - message sending should succeed even if notification fails
+      console.warn('Message notification failed but message was still saved successfully:', {
+        bookingId,
+        receiverId,
+        senderId,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   }
 
