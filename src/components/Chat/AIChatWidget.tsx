@@ -215,7 +215,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
       const welcomeMessage: ChatMessage = {
         id: 'welcome',
         role: 'assistant',
-        content: "👋 Hi! I'm Kutable's AI assistant. I can help you with:\n\n• **Booking appointments** - How to find and book barbers\n• **For Barbers** - Claiming profiles, fees, payment setup\n• **Platform features** - SMS notifications, mobile app, security\n• **Pricing & payments** - Customer and barber costs\n• **Support** - Getting help and contacting us\n\nWhat can I help you with today?",
+        content: "👋 Hi! I'm Kutable's AI assistant. I can help you with:\n\n🗓️ Booking appointments\n   How to find and book barbers\n\n💼 For Barbers\n   Claiming profiles, fees, payment setup\n\n⚡ Platform features\n   SMS notifications, mobile app, security\n\n💰 Pricing & payments\n   Customer and barber costs\n\n🆘 Support\n   Getting help and contacting us\n\nWhat can I help you with today?",
         timestamp: new Date().toISOString()
       };
       setMessages([welcomeMessage]);
