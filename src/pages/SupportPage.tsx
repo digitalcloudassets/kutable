@@ -175,29 +175,12 @@ const SupportPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center bg-gray-50 rounded-lg p-6">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Live Chat</h3>
-              <p className="text-gray-600 mb-4">
-                Get instant help from our support team during business hours.
-              </p>
-              <div className="text-sm text-gray-500 mb-4">
-                <Clock className="h-4 w-4 inline mr-1" />
-                Mon-Fri 9AM-6PM EST
-              </div>
-              <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                Start Chat
-              </button>
-            </div>
-
-            <div className="text-center bg-gray-50 rounded-lg p-6">
               <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Mail className="h-8 w-8 text-green-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">Email Support</h3>
               <p className="text-gray-600 mb-4">
-                Send us a detailed message and we'll respond within 24 hours.
+                Send us a detailed message and we'll respond within 24 hours. For barbers: email us directly for platform issues. For clients: contact your barber directly for appointment questions.
               </p>
               <div className="text-sm text-gray-500 mb-4">
                 support@kutable.com
@@ -211,21 +194,21 @@ const SupportPage: React.FC = () => {
             </div>
 
             <div className="text-center bg-gray-50 rounded-lg p-6">
-              <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Phone className="h-8 w-8 text-orange-600" />
+              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MessageSquare className="h-8 w-8 text-blue-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Phone Support</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Contact Your Barber</h3>
               <p className="text-gray-600 mb-4">
-                Speak directly with our support team for urgent issues.
+                For appointment questions, changes, or service inquiries, contact your barber directly using their phone number listed on their profile.
               </p>
               <div className="text-sm text-gray-500 mb-4">
-                1-800-KUTABLE (582-8253)
+                Find phone numbers on barber profile pages
               </div>
               <a
-                href="tel:1-800-582-8253"
-                className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 transition-colors inline-block"
+                href="/barbers"
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-block"
               >
-                Call Now
+                Find Barbers
               </a>
             </div>
           </div>
@@ -485,11 +468,11 @@ const SupportPage: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex items-center justify-center space-x-2 mb-2">
             <AlertCircle className="h-5 w-5 text-red-600" />
-            <span className="font-medium text-red-800">Urgent Support</span>
+            <span className="font-medium text-red-800">Need Help?</span>
           </div>
           <p className="text-red-700 text-sm">
-            For urgent booking issues or payment problems on the day of your appointment, 
-            call our emergency support line: <strong>1-800-KUTABLE (582-8253)</strong>
+            For urgent booking issues: <strong>Contact your barber directly</strong> using their phone number. 
+            For platform problems: <strong>Email support@kutable.com</strong>
           </p>
         </div>
       </section>

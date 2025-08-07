@@ -58,10 +58,6 @@ const Footer: React.FC = () => {
                 <Mail className="h-4 w-4" />
                 <span>support@kutable.com</span>
               </li>
-              <li className="flex items-center space-x-2 text-gray-400 text-sm">
-                <Phone className="h-4 w-4" />
-                <span>1-800-KUTABLE</span>
-              </li>
             </ul>
           </div>
         </div>
