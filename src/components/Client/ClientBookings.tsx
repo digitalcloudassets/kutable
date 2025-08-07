@@ -82,56 +82,10 @@ const ClientBookings: React.FC = () => {
     if (!user) return;
 
     try {
-      // First, find or fix the client profile for this user
-      let clientProfile;
-      
-      // Try to find profile by user_id first
-      let { data: existingProfile } = await supabase
-        .from('client_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      // If no profile found by user_id, try to find by email as fallback
-      if (!existingProfile) {
-        const { data: profileByEmail } = await supabase
-          .from('client_profiles')
-          .select('id, user_id')
-          .eq('email', user.email)
-          .maybeSingle();
-          
-        if (profileByEmail) {
-          // Update the user_id to match the authenticated user
-          const { error: updateError } = await supabase
-            .from('client_profiles')
-            .update({ user_id: user.id })
-            .eq('id', profileByEmail.id);
-            
-          if (!updateError) {
-            existingProfile = { id: profileByEmail.id };
-            console.log('Fixed client profile user_id mismatch');
-          }
-        }
-      }
-      if (existingProfile) {
-        clientProfile = existingProfile;
-      } else {
-        // Create client profile if it doesn't exist
-        const { data: newProfile, error: profileError } = await supabase
-          .from('client_profiles')
-          .insert({
-            user_id: user.id,
-            first_name: user.user_metadata?.first_name || '',
-            last_name: user.user_metadata?.last_name || '',
-            email: user.email || '',
-            phone: '',
-            preferred_contact: 'sms'
-          })
-          .select('id')
-          .single();
-
-        if (profileError) throw profileError;
-        clientProfile = newProfile;
+      // Get or create client profile using centralized logic
+      const clientProfile = await getOrCreateClientProfile(user);
+      if (!clientProfile) {
+        throw new Error('Failed to get client profile');
       }
 
       // Fetch bookings with related data

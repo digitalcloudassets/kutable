@@ -17,6 +17,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Database } from '../../lib/supabase';
 import ConsentManagement from './ConsentManagement';
 import { NotificationManager } from '../../utils/notifications';
+import { getOrCreateClientProfile } from '../../utils/profileHelpers';
 import { validateEmail, validatePhone } from '../../utils/security';
 
 type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
@@ -51,50 +52,29 @@ const ClientProfileSettings: React.FC = () => {
       setLoading(true);
       setError('');
       
-      const { data: existingProfile, error: fetchError } = await supabase
-        .from('client_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw fetchError;
-      }
-
-      if (existingProfile) {
-        setClientProfile(existingProfile);
-        setEditData({
-          first_name: existingProfile.first_name || '',
-          last_name: existingProfile.last_name || '',
-          phone: existingProfile.phone || '',
-          email: existingProfile.email || '',
-          preferred_contact: existingProfile.preferred_contact as 'sms' | 'email' | 'phone' || 'sms'
-        });
-      } else {
-        // Create client profile if it doesn't exist
-        const { data: newProfile, error: createError } = await supabase
+      // Use centralized profile lookup to prevent duplicates
+      const profile = await getOrCreateClientProfile(user);
+      
+      if (profile) {
+        // Fetch the full profile data
+        const { data: fullProfile, error: fetchError } = await supabase
           .from('client_profiles')
-          .insert({
-            user_id: user.id,
-            first_name: user.user_metadata?.first_name || '',
-            last_name: user.user_metadata?.last_name || '',
-            email: user.email || '',
-            phone: '',
-            preferred_contact: 'sms'
-          })
-          .select()
+          .select('*')
+          .eq('id', profile.id)
           .single();
 
-        if (createError) throw createError;
-
-        setClientProfile(newProfile);
+        if (fetchError) throw fetchError;
+        
+        setClientProfile(fullProfile);
         setEditData({
-          first_name: newProfile.first_name || '',
-          last_name: newProfile.last_name || '',
-          phone: newProfile.phone || '',
-          email: newProfile.email || '',
-          preferred_contact: newProfile.preferred_contact as 'sms' | 'email' | 'phone' || 'sms'
+          first_name: fullProfile.first_name || '',
+          last_name: fullProfile.last_name || '',
+          phone: fullProfile.phone || '',
+          email: fullProfile.email || '',
+          preferred_contact: fullProfile.preferred_contact as 'sms' | 'email' | 'phone' || 'sms'
         });
+      } else {
+        throw new Error('Could not create or find client profile');
       }
     } catch (error: any) {
       console.error('Error fetching client profile:', error);

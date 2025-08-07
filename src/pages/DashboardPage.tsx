@@ -12,6 +12,7 @@ import ClientDashboardContent from '../components/Dashboard/ClientDashboardConte
 import BarberDashboardContent from '../components/Dashboard/BarberDashboardContent';
 import LoadingDashboard from '../components/Dashboard/LoadingDashboard';
 import FallbackDashboard from '../components/Dashboard/FallbackDashboard';
+import { getOrCreateClientProfile } from '../utils/profileHelpers';
 import { Database } from '../lib/supabase';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
@@ -78,28 +79,10 @@ const DashboardPage: React.FC = () => {
         setClientProfile(clientData);
         setActiveTab('bookings');
       } else {
-        // Create client profile if none exists
-        const { data: newClientProfile, error: createError } = await supabase
-          .from('client_profiles')
-          .insert({
-            user_id: user.id,
-            first_name: user.user_metadata?.first_name || '',
-            last_name: user.user_metadata?.last_name || '',
-            email: user.email || '',
-            phone: '',
-            preferred_contact: 'sms'
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating client profile:', createError);
-          setUserType('client');
-          setClientProfile(null);
-        } else {
-          setUserType('client');
-          setClientProfile(newClientProfile);
-        }
+        // Use centralized profile creation to prevent duplicates
+        const clientProfile = await getOrCreateClientProfile(user);
+        setUserType('client');
+        setClientProfile(clientProfile);
         setActiveTab('bookings');
       }
     } catch (error) {

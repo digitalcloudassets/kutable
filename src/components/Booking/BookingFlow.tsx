@@ -26,6 +26,7 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { calculateFees } from '../../lib/stripe';
+import { getOrCreateClientProfile } from '../../utils/profileHelpers';
 import { Database } from '../../lib/supabase';
 import { createAvailabilityManager } from '../../utils/availabilityManager';
 import { NotificationManager } from '../../utils/notifications';
@@ -207,50 +208,25 @@ const BookingFlow: React.FC = () => {
     setPaymentError('');
 
     try {
-      // Ensure client profile exists with phone number for SMS
-      let clientProfile;
-      const { data: existingProfile } = await supabase
-        .from('client_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (existingProfile) {
-        // Update existing profile with latest contact info
-        const { data: updatedProfile, error: updateError } = await supabase
-          .from('client_profiles')
-          .update({
-            first_name: customerInfo.firstName.trim(),
-            last_name: customerInfo.lastName.trim(),
-            phone: customerInfo.phone.trim(),
-            email: customerInfo.email.trim(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', user.id)
-          .select('id')
-          .single();
-
-        if (updateError) throw updateError;
-        clientProfile = updatedProfile;
-      } else {
-        // Create new client profile
-        const { data: newProfile, error: createError } = await supabase
-          .from('client_profiles')
-          .insert({
-            user_id: user.id,
-            first_name: customerInfo.firstName.trim(),
-            last_name: customerInfo.lastName.trim(),
-            phone: customerInfo.phone.trim(),
-            email: customerInfo.email.trim(),
-            preferred_contact: 'sms'
-          })
-          .select('id')
-          .single();
-
-        if (createError) throw createError;
-        clientProfile = newProfile;
+      // Get or create client profile and update with latest contact info
+      const clientProfile = await getOrCreateClientProfile(user);
+      if (!clientProfile) {
+        throw new Error('Failed to get client profile');
       }
 
+      // Update profile with latest contact info from booking form
+      const { error: updateError } = await supabase
+        .from('client_profiles')
+        .update({
+          first_name: customerInfo.firstName.trim(),
+          last_name: customerInfo.lastName.trim(),
+          phone: customerInfo.phone.trim(),
+          email: customerInfo.email.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', clientProfile.id);
+
+      if (updateError) throw updateError;
       // Create payment intent via edge function
       const { data, error } = await supabase.functions.invoke('create-payment-intent', {
         body: {
