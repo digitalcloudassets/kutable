@@ -54,6 +54,8 @@ export const useMessaging = () => {
 
       // Refresh conversations to update last message
       await loadConversations();
+      // Also refresh unread count since sending a message means you've seen the conversation
+      await loadUnreadCount();
       
       return message;
     } catch (error) {
