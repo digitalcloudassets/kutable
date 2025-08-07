@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
           details: "OpenAI API key not configured"
         }),
         { 
-          status: 503,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         }
       );
@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
           details: "Database connection not available"
         }),
         { 
-          status: 503,
+          status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         }
       );
