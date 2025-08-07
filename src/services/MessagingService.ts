@@ -141,7 +141,38 @@ export class MessagingService {
           .order('appointment_date', { ascending: false });
 
         if (barberError) throw barberError;
-        allBookings.push(...(barberBookings || []));
+        
+        // Debug: Check if any bookings have null client_profiles
+        console.log('Raw barber bookings:', barberBookings?.map(b => ({
+          id: b.id,
+          client_id: b.client_id,
+          hasClientProfiles: !!b.client_profiles,
+          clientProfilesData: b.client_profiles
+        })));
+        
+        // Filter out bookings with null client_profiles and fetch client data separately
+        const enrichedBarberBookings = [];
+        for (const booking of barberBookings || []) {
+          if (!booking.client_profiles && booking.client_id) {
+            console.log('Fetching missing client data for booking:', booking.id, 'client_id:', booking.client_id);
+            // Fetch client profile separately
+            const { data: clientProfile } = await supabase
+              .from('client_profiles')
+              .select('id, user_id, first_name, last_name, profile_image_url')
+              .eq('id', booking.client_id)
+              .maybeSingle();
+              
+            if (clientProfile) {
+              booking.client_profiles = clientProfile;
+              console.log('Found missing client profile:', clientProfile);
+            } else {
+              console.warn('Client profile not found for client_id:', booking.client_id);
+            }
+          }
+          enrichedBarberBookings.push(booking);
+        }
+        
+        allBookings.push(...enrichedBarberBookings);
         console.log('Added barber bookings:', barberBookings?.length || 0);
       }
 
@@ -165,7 +196,38 @@ export class MessagingService {
           .order('appointment_date', { ascending: false });
 
         if (clientError) throw clientError;
-        allBookings.push(...(clientBookings || []));
+        
+        // Debug: Check if any bookings have null barber_profiles
+        console.log('Raw client bookings:', clientBookings?.map(b => ({
+          id: b.id,
+          barber_id: b.barber_id,
+          hasBarberProfiles: !!b.barber_profiles,
+          barberProfilesData: b.barber_profiles
+        })));
+        
+        // Filter out bookings with null barber_profiles and fetch barber data separately
+        const enrichedClientBookings = [];
+        for (const booking of clientBookings || []) {
+          if (!booking.barber_profiles && booking.barber_id) {
+            console.log('Fetching missing barber data for booking:', booking.id, 'barber_id:', booking.barber_id);
+            // Fetch barber profile separately
+            const { data: barberProfile } = await supabase
+              .from('barber_profiles')
+              .select('id, user_id, business_name, owner_name, profile_image_url')
+              .eq('id', booking.barber_id)
+              .maybeSingle();
+              
+            if (barberProfile) {
+              booking.barber_profiles = barberProfile;
+              console.log('Found missing barber profile:', barberProfile);
+            } else {
+              console.warn('Barber profile not found for barber_id:', booking.barber_id);
+            }
+          }
+          enrichedClientBookings.push(booking);
+        }
+        
+        allBookings.push(...enrichedClientBookings);
         console.log('Added client bookings:', clientBookings?.length || 0);
       }
 
