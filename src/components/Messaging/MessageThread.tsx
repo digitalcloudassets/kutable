@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { messagingService, Message, Conversation } from '../../services/MessagingService';
+import MessageHeader from './MessageHeader';
 import { useAuth } from '../../hooks/useAuth';
 import { useMessaging } from '../../hooks/useMessaging';
 
@@ -195,51 +196,15 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-4 rounded-t-2xl">
-        <div className="flex items-center space-x-3">
-          {conversation.participant.avatar ? (
-            <img
-              src={conversation.participant.avatar}
-              alt={conversation.participant.name}
-              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
-            />
-          ) : (
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-              conversation.participant.type === 'barber' 
-                ? 'bg-primary-100' 
-                : 'bg-accent-100'
-            }`}>
-              {conversation.participant.type === 'barber' ? (
-                <Building className="h-6 w-6 text-primary-600" />
-              ) : (
-                <User className="h-6 w-6 text-accent-600" />
-              )}
-            </div>
-          )}
-          
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-gray-900 truncate">
-              {conversation.participant.name}
-            </h3>
-            <div className="flex items-center space-x-1 text-sm text-gray-500">
-              <Calendar className="h-3 w-3" />
-              <span>{conversation.booking.serviceName}</span>
-              <span>•</span>
-              <span>{formatAppointmentDate(conversation.booking.appointmentDate)} at {conversation.booking.appointmentTime}</span>
-            </div>
-          </div>
-
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            conversation.booking.status === 'confirmed' 
-              ? 'bg-green-100 text-green-800'
-              : conversation.booking.status === 'pending'
-              ? 'bg-yellow-100 text-yellow-800'
-              : 'bg-gray-100 text-gray-800'
-          }`}>
-            {conversation.booking.status.toUpperCase()}
-          </span>
-        </div>
-      </div>
+      <MessageHeader
+        avatar={conversation.participant.avatar}
+        name={conversation.participant.name}
+        participantType={conversation.participant.type}
+        serviceName={conversation.booking.serviceName}
+        appointmentDate={conversation.booking.appointmentDate}
+        appointmentTime={conversation.booking.appointmentTime}
+        status={conversation.booking.status}
+      />
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
