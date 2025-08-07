@@ -182,6 +182,7 @@ export class MessagingService {
           barber_user_id: booking.barber_profiles?.user_id
         });
 
+        const { data: lastMessage } = await supabase
           .from('messages')
           .select('*')
           .eq('booking_id', booking.id)
