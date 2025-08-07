@@ -152,19 +152,27 @@ export class MessagingService {
         const isBarber = barberProfile && booking.barber_id === barberProfile.id;
         console.log('Processing booking:', booking.id, 'isBarber:', isBarber);
         
-        const participant = isBarber 
-          ? {
-              id: booking.client_profiles?.user_id || '',
-              name: `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`,
-              type: 'client' as const,
-              avatar: undefined
-            }
-          : {
-              id: booking.barber_profiles?.user_id || '',
-              name: booking.barber_profiles?.business_name || '',
-              type: 'barber' as const,
-              avatar: booking.barber_profiles?.profile_image_url || undefined
-            };
+       let participant;
+       if (isBarber) {
+         // For barbers: show the client as the participant
+         participant = {
+           id: booking.client_profiles?.user_id || '',
+           name: `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`.trim() || 'Client',
+           type: 'client' as const,
+           avatar: undefined
+         };
+       } else {
+         // For clients: show the barber as the participant,
+         // even if user_id is missing (show "Unclaimed Barber")
+         participant = {
+           id: booking.barber_profiles?.user_id || booking.barber_profiles?.id || '',
+           name: booking.barber_profiles?.business_name 
+             || booking.barber_profiles?.owner_name 
+             || 'Unclaimed Barber',
+           type: 'barber' as const,
+           avatar: booking.barber_profiles?.profile_image_url || undefined
+         };
+       }
 
         console.log('Conversation participant:', {
           bookingId: booking.id,
@@ -175,12 +183,6 @@ export class MessagingService {
           barberUserId: booking.barber_profiles?.user_id,
           clientUserId: booking.client_profiles?.user_id
         });
-        
-        // Skip conversations where barber profile is unclaimed (no user_id)
-        if (!participant.id || participant.id.trim() === '') {
-          console.log('Skipping conversation - no participant ID for booking:', booking.id);
-          continue;
-        }
         
         // Get last message and unread count
         const { data: lastMessage } = await supabase
@@ -198,7 +200,8 @@ export class MessagingService {
           .eq('receiver_id', userId)
           .is('read_at', null);
 
-        conversations.push({
+       // Don't skip if participant.id is missing; show as "Unclaimed Barber"
+       conversations.push({
           bookingId: booking.id,
           lastMessage: lastMessage || undefined,
           unreadCount: unreadCount || 0,
@@ -210,7 +213,7 @@ export class MessagingService {
             appointmentTime: booking.appointment_time,
             status: booking.status
           }
-        });
+       });
       }
 
       console.log('Final conversations:', conversations.length);
