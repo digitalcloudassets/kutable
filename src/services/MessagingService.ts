@@ -154,70 +154,34 @@ export class MessagingService {
         // even if client_profiles.user_id is null (unclaimed account)
         let participant;
         if (isUserTheBarber) {
-          // For barbers: show the client as the participant
-          const clientFirstName = booking.client_profiles?.first_name || '';
-          const clientLastName = booking.client_profiles?.last_name || '';
-          const clientName = `${clientFirstName} ${clientLastName}`.trim();
-          const clientUserId = booking.client_profiles?.user_id;
-          
-          console.log('🔍 DEBUG - Client data for barber conversation:', {
-            booking_id: booking.id,
-            client_first_name: clientFirstName,
-            client_last_name: clientLastName,
-            client_user_id: clientUserId,
-            final_client_name: clientName
-          });
-          
-          // Get client's user_id - this is the key field for messaging validation
-          
-          console.log('🔍 DEBUG - Booking participant data:', {
-            booking_id: booking.id,
-            barber_user_id: booking.barber_profiles?.user_id,
-            client_user_id: clientUserId,
-            client_first_name: booking.client_profiles?.first_name,
-            client_last_name: booking.client_profiles?.last_name,
-            current_user_id: userId,
-            is_user_the_barber: isUserTheBarber
-          });
-
-            // Only set participant.id if client has a valid user account
-            const validClientUserId = clientUserId && clientUserId.trim() !== '' ? clientUserId : '';
-            
-            if (!validClientUserId) {
-              console.warn('🚫 Client profile found but no user_id:', {
-                booking_id: booking.id,
-                client_profile_id: booking.client_profiles?.id,
-                client_name: clientName,
-                message: 'Client needs to create an account to enable messaging'
-              });
-            }
-
+          // For barbers: participant is the client's Auth UID
           participant = {
-            id: validClientUserId,  // Use client's user_id for sending messages (empty if no account)
-            name: clientName || 'Client',
+            id: booking.client_profiles?.user_id || '', // <-- Use only user_id!
+            name: `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim() || 'Client',
             type: 'client' as const,
-            avatar: undefined
+            avatar: undefined,
           };
         } else {
-          // For clients: show the barber as the participant
+          // For clients: participant is the barber's Auth UID
           participant = {
-            id: booking.barber_profiles?.user_id || '',
+            id: booking.barber_profiles?.user_id || '', // <-- Use only user_id!
             name: booking.barber_profiles?.business_name || 'Barber',
             type: 'barber' as const,
-            avatar: booking.barber_profiles?.profile_image_url || undefined
+            avatar: booking.barber_profiles?.profile_image_url || undefined,
           };
         }
 
-        console.log('🔍 DEBUG - Final participant for conversation:', {
+        // Debug logging for participant assignment
+        console.log('🔍 DEBUG - Participant assignment:', {
           booking_id: booking.id,
-          is_barber: isUserTheBarber,
-          participant_id: participant.id,
+          is_user_the_barber: isUserTheBarber,
+          participant_user_id: participant.id,
           participant_name: participant.name,
-          participant_type: participant.type
+          participant_type: participant.type,
+          client_user_id: booking.client_profiles?.user_id,
+          barber_user_id: booking.barber_profiles?.user_id
         });
 
-        // Get last message and unread count
-        const { data: lastMessage } = await supabase
           .from('messages')
           .select('*')
           .eq('booking_id', booking.id)
