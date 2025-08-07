@@ -79,26 +79,39 @@ const DashboardPage: React.FC = () => {
         setActiveTab('bookings');
       } else {
         // Create client profile if none exists
-        const { data: newClientProfile, error: createError } = await supabase
-          .from('client_profiles')
-          .insert({
-            user_id: user.id,
-            first_name: user.user_metadata?.first_name || '',
-            last_name: user.user_metadata?.last_name || '',
-            email: user.email || '',
-            phone: '',
-            preferred_contact: 'sms'
-          })
-          .select()
-          .single();
+        try {
+          console.log('Creating client profile for existing user:', user.id);
+          
+          const { data: newClientProfile, error: createError } = await supabase
+            .from('client_profiles')
+            .insert({
+              user_id: user.id,
+              first_name: user.user_metadata?.first_name || '',
+              last_name: user.user_metadata?.last_name || '',
+              email: user.email || '',
+              phone: '',
+              preferred_contact: 'sms',
+              communication_consent: true,
+              sms_consent: true,
+              email_consent: true,
+              consent_date: new Date().toISOString()
+            })
+            .select()
+            .single();
 
-        if (createError) {
-          console.error('Error creating client profile:', createError);
+          if (createError) {
+            console.error('Error creating client profile in dashboard:', createError);
+            setUserType('client');
+            setClientProfile(null);
+          } else {
+            console.log('Client profile created successfully in dashboard:', newClientProfile.id);
+            setUserType('client');
+            setClientProfile(newClientProfile);
+          }
+        } catch (profileCreationError) {
+          console.error('Exception creating client profile:', profileCreationError);
           setUserType('client');
           setClientProfile(null);
-        } else {
-          setUserType('client');
-          setClientProfile(newClientProfile);
         }
         setActiveTab('bookings');
       }
