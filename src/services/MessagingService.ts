@@ -127,6 +127,8 @@ export class MessagingService {
           .from('bookings')
           .select(`
             id,
+            barber_id,
+            client_id,
             appointment_date,
             appointment_time,
             status,
@@ -149,6 +151,8 @@ export class MessagingService {
           .from('bookings')
           .select(`
             id,
+            barber_id,
+            client_id,
             appointment_date,
             appointment_time,
             status,
@@ -175,12 +179,16 @@ export class MessagingService {
       for (const booking of uniqueBookings) {
         const isBarber = barberProfile && booking.barber_id === barberProfile.id;
         console.log('Processing booking:', booking.id, 'isBarber:', isBarber);
+        console.log('Booking barber_id:', booking.barber_id, 'vs barberProfile.id:', barberProfile?.id);
+        console.log('Client data:', booking.client_profiles);
+        console.log('Barber data:', booking.barber_profiles);
         
         let participant;
         // For barber: show client, for client: show barber
         if (isBarber && booking.client_profiles) {
           const clientUserId = booking.client_profiles.user_id || '';
           const clientName = `${booking.client_profiles.first_name || ''} ${booking.client_profiles.last_name || ''}`.trim();
+          console.log('Setting client participant:', { clientUserId, clientName, avatar: booking.client_profiles.profile_image_url });
           participant = {
             id: clientUserId,
             name: clientName || 'Client',
@@ -189,6 +197,7 @@ export class MessagingService {
           };
         } else if (!isBarber && booking.barber_profiles) {
           const barberUserId = booking.barber_profiles.user_id || '';
+          console.log('Setting barber participant:', { barberUserId, name: booking.barber_profiles.business_name, avatar: booking.barber_profiles.profile_image_url });
           participant = {
             id: barberUserId || booking.barber_profiles.id || '',
             name: booking.barber_profiles.business_name || 'Barber',
@@ -196,6 +205,7 @@ export class MessagingService {
             avatar: booking.barber_profiles.profile_image_url || undefined
           };
         } else {
+          console.log('Using fallback participant logic. isBarber:', isBarber, 'has client_profiles:', !!booking.client_profiles, 'has barber_profiles:', !!booking.barber_profiles);
           // Fallback for missing data
           participant = {
             id: '',
@@ -212,7 +222,8 @@ export class MessagingService {
           participantType: participant.type,
           isBarber,
           barberUserId: booking.barber_profiles?.user_id,
-          clientUserId: booking.client_profiles?.user_id
+          clientUserId: booking.client_profiles?.user_id,
+          participantAvatar: participant.avatar
         });
         
         // Get last message and unread count
