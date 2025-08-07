@@ -69,6 +69,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ barberId }) => {
         .select(`
           id,
           appointment_date,
+          appointment_time,
           total_amount,
           status,
           created_at,
