@@ -149,7 +149,12 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       }
     } catch (error: any) {
       console.error('Error sending message:', error);
-      setError(error.message || 'Failed to send message');
+      // Don't show error for notification failures - message still sent successfully
+      if (error.message?.includes('Booking not found')) {
+        console.warn('Notification failed but message was sent:', error.message);
+      } else {
+        setError(error.message || 'Failed to send message');
+      }
     } finally {
       setSending(false);
     }
