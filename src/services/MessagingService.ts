@@ -135,6 +135,10 @@ export class MessagingService {
               avatar: booking.barber_profiles?.profile_image_url || undefined
             };
 
+        // Skip conversations where barber profile is unclaimed (no user_id)
+        if (!participant.id || participant.id.trim() === '') {
+          continue;
+        }
         // Get last message and unread count
         const { data: lastMessage } = await supabase
           .from('messages')

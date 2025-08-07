@@ -80,10 +80,18 @@ const ConversationList: React.FC<ConversationListProps> = ({
           <div key={i} className="bg-white rounded-xl p-4 border border-gray-100 animate-pulse">
             <div className="flex items-start space-x-3">
               <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
-              <div className="flex-1 space-y-2">
+                  ? 'Messages will appear here when you have active bookings with claimed barber profiles'
                 <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                 <div className="h-3 bg-gray-200 rounded w-1/2"></div>
               </div>
+              {conversations.length === 0 && (
+                <div className="mt-4">
+                  <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <strong>Note:</strong> You can only message barbers who have claimed their profiles. 
+                    Unclaimed profiles don't have messaging enabled yet.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         ))}
