@@ -157,7 +157,7 @@ const ResetPassword: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center px-4 page-container relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex flex-col items-center justify-center px-4 page-container relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary-500/5 rounded-full blur-3xl animate-float"></div>
@@ -176,7 +176,7 @@ const ResetPassword: React.FC = () => {
         <div className="card-premium p-8 relative z-10 animate-fade-in-up">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-center space-x-3">
+              <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-center justify-center space-x-3">
                 <div className="bg-red-500 p-1.5 rounded-lg">
                   <AlertCircle className="h-4 w-4 text-white" />
                 </div>
@@ -185,18 +185,20 @@ const ResetPassword: React.FC = () => {
             )}
 
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-3">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2 text-center">
                 New Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
                 <input
                   id="password"
                   type={showPassword.password ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="input-premium pl-12 pr-12"
+                  className="w-full pl-12 pr-12 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
                   placeholder="Enter your new password"
                   disabled={loading}
                 />
@@ -216,18 +218,20 @@ const ResetPassword: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-3">
+              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2 text-center">
                 Confirm New Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
                 <input
                   id="confirmPassword"
                   type={showPassword.confirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  className="input-premium pl-12 pr-12"
+                  className="w-full pl-12 pr-12 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
                   placeholder="Confirm your new password"
                   disabled={loading}
                 />
@@ -248,7 +252,7 @@ const ResetPassword: React.FC = () => {
 
             {/* Password Requirements */}
             <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-2xl p-6">
-              <h4 className="font-semibold text-gray-900 mb-4">Password Requirements:</h4>
+              <h4 className="font-semibold text-gray-900 mb-4 text-center">Password Requirements:</h4>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li className={`flex items-center space-x-2 ${password.length >= 6 ? 'text-green-600' : ''}`}>
                   <div className={`w-3 h-3 rounded-full ${password.length >= 6 ? 'bg-green-500' : 'bg-gray-300'}`}></div>

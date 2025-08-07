@@ -368,7 +368,7 @@ const BookingFlow: React.FC = () => {
         {/* Step Content */}
         <div className="card-premium relative z-10 animate-fade-in-up">
           {step === 'service' && (
-            <div className="p-6 sm:p-8">
+            <div className="p-6 sm:p-8 max-w-4xl mx-auto">
               <div className="text-center mb-8">
                 <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium">
                   <Scissors className="h-8 w-8 text-white" />
@@ -416,7 +416,7 @@ const BookingFlow: React.FC = () => {
           )}
 
           {step === 'datetime' && selectedService && (
-            <div className="p-6 sm:p-8">
+            <div className="p-6 sm:p-8 max-w-5xl mx-auto">
               <div className="text-center mb-8">
                 <div className="bg-gradient-to-br from-primary-500 to-primary-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium">
                   <Calendar className="h-8 w-8 text-white" />
@@ -433,7 +433,7 @@ const BookingFlow: React.FC = () => {
                     minDate={new Date()}
                     maxDate={addDays(new Date(), 30)}
                     inline
-                    className="w-full border border-gray-200 rounded-2xl shadow-sm"
+                    className="w-full border border-gray-200 rounded-2xl shadow-sm mx-auto"
                   />
                 </div>
                 <div>
@@ -506,7 +506,7 @@ const BookingFlow: React.FC = () => {
           )}
 
           {step === 'details' && (
-            <div className="p-6 sm:p-8">
+            <div className="p-6 sm:p-8 max-w-2xl mx-auto">
               <div className="text-center mb-8">
                 <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium">
                   <User className="h-8 w-8 text-white" />
@@ -517,30 +517,32 @@ const BookingFlow: React.FC = () => {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       First Name *
                     </label>
                     <div className="relative">
-                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                        <User className="h-5 w-5 text-gray-400" />
+                      </div>
                       <input
                         type="text"
                         value={customerInfo.firstName}
                         onChange={(e) => setCustomerInfo(prev => ({ ...prev, firstName: e.target.value }))}
-                        className="input-premium pl-12"
+                        className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                         placeholder="First name"
                         required
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Last Name *
                     </label>
                     <input
                       type="text"
                       value={customerInfo.lastName}
                       onChange={(e) => setCustomerInfo(prev => ({ ...prev, lastName: e.target.value }))}
-                      className="input-premium"
+                      className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                       placeholder="Last name"
                       required
                     />
@@ -548,16 +550,18 @@ const BookingFlow: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Phone Number *
                   </label>
                   <div className="relative">
-                    <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                      <Phone className="h-5 w-5 text-gray-400" />
+                    </div>
                     <input
                       type="tel"
                       value={customerInfo.phone}
                       onChange={(e) => setCustomerInfo(prev => ({ ...prev, phone: e.target.value }))}
-                      className="input-premium pl-12"
+                      className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                       placeholder="(555) 123-4567"
                       required
                     />
@@ -565,16 +569,18 @@ const BookingFlow: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Email Address *
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                      <Mail className="h-5 w-5 text-gray-400" />
+                    </div>
                     <input
                       type="email"
                       value={customerInfo.email}
                       onChange={(e) => setCustomerInfo(prev => ({ ...prev, email: e.target.value }))}
-                      className="input-premium pl-12"
+                      className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                       placeholder="email@example.com"
                       required
                     />
@@ -582,14 +588,14 @@ const BookingFlow: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Notes (Optional)
                   </label>
                   <textarea
                     value={customerInfo.notes}
                     onChange={(e) => setCustomerInfo(prev => ({ ...prev, notes: e.target.value }))}
                     rows={3}
-                    className="input-premium"
+                    className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                     placeholder="Any special requests or notes for your barber..."
                   />
                 </div>
@@ -648,7 +654,7 @@ const BookingFlow: React.FC = () => {
           )}
 
           {step === 'confirmation' && confirmedBooking && (
-            <div className="p-8 sm:p-12 text-center">
+            <div className="p-8 sm:p-12 text-center max-w-2xl mx-auto">
               <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-premium animate-float">
                 <CheckCircle className="h-12 w-12 text-white" />
               </div>

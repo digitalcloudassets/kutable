@@ -124,7 +124,7 @@ const SignUpForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center px-4 py-8 page-container relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex flex-col items-center justify-center px-4 py-8 page-container relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary-500/5 rounded-full blur-3xl animate-float"></div>
@@ -143,17 +143,17 @@ const SignUpForm: React.FC = () => {
         <div className="card-premium p-8 relative z-10 animate-fade-in-up">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-center space-x-3">
+              <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-center justify-center space-x-3">
                 <div className="bg-red-500 p-1.5 rounded-lg">
                   <AlertTriangle className="h-4 w-4 text-white" />
                 </div>
-                {error}
+                <span className="font-medium">{error}</span>
               </div>
             )}
 
             {/* Account Type Selection */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-4 text-center">
                 I am a...
               </label>
               <div className="grid grid-cols-2 gap-4">
@@ -187,7 +187,7 @@ const SignUpForm: React.FC = () => {
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-3">
+               <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-2 text-center">
                   First Name
                 </label>
                 <input
@@ -196,12 +196,12 @@ const SignUpForm: React.FC = () => {
                   value={formData.firstName}
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
                   required
-                  className="input-premium"
+                 className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
                   placeholder="First name"
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-3">
+               <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-2 text-center">
                   Last Name
                 </label>
                 <input
@@ -210,7 +210,7 @@ const SignUpForm: React.FC = () => {
                   value={formData.lastName}
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
                   required
-                  className="input-premium"
+                 className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
                   placeholder="Last name"
                 />
               </div>
@@ -218,18 +218,20 @@ const SignUpForm: React.FC = () => {
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-3">
+             <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2 text-center">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+               <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                 <Mail className="h-5 w-5 text-gray-400" />
+               </div>
                 <input
                   id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   required
-                  className="input-premium pl-12"
+                 className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
                   placeholder="Enter your email"
                 />
               </div>
@@ -237,18 +239,20 @@ const SignUpForm: React.FC = () => {
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-3">
+             <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2 text-center">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+               <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                 <Lock className="h-5 w-5 text-gray-400" />
+               </div>
                 <input
                   id="password"
                   type={showPassword.password ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
                   required
-                  className="input-premium pl-12 pr-12"
+                 className="w-full pl-12 pr-12 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
                   placeholder="Create a password"
                 />
                 <button
@@ -267,18 +271,20 @@ const SignUpForm: React.FC = () => {
 
             {/* Confirm Password */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-3">
+             <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2 text-center">
                 Confirm Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+               <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                 <Lock className="h-5 w-5 text-gray-400" />
+               </div>
                 <input
                   id="confirmPassword"
                   type={showPassword.confirmPassword ? 'text' : 'password'}
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                   required
-                  className="input-premium pl-12 pr-12"
+                 className="w-full pl-12 pr-12 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
                   placeholder="Confirm your password"
                 />
                 <button

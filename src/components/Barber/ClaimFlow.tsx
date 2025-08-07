@@ -500,16 +500,16 @@ const ClaimFlow: React.FC = () => {
         <div className="card-premium relative z-10 animate-fade-in-up">
           {step === 'signin' && (
             <div className="p-8 sm:p-12 text-center">
-              <div className="bg-gradient-to-br from-primary-500 to-primary-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-premium animate-float">
+              <div className="bg-gradient-to-br from-primary-500 to-primary-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-premium animate-float">
                 <User className="h-10 w-10 text-white" />
               </div>
-              <h2 className="text-3xl font-display font-bold text-gray-900 mb-6">
+              <h2 className="text-3xl font-display font-bold text-gray-900 mb-4">
                 Sign In Required
               </h2>
-              <p className="text-gray-600 mb-8 text-lg leading-relaxed">
+              <p className="text-gray-600 mb-6 text-lg leading-relaxed">
                 To claim this barber profile, you need to sign in or create an account first.
               </p>
-              <div className="space-y-4 max-w-sm mx-auto">
+              <div className="space-y-3 max-w-sm mx-auto">
                 <Link
                   to="/login"
                   className="btn-primary w-full hover:scale-105 transition-all duration-200"
@@ -530,7 +530,7 @@ const ClaimFlow: React.FC = () => {
           )}
 
           {step === 'verify' && (
-            <div className="p-8 sm:p-12 text-center">
+            <div className="p-8 sm:p-12 text-center max-w-lg mx-auto">
               <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-premium animate-float">
                 <Building className="h-10 w-10 text-white" />
               </div>
@@ -576,7 +576,7 @@ const ClaimFlow: React.FC = () => {
           )}
 
           {step === 'details' && (
-            <div className="p-8 sm:p-12">
+            <div className="p-8 sm:p-12 max-w-2xl mx-auto">
               <div className="text-center mb-8">
                 <div className="bg-gradient-to-br from-primary-500 to-primary-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-premium animate-float">
                   <Building className="h-10 w-10 text-white" />
@@ -586,64 +586,72 @@ const ClaimFlow: React.FC = () => {
               </div>
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Business Name
                   </label>
                   <div className="relative">
-                    <Building className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                      <Building className="h-5 w-5 text-gray-400" />
+                    </div>
                     <input
                       type="text"
                       value={claimData.businessName}
                       onChange={(e) => setClaimData(prev => ({ ...prev, businessName: e.target.value }))}
-                      className="input-premium pl-12"
+                      className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                       placeholder="Your business name"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Owner Name
                   </label>
                   <div className="relative">
-                    <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                      <User className="h-5 w-5 text-gray-400" />
+                    </div>
                     <input
                       type="text"
                       value={claimData.ownerName}
                       onChange={(e) => setClaimData(prev => ({ ...prev, ownerName: e.target.value }))}
-                      className="input-premium pl-12"
+                      className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                       placeholder="Your full name"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Phone Number
                     </label>
                     <div className="relative">
-                      <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                        <Phone className="h-5 w-5 text-gray-400" />
+                      </div>
                       <input
                         type="tel"
                         value={claimData.phone}
                         onChange={(e) => setClaimData(prev => ({ ...prev, phone: e.target.value }))}
-                        className="input-premium pl-12"
+                        className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                         placeholder="(555) 123-4567"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Email Address
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                        <Mail className="h-5 w-5 text-gray-400" />
+                      </div>
                       <input
                         type="email"
                         value={claimData.email}
                         onChange={(e) => setClaimData(prev => ({ ...prev, email: e.target.value }))}
-                        className="input-premium pl-12"
+                        className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                         placeholder="email@example.com"
                       />
                     </div>
@@ -651,16 +659,18 @@ const ClaimFlow: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Business Address
                   </label>
                   <div className="relative">
-                    <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                      <MapPin className="h-5 w-5 text-gray-400" />
+                    </div>
                     <input
                       type="text"
                       value={claimData.address}
                       onChange={(e) => setClaimData(prev => ({ ...prev, address: e.target.value }))}
-                      className="input-premium pl-12"
+                      className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                       placeholder="Street address"
                     />
                   </div>
@@ -668,58 +678,58 @@ const ClaimFlow: React.FC = () => {
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       City
                     </label>
                     <input
                       type="text"
                       value={claimData.city}
                       onChange={(e) => setClaimData(prev => ({ ...prev, city: e.target.value }))}
-                      className="input-premium"
+                      className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                       placeholder="City"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       State
                     </label>
                     <input
                       type="text"
                       value={claimData.state}
                       onChange={(e) => setClaimData(prev => ({ ...prev, state: e.target.value }))}
-                      className="input-premium"
+                      className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                       placeholder="State"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       ZIP Code
                     </label>
                     <input
                       type="text"
                       value={claimData.zipCode}
                       onChange={(e) => setClaimData(prev => ({ ...prev, zipCode: e.target.value }))}
-                      className="input-premium"
+                      className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                       placeholder="12345"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Business Description
                   </label>
                   <textarea
                     value={claimData.bio}
                     onChange={(e) => setClaimData(prev => ({ ...prev, bio: e.target.value }))}
                     rows={4}
-                    className="input-premium"
+                    className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                     placeholder="Tell customers about your services and experience..."
                   />
                 </div>
               </div>
 
-              <div className="mt-12 flex justify-center">
+              <div className="mt-8 flex justify-center">
                 <button
                   onClick={handleDetailsSubmit}
                   disabled={loading || !isConnected || !user}
@@ -737,7 +747,7 @@ const ClaimFlow: React.FC = () => {
           )}
 
           {step === 'complete' && (
-            <div className="p-8 sm:p-12 text-center">
+            <div className="p-8 sm:p-12 text-center max-w-lg mx-auto">
               <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-premium animate-float">
                 <CheckCircle className="h-10 w-10 text-white" />
               </div>

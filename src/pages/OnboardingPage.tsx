@@ -568,12 +568,14 @@ const OnboardingPage: React.FC = () => {
                     Business Name <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                      <Building className="h-5 w-5 text-gray-400" />
+                    </div>
                     <input
                       type="text"
                       value={data.businessInfo.businessName}
                       onChange={(e) => updateData('businessInfo.businessName', e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                       placeholder="e.g., Elite Cuts Barbershop"
                     />
                   </div>
@@ -584,12 +586,14 @@ const OnboardingPage: React.FC = () => {
                     Owner Name <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                      <User className="h-5 w-5 text-gray-400" />
+                    </div>
                     <input
                       type="text"
                       value={data.businessInfo.ownerName}
                       onChange={(e) => updateData('businessInfo.ownerName', e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                       placeholder="Your full name"
                     />
                   </div>
@@ -600,12 +604,14 @@ const OnboardingPage: React.FC = () => {
                     Phone Number <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                      <Phone className="h-5 w-5 text-gray-400" />
+                    </div>
                     <input
                       type="tel"
                       value={data.businessInfo.phone}
                       onChange={(e) => updateData('businessInfo.phone', e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                       placeholder="(555) 123-4567"
                     />
                   </div>
@@ -616,12 +622,14 @@ const OnboardingPage: React.FC = () => {
                     Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                      <Mail className="h-5 w-5 text-gray-400" />
+                    </div>
                     <input
                       type="email"
                       value={data.businessInfo.email}
                       onChange={(e) => updateData('businessInfo.email', e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                       placeholder="email@example.com"
                     />
                   </div>
@@ -633,12 +641,14 @@ const OnboardingPage: React.FC = () => {
                   Business Address
                 </label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
+                    <MapPin className="h-5 w-5 text-gray-400" />
+                  </div>
                   <input
                     type="text"
                     value={data.businessInfo.address}
                     onChange={(e) => updateData('businessInfo.address', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                     placeholder="123 Main Street"
                   />
                 </div>
@@ -651,7 +661,7 @@ const OnboardingPage: React.FC = () => {
                     type="text"
                     value={data.businessInfo.city}
                     onChange={(e) => updateData('businessInfo.city', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                     placeholder="City"
                   />
                 </div>
@@ -661,7 +671,7 @@ const OnboardingPage: React.FC = () => {
                     type="text"
                     value={data.businessInfo.state}
                     onChange={(e) => updateData('businessInfo.state', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                     placeholder="State"
                   />
                 </div>
@@ -671,7 +681,7 @@ const OnboardingPage: React.FC = () => {
                     type="text"
                     value={data.businessInfo.zipCode}
                     onChange={(e) => updateData('businessInfo.zipCode', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                     placeholder="12345"
                   />
                 </div>
@@ -685,7 +695,7 @@ const OnboardingPage: React.FC = () => {
                   value={data.businessInfo.bio}
                   onChange={(e) => updateData('businessInfo.bio', e.target.value)}
                   rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                   placeholder="Tell customers about your experience, specialties, and what makes your shop unique..."
                 />
               </div>
