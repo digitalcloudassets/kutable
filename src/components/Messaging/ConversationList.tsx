@@ -80,18 +80,10 @@ const ConversationList: React.FC<ConversationListProps> = ({
           <div key={i} className="bg-white rounded-xl p-4 border border-gray-100 animate-pulse">
             <div className="flex items-start space-x-3">
               <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
-                  ? 'Messages will appear here when you have active bookings with claimed barber profiles'
+              <div className="flex-1 min-w-0">
                 <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2 mt-2"></div>
               </div>
-              {conversations.length === 0 && (
-                <div className="mt-4">
-                  <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
-                    <strong>Note:</strong> You can only message barbers who have claimed their profiles. 
-                    Unclaimed profiles don't have messaging enabled yet.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         ))}
@@ -123,10 +115,18 @@ const ConversationList: React.FC<ConversationListProps> = ({
             <h3 className="text-lg font-medium text-gray-900 mb-2">No conversations</h3>
             <p className="text-gray-600">
               {conversations.length === 0 
-                ? 'Messages will appear here when you have active bookings'
+                ? 'Messages will appear here when you have active bookings with claimed barber profiles'
                 : 'No conversations match your search'
               }
             </p>
+            {conversations.length === 0 && (
+              <div className="mt-4">
+                <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <strong>Note:</strong> You can only message barbers who have claimed their profiles. 
+                  Unclaimed profiles don't have messaging enabled yet.
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           filteredConversations.map((conversation) => (
@@ -211,11 +211,11 @@ const ConversationList: React.FC<ConversationListProps> = ({
                     ? 'bg-yellow-100 text-yellow-800'
                     : 'bg-gray-100 text-gray-800'
                 }`}>
-            <div className="flex-1 min-w-0">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2 mt-2"></div>
+                  {conversation.booking.status}
+                </span>
+              </div>
             </div>
-          </div>
+          ))
         )}
       </div>
     </div>
