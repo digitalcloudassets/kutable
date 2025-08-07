@@ -137,11 +137,12 @@ export class MessagingService {
             client_profiles(id, user_id, first_name, last_name, profile_image_url)
           `)
           .eq('barber_id', barberProfile.id)
-          .in('status', ['pending', 'confirmed', 'completed'])
+          .in('status', ['pending', 'confirmed', 'completed']);
 
         if (barberError) throw barberError;
         
         // Debug: Check if any bookings have null client_profiles
+        console.log('Barber bookings client profiles check:', barberBookings?.map(b => ({
           id: b.id,
           client_id: b.client_id,
           hasClientProfiles: !!b.client_profiles,
@@ -150,6 +151,7 @@ export class MessagingService {
         
         // Filter out bookings with null client_profiles and fetch client data separately
         const enrichedBarberBookings = [];
+        for (const booking of barberBookings || []) {
           if (!booking.client_profiles && booking.client_id) {
             console.log('Fetching missing client data for booking:', booking.id, 'client_id:', booking.client_id);
             // Fetch client profile separately
@@ -177,6 +179,7 @@ export class MessagingService {
                 last_name: '',
                 profile_image_url: null,
                 email: null
+              };
             }
           }
           enrichedBarberBookings.push(booking);
@@ -205,11 +208,17 @@ export class MessagingService {
           .order('appointment_date', { ascending: false });
 
         if (clientError) throw clientError;
+        console.log('Client bookings barber profiles check:', clientBookings?.map(b => ({
+          id: b.id,
+          barber_id: b.barber_id,
+          hasBarberProfiles: !!b.barber_profiles,
+          barberProfilesData: b.barber_profiles
         })));
         
         // Filter out bookings with null barber_profiles and fetch barber data separately
         const enrichedClientBookings = [];
         for (const booking of clientBookings || []) {
+          if (!booking.barber_profiles && booking.barber_id) {
             console.log('Fetching missing barber data for booking:', booking.id, 'barber_id:', booking.barber_id);
             // Fetch barber profile separately
             const { data: barberProfile } = await supabase
@@ -217,10 +226,15 @@ export class MessagingService {
               .select('id, user_id, business_name, owner_name, profile_image_url')
               .eq('id', booking.barber_id)
               .maybeSingle();
+              
+            if (barberProfile) {
+              booking.barber_profiles = barberProfile;
               console.log('Found missing barber profile:', barberProfile);
             } else {
               console.warn('Barber profile not found for barber_id:', booking.barber_id);
+            }
           }
+          enrichedClientBookings.push(booking);
         }
         allBookings.push(...enrichedClientBookings);
         console.log('Added client bookings:', clientBookings?.length || 0);
@@ -259,11 +273,18 @@ export class MessagingService {
             name: booking.barber_profiles.business_name || 'Barber',
             type: 'barber' as const,
             avatar: booking.barber_profiles.profile_image_url || undefined
+          };
+        } else {
+          // Fallback participant
+          participant = {
+            id: null,
+            name: 'Unknown',
             type: isBarber ? 'client' as const : 'barber' as const,
             avatar: undefined
           };
         }
 
+        console.log('Final participant for booking:', {
           bookingId: booking.id,
           participantId: participant.id,
           participantName: participant.name,
@@ -273,12 +294,15 @@ export class MessagingService {
           clientUserId: booking.client_profiles?.user_id,
           participantAvatar: participant.avatar
         });
+
+        const { data: lastMessage } = await supabase
           .from('messages')
           .select('*')
           .eq('booking_id', booking.id)
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+
         const { count: unreadCount } = await supabase
           .from('messages')
           .select('*', { count: 'exact' })
@@ -290,6 +314,10 @@ export class MessagingService {
           bookingId: booking.id,
           lastMessage: lastMessage || undefined,
           unreadCount: unreadCount || 0,
+          participant,
+          booking: {
+            id: booking.id,
+            serviceName: booking.services?.name || 'Service',
             appointmentDate: booking.appointment_date,
             appointmentTime: booking.appointment_time,
             status: booking.status
@@ -304,6 +332,7 @@ export class MessagingService {
         if (a.lastMessage) return -1;
         if (b.lastMessage) return 1;
         return new Date(b.booking.appointmentDate).getTime() - new Date(a.booking.appointmentDate).getTime();
+      });
 
     } catch (error) {
       console.error('Error fetching conversations:', error);
@@ -311,6 +340,7 @@ export class MessagingService {
     }
   }
 
+  async getMessages(bookingId: string, userId: string): Promise<Message[]> {
     if (!isSupabaseConnected()) {
       console.warn('Supabase not connected - messaging unavailable');
       return [];
@@ -320,7 +350,13 @@ export class MessagingService {
       // Verify user has access to this booking
       const { data: booking } = await supabase
         .from('bookings')
-      }
+        .select(`
+          id,
+          barber_profiles(user_id, business_name),
+          client_profiles(user_id, first_name, last_name)
+        `)
+        .eq('id', bookingId)
+        .single();
 
       const hasAccess = booking.barber_profiles?.user_id === userId || 
                        booking.client_profiles?.user_id === userId;
@@ -352,6 +388,7 @@ export class MessagingService {
                 id: booking.client_profiles?.user_id || '',
                 name: `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`,
                 type: 'client'
+              }
         };
       });
 
@@ -369,6 +406,7 @@ export class MessagingService {
       throw new Error('Messaging is not available - please connect to Supabase');
     }
 
+    try {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
@@ -441,6 +479,12 @@ export class MessagingService {
     }
   }
 
+  async markConversationAsRead(bookingId: string, userId: string): Promise<void> {
+    if (!isSupabaseConnected()) {
+      return;
+    }
+
+    try {
       const { error } = await supabase
         .from('messages')
         .update({ read_at: new Date().toISOString() })
@@ -467,9 +511,11 @@ export class MessagingService {
         {
           event: 'INSERT',
           schema: 'public',
+          table: 'messages',
           filter: `booking_id=eq.${bookingId}`,
         },
         (payload) => {
+          callback(payload.new as Message);
         }
       )
       .subscribe();
@@ -541,6 +587,7 @@ export class MessagingService {
           }
         });
         
+        console.log('SMS notification result:', { smsResult, smsError });
       }
 
       // Send email notification if user has email enabled (default to true for essential notifications)
@@ -585,6 +632,7 @@ export class MessagingService {
           }
         });
         
+        console.log('Email notification result:', { emailResult, emailError });
       }
 
     } catch (error) {
