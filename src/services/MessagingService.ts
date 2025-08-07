@@ -193,16 +193,16 @@ export class MessagingService {
               needsClaim: !clientUserId, // Flag if client hasn't claimed profile
             }
         // Determine the other participant (who the user would message)
-        : {
-              id: clientUserId || `placeholder_${booking.id}`,
-              name: clientUserId 
-                ? `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`
-                : 'Unclaimed Client',
+        : isUserBarber 
+          ? {
+              id: effectiveClientUserId || `placeholder_client_${booking.id}`,
+              name: effectiveClientName,
               type: 'client' as const,
               avatar: undefined,
-              needsClaim: !clientUserId,
-              hasValidProfile: !!clientUserId,
-              isPlaceholder: !clientUserId
+              needsClaim: !effectiveClientUserId,
+              hasValidProfile: !!effectiveClientUserId,
+              isPlaceholder: !effectiveClientUserId,
+              canReceiveMessages: !!effectiveClientUserId && effectiveClientUserId !== userId
             }
           : {
               id: barberUserId || `placeholder_${booking.id}`,
@@ -213,7 +213,8 @@ export class MessagingService {
               avatar: booking.barber_profiles?.profile_image_url || undefined,
               needsClaim: !barberUserId,
               hasValidProfile: !!barberUserId,
-              isPlaceholder: !barberUserId
+              isPlaceholder: !barberUserId,
+              canReceiveMessages: !!barberUserId && barberUserId !== userId
             };
 
         // Enhanced logging for conversation inclusion
