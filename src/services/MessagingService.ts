@@ -305,6 +305,11 @@ export class MessagingService {
       throw new Error('Messaging is not available - please connect to Supabase');
     }
 
+    // Validate receiverId is not empty
+    if (!receiverId || receiverId.trim() === '') {
+      console.warn('Attempt to send message with blank receiverId:', { bookingId, receiverId });
+      throw new Error('Cannot send message: recipient account not found. The recipient needs to create an account first.');
+    }
     try {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
