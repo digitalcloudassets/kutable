@@ -3,7 +3,7 @@ import BarberProfile from './BarberProfile';
 import BookingsManagement from './BookingsManagement';
 import Analytics from './Analytics';
 import ConsentManagement from '../Client/ConsentManagement';
-import { Settings } from 'lucide-react';
+import { Settings, Scissors, Camera, ImageIcon, Clock, Save } from 'lucide-react';
 import { Database } from '../../lib/supabase';
 import ServicesManagement from './ServicesManagement';
 import MediaUpload from '../Gallery/MediaUpload';
