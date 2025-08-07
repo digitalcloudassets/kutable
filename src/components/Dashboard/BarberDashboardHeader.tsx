@@ -81,14 +81,6 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
             </div>
           </div>
 
-          {/* Monthly Revenue */}
-          <div className="bg-gray-50 rounded-2xl p-6">
-            <div className="text-3xl font-bold text-gray-900 mb-1">
-              $2,340
-            </div>
-            <p className="text-gray-600 font-medium">This Month's Earnings</p>
-          </div>
-
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

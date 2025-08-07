@@ -556,10 +556,10 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
               </div>
               <div className="text-center group">
                 <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium group-hover:scale-110 transition-transform duration-300">
-                  <Crown className="h-8 w-8 text-white" />
+                  <CheckCircle className="h-8 w-8 text-white" />
                 </div>
-                <p className="text-3xl font-bold text-gray-900 mb-1">Pro</p>
-                <p className="text-gray-600 font-medium">Verified Status</p>
+                <p className="text-3xl font-bold text-gray-900 mb-1">{barber.is_claimed ? 'Claimed' : 'Unclaimed'}</p>
+                <p className="text-gray-600 font-medium">Profile Status</p>
               </div>
             </div>
           </div>
