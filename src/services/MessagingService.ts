@@ -411,7 +411,7 @@ export class MessagingService {
             table: 'messages',
             filter: `booking_id=eq.${bookingId}`,
           },
-          (payload) => {
+          async (payload) => {
             try {
               callback(payload.new as Message);
             } catch (callbackError) {
@@ -427,7 +427,6 @@ export class MessagingService {
           }
         });
 
-        const { data: lastMessage } = await supabase
       const unsubscribe = () => {
         try {
           supabase.removeChannel(channel);
