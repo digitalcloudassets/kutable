@@ -219,8 +219,6 @@ export class MessagingService {
         // Get last message and unread count
         const { data: lastMessage } = await supabase
           .from('messages')
-        const { data: lastMessage } = await supabase
-          .from('messages')
           .select('*')
           .eq('booking_id', booking.id)
           .order('created_at', { ascending: false })
