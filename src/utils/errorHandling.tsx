@@ -183,10 +183,10 @@ export const withErrorBoundary = (
       if (this.state.hasError) {
         if (fallback) {
           const Fallback = fallback;
-          return <Fallback 
-            error={this.state.error || new Error('Unknown error')} 
-            reset={() => this.setState({ hasError: false, error: undefined })} 
-          />;
+          return React.createElement(Fallback, {
+            error: this.state.error || new Error('Unknown error'),
+            reset: () => this.setState({ hasError: false, error: undefined })
+          });
         }
         
         return (

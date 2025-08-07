@@ -4,10 +4,12 @@ import BookingsManagement from './BookingsManagement';
 import Analytics from './Analytics';
 import ConsentManagement from '../Client/ConsentManagement';
 import { Settings, Scissors, Camera, ImageIcon, Clock, Save } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { Database } from '../../lib/supabase';
 import ServicesManagement from './ServicesManagement';
 import MediaUpload from '../Gallery/MediaUpload';
 import MediaGallery from '../Gallery/MediaGallery';
+import MessagingDashboard from '../Messaging/MessagingDashboard';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -104,6 +106,18 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
       
       {activeTab === 'bookings' && (
         <BookingsManagement barberId={barber.id} />
+      )}
+      
+      {activeTab === 'messages' && (
+        <div className="card-premium p-8 animate-fade-in-up">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="bg-primary-100 p-2 rounded-xl">
+              <MessageSquare className="h-6 w-6 text-primary-600" />
+            </div>
+            <h3 className="text-2xl font-display font-bold text-gray-900">Customer Messages</h3>
+          </div>
+          <MessagingDashboard />
+        </div>
       )}
       
       {activeTab === 'analytics' && (

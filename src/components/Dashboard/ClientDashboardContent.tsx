@@ -1,4 +1,5 @@
 import React from 'react';
+import { MessageSquare } from 'lucide-react';
 import ClientBookings from '../Client/ClientBookings';
 import ClientProfileSettings from '../Client/ClientProfileSettings';
 

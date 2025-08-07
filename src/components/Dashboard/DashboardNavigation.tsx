@@ -8,7 +8,8 @@ import {
   User, 
   Scissors,
   Camera,
-  Clock
+  Clock,
+  MessageSquare
 } from 'lucide-react';
 
 interface DashboardNavigationProps {
@@ -42,6 +43,7 @@ const DashboardNavigation = React.memo<DashboardNavigationProps>(({
 
   const clientNavButtons: NavButton[] = [
     { id: 'bookings', label: 'My Bookings', icon: Calendar },
+    { id: 'messages', label: 'Messages', icon: MessageSquare },
     { id: 'profile', label: 'My Profile', icon: User },
     { id: 'barbers', label: 'Find Barbers', icon: Scissors, action: 'navigate', to: '/barbers' }
   ];
@@ -49,6 +51,7 @@ const DashboardNavigation = React.memo<DashboardNavigationProps>(({
   const barberNavButtons: NavButton[] = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'bookings', label: 'Bookings', icon: Calendar },
+    { id: 'messages', label: 'Messages', icon: MessageSquare },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'services', label: 'Services', icon: Scissors },
     { id: 'gallery', label: 'Gallery', icon: Camera },

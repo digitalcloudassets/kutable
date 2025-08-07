@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { User, LogOut, Menu, X, Scissors, Crown } from 'lucide-react';
+import { User, LogOut, Menu, X, Scissors, Crown, MessageSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { useMessaging } from '../../hooks/useMessaging';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useAuth();
+  const { unreadCount } = useMessaging();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -81,6 +83,11 @@ const Header: React.FC = () => {
                 >
                   <User className="h-5 w-5" />
                   <span>Dashboard</span>
+                  {unreadCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                      {unreadCount}
+                    </span>
+                  )}
                 </Link>
                 <button
                   onClick={handleSignOut}
