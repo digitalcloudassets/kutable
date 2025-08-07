@@ -572,6 +572,42 @@ export type Database = {
         Insert: Omit<Database['public']['Tables']['client_profiles']['Row'], 'id' | 'created_at' | 'updated_at'>;
         Update: Partial<Database['public']['Tables']['client_profiles']['Insert']>;
       };
+      knowledge_base: {
+        Row: {
+          id: string;
+          title: string;
+          content: string;
+          embedding: number[];
+          category: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['knowledge_base']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['knowledge_base']['Insert']>;
+      };
+      chat_conversations: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          session_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['chat_conversations']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['chat_conversations']['Insert']>;
+      };
+      chat_messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          role: 'user' | 'assistant';
+          content: string;
+          context_used: any;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['chat_messages']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['chat_messages']['Insert']>;
+      };
     };
   };
 };

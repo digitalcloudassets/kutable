@@ -550,6 +550,50 @@ textarea {
   display: none !important;
 }
 
+/* Chat widget specific styles */
+.chat-widget {
+  z-index: 9999;
+}
+
+.chat-bubble {
+  animation: float 3s ease-in-out infinite;
+}
+
+.chat-bubble:hover {
+  animation-play-state: paused;
+}
+
+/* Chat message animations */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.message-user {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.message-assistant {
+  animation: slide-in-left 0.3s ease-out;
+}
+
 /* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
   .dark-mode {
