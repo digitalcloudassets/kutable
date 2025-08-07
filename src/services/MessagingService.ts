@@ -249,7 +249,7 @@ export class MessagingService {
 
       const hasAccess = booking.barber_profiles?.user_id === userId || 
                        booking.client_profiles?.user_id === userId;
-
+        console.log('Skipping conversation - both user IDs missing:', booking.id);
       if (!hasAccess) {
         throw new Error('Access denied');
       }
