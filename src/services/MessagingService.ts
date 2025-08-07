@@ -144,16 +144,14 @@ export class MessagingService {
         const isBarber = barberProfile && booking.barber_id === barberProfile.id;
         
         // Debug logging
-        console.log('DEBUG - Conversation participant logic:', {
+        console.log('Conversation participant logic:', {
           bookingId: booking.id,
-          currentUserId: userId,
           isBarber,
           barberUserId: booking.barber_profiles?.user_id,
           clientUserId: booking.client_profiles?.user_id,
           barberBusiness: booking.barber_profiles?.business_name,
-          clientFirstName: booking.client_profiles?.first_name,
-          clientLastName: booking.client_profiles?.last_name,
-          clientFullName: `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim()
+          clientName: `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`,
+          currentUserId: userId
         });
         
         const participant = isBarber 
@@ -170,14 +168,11 @@ export class MessagingService {
               avatar: booking.barber_profiles?.profile_image_url || undefined
             };
         
-        console.log('DEBUG - Final participant for conversation:', {
+        console.log('Final participant for conversation:', {
           bookingId: booking.id,
           participantId: participant.id,
           participantName: participant.name,
-          participantType: participant.type,
-          isBarberCalculated: isBarber,
-          shouldShowClientName: isBarber,
-          actuallyShowing: participant.name
+          participantType: participant.type
         });
 
         // Skip conversations where barber profile is unclaimed (no user_id)
