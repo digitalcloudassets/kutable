@@ -115,7 +115,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
             <h3 className="text-lg font-medium text-gray-900 mb-2">No conversations</h3>
             <p className="text-gray-600">
               {conversations.length === 0 
-                ? 'Messages will appear here when you have active bookings with claimed barber profiles'
+                ? 'Messages will appear here when you have active bookings with claimed profiles'
                 : 'No conversations match your search'
               }
             </p>
@@ -123,7 +123,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
               <div className="mt-4">
                 <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
                   <strong>Note:</strong> You can only message users who have claimed their profiles and set up their accounts. 
-                  Both barbers and clients need to claim their profiles to enable messaging.
+                  Both barbers and clients need to claim their profiles to enable messaging. Bookings with unclaimed 
+                  participants will not appear in your conversations list.
                 </p>
               </div>
             )}
