@@ -130,7 +130,9 @@ Deno.serve(async (req) => {
     const authToken = Deno.env.get('TWILIO_AUTH_TOKEN')
     const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER')
 
-    if (!accountSid || !authToken || !fromNumber) {
+    // Validate Twilio credentials more strictly
+    if (!accountSid || !authToken || !fromNumber || 
+        accountSid.trim() === '' || authToken.trim() === '' || fromNumber.trim() === '') {
       console.warn('Missing Twilio configuration:', {
         hasAccountSid: !!accountSid,
         hasAuthToken: !!authToken,
@@ -147,6 +149,22 @@ Deno.serve(async (req) => {
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200, // Use 200 so booking doesn't fail
+        },
+      )
+    }
+
+    // Additional validation for credential format
+    if (!accountSid.startsWith('AC') || accountSid.length !== 34) {
+      console.error('Invalid Twilio Account SID format:', accountSid.substring(0, 5) + '...');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Invalid Twilio Account SID format',
+          warning: 'Booking was successful but SMS notification could not be sent'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
         },
       )
     }
@@ -168,6 +186,8 @@ Deno.serve(async (req) => {
     });
     // Create Twilio API request
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`
+    
+    console.log('Twilio API URL:', twilioUrl.substring(0, 50) + '...');
     
     const body = new URLSearchParams({
       To: formattedPhone,
@@ -192,8 +212,23 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const error = await response.text()
-      console.error('Twilio API error:', error);
-      throw new Error(`Twilio API error: ${response.status} ${response.statusText}`)
+      console.error('Twilio API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: error
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: `Twilio API error: ${response.status} - ${error}`,
+          warning: 'Booking was successful but SMS notification could not be sent'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        },
+      )
     }
 
     const result = await response.json()
