@@ -223,6 +223,19 @@ const SupportPage: React.FC = () => {
             <p className="text-xl text-gray-600">Find quick answers to common questions</p>
           </div>
 
+          <div className="text-center">
+            <p className="text-gray-600 mb-6">
+              Browse frequently asked questions organized by category. Use the search function to quickly find answers to specific questions.
+            </p>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-blue-800 text-sm">
+                <strong>For Barbers:</strong> Platform and technical issues - email support@kutable.com<br />
+                <strong>For Clients:</strong> Appointment questions - contact your barber directly
+              </p>
+            </div>
+          </div>
+
           {/* Search and Filter */}
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
             <div className="flex-1 relative">
