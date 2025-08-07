@@ -37,7 +37,7 @@ export interface Conversation {
   lastMessage?: Message;
   unreadCount: number;
   participant: {
-    id: string;
+    id: string | null;
     name: string;
     type: 'barber' | 'client';
     avatar?: string;
@@ -208,7 +208,7 @@ export class MessagingService {
           console.log('Using fallback participant logic. isBarber:', isBarber, 'has client_profiles:', !!booking.client_profiles, 'has barber_profiles:', !!booking.barber_profiles);
           // Fallback for missing data
           participant = {
-            id: isBarber ? 'client-fallback' : '', // Give clients a fallback ID so messaging works
+            id: null, // No valid user ID available
             name: isBarber ? 'Client' : 'Barber',
             type: isBarber ? 'client' as const : 'barber' as const,
             avatar: undefined

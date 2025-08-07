@@ -123,7 +123,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
 
     // Check if participant has a valid user ID
     if (!conversation.participant.id) {
-      setError('Cannot send message to unclaimed profile. This barber needs to claim their profile first.');
+      const errorMessage = conversation.participant.type === 'barber' 
+        ? 'Cannot send message - this barber profile needs to be claimed first.'
+        : 'Cannot send message - client profile is not properly linked.';
+      setError(errorMessage);
       return;
     }
     setSending(true);
@@ -337,11 +340,13 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
         )}
         
         <form onSubmit={handleSendMessage} className="flex space-x-3">
-          {!conversation.participant.id && conversation.participant.type === 'barber' ? (
+          {!conversation.participant.id ? (
             <div className="flex-1 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm flex items-center space-x-2">
               <AlertCircle className="h-4 w-4" />
               <span>
-                This barber profile hasn't been claimed yet. Messages can only be sent to claimed profiles.
+                {conversation.participant.type === 'barber' 
+                  ? 'This barber profile hasn\'t been claimed yet. Messages can only be sent to claimed profiles.'
+                  : 'Client profile is not properly linked. Please contact support.'}
               </span>
             </div>
           ) : (
@@ -354,7 +359,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all duration-200"
               rows={newMessage.includes('\n') ? 3 : 1}
               maxLength={1000}
-              disabled={!conversation.participant.id && conversation.participant.type === 'barber'}
+              disabled={!conversation.participant.id}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -362,16 +367,11 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
                 }
               }}
             />
-            {!conversation.participant.id && conversation.participant.type === 'barber' && (
-              <p className="text-xs text-amber-600 mt-1">
-                This profile hasn't been claimed yet. Messages cannot be sent.
-              </p>
-            )}
           </div>
           
           <button
             type="submit"
-            disabled={!newMessage.trim() || sending || (!conversation.participant.id && conversation.participant.type === 'barber')}
+            disabled={!newMessage.trim() || sending || !conversation.participant.id}
             className="bg-primary-500 text-white p-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           >
             {sending ? (
