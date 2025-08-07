@@ -41,6 +41,10 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Debug logging for visibility issues
+  useEffect(() => {
+    console.log('AI Chat Widget mounted and rendered');
+  }, []);
   useEffect(() => {
     if (isOpen && !isMinimized) {
       setHasUnread(false);
@@ -225,12 +229,17 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
   };
 
   return (
-    <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
+    <div className={`fixed bottom-6 right-6 z-[9999] ${className}`} style={{ zIndex: 9999 }}>
       {/* Chat Bubble */}
       {!isOpen && (
         <button
           onClick={openChat}
-          className="relative bg-gradient-to-r from-primary-500 to-accent-500 text-white p-4 rounded-full shadow-premium-lg hover:shadow-2xl transition-all duration-300 hover:scale-110 group"
+          className="relative bg-gradient-to-r from-primary-500 to-accent-500 text-white p-4 rounded-full shadow-premium-lg hover:shadow-2xl transition-all duration-300 hover:scale-110 group animate-float"
+          style={{ 
+            background: 'linear-gradient(135deg, #0066FF 0%, #00D4AA 100%)',
+            minWidth: '56px',
+            minHeight: '56px'
+          }}
         >
           <MessageSquare className="h-6 w-6" />
           
@@ -242,7 +251,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
           )}
           
           {/* Floating animation */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-accent-500 rounded-full opacity-75 animate-ping"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-accent-500 rounded-full opacity-30 animate-ping" style={{ animationDuration: '2s' }}></div>
         </button>
       )}
 
@@ -252,7 +261,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
           isMinimized 
             ? 'w-80 h-16' 
             : 'w-80 sm:w-96 h-[32rem]'
-        }`}>
+        }`} style={{ zIndex: 9999 }}>
           {/* Header */}
           <div className="bg-gradient-to-r from-primary-500 to-accent-500 text-white p-4 rounded-t-2xl flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -402,7 +411,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
 
       {/* Quick Actions (when chat is open but minimized) */}
       {isOpen && isMinimized && (
-        <div className="absolute bottom-20 right-0 bg-white rounded-xl shadow-lg border border-gray-200 p-3 space-y-2 w-64">
+        <div className="absolute bottom-20 right-0 bg-white rounded-xl shadow-lg border border-gray-200 p-3 space-y-2 w-64" style={{ zIndex: 9999 }}>
           <p className="text-sm font-medium text-gray-900 mb-2">Quick Questions:</p>
           {[
             "How do I book an appointment?",
