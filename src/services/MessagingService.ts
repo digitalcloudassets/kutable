@@ -2,6 +2,23 @@ import { supabase } from '../lib/supabase';
 import { Database } from '../lib/supabase';
 import { notificationService, BookingNotificationData } from './NotificationService';
 
+// Check if Supabase is properly connected
+const isSupabaseConnected = () => {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  return supabaseUrl && 
+    supabaseAnonKey && 
+    supabaseUrl !== 'https://your-project.supabase.co' &&
+    supabaseAnonKey !== 'your_supabase_anon_key_here' &&
+    supabaseUrl !== 'your_supabase_url_here' &&
+    supabaseAnonKey !== 'your_supabase_anon_key_here' &&
+    !supabaseUrl.includes('placeholder') &&
+    !supabaseAnonKey.includes('placeholder') &&
+    supabaseUrl.startsWith('https://') &&
+    supabaseUrl.includes('.supabase.co');
+};
+
 export type Message = Database['public']['Tables']['messages']['Row'] & {
   sender_profile?: {
     id: string;
@@ -52,6 +69,11 @@ export class MessagingService {
   }
 
   async getUserConversations(userId: string): Promise<Conversation[]> {
+    if (!isSupabaseConnected()) {
+      console.warn('Supabase not connected - messaging unavailable');
+      return [];
+    }
+
     try {
       // Get bookings where user is a barber
       const { data: barberBookings, error: barberError } = await supabase
@@ -160,6 +182,11 @@ export class MessagingService {
   }
 
   async getMessagesForBooking(bookingId: string, userId: string): Promise<Message[]> {
+    if (!isSupabaseConnected()) {
+      console.warn('Supabase not connected - messaging unavailable');
+      return [];
+    }
+
     try {
       // Verify user has access to this booking
       const { data: booking } = await supabase
@@ -220,6 +247,10 @@ export class MessagingService {
   }
 
   async sendMessage({ bookingId, receiverId, messageText }: SendMessageRequest): Promise<Message> {
+    if (!isSupabaseConnected()) {
+      throw new Error('Messaging is not available - please connect to Supabase');
+    }
+
     try {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -263,6 +294,10 @@ export class MessagingService {
   }
 
   async markAsRead(messageId: string, userId: string): Promise<void> {
+    if (!isSupabaseConnected()) {
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('messages')
@@ -277,6 +312,10 @@ export class MessagingService {
   }
 
   async markConversationAsRead(bookingId: string, userId: string): Promise<void> {
+    if (!isSupabaseConnected()) {
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('messages')
@@ -292,6 +331,11 @@ export class MessagingService {
   }
 
   subscribeToMessages(bookingId: string, callback: (message: Message) => void): () => void {
+    if (!isSupabaseConnected()) {
+      // Return a no-op unsubscribe function
+      return () => {};
+    }
+
     const channel = supabase
       .channel(`messages_${bookingId}`)
       .on(
@@ -415,6 +459,10 @@ export class MessagingService {
   }
 
   async getUnreadMessageCount(userId: string): Promise<number> {
+    if (!isSupabaseConnected()) {
+      return 0;
+    }
+
     try {
       const { count, error } = await supabase
         .from('messages')

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, ArrowLeft, Users } from 'lucide-react';
+import { MessageSquare, ArrowLeft, Users, AlertCircle } from 'lucide-react';
 import ConversationList from './ConversationList';
 import MessageThread from './MessageThread';
 import { Conversation } from '../../services/MessagingService';
 import { useAuth } from '../../hooks/useAuth';
+import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 
 const MessagingDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { isConnected } = useSupabaseConnection();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [showMobileThread, setShowMobileThread] = useState(false);
 
@@ -21,6 +23,18 @@ const MessagingDashboard: React.FC = () => {
   };
 
   return (
+    <>
+      {!isConnected && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="h-5 w-5 text-yellow-600" />
+            <span className="text-yellow-800 font-medium">
+              Connect to Supabase to enable messaging between barbers and clients
+            </span>
+          </div>
+        </div>
+      )}
+      
     <div className="h-[600px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="h-full flex">
         {/* Conversation List - Desktop: Always visible, Mobile: Hidden when thread open */}
@@ -89,6 +103,7 @@ const MessagingDashboard: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
