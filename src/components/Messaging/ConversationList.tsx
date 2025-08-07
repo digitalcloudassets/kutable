@@ -139,7 +139,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
                   : 'border-gray-100 hover:border-primary-300'
               }`}
             >
-              <div className="flex items-start space-x-3">
+              <div className="flex items-start space-x-3 mb-3">
                 {/* Avatar */}
                 <div className="flex-shrink-0">
                   {conversation.participant.avatar ? (
@@ -165,45 +165,41 @@ const ConversationList: React.FC<ConversationListProps> = ({
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-sm font-semibold text-gray-900 truncate">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="text-sm font-semibold text-gray-900 leading-tight pr-2">
                       {conversation.participant.name}
                     </h3>
-                    {conversation.lastMessage && (
-                      <span className="text-xs text-gray-500 font-medium">
-                        {formatMessageTime(conversation.lastMessage.created_at)}
-                      </span>
+                    {/* Unread badge */}
+                    {conversation.unreadCount > 0 && (
+                      <div className="flex-shrink-0">
+                        <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                          {conversation.unreadCount}
+                        </span>
+                      </div>
                     )}
                   </div>
                   
-                  <div className="flex items-center space-x-1 mb-2">
+                  {/* Service and appointment info */}
+                  <div className="flex items-center space-x-1 mb-3">
                     <Calendar className="h-3 w-3 text-gray-400" />
                     <span className="text-xs text-gray-500 font-medium">
                       {conversation.booking.serviceName} • {formatAppointmentDate(conversation.booking.appointmentDate)} at {conversation.booking.appointmentTime}
                     </span>
                   </div>
 
+                  {/* Last message */}
                   {conversation.lastMessage ? (
-                    <p className="text-sm text-gray-600 truncate">
+                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed mb-3">
                       {conversation.lastMessage.message_text}
                     </p>
                   ) : (
-                    <p className="text-sm text-gray-400 italic">No messages yet</p>
+                    <p className="text-sm text-gray-400 italic mb-3">No messages yet</p>
                   )}
                 </div>
-
-                {/* Unread badge */}
-                {conversation.unreadCount > 0 && (
-                  <div className="flex-shrink-0">
-                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
-                      {conversation.unreadCount}
-                    </span>
-                  </div>
-                )}
               </div>
 
-              {/* Status indicator */}
-              <div className="mt-3 flex items-center justify-between">
+              {/* Bottom row with status and timestamp */}
+              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                   conversation.booking.status === 'confirmed' 
                     ? 'bg-green-100 text-green-800'
@@ -211,8 +207,13 @@ const ConversationList: React.FC<ConversationListProps> = ({
                     ? 'bg-yellow-100 text-yellow-800'
                     : 'bg-gray-100 text-gray-800'
                 }`}>
-                  {conversation.booking.status}
+                  {conversation.booking.status.toUpperCase()}
                 </span>
+                {conversation.lastMessage && (
+                  <span className="text-xs text-gray-500 font-medium">
+                    {formatMessageTime(conversation.lastMessage.created_at)}
+                  </span>
+                )}
               </div>
             </div>
           ))
