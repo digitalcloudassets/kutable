@@ -186,20 +186,20 @@ export class MessagingService {
         let participant;
         // For barber: show client, for client: show barber
         if (isBarber && booking.client_profiles) {
-          const clientUserId = booking.client_profiles.user_id || '';
+          const clientUserId = booking.client_profiles.user_id;
           const clientName = `${booking.client_profiles.first_name || ''} ${booking.client_profiles.last_name || ''}`.trim();
           console.log('Setting client participant:', { clientUserId, clientName, avatar: booking.client_profiles.profile_image_url });
           participant = {
-            id: clientUserId, // Must use user_id for messaging, not profile id
+            id: clientUserId || null, // Use actual user_id or null if missing
             name: clientName || 'Client',
             type: 'client' as const,
             avatar: booking.client_profiles.profile_image_url || undefined
           };
         } else if (!isBarber && booking.barber_profiles) {
-          const barberUserId = booking.barber_profiles.user_id || '';
+          const barberUserId = booking.barber_profiles.user_id;
           console.log('Setting barber participant:', { barberUserId, name: booking.barber_profiles.business_name, avatar: booking.barber_profiles.profile_image_url });
           participant = {
-            id: barberUserId, // Must use user_id for messaging, not profile id
+            id: barberUserId || null, // Use actual user_id or null if missing
             name: booking.barber_profiles.business_name || 'Barber',
             type: 'barber' as const,
             avatar: booking.barber_profiles.profile_image_url || undefined

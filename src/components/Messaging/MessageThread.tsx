@@ -125,7 +125,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     if (!conversation.participant.id) {
       const errorMessage = conversation.participant.type === 'barber' 
         ? 'This barber profile hasn\'t been claimed yet. Messages can only be sent to claimed profiles.'
-        : 'Client profile is not properly linked. Please contact support.';
+        : 'Cannot send message - client account not found. Please ensure the client has completed signup.';
       setError(errorMessage);
       return;
     }
