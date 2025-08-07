@@ -178,6 +178,14 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     return format(date, 'EEEE, MMMM d');
   };
 
+  const formatTimeDisplay = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    return `${displayHour}${minutes !== '00' ? `:${minutes}` : ''} ${period}`;
+  };
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -226,11 +234,13 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
             </div>
             
             {/* Service and Date Info */}
-            <div className="flex items-center space-x-1 text-sm text-gray-500 font-medium">
-              <Calendar className="h-3 w-3 flex-shrink-0" style={{ marginTop: '1px' }} />
-              <span>{conversation.booking.serviceName}</span>
-              <span>•</span>
-              <span>{formatAppointmentDate(conversation.booking.appointmentDate)} at {conversation.booking.appointmentTime}</span>
+            <div className="flex items-center justify-between text-sm text-gray-500 font-medium">
+              <div className="flex items-center space-x-1">
+                <Calendar className="h-3 w-3 flex-shrink-0" style={{ marginTop: '1px' }} />
+                <span>{conversation.booking.serviceName}</span>
+              </div>
+              <span className="flex-1 text-center">{formatAppointmentDate(conversation.booking.appointmentDate)}</span>
+              <span className="text-right">{formatTimeDisplay(conversation.booking.appointmentTime)}</span>
             </div>
             
             {/* Status Badge - Third line */}
