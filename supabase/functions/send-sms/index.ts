@@ -1,260 +1,105 @@
-import { createClient } from 'npm:@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+const ALLOWED_ORIGIN = "https://kutable.com";
+
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "content-type, authorization",
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin",
+  };
 }
 
-interface SMSRequest {
-  to: string;
-  message: string;
-  type: 'booking_confirmation' | 'booking_reminder' | 'booking_update';
+function badRequest(msg: string) {
+  return new Response(JSON.stringify({ success: false, error: msg }), {
+    status: 400,
+    headers: { "content-type": "application/json", ...corsHeaders() },
+  });
 }
 
-// Rate limiting for SMS sends
-const smsAttempts = new Map<string, { count: number; lastAttempt: number }>();
+function serverError(msg: string, status = 502) {
+  return new Response(JSON.stringify({ success: false, error: msg }), {
+    status,
+    headers: { "content-type": "application/json", ...corsHeaders() },
+  });
+}
 
-const isRateLimited = (identifier: string, maxAttempts: number = 5, windowMs: number = 60 * 60 * 1000): boolean => {
-  const now = Date.now();
-  const attempts = smsAttempts.get(identifier);
-  
-  if (!attempts) {
-    smsAttempts.set(identifier, { count: 1, lastAttempt: now });
-    return false;
-  }
-  
-  if (now - attempts.lastAttempt > windowMs) {
-    smsAttempts.set(identifier, { count: 1, lastAttempt: now });
-    return false;
-  }
-  
-  if (attempts.count >= maxAttempts) {
-    return true;
-  }
-  
-  attempts.count++;
-  attempts.lastAttempt = now;
-  smsAttempts.set(identifier, attempts);
-  
-  return false;
-};
+function isLikelyUS(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  return digits.length === 10;
+}
 
-const sanitizeInput = (input: string, maxLength: number = 255): string => {
-  if (typeof input !== 'string') return '';
-  
-  return input
-    .trim()
-    .slice(0, maxLength)
-    .replace(/<[^>]*>/g, '')
-    .replace(/[<>&"']/g, '');
-};
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+function toE164(phone: string) {
+  let p = phone.trim();
+  if (isLikelyUS(p)) return `+1${p.replace(/\D/g, "")}`;
+  if (/^\+/.test(p)) return p;
+  return null;
+}
+
+serve(async (req) => {
+  // CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders() });
+  }
+
+  if (req.method !== "POST") {
+    return new Response("Method Not Allowed", {
+      status: 405,
+      headers: corsHeaders(),
+    });
   }
 
   try {
-    // Get client IP for rate limiting
-    const clientIP = req.headers.get('x-forwarded-for') || 
-                    req.headers.get('x-real-ip') || 
-                    'unknown';
+    const { to, message, type } = await req.json();
 
-    // Rate limiting by IP
-    if (isRateLimited(`sms_${clientIP}`, 10, 60 * 60 * 1000)) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'SMS rate limit exceeded. Please wait before sending more messages.'
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 429,
-        },
-      )
+    if (!to || !message) return badRequest("Missing 'to' or 'message'");
+
+    const normalized = toE164(String(to));
+    if (!normalized) return badRequest("Invalid phone number");
+
+    const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const token = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const msgSvc = Deno.env.get("TWILIO_MESSAGING_SERVICE_SID");
+    if (!sid || !token || !msgSvc) {
+      return serverError("Twilio environment not configured", 500);
     }
 
-    const { to, message, type }: SMSRequest = await req.json()
-
-    if (!to || !message) {
-      throw new Error('Missing required fields: to and message are required')
-    }
-
-    // Enhanced input validation and sanitization
-    const sanitizedMessage = sanitizeInput(message, 1600);
-    const sanitizedTo = to.replace(/[^\d\+\-\(\)\s]/g, '');
-    const sanitizedType = type;
-
-    // Security: Validate input lengths and content
-    if (sanitizedMessage.length > 1600) { // SMS limit
-      throw new Error('Message too long for SMS delivery')
-    }
-
-    if (sanitizedMessage.length < 1) {
-      throw new Error('Message cannot be empty')
-    }
-
-    // Check for spam patterns in message
-    const spamPatterns = [
-      /click here/gi,
-      /free money/gi,
-      /urgent/gi,
-      /congratulations/gi,
-      /winner/gi,
-      /http[s]?:\/\/(?!kutable\.com)/gi // Block external URLs except our domain
-    ];
-    
-    if (spamPatterns.some(pattern => pattern.test(sanitizedMessage))) {
-      throw new Error('Message contains prohibited content')
-    }
-    // Validate phone number format more strictly
-    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-    const cleanPhone = sanitizedTo.replace(/\D/g, '');
-    
-    if (!phoneRegex.test(cleanPhone) || cleanPhone.length < 10 || cleanPhone.length > 15) {
-      throw new Error('Invalid phone number format')
-    }
-
-    // Validate message type
-    const validTypes = ['booking_confirmation', 'booking_reminder', 'booking_update'];
-    if (!validTypes.includes(sanitizedType)) {
-      throw new Error('Invalid message type')
-    }
-
-    // Additional rate limiting per phone number
-    if (isRateLimited(`phone_${cleanPhone}`, 5, 60 * 60 * 1000)) {
-      throw new Error('Too many messages sent to this number. Please wait before sending more.')
-    }
-    // Get Twilio credentials from environment
-    const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID')
-    const authToken = Deno.env.get('TWILIO_AUTH_TOKEN')
-    const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER')
-
-    // Validate Twilio credentials more strictly
-    if (!accountSid || !authToken || !fromNumber || 
-        accountSid.trim() === '' || authToken.trim() === '' || fromNumber.trim() === '') {
-      console.warn('Missing Twilio configuration:', {
-        hasAccountSid: !!accountSid,
-        hasAuthToken: !!authToken,
-        hasFromNumber: !!fromNumber
-      });
-      
-      // Return success but with a warning (don't break the booking flow)
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'SMS service not configured - missing Twilio credentials',
-          warning: 'Booking was successful but SMS notification could not be sent'
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200, // Use 200 so booking doesn't fail
-        },
-      )
-    }
-
-    // Additional validation for credential format
-    if (!accountSid.startsWith('AC') || accountSid.length !== 34) {
-      console.error('Invalid Twilio Account SID format:', accountSid.substring(0, 5) + '...');
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Invalid Twilio Account SID format',
-          warning: 'Booking was successful but SMS notification could not be sent'
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        },
-      )
-    }
-
-    // Clean and format phone number
-    const cleanPhone = to.replace(/\D/g, '');
-    const formattedPhone = cleanPhone.startsWith('1') ? `+${cleanPhone}` : `+1${cleanPhone}`;
-    
-    if (cleanPhone.length < 10) {
-      throw new Error('Invalid phone number format')
-    }
-
-    // Note: In production, we should check SMS consent before sending
-    // For now, we'll log this requirement
-    console.log('Sending SMS with Twilio:', {
-      to: formattedPhone,
-      type: type,
-      messagePreview: sanitizedMessage.slice(0, 50) + '...'
-    });
-    // Create Twilio API request
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid.trim()}/Messages.json`
-    
     const body = new URLSearchParams({
-      To: formattedPhone,
-      From: fromNumber,
-      Body: sanitizedMessage,
-    })
+      To: normalized,
+      MessagingServiceSid: msgSvc,
+      Body: String(message),
+    });
 
-    const response = await fetch(twilioUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: body.toString(),
-    })
-
-    if (!response.ok) {
-      const error = await response.text()
-      console.error('Twilio API error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: error.slice(0, 200) // Limit error log size
-      });
-      
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: `SMS service error: ${response.status}`,
-          warning: 'Booking was successful but SMS notification could not be sent'
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
+    const twilioResp = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Basic " + btoa(`${sid}:${token}`),
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-      )
+        body,
+      }
+    );
+
+    const twilioJson = await twilioResp.json().catch(() => ({}));
+
+    if (!twilioResp.ok) {
+      console.error("Twilio error", twilioResp.status, twilioJson);
+      // Common case: unverified sender/number
+      const msg =
+        twilioJson?.message || "Twilio rejected the request (verification pending?)";
+      return serverError(msg);
     }
 
-    const result = await response.json()
-
-    console.log('SMS sent successfully:', {
-      messageId: result.sid,
-      status: result.status,
-      to: formattedPhone
+    return new Response(JSON.stringify({ success: true, sid: twilioJson.sid }), {
+      status: 200,
+      headers: { "content-type": "application/json", ...corsHeaders() },
     });
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        messageId: result.sid,
-        status: result.status,
-        to: formattedPhone
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      },
-    )
-
-  } catch (error) {
-    console.error('SMS service error:', error);
-    
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'SMS sending failed'
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200, // Don't break booking flow for SMS failures
-      },
-    )
+  } catch (err) {
+    console.error("send-sms error", err);
+    return serverError("Internal error sending SMS");
   }
-})
+});
