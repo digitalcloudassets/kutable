@@ -125,6 +125,8 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     setError('');
 
     try {
+      console.log('Sending message from user:', user.id, 'to participant:', conversation.participant.id);
+      
       const message = await messagingService.sendMessage({
         bookingId: conversation.bookingId,
         receiverId: conversation.participant.id,

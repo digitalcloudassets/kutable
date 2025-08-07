@@ -281,6 +281,12 @@ export class MessagingService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      console.log('Sending message:', { 
+        fromUserId: user.id, 
+        toUserId: receiverId, 
+        bookingId,
+        messagePreview: messageText.slice(0, 50) 
+      });
       // Validate message
       if (!messageText.trim() || messageText.length > 1000) {
         throw new Error('Message must be between 1 and 1000 characters');
@@ -307,8 +313,15 @@ export class MessagingService {
 
       if (error) throw error;
 
+      console.log('Message saved to database:', message.id);
       // Send notification to receiver if they have notifications enabled
-      this.sendMessageNotification(bookingId, receiverId, sanitizedMessage, user.id);
+      try {
+        await this.sendMessageNotification(bookingId, receiverId, sanitizedMessage, user.id);
+        console.log('Notification sent for message:', message.id);
+      } catch (notificationError) {
+        console.error('Failed to send notification for message:', message.id, notificationError);
+        // Don't throw - message was still sent successfully
+      }
 
       return message;
 
@@ -393,6 +406,8 @@ export class MessagingService {
     senderId: string
   ): Promise<void> {
     try {
+      console.log('Sending message notification:', { bookingId, receiverId, senderId, messagePreview: messageText.slice(0, 50) });
+      
       // Get booking and user details for notification
       const { data: booking } = await supabase
         .from('bookings')
@@ -408,12 +423,24 @@ export class MessagingService {
         .single();
 
       if (!booking) return;
+        console.error('Booking not found for notification:', bookingId);
+      console.log('Booking data for notification:', {
+        barberUserId: booking.barber_profiles?.user_id,
+        clientUserId: booking.client_profiles?.user_id,
+        barberPhone: booking.barber_profiles?.phone,
+        clientPhone: booking.client_profiles?.phone,
+        senderId,
+        receiverId
+      });
 
       const isFromBarber = senderId === booking.barber_profiles?.user_id;
+      console.log('Message direction:', isFromBarber ? 'Barber → Client' : 'Client → Barber');
+      
       const receiverProfile = isFromBarber ? booking.client_profiles : booking.barber_profiles;
       const senderProfile = isFromBarber ? booking.barber_profiles : booking.client_profiles;
 
       if (!receiverProfile || !senderProfile) return;
+        console.error('Missing profile data:', { receiverProfile: !!receiverProfile, senderProfile: !!senderProfile });
 
       const senderName = isFromBarber 
         ? senderProfile.business_name 
@@ -423,11 +450,15 @@ export class MessagingService {
         ? `${receiverProfile.first_name} ${receiverProfile.last_name}`
         : receiverProfile.business_name;
 
+      console.log('Notification participants:', { senderName, receiverName, receiverPhone: receiverProfile.phone, receiverEmail: receiverProfile.email });
       // Send SMS notification if user has SMS enabled (default to true for essential notifications)
-      const shouldSendSMS = (receiverProfile.sms_consent !== false) && receiverProfile.phone;
+      const shouldSendSMS = (receiverProfile.sms_consent !== false) && !!receiverProfile.phone;
+      console.log('SMS notification check:', { shouldSendSMS, smsConsent: receiverProfile.sms_consent, hasPhone: !!receiverProfile.phone });
+      
       if (shouldSendSMS) {
         const smsMessage = `💬 New message from ${senderName}:\n\n"${messageText.slice(0, 100)}${messageText.length > 100 ? '...' : ''}"\n\nReply in your Kutable dashboard.\n\n- Kutable`;
         
+        console.log('Sending SMS to:', receiverProfile.phone);
         const { data: smsResult, error: smsError } = await supabase.functions.invoke('send-sms', {
           body: {
             to: receiverProfile.phone,
@@ -437,14 +468,18 @@ export class MessagingService {
         });
         
         if (smsError) {
-          console.error('Failed to send SMS notification:', smsError);
+          console.error('Failed to send SMS notification to', receiverProfile.phone, ':', smsError);
         } else if (smsResult?.success) {
-          console.log('SMS notification sent successfully to:', receiverProfile.phone);
+          console.log('✅ SMS notification sent successfully to:', receiverProfile.phone);
+        } else {
+          console.error('SMS failed with result:', smsResult);
         }
       }
 
       // Send email notification if user has email enabled (default to true for essential notifications)
-      const shouldSendEmail = (receiverProfile.email_consent !== false) && receiverProfile.email;
+      const shouldSendEmail = (receiverProfile.email_consent !== false) && !!receiverProfile.email;
+      console.log('Email notification check:', { shouldSendEmail, emailConsent: receiverProfile.email_consent, hasEmail: !!receiverProfile.email });
+      
       if (shouldSendEmail) {
         const emailSubject = `New message from ${senderName} - Kutable`;
         const emailMessage = `
@@ -474,6 +509,7 @@ export class MessagingService {
           </div>
         `;
 
+        console.log('Sending email to:', receiverProfile.email);
         const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email', {
           body: {
             to: receiverProfile.email,
@@ -485,9 +521,11 @@ export class MessagingService {
         });
         
         if (emailError) {
-          console.error('Failed to send email notification:', emailError);
+          console.error('Failed to send email notification to', receiverProfile.email, ':', emailError);
         } else if (emailResult?.success) {
-          console.log('Email notification sent successfully to:', receiverProfile.email);
+          console.log('✅ Email notification sent successfully to:', receiverProfile.email);
+        } else {
+          console.error('Email failed with result:', emailResult);
         }
       }
 
