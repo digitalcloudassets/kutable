@@ -35,32 +35,90 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       if (conversation && user) {
         loadMessages();
         markAsRead();
-        // Refresh unread count and conversations when viewing thread
+        
+        // Start with polling for reliable message updates
+        const pollInterval = setInterval(async () => {
+          try {
+            const latestMessages = await messagingService.getMessagesForBooking(
+              conversation.bookingId,
+              user.id
+            );
+            
+            setMessages(prev => {
+              // If we have fewer messages locally than what's in the database, update
+              if (latestMessages.length > prev.length) {
+                console.log('📨 New messages detected via polling:', latestMessages.length - prev.length);
+                
+                // Mark new messages as read if they're for us
+                const newMessages = latestMessages.slice(prev.length);
+                newMessages.forEach(msg => {
+                  if (msg.receiver_id === user.id) {
+                    setTimeout(() => {
+                      messagingService.markAsRead(msg.id, user.id);
+                      if (refreshUnreadCount) {
+                        refreshUnreadCount();
+                      }
+                    }, 1000);
+                  }
+                });
+                
+                setTimeout(() => scrollToBottom(), 100);
+                return latestMessages;
+              }
+              
+              return prev;
+            });
+          } catch (pollError) {
+            console.warn('Message polling failed:', pollError);
+          }
+        }, 2000); // Poll every 2 seconds for better responsiveness
+        
+        // Refresh unread count when viewing thread
         if (refreshUnreadCount) {
           await refreshUnreadCount();
         }
         
-        // Subscribe to real-time updates
-        const unsubscribe = messagingService.subscribeToMessages(
-          conversation.bookingId,
-          (newMessage) => {
-            setMessages(prev => [...prev, newMessage]);
-            scrollToBottom();
-            
-            // Mark as read if it's for us
-            if (newMessage.receiver_id === user.id) {
-              setTimeout(() => {
-                messagingService.markAsRead(newMessage.id, user.id);
-                // Refresh unread count after marking as read
-                if (refreshUnreadCount) {
-                  refreshUnreadCount();
+        // Try real-time subscription as enhancement (not required)
+        let realtimeCleanup: (() => void) | undefined;
+        try {
+          realtimeCleanup = messagingService.subscribeToMessages(
+            conversation.bookingId,
+            (newMessage) => {
+              console.log('📨 Real-time message received:', newMessage.id);
+              setMessages(prev => {
+                // Avoid duplicates from polling
+                if (prev.some(msg => msg.id === newMessage.id)) {
+                  return prev;
                 }
-              }, 1000);
+                return [...prev, newMessage];
+              });
+              scrollToBottom();
+              
+              // Mark as read if it's for us
+              if (newMessage.receiver_id === user.id) {
+                setTimeout(() => {
+                  messagingService.markAsRead(newMessage.id, user.id);
+                  if (refreshUnreadCount) {
+                    refreshUnreadCount();
+                  }
+                }, 1000);
+              }
+            }
+          );
+        } catch (realtimeError) {
+          console.warn('Real-time subscription failed (polling will handle updates):', realtimeError);
+        }
+
+        return () => {
+          clearInterval(pollInterval);
+          if (realtimeCleanup) {
+            try {
+              realtimeCleanup();
+            } catch (cleanupError) {
+              console.warn('Error cleaning up real-time subscription:', cleanupError);
             }
           }
-        );
-
-        return unsubscribe;
+        };
       }
     };
 
