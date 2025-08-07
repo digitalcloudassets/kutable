@@ -42,6 +42,8 @@ const AdminLoginPage: React.FC = () => {
       // For demo purposes, using environment variables
       const adminUsername = import.meta.env.VITE_ADMIN_USERNAME || 'admin';
       const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
+      const adminUsername = import.meta.env.VITE_ADMIN_USERNAME || 'Kut@ble';
+      const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'kutable2025!';
       
       if (credentials.username === adminUsername && credentials.password === adminPassword) {
         // Reset attempts on success
