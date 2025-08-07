@@ -190,7 +190,7 @@ export class MessagingService {
           const clientName = `${booking.client_profiles.first_name || ''} ${booking.client_profiles.last_name || ''}`.trim();
           console.log('Setting client participant:', { clientUserId, clientName, avatar: booking.client_profiles.profile_image_url });
           participant = {
-            id: clientUserId || booking.client_profiles.id, // Fallback to profile ID if user_id is missing
+            id: clientUserId, // Must use user_id for messaging, not profile id
             name: clientName || 'Client',
             type: 'client' as const,
             avatar: booking.client_profiles.profile_image_url || undefined
@@ -199,7 +199,7 @@ export class MessagingService {
           const barberUserId = booking.barber_profiles.user_id || '';
           console.log('Setting barber participant:', { barberUserId, name: booking.barber_profiles.business_name, avatar: booking.barber_profiles.profile_image_url });
           participant = {
-            id: barberUserId, // Only use user_id for barbers since they must be claimed
+            id: barberUserId, // Must use user_id for messaging, not profile id
             name: booking.barber_profiles.business_name || 'Barber',
             type: 'barber' as const,
             avatar: booking.barber_profiles.profile_image_url || undefined

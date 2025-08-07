@@ -345,8 +345,8 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               <AlertCircle className="h-4 w-4" />
               <span>
                 {conversation.participant.type === 'barber' 
-                  ? 'This barber profile hasn\'t been claimed yet. Messages can only be sent to claimed profiles.'
-                  : 'Client profile is not properly linked. Please contact support.'}
+                  ? 'This barber profile hasn\'t been claimed yet and doesn\'t have a user account.'
+                  : 'Client doesn\'t have a user account linked. They may need to sign up first.'}
               </span>
             </div>
           ) : (
