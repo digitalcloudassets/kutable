@@ -92,29 +92,30 @@ const HowItWorksPage: React.FC = () => {
             {/* Step 2 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-12 lg:gap-16">
               <div className="lg:order-2">
-              <div className="lg:w-1/2">
-                <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mb-6">
-                  <span className="text-2xl font-bold text-orange-600">2</span>
+                <div className="lg:w-1/2">
+                  <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+                    <span className="text-2xl font-bold text-orange-600">2</span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Book Instantly</h3>
+                  <p className="text-gray-600 text-lg leading-relaxed mb-6">
+                    Select your preferred service, choose from available time slots, and secure your appointment 
+                    with instant payment. No phone calls, no waiting on hold – just simple, fast booking.
+                  </p>
+                  <ul className="space-y-4">
+                    <li className="flex items-center space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <span className="text-gray-700">Real-time availability calendar</span>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <span className="text-gray-700">Secure payment processing</span>
+                    </li>
+                    <li className="flex items-center space-x-3">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <span className="text-gray-700">Instant confirmation via SMS</span>
+                    </li>
+                  </ul>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Book Instantly</h3>
-                <p className="text-gray-600 text-lg leading-relaxed mb-6">
-                  Select your preferred service, choose from available time slots, and secure your appointment 
-                  with instant payment. No phone calls, no waiting on hold – just simple, fast booking.
-                </p>
-                <ul className="space-y-4">
-                  <li className="flex items-center space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    <span className="text-gray-700">Real-time availability calendar</span>
-                  </li>
-                  <li className="flex items-center space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    <span className="text-gray-700">Secure payment processing</span>
-                  </li>
-                  <li className="flex items-center space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    <span className="text-gray-700">Instant confirmation via SMS</span>
-                  </li>
-                </ul>
               </div>
               <div className="lg:order-1">
                 <div className="bg-gray-100 rounded-2xl p-8">
