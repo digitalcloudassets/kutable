@@ -40,8 +40,6 @@ const AdminLoginPage: React.FC = () => {
     setTimeout(() => {
       // In production, this should check against a secure backend
       // For demo purposes, using environment variables
-      const adminUsername = import.meta.env.VITE_ADMIN_USERNAME || 'admin';
-      const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
       const adminUsername = import.meta.env.VITE_ADMIN_USERNAME || 'Kut@ble';
       const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'kutable2025!';
       
