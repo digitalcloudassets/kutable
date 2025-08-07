@@ -7,7 +7,8 @@ import {
   Clock, 
   MapPin,
   Loader,
-  AlertCircle
+  AlertCircle,
+  MessageSquare
 } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { messagingService, Message, Conversation } from '../../services/MessagingService';
