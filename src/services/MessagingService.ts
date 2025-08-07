@@ -374,49 +374,29 @@ export class MessagingService {
       return () => {};
     }
 
-    try {
-      const channel = supabase
-        .channel(`messages_${bookingId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages',
-            filter: `booking_id=eq.${bookingId}`,
-          },
-          (payload) => {
-            try {
-              callback(payload.new as Message);
-            } catch (callbackError) {
-              console.warn('Message callback error:', callbackError);
-            }
-          }
-        )
-        .subscribe((status) => {
-          console.log(`Real-time subscription status for booking ${bookingId}:`, status);
-          
-          if (status === 'SUBSCRIPTION_ERROR') {
-            console.warn('Real-time subscription failed for booking:', bookingId);
-          }
-        });
-
-      const unsubscribe = () => {
-        try {
-          supabase.removeChannel(channel);
-          this.subscriptions.delete(bookingId);
-        } catch (error) {
-          console.warn('Error unsubscribing from real-time channel:', error);
+    const channel = supabase
+      .channel(`messages_${bookingId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `booking_id=eq.${bookingId}`,
+        },
+        (payload) => {
+          callback(payload.new as Message);
         }
-      };
+      )
+      .subscribe();
 
-      this.subscriptions.set(bookingId, unsubscribe);
-      return unsubscribe;
-    } catch (subscriptionError) {
-      console.warn('Failed to set up real-time subscription:', subscriptionError);
-      // Return a no-op unsubscribe function
-      return () => {};
-    }
+    const unsubscribe = () => {
+      supabase.removeChannel(channel);
+      this.subscriptions.delete(bookingId);
+    };
+
+    this.subscriptions.set(bookingId, unsubscribe);
+    return unsubscribe;
   }
 
   private async sendMessageNotification(
@@ -442,11 +422,8 @@ export class MessagingService {
         .eq('id', bookingId)
         .single();
 
-      if (!booking) {
-        console.warn('Booking not found for notification:', bookingId);
-        return; // Exit gracefully without breaking the message flow
-      }
-
+      if (!booking) return;
+        console.error('Booking not found for notification:', bookingId);
       console.log('Booking data for notification:', {
         barberUserId: booking.barber_profiles?.user_id,
         clientUserId: booking.client_profiles?.user_id,
@@ -462,25 +439,9 @@ export class MessagingService {
       const receiverProfile = isFromBarber ? booking.client_profiles : booking.barber_profiles;
       const senderProfile = isFromBarber ? booking.barber_profiles : booking.client_profiles;
 
-      if (!receiverProfile || !senderProfile) {
-        console.warn('Missing profile data for notification:', { receiverProfile: !!receiverProfile, senderProfile: !!senderProfile });
-        return; // Exit gracefully without breaking the message flow
-      }
+      if (!receiverProfile || !senderProfile) return;
+        console.error('Missing profile data:', { receiverProfile: !!receiverProfile, senderProfile: !!senderProfile });
 
-     // Additional validation for profile user IDs
-     if (!receiverProfile.user_id || !senderProfile.user_id) {
-       console.warn('Missing user IDs in profile data (message still sent successfully):', { 
-         receiverUserId: !!receiverProfile.user_id, 
-         senderUserId: !!senderProfile.user_id 
-       });
-       return; // Exit gracefully without breaking the message flow
-     }
-
-     // Prevent sending notifications to self
-     if (senderProfile.user_id === receiverProfile.user_id) {
-       console.warn('Cannot send notification to self (message still sent successfully)');
-       return; // Exit gracefully without breaking the message flow
-     }
       const senderName = isFromBarber 
         ? senderProfile.business_name 
         : `${senderProfile.first_name} ${senderProfile.last_name}`;
@@ -498,32 +459,25 @@ export class MessagingService {
         const smsMessage = `💬 New message from ${senderName}:\n\n"${messageText.slice(0, 100)}${messageText.length > 100 ? '...' : ''}"\n\nReply in your Kutable dashboard.\n\n- Kutable`;
         
         console.log('Sending SMS to:', receiverProfile.phone);
-        try {
-          const { data: smsResult, error: smsError } = await supabase.functions.invoke('send-sms', {
+        const { data: smsResult, error: smsError } = await supabase.functions.invoke('send-sms', {
           body: {
             to: receiverProfile.phone,
             message: smsMessage,
             type: 'booking_update'
           }
-          });
+        });
         
-          if (smsError) {
-            console.warn('Failed to send SMS notification to', receiverProfile.phone, ':', smsError);
-          } else if (smsResult?.success) {
-            console.log('✅ SMS notification sent successfully to:', receiverProfile.phone);
-          } else {
-            console.warn('SMS failed with result:', smsResult);
-          }
-        } catch (smsError) {
-          console.warn('SMS service error (CORS or network issue):', smsError);
-          // Don't break the messaging flow for SMS failures
+        if (smsError) {
+          console.error('Failed to send SMS notification to', receiverProfile.phone, ':', smsError);
+        } else if (smsResult?.success) {
+          console.log('✅ SMS notification sent successfully to:', receiverProfile.phone);
+        } else {
+          console.error('SMS failed with result:', smsResult);
         }
       }
 
       // Send email notification if user has email enabled (default to true for essential notifications)
-      const shouldSendEmail = (receiverProfile.email_consent !== false) && 
-                              !!receiverProfile.email && 
-                              this.isValidEmail(receiverProfile.email);
+      const shouldSendEmail = (receiverProfile.email_consent !== false) && !!receiverProfile.email;
       console.log('Email notification check:', { shouldSendEmail, emailConsent: receiverProfile.email_consent, hasEmail: !!receiverProfile.email });
       
       if (shouldSendEmail) {
@@ -556,8 +510,7 @@ export class MessagingService {
         `;
 
         console.log('Sending email to:', receiverProfile.email);
-        try {
-          const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email', {
+        const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email', {
           body: {
             to: receiverProfile.email,
             name: receiverName,
@@ -565,30 +518,21 @@ export class MessagingService {
             message: emailMessage,
             type: 'message_notification'
           }
-          });
+        });
         
-          if (emailError) {
-            console.warn('Failed to send email notification to', receiverProfile.email, ':', emailError);
-          } else if (emailResult?.success) {
-            console.log('✅ Email notification sent successfully to:', receiverProfile.email);
-          } else {
-            console.warn('Email failed with result:', emailResult);
-          }
-        } catch (emailError) {
-          console.warn('Email service error:', emailError);
-          // Don't break the messaging flow for email failures
+        if (emailError) {
+          console.error('Failed to send email notification to', receiverProfile.email, ':', emailError);
+        } else if (emailResult?.success) {
+          console.log('✅ Email notification sent successfully to:', receiverProfile.email);
+        } else {
+          console.error('Email failed with result:', emailResult);
         }
       }
 
     } catch (error) {
-      console.warn('Error sending message notification (message still sent successfully):', error);
+      console.error('Error sending message notification:', error);
       // Don't throw - message sending should succeed even if notification fails
     }
-  }
-
-  private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email) && email.length <= 254;
   }
 
   async getUnreadMessageCount(userId: string): Promise<number> {
