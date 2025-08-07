@@ -146,15 +146,15 @@ const Analytics: React.FC<AnalyticsProps> = ({ barberId }) => {
       // Calculate daily trends (last 30 days)
       const dailyTrends = [];
       for (let i = 29; i >= 0; i--) {
-        const date = subMonths(now, 0);
-        date.setDate(date.getDate() - i);
-        const dateStr = format(date, 'yyyy-MM-dd');
+        const checkDate = new Date(now);
+        checkDate.setDate(now.getDate() - i);
+        const dateStr = format(checkDate, 'yyyy-MM-dd');
         const dayBookings = bookingsData?.filter(booking => 
           booking.appointment_date === dateStr && booking.status === 'completed'
         ) || [];
         
         dailyTrends.push({
-          date: format(date, 'MMM d'),
+          date: format(checkDate, 'MMM d'),
           bookings: dayBookings.length,
           revenue: dayBookings.reduce((sum, booking) => sum + Number(booking.total_amount), 0)
         });
