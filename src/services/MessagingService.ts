@@ -150,34 +150,39 @@ export class MessagingService {
 
       for (const booking of uniqueBookings) {
         const isBarber = barberProfile && booking.barber_id === barberProfile.id;
+        console.log('Processing booking:', booking.id, 'isBarber:', isBarber);
         
-        let participant;
-        // For barber: show client, for client: show barber
-        if (isBarber) {
-          const clientUserId = booking.client_profiles?.user_id || '';
-          const clientName = `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim();
-          participant = {
-            id: clientUserId,
-            name: clientName || 'Client',
-            type: 'client' as const,
-            avatar: undefined
-          };
-        } else {
-          const barberUserId = booking.barber_profiles?.user_id || '';
-          participant = {
-            id: barberUserId,
-            name: booking.barber_profiles?.business_name || 'Barber',
-            type: 'barber' as const,
-            avatar: booking.barber_profiles?.profile_image_url || undefined
-          };
-        }
+       let participant;
+       if (isBarber) {
+         // For barbers: show the client as the participant
+         participant = {
+           id: booking.client_profiles?.user_id || '',
+           name: `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`.trim() || 'Client',
+           type: 'client' as const,
+           avatar: undefined
+         };
+       } else {
+         // For clients: show the barber as the participant,
+         // even if user_id is missing (show "Unclaimed Barber")
+         participant = {
+           id: booking.barber_profiles?.user_id || booking.barber_profiles?.id || '',
+           name: booking.barber_profiles?.business_name 
+             || booking.barber_profiles?.owner_name 
+             || 'Unclaimed Barber',
+           type: 'barber' as const,
+           avatar: booking.barber_profiles?.profile_image_url || undefined
+         };
+       }
 
-        // Only skip if *both* user IDs are blank (should be extremely rare)
-        if ((!booking.client_profiles?.user_id || booking.client_profiles?.user_id.trim() === '') &&
-            (!booking.barber_profiles?.user_id || booking.barber_profiles?.user_id.trim() === '')) {
-          console.log('Skipping conversation - both user IDs missing:', booking.id);
-          continue;
-        }
+        console.log('Conversation participant:', {
+          bookingId: booking.id,
+          participantId: participant.id,
+          participantName: participant.name,
+          participantType: participant.type,
+          isBarber,
+          barberUserId: booking.barber_profiles?.user_id,
+          clientUserId: booking.client_profiles?.user_id
+        });
         
         // Get last message and unread count
         const { data: lastMessage } = await supabase
@@ -195,7 +200,8 @@ export class MessagingService {
           .eq('receiver_id', userId)
           .is('read_at', null);
 
-        conversations.push({
+       // Don't skip if participant.id is missing; show as "Unclaimed Barber"
+       conversations.push({
           bookingId: booking.id,
           lastMessage: lastMessage || undefined,
           unreadCount: unreadCount || 0,
@@ -207,9 +213,10 @@ export class MessagingService {
             appointmentTime: booking.appointment_time,
             status: booking.status
           }
-        });
+       });
       }
 
+      console.log('Final conversations:', conversations.length);
       return conversations.sort((a, b) => {
         if (a.lastMessage && b.lastMessage) {
           return new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime();
@@ -249,7 +256,7 @@ export class MessagingService {
 
       const hasAccess = booking.barber_profiles?.user_id === userId || 
                        booking.client_profiles?.user_id === userId;
-        console.log('Skipping conversation - both user IDs missing:', booking.id);
+
       if (!hasAccess) {
         throw new Error('Access denied');
       }
