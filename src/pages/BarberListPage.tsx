@@ -4,6 +4,7 @@ import { Search, MapPin, Star, Filter, Clock, DollarSign, Calendar, MapIcon, X, 
 import { supabase } from '../lib/supabase';
 import { shouldSkipCSVRecord, isReservedSlug } from '../lib/reservedSlugs';
 import { applySearchFilters, SearchFilters, DEFAULT_FILTERS } from '../utils/searchFilters';
+import AdvancedSearchPanel from '../components/Search/AdvancedSearchPanel';
 import { NotificationManager } from '../utils/notifications';
 
 interface BarberProfile {
@@ -434,27 +435,45 @@ const BarberListPage: React.FC = () => {
             </div>
 
             {/* Search and Filters */}
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-4">
-                <div className="flex-1 relative">
+            <div className="space-y-6">
+              {/* Search Row - Horizontal Layout */}
+              <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                <div className="flex flex-col lg:flex-row gap-4">
+                  {/* Search Input */}
+                  <div className="flex-1 relative">
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search barbers or businesses..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-14 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-lg min-h-[56px]"
+                    className="w-full pl-14 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-gray-50 placeholder-gray-400 text-lg min-h-[56px]"
                   />
-                </div>
-
-                <div className="flex flex-col gap-3">
+                  </div>
+                  
+                  {/* City Selector */}
+                  <div className="relative lg:w-64">
+                    <MapIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
+                    <select
+                      value={selectedCity}
+                      onChange={(e) => setSelectedCity(e.target.value)}
+                      className="w-full pl-14 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-gray-50 font-medium min-h-[56px]"
+                    >
+                      <option value="">All Cities</option>
+                      {cities.map(city => (
+                        <option key={city} value={city}>{city}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {/* Filters Button */}
                   <button
                     onClick={() => setShowFilters(!showFilters)}
                     className={`px-6 py-4 border rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 font-medium min-h-[52px] w-full ${
                       showFilters || activeFilterCount > 0
                         ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-md'
-                        : 'border-gray-200 text-gray-700 hover:border-primary-300 hover:bg-gray-50'
-                    }`}
+                        : 'border-gray-200 text-gray-700 hover:border-primary-300 hover:bg-primary-50'
+                    } lg:w-40`}
                   >
                     <SlidersHorizontal className="h-5 w-5" />
                     <span>Filters</span>
@@ -464,23 +483,9 @@ const BarberListPage: React.FC = () => {
                       </span>
                     )}
                   </button>
-
-                  <div className="relative">
-                    <MapIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
-                    <select
-                      value={selectedCity}
-                      onChange={(e) => setSelectedCity(e.target.value)}
-                      className="w-full pl-14 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white font-medium min-h-[52px]"
-                    >
-                      <option value="">All Cities</option>
-                      {cities.map(city => (
-                        <option key={city} value={city}>{city}</option>
-                      ))}
-                    </select>
-                  </div>
                 </div>
               </div>
-              
+
               {/* Advanced Filters Panel */}
               <AdvancedSearchPanel
                 filters={filters}
@@ -492,6 +497,7 @@ const BarberListPage: React.FC = () => {
                 isOpen={showFilters}
                 onClose={() => setShowFilters(false)}
                 activeFilterCount={activeFilterCount}
+                availableServiceTypes={availableServiceTypes}
               />
             </div>
           </div>
@@ -639,6 +645,9 @@ const BarberListPage: React.FC = () => {
                         {barber.business_name}
                       </h3>
                       <p className="text-gray-600 mobile-body font-medium">{barber.owner_name}</p>
+                      {barber.city && (
+                        <p className="text-gray-500 text-sm mt-1">{barber.city}, {barber.state}</p>
+                      )}
                     </div>
                     
                     <p className="text-gray-600 mb-6 line-clamp-2 mobile-body">
@@ -653,18 +662,17 @@ const BarberListPage: React.FC = () => {
                         </div>
                         <span className="font-bold text-gray-900">{barber.average_rating}</span>
                         <span className="text-gray-500">({barber.total_reviews})</span>
+                        {barber.is_claimed && (
+                          <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-semibold ml-2">
+                            Verified
+                          </span>
+                        )}
                       </div>
-                      
-                      {barber.city && (
-                        <div className="flex items-center justify-center sm:justify-start space-x-1 text-gray-600">
-                          <MapPin className="h-4 w-4" />
-                          <span className="font-medium">{barber.city}</span>
-                        </div>
-                      )}
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
-                      <div className="flex items-center space-x-2">
+                    {/* Availability and CTA Section */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-center sm:justify-start space-x-2">
                         {filters.availableToday && Math.random() > 0.5 && (
                           <span className="bg-emerald-100 text-emerald-700 px-3 py-2 rounded-full mobile-small font-semibold">
                             Available Today
@@ -678,7 +686,7 @@ const BarberListPage: React.FC = () => {
                         )}
                       </div>
                       
-                      <div className="btn-primary group-hover:scale-105 transition-all duration-200 w-full sm:w-auto">
+                      <div className="btn-primary group-hover:scale-105 transition-all duration-200 w-full">
                         View Profile
                       </div>
                     </div>

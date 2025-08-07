@@ -21,6 +21,7 @@ interface AdvancedSearchPanelProps {
   isOpen: boolean;
   onClose: () => void;
   activeFilterCount: number;
+  availableServiceTypes: string[];
 }
 
 const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
@@ -32,7 +33,8 @@ const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
   onClearAll,
   isOpen,
   onClose,
-  activeFilterCount
+  activeFilterCount,
+  availableServiceTypes
 }) => {
   const updateFilter = (key: keyof SearchFilters, value: any) => {
     setFilters({ ...filters, [key]: value });
@@ -184,7 +186,7 @@ const AdvancedSearchPanel: React.FC<AdvancedSearchPanelProps> = ({
           Service Types
         </label>
         <div className="flex flex-wrap gap-2">
-          {SERVICE_TYPES.map(serviceType => (
+          {availableServiceTypes.map(serviceType => (
             <button
               key={serviceType}
               onClick={() => toggleServiceType(serviceType)}
