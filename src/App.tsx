@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { setupGlobalErrorHandling } from './utils/errorHandling';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import HomePage from './pages/HomePage';
@@ -23,6 +24,8 @@ import TermsOfServicePage from './pages/TermsOfServicePage';
 import ForgotPassword from './components/Auth/ForgotPassword';
 import ResetPassword from './components/Auth/ResetPassword';
 
+// Set up global error handling
+setupGlobalErrorHandling();
 // Protected Admin Route Component
 const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
@@ -36,9 +39,16 @@ const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const session = JSON.parse(atob(adminSession));
           
-          // Check if session has expired
+          // Enhanced session validation
           if (new Date() <= new Date(session.expires)) {
+            // Additional security checks
+            if (session.username && session.role && session.loginTime) {
             setIsAuthenticated(true);
+            } else {
+              localStorage.removeItem('admin_authenticated');
+              localStorage.removeItem('admin_session');
+              setIsAuthenticated(false);
+            }
           } else {
             localStorage.removeItem('admin_authenticated');
             localStorage.removeItem('admin_session');
@@ -55,6 +65,10 @@ const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children
     };
     
     checkAuth();
+    
+    // Check session validity every 5 minutes
+    const interval = setInterval(checkAuth, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
   
   if (isAuthenticated === null) {

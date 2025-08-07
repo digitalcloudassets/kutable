@@ -676,7 +676,7 @@ const ClaimFlow: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Business Name
+                    Business Name *
                   </label>
                   <div className="relative">
                     <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
@@ -685,8 +685,10 @@ const ClaimFlow: React.FC = () => {
                     <input
                       type="text"
                       value={claimData.businessName}
-                      onChange={(e) => setClaimData(prev => ({ ...prev, businessName: e.target.value }))}
+                      onChange={(e) => setClaimData(prev => ({ ...prev, businessName: e.target.value.slice(0, 100) }))}
                       disabled={!user}
+                      autoComplete="organization"
+                      spellCheck={false}
                       className={`w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 ${
                         !user ? 'opacity-60 cursor-not-allowed' : ''
                       }`}
@@ -697,7 +699,7 @@ const ClaimFlow: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Owner Name
+                    Owner Name *
                   </label>
                   <div className="relative">
                     <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
@@ -706,8 +708,10 @@ const ClaimFlow: React.FC = () => {
                     <input
                       type="text"
                       value={claimData.ownerName}
-                      onChange={(e) => setClaimData(prev => ({ ...prev, ownerName: e.target.value }))}
+                      onChange={(e) => setClaimData(prev => ({ ...prev, ownerName: e.target.value.slice(0, 100) }))}
                       disabled={!user}
+                      autoComplete="name"
+                      spellCheck={false}
                       className={`w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 ${
                         !user ? 'opacity-60 cursor-not-allowed' : ''
                       }`}
@@ -727,8 +731,9 @@ const ClaimFlow: React.FC = () => {
                     <input
                       type="tel"
                       value={claimData.phone}
-                      onChange={(e) => setClaimData(prev => ({ ...prev, phone: e.target.value }))}
+                      onChange={(e) => setClaimData(prev => ({ ...prev, phone: e.target.value.replace(/[^\d\s\-\(\)\+\.]/g, '').slice(0, 20) }))}
                       disabled={!user}
+                      autoComplete="tel"
                       className={`w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 ${
                         !user ? 'opacity-60 cursor-not-allowed' : ''
                       }`}
@@ -748,8 +753,10 @@ const ClaimFlow: React.FC = () => {
                     <input
                       type="email"
                       value={claimData.email}
-                      onChange={(e) => setClaimData(prev => ({ ...prev, email: e.target.value }))}
+                      onChange={(e) => setClaimData(prev => ({ ...prev, email: e.target.value.slice(0, 254).toLowerCase() }))}
                       disabled={!user}
+                      autoComplete="email"
+                      spellCheck={false}
                       className={`w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 ${
                         !user ? 'opacity-60 cursor-not-allowed' : ''
                       }`}
@@ -770,8 +777,9 @@ const ClaimFlow: React.FC = () => {
                   <input
                     type="text"
                     value={claimData.address}
-                    onChange={(e) => setClaimData(prev => ({ ...prev, address: e.target.value }))}
+                    onChange={(e) => setClaimData(prev => ({ ...prev, address: e.target.value.slice(0, 200) }))}
                     disabled={!user}
+                    autoComplete="street-address"
                     className={`w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 ${
                       !user ? 'opacity-60 cursor-not-allowed' : ''
                     }`}
@@ -786,8 +794,9 @@ const ClaimFlow: React.FC = () => {
                   <input
                     type="text"
                     value={claimData.city}
-                    onChange={(e) => setClaimData(prev => ({ ...prev, city: e.target.value }))}
+                    onChange={(e) => setClaimData(prev => ({ ...prev, city: e.target.value.slice(0, 50) }))}
                     disabled={!user}
+                    autoComplete="address-level2"
                     className={`w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 ${
                       !user ? 'opacity-60 cursor-not-allowed' : ''
                     }`}
@@ -799,8 +808,9 @@ const ClaimFlow: React.FC = () => {
                   <input
                     type="text"
                     value={claimData.state}
-                    onChange={(e) => setClaimData(prev => ({ ...prev, state: e.target.value }))}
+                    onChange={(e) => setClaimData(prev => ({ ...prev, state: e.target.value.slice(0, 50) }))}
                     disabled={!user}
+                    autoComplete="address-level1"
                     className={`w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 ${
                       !user ? 'opacity-60 cursor-not-allowed' : ''
                     }`}
@@ -812,8 +822,9 @@ const ClaimFlow: React.FC = () => {
                   <input
                     type="text"
                     value={claimData.zipCode}
-                    onChange={(e) => setClaimData(prev => ({ ...prev, zipCode: e.target.value }))}
+                    onChange={(e) => setClaimData(prev => ({ ...prev, zipCode: e.target.value.replace(/[^\d\-]/g, '').slice(0, 10) }))}
                     disabled={!user}
+                    autoComplete="postal-code"
                     className={`w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 ${
                       !user ? 'opacity-60 cursor-not-allowed' : ''
                     }`}
@@ -830,15 +841,17 @@ const ClaimFlow: React.FC = () => {
                   <FileText className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
                   <textarea
                     value={claimData.bio}
-                    onChange={(e) => setClaimData(prev => ({ ...prev, bio: e.target.value }))}
+                    onChange={(e) => setClaimData(prev => ({ ...prev, bio: e.target.value.slice(0, 1000) }))}
                     disabled={!user}
                     rows={4}
                     className={`w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 ${
                       !user ? 'opacity-60 cursor-not-allowed' : ''
                     }`}
                     placeholder="Tell customers about your services and experience..."
+                    maxLength={1000}
                   />
                 </div>
+                <p className="text-xs text-gray-500 mt-1">{claimData.bio.length}/1000 characters</p>
               </div>
             </div>
 

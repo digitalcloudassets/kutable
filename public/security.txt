@@ -1,0 +1,55 @@
+Contact: security@kutable.com
+Contact: https://kutable.com/support
+Expires: 2025-12-31T23:59:59.000Z
+Acknowledgments: https://kutable.com/security-acknowledgments
+Preferred-Languages: en
+Canonical: https://kutable.com/.well-known/security.txt
+
+# Security Policy
+
+## Reporting Security Vulnerabilities
+
+We take security seriously at Kutable. If you discover a security vulnerability, please report it to us through one of the following methods:
+
+1. Email: security@kutable.com
+2. Support form: https://kutable.com/support (mark as "Security Issue")
+
+## What to Include
+
+When reporting a security vulnerability, please include:
+- A clear description of the vulnerability
+- Steps to reproduce the issue
+- Potential impact assessment
+- Any proof-of-concept code (if applicable)
+
+## Our Commitment
+
+- We will respond to security reports within 24 hours
+- We will provide regular updates on our investigation
+- We will credit researchers (if desired) for responsible disclosure
+- We will not pursue legal action against researchers who follow responsible disclosure
+
+## Scope
+
+This security policy applies to:
+- https://kutable.com and all subdomains
+- Mobile applications (when available)
+- API endpoints and integrations
+
+## Out of Scope
+
+The following are considered out of scope:
+- Social engineering attacks
+- Physical attacks
+- Denial of service attacks
+- Issues in third-party services (Stripe, Supabase, etc.)
+
+## Security Measures
+
+We implement industry-standard security measures including:
+- End-to-end encryption for all data transmission
+- Secure authentication and session management
+- Input validation and sanitization
+- Rate limiting and abuse prevention
+- Regular security audits and penetration testing
+- PCI DSS compliance for payment processing
