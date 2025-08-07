@@ -141,34 +141,50 @@ export class MessagingService {
       const conversations: Conversation[] = [];
 
       for (const booking of uniqueBookings) {
-        // Detect if the current user is the barber for this booking
         const isBarber = barberProfile && booking.barber_id === barberProfile.id;
+        
+        // Debug logging
+        console.log('DEBUG - Conversation participant logic:', {
+          bookingId: booking.id,
+          currentUserId: userId,
+          isBarber,
+          barberUserId: booking.barber_profiles?.user_id,
+          clientUserId: booking.client_profiles?.user_id,
+          barberBusiness: booking.barber_profiles?.business_name,
+          clientFirstName: booking.client_profiles?.first_name,
+          clientLastName: booking.client_profiles?.last_name,
+          clientFullName: `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim()
+        });
+        
+        const participant = isBarber 
+          ? {
+              id: booking.client_profiles?.user_id || '',
+              name: `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim(),
+              type: 'client' as const,
+              avatar: undefined
+            }
+          : {
+              id: booking.barber_profiles?.user_id || '',
+              name: booking.barber_profiles?.business_name || '',
+              type: 'barber' as const,
+              avatar: booking.barber_profiles?.profile_image_url || undefined
+            };
+        
+        console.log('DEBUG - Final participant for conversation:', {
+          bookingId: booking.id,
+          participantId: participant.id,
+          participantName: participant.name,
+          participantType: participant.type,
+          isBarberCalculated: isBarber,
+          shouldShowClientName: isBarber,
+          actuallyShowing: participant.name
+        });
 
-        // Participant logic:  
-        // For barbers, always show the client as the conversation participant, 
-        // even if client_profiles.user_id is null (unclaimed account)
-        let participant;
-        if (isBarber) {
-          const clientName = [
-            booking.client_profiles?.first_name || '',
-            booking.client_profiles?.last_name || ''
-          ].join(' ').trim();
-
-          participant = {
-            id: booking.client_profiles?.user_id || '',  // can be blank if unclaimed
-            name: clientName || 'Client',
-            type: 'client' as const,
-            avatar: undefined
-          };
-        } else {
-          participant = {
-            id: booking.barber_profiles?.user_id || '',
-            name: booking.barber_profiles?.business_name || 'Barber',
-            type: 'barber' as const,
-            avatar: booking.barber_profiles?.profile_image_url || undefined
-          };
+        // Skip conversations where barber profile is unclaimed (no user_id)
+        if (!participant.id || participant.id.trim() === '') {
+          console.log('Skipping conversation - no participant ID:', booking.id);
+          continue;
         }
-
         // Get last message and unread count
         const { data: lastMessage } = await supabase
           .from('messages')
@@ -185,8 +201,6 @@ export class MessagingService {
           .eq('receiver_id', userId)
           .is('read_at', null);
 
-        // Always push the conversation even if participant.id is blank, 
-        // so unclaimed clients show up in the list for the barber.
         conversations.push({
           bookingId: booking.id,
           lastMessage: lastMessage || undefined,
