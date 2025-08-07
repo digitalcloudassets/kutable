@@ -110,7 +110,6 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
         </div>
       </div>
     </div>
-    </div>
   );
 });
 
