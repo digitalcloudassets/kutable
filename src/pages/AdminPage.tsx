@@ -16,7 +16,8 @@ import {
   PieChart as PieChartIcon,
   Building,
   Star,
-  Clock
+  Clock,
+  Mail
 } from 'lucide-react';
 import { supabase, getRealBarberCount } from '../lib/supabase';
 import { useSupabaseConnection } from '../hooks/useSupabaseConnection';
@@ -486,6 +487,47 @@ const AdminPage: React.FC = () => {
                         <p className="text-gray-600 font-medium">Data will appear here once barbers start receiving bookings.</p>
                       </div>
                     )}
+                  </div>
+
+                  {/* Notification System Status */}
+                  <div className="card-premium p-8">
+                    <div className="flex items-center space-x-3 mb-8">
+                      <div className="bg-blue-100 p-3 rounded-2xl">
+                        <Mail className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <h4 className="text-2xl font-display font-bold text-gray-900">
+                        Notification System
+                      </h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+                        <h5 className="font-semibold text-green-800 mb-3">SMS Notifications</h5>
+                        <ul className="space-y-2 text-sm text-green-700">
+                          <li>• Booking confirmations and updates</li>
+                          <li>• 24-hour appointment reminders</li>
+                          <li>• Real-time status changes</li>
+                          <li>• Rate limited for security</li>
+                        </ul>
+                      </div>
+                      
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                        <h5 className="font-semibold text-blue-800 mb-3">Email Notifications</h5>
+                        <ul className="space-y-2 text-sm text-blue-700">
+                          <li>• Detailed booking confirmations</li>
+                          <li>• Professional email templates</li>
+                          <li>• Payment receipts and summaries</li>
+                          <li>• Respects user preferences</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                      <p className="text-yellow-800 text-sm">
+                        <strong>Setup Required:</strong> Configure SendGrid or similar email service in production. 
+                        Current setup uses simulation mode for emails.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
