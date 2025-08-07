@@ -142,22 +142,10 @@ export class MessagingService {
 
       for (const booking of uniqueBookings) {
         const isBarber = barberProfile && booking.barber_id === barberProfile.id;
-        
-        // Debug logging
-        console.log('Conversation participant logic:', {
-          bookingId: booking.id,
-          isBarber,
-          barberUserId: booking.barber_profiles?.user_id,
-          clientUserId: booking.client_profiles?.user_id,
-          barberBusiness: booking.barber_profiles?.business_name,
-          clientName: `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`,
-          currentUserId: userId
-        });
-        
         const participant = isBarber 
           ? {
               id: booking.client_profiles?.user_id || '',
-              name: `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim(),
+              name: `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`,
               type: 'client' as const,
               avatar: undefined
             }
@@ -167,17 +155,9 @@ export class MessagingService {
               type: 'barber' as const,
               avatar: booking.barber_profiles?.profile_image_url || undefined
             };
-        
-        console.log('Final participant for conversation:', {
-          bookingId: booking.id,
-          participantId: participant.id,
-          participantName: participant.name,
-          participantType: participant.type
-        });
 
         // Skip conversations where barber profile is unclaimed (no user_id)
         if (!participant.id || participant.id.trim() === '') {
-          console.log('Skipping conversation - no participant ID:', booking.id);
           continue;
         }
         // Get last message and unread count
