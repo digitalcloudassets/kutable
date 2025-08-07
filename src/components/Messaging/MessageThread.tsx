@@ -13,6 +13,7 @@ import {
 import { format, isToday, isYesterday } from 'date-fns';
 import { messagingService, Message, Conversation } from '../../services/MessagingService';
 import { useAuth } from '../../hooks/useAuth';
+import { useMessaging } from '../../hooks/useMessaging';
 
 interface MessageThreadProps {
   conversation: Conversation;
@@ -21,6 +22,7 @@ interface MessageThreadProps {
 
 const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) => {
   const { user } = useAuth();
+  const { loadUnreadCount } = useMessaging();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
