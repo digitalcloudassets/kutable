@@ -106,7 +106,8 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
       } else {
         throw new Error(data?.error || 'Failed to get AI response');
       }
-    } catch (error: any) {
+        setError(errorData.error || 'Chat service is temporarily unavailable');
+        return;
       console.error('Chat error:', error);
       
       const errorMessage: ChatMessage = {
@@ -116,7 +117,7 @@ const AIChatWidget: React.FC<AIChatWidgetProps> = ({ className = '' }) => {
         timestamp: new Date().toISOString()
       };
 
-      setMessages(prev => [...prev, errorMessage]);
+      setError('Unable to connect to chat service. Please try again later.');
     } finally {
       setIsLoading(false);
     }

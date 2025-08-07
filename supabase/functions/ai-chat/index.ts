@@ -78,21 +78,37 @@ Deno.serve(async (req) => {
       )
     }
 
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    // Get environment variables
+    const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!openaiApiKey || !supabaseUrl || !supabaseServiceKey) {
+    if (!openaiApiKey) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Missing required API keys. Please configure OpenAI and Supabase credentials.'
+          error: "AI chat is currently unavailable. Please contact support.",
+          details: "OpenAI API key not configured"
         }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500,
-        },
-      )
+        { 
+          status: 503,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Service temporarily unavailable. Please try again later.",
+          details: "Database connection not available"
+        }),
+        { 
+          status: 503,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
     }
 
     const openai = new OpenAI({
