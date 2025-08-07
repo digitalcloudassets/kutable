@@ -53,8 +53,8 @@ export class MessagingService {
 
   async getUserConversations(userId: string): Promise<Conversation[]> {
     try {
-      // Get all bookings where the user is either the barber or client
-      const { data: bookings, error: bookingsError } = await supabase
+      // Get bookings where user is a barber
+      const { data: barberBookings, error: barberError } = await supabase
         .from('bookings')
         .select(`
           id,
@@ -65,15 +65,38 @@ export class MessagingService {
           barber_profiles(id, user_id, business_name, owner_name, profile_image_url),
           client_profiles(id, user_id, first_name, last_name)
         `)
-        .or(`barber_profiles.user_id.eq.${userId},client_profiles.user_id.eq.${userId}`)
+        .eq('barber_profiles.user_id', userId)
         .in('status', ['pending', 'confirmed', 'completed'])
         .order('appointment_date', { ascending: false });
 
-      if (bookingsError) throw bookingsError;
+      if (barberError) throw barberError;
+
+      // Get bookings where user is a client
+      const { data: clientBookings, error: clientError } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          appointment_date,
+          appointment_time,
+          status,
+          services(name),
+          barber_profiles(id, user_id, business_name, owner_name, profile_image_url),
+          client_profiles(id, user_id, first_name, last_name)
+        `)
+        .eq('client_profiles.user_id', userId)
+        .in('status', ['pending', 'confirmed', 'completed'])
+        .order('appointment_date', { ascending: false });
+
+      if (clientError) throw clientError;
+
+      // Combine and deduplicate bookings
+      const allBookings = [...(barberBookings || []), ...(clientBookings || [])];
+      const uniqueBookings = Array.from(
+        new Map(allBookings.map(booking => [booking.id, booking])).values()
+      );
 
       const conversations: Conversation[] = [];
 
-      for (const booking of bookings || []) {
         const isBarber = booking.barber_profiles?.user_id === userId;
         const participant = isBarber 
           ? {
