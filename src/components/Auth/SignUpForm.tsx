@@ -124,50 +124,62 @@ const SignUpForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-8 page-container">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center px-4 py-8 page-container relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-primary-500/5 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent-500/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
+      </div>
+      
       <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">Create your account</h2>
-          <p className="mt-2 text-gray-600">Join Kutable and start booking or managing appointments</p>
+        <div className="text-center relative z-10">
+          <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-premium animate-float">
+            <User className="h-10 w-10 text-white" />
+          </div>
+          <h2 className="text-4xl font-display font-bold text-gray-900 mb-4">Create your account</h2>
+          <p className="text-xl text-gray-600 font-medium">Join Kutable and start booking or managing appointments</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="card-premium p-8 relative z-10 animate-fade-in-up">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-center space-x-3">
+                <div className="bg-red-500 p-1.5 rounded-lg">
+                  <AlertTriangle className="h-4 w-4 text-white" />
+                </div>
                 {error}
               </div>
             )}
 
             {/* Account Type Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-sm font-semibold text-gray-700 mb-4">
                 I am a...
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
                   onClick={() => handleInputChange('userType', 'client')}
-                  className={`p-3 border rounded-lg text-center transition-colors ${
+                  className={`p-6 border-2 rounded-2xl text-center transition-all duration-200 hover:scale-105 ${
                     formData.userType === 'client'
-                      ? 'border-orange-500 bg-orange-50 text-orange-700'
-                      : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-primary-500 bg-gradient-to-br from-primary-50 to-primary-100 text-primary-700 shadow-premium'
+                      : 'border-gray-300 hover:border-primary-400 hover:bg-primary-50'
                   }`}
                 >
-                  <User className="h-5 w-5 mx-auto mb-1" />
-                  <span className="text-sm font-medium">Client</span>
+                  <User className="h-6 w-6 mx-auto mb-2" />
+                  <span className="font-semibold">Client</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleInputChange('userType', 'barber')}
-                  className={`p-3 border rounded-lg text-center transition-colors ${
+                  className={`p-6 border-2 rounded-2xl text-center transition-all duration-200 hover:scale-105 ${
                     formData.userType === 'barber'
-                      ? 'border-orange-500 bg-orange-50 text-orange-700'
-                      : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-accent-500 bg-gradient-to-br from-accent-50 to-accent-100 text-accent-700 shadow-premium'
+                      : 'border-gray-300 hover:border-accent-400 hover:bg-accent-50'
                   }`}
                 >
-                  <User className="h-5 w-5 mx-auto mb-1" />
-                  <span className="text-sm font-medium">Barber</span>
+                  <Scissors className="h-6 w-6 mx-auto mb-2" />
+                  <span className="font-semibold">Barber</span>
                 </button>
               </div>
             </div>
@@ -175,7 +187,7 @@ const SignUpForm: React.FC = () => {
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-3">
                   First Name
                 </label>
                 <input
@@ -184,12 +196,12 @@ const SignUpForm: React.FC = () => {
                   value={formData.firstName}
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
                   required
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors"
+                  className="input-premium"
                   placeholder="First name"
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-3">
                   Last Name
                 </label>
                 <input
@@ -198,7 +210,7 @@ const SignUpForm: React.FC = () => {
                   value={formData.lastName}
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
                   required
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors"
+                  className="input-premium"
                   placeholder="Last name"
                 />
               </div>
@@ -206,18 +218,18 @@ const SignUpForm: React.FC = () => {
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-3">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors"
+                  className="input-premium pl-12"
                   placeholder="Enter your email"
                 />
               </div>
@@ -225,24 +237,24 @@ const SignUpForm: React.FC = () => {
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-3">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   id="password"
                   type={showPassword.password ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => handleInputChange('password', e.target.value)}
                   required
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors"
+                  className="input-premium pl-12 pr-12"
                   placeholder="Create a password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(prev => ({ ...prev, password: !prev.password }))}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword.password ? (
                     <EyeOff className="h-5 w-5" />
@@ -255,24 +267,24 @@ const SignUpForm: React.FC = () => {
 
             {/* Confirm Password */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-3">
                 Confirm Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   id="confirmPassword"
                   type={showPassword.confirmPassword ? 'text' : 'password'}
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                   required
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors"
+                  className="input-premium pl-12 pr-12"
                   placeholder="Confirm your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(prev => ({ ...prev, confirmPassword: !prev.confirmPassword }))}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword.confirmPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -284,30 +296,30 @@ const SignUpForm: React.FC = () => {
             </div>
 
             {/* Communication Consent */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-6">
               <label className="flex items-start space-x-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={formData.communicationConsent}
                   onChange={(e) => handleInputChange('communicationConsent', e.target.checked)}
                   required
-                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 mt-1"
+                  className="w-5 h-5 text-primary-600 border-gray-300 rounded-lg focus:ring-primary-500 mt-1"
                 />
                 <div className="text-sm">
-                  <span className="text-gray-900 font-medium">
+                  <span className="text-gray-900 font-semibold">
                     I consent to receive emails and SMS notifications *
                   </span>
-                  <p className="text-gray-600 mt-1 leading-relaxed">
+                  <p className="text-gray-700 mt-2 leading-relaxed font-medium">
                     By checking this box, you agree to receive booking confirmations, appointment reminders, 
                     and important account updates via email and SMS. You can unsubscribe from marketing 
                     communications anytime, but transactional messages (booking confirmations, reminders) 
                     are necessary for the service.
                   </p>
-                  <div className="mt-2 space-x-4">
-                    <Link to="/privacy" className="text-orange-600 hover:text-orange-500 underline">
+                  <div className="mt-3 space-x-4">
+                    <Link to="/privacy" className="text-primary-600 hover:text-primary-500 underline font-medium">
                       Privacy Policy
                     </Link>
-                    <Link to="/terms" className="text-orange-600 hover:text-orange-500 underline">
+                    <Link to="/terms" className="text-primary-600 hover:text-primary-500 underline font-medium">
                       Terms of Service
                     </Link>
                   </div>
@@ -318,16 +330,17 @@ const SignUpForm: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-all duration-200"
             >
+              {loading && <Loader className="h-5 w-5 animate-spin" />}
               {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-8 text-center">
             <p className="text-gray-600">
               Already have an account?{' '}
-              <Link to="/login" className="text-orange-600 hover:text-orange-500 font-medium transition-colors">
+              <Link to="/login" className="text-primary-600 hover:text-primary-500 font-semibold transition-colors">
                 Sign in
               </Link>
             </p>

@@ -294,41 +294,59 @@ const BookingFlow: React.FC = () => {
 
   if (!barber) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary-100 border-t-primary-500 mx-auto"></div>
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-accent-500 opacity-20 blur-lg"></div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-gray-700 font-medium">Loading booking experience...</p>
+            <p className="text-sm text-gray-500">Preparing your appointment details</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 page-container">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 page-container relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-primary-500/5 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent-500/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
+      </div>
+      
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="bg-white rounded-lg p-4 sm:p-6 mb-6 shadow-sm">
+        <div className="card-premium p-6 sm:p-8 mb-8 relative z-10 animate-fade-in-up">
           <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 text-center sm:text-left">
             <img
               src={barber.profile_image_url || 'https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=100'}
               alt={barber.business_name}
-              className="w-20 h-20 sm:w-16 sm:h-16 rounded-lg object-cover mx-auto sm:mx-0"
+              className="w-24 h-24 sm:w-20 sm:h-20 rounded-2xl object-cover mx-auto sm:mx-0 border-4 border-white shadow-premium"
             />
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{barber.business_name}</h1>
-              <p className="text-gray-600">{barber.owner_name}</p>
-              <p className="text-sm text-gray-500">{barber.city}, {barber.state}</p>
+              <h1 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 mb-2">{barber.business_name}</h1>
+              <p className="text-gray-600 font-medium text-lg">{barber.owner_name}</p>
+              <div className="flex items-center justify-center sm:justify-start space-x-2 mt-2">
+                <MapPin className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-500 font-medium">{barber.city}, {barber.state}</span>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-between mb-8 px-2">
+        <div className="flex items-center justify-between mb-12 px-2 relative z-10">
           {['service', 'datetime', 'details', 'payment', 'confirmation'].map((stepName, index) => (
             <div key={stepName} className="flex items-center flex-1">
-              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-xs sm:text-sm font-semibold shadow-premium transition-all duration-300 ${
                 step === stepName
-                  ? 'bg-orange-500 text-white'
+                  ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-premium-lg scale-110'
                   : index < ['service', 'datetime', 'details', 'payment', 'confirmation'].indexOf(step)
-                  ? 'bg-green-500 text-white'
-                  : 'bg-gray-200 text-gray-600'
+                  ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white'
+                  : 'bg-white text-gray-600 border-2 border-gray-200'
               }`}>
                 {index < ['service', 'datetime', 'details', 'payment', 'confirmation'].indexOf(step) ? (
                   <Check className="h-5 w-5" />
@@ -337,9 +355,9 @@ const BookingFlow: React.FC = () => {
                 )}
               </div>
               {index < 4 && (
-                <div className={`flex-1 h-1 mx-1 sm:mx-2 ${
+                <div className={`flex-1 h-2 mx-2 sm:mx-3 rounded-full transition-all duration-300 ${
                   index < ['service', 'datetime', 'details', 'payment', 'confirmation'].indexOf(step)
-                    ? 'bg-green-500'
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600'
                     : 'bg-gray-200'
                 }`} />
               )}
@@ -348,35 +366,47 @@ const BookingFlow: React.FC = () => {
         </div>
 
         {/* Step Content */}
-        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-0">
+        <div className="card-premium relative z-10 animate-fade-in-up">
           {step === 'service' && (
-            <div className="p-4 sm:p-6">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">Select a Service</h2>
+            <div className="p-6 sm:p-8">
+              <div className="text-center mb-8">
+                <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium">
+                  <Scissors className="h-8 w-8 text-white" />
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-display font-bold text-gray-900 mb-4">Select a Service</h2>
+                <p className="text-gray-600 text-lg">Choose the service you'd like to book</p>
+              </div>
               <div className="space-y-4">
                 {services.map((service) => (
                   <div
                     key={service.id}
                     onClick={() => handleServiceSelect(service)}
-                    className="border border-gray-200 rounded-lg p-4 sm:p-6 hover:border-orange-500 cursor-pointer transition-colors"
+                    className="border-2 border-gray-200 rounded-2xl p-6 sm:p-8 hover:border-primary-500 hover:shadow-premium cursor-pointer transition-all duration-300 hover:scale-[1.02] group"
                   >
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-4 sm:space-y-0">
                       <div>
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900">{service.name}</h3>
-                        <p className="text-gray-600 text-sm mt-1">{service.description}</p>
+                        <h3 className="text-xl sm:text-2xl font-display font-bold text-gray-900 group-hover:text-primary-600 transition-colors">{service.name}</h3>
+                        <p className="text-gray-600 mt-2">{service.description}</p>
                         <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
                           <div className="flex items-center space-x-1">
-                            <Clock className="h-4 w-4" />
-                            <span>{service.duration_minutes} min</span>
+                            <div className="bg-gray-200 p-1.5 rounded-lg">
+                              <Clock className="h-4 w-4" />
+                            </div>
+                            <span className="font-medium">{service.duration_minutes} min</span>
                           </div>
                           {service.deposit_required && (
-                            <span className="text-orange-600">
+                            <span className="text-accent-600 font-semibold">
                               ${service.deposit_amount} deposit required
                             </span>
                           )}
                         </div>
                       </div>
-                      <div className="text-center sm:text-right">
-                        <p className="text-3xl sm:text-2xl font-bold text-gray-900">${service.price}</p>
+                      <div className="text-center sm:text-right bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 shadow-sm">
+                        <div className="flex items-center justify-center space-x-1 text-3xl sm:text-4xl font-display font-bold text-gray-900 mb-1">
+                          <DollarSign className="h-6 w-6" />
+                          <span>{service.price}</span>
+                        </div>
+                        <p className="text-gray-500 text-sm font-medium">Service Price</p>
                       </div>
                     </div>
                   </div>
@@ -386,69 +416,80 @@ const BookingFlow: React.FC = () => {
           )}
 
           {step === 'datetime' && selectedService && (
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Select Date & Time</h2>
+            <div className="p-6 sm:p-8">
+              <div className="text-center mb-8">
+                <div className="bg-gradient-to-br from-primary-500 to-primary-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium">
+                  <Calendar className="h-8 w-8 text-white" />
+                </div>
+                <h2 className="text-2xl font-display font-bold text-gray-900 mb-4">Select Date & Time</h2>
+                <p className="text-gray-600">Choose your preferred appointment slot</p>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Choose Date</h3>
+                  <h3 className="font-display font-bold text-gray-900 mb-4 text-lg">Choose Date</h3>
                   <DatePicker
                     selected={selectedDate}
                     onChange={(date) => date && setSelectedDate(date)}
                     minDate={new Date()}
                     maxDate={addDays(new Date(), 30)}
                     inline
-                    className="w-full"
+                    className="w-full border border-gray-200 rounded-2xl shadow-sm"
                   />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">
+                  <h3 className="font-display font-bold text-gray-900 mb-4 text-lg">
                     Available Times - {formatDateDisplay(selectedDate)}
                   </h3>
                   
                   {loadingSlots ? (
                     <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-orange-500 border-t-transparent mx-auto mb-4"></div>
-                      <p className="text-gray-600">Loading available times...</p>
+                      <div className="relative mb-6">
+                        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-100 border-t-primary-500 mx-auto"></div>
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-accent-500 opacity-20 blur-lg"></div>
+                      </div>
+                      <p className="text-gray-600 font-medium">Loading available times...</p>
                     </div>
                   ) : timeSlots.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                    <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto">
                       {timeSlots.map((slot) => (
                         <button
                           key={slot.time}
                           onClick={() => setSelectedTime(slot.time)}
                           disabled={!slot.available}
-                          className={`p-3 text-sm rounded-lg border transition-colors ${
+                          className={`p-4 text-sm rounded-2xl border-2 font-semibold transition-all duration-200 ${
                             selectedTime === slot.time
-                              ? 'bg-orange-500 text-white border-orange-500 shadow-md'
+                              ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white border-primary-500 shadow-premium scale-105'
                               : slot.available
-                              ? 'border-gray-300 hover:border-orange-500 hover:bg-orange-50'
+                              ? 'border-gray-300 hover:border-primary-400 hover:bg-primary-50 hover:scale-105'
                               : 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
                           }`}
                           title={!slot.available ? slot.reason : undefined}
                         >
                           {slot.time}
                           {!slot.available && slot.reason && (
-                            <div className="text-xs text-gray-400 mt-1">{slot.reason}</div>
+                            <div className="text-xs text-gray-400 mt-1 font-medium">{slot.reason}</div>
                           )}
                         </button>
                       ))}
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h4 className="text-lg font-medium text-gray-900 mb-2">No Available Times</h4>
-                      <p className="text-gray-600 text-sm">
+                      <div className="bg-gray-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                        <Clock className="h-10 w-10 text-gray-400" />
+                      </div>
+                      <h4 className="text-xl font-display font-bold text-gray-900 mb-3">No Available Times</h4>
+                      <p className="text-gray-600">
                         This barber doesn't have any available slots on {formatDateDisplay(selectedDate)}. 
                         Please try a different date.
                       </p>
                     </div>
                   )}
-                </div>
+                        className="mt-6 text-primary-600 hover:text-primary-500 font-semibold bg-primary-50 px-6 py-3 rounded-xl hover:bg-primary-100 transition-all duration-200"
               </div>
-              <div className="mt-6 flex justify-between">
+              <div className="mt-8 flex justify-between">
                 <button
                   onClick={() => setStep('service')}
-                  className="flex items-center space-x-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="btn-secondary"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span>Back</span>
@@ -456,7 +497,7 @@ const BookingFlow: React.FC = () => {
                 <button
                   onClick={handleDateTimeConfirm}
                   disabled={!selectedTime}
-                  className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-all duration-200"
                 >
                   Continue
                 </button>
@@ -465,35 +506,41 @@ const BookingFlow: React.FC = () => {
           )}
 
           {step === 'details' && (
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Details</h2>
+            <div className="p-6 sm:p-8">
+              <div className="text-center mb-8">
+                <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium">
+                  <User className="h-8 w-8 text-white" />
+                </div>
+                <h2 className="text-2xl font-display font-bold text-gray-900 mb-4">Your Details</h2>
+                <p className="text-gray-600">Please provide your contact information</p>
+              </div>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
                       First Name *
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                       <input
                         type="text"
                         value={customerInfo.firstName}
                         onChange={(e) => setCustomerInfo(prev => ({ ...prev, firstName: e.target.value }))}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="input-premium pl-12"
                         placeholder="First name"
                         required
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
                       Last Name *
                     </label>
                     <input
                       type="text"
                       value={customerInfo.lastName}
                       onChange={(e) => setCustomerInfo(prev => ({ ...prev, lastName: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="input-premium"
                       placeholder="Last name"
                       required
                     />
@@ -501,16 +548,16 @@ const BookingFlow: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
                     Phone Number *
                   </label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
                       type="tel"
                       value={customerInfo.phone}
                       onChange={(e) => setCustomerInfo(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="input-premium pl-12"
                       placeholder="(555) 123-4567"
                       required
                     />
@@ -518,16 +565,16 @@ const BookingFlow: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
                     Email Address *
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
                       type="email"
                       value={customerInfo.email}
                       onChange={(e) => setCustomerInfo(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="input-premium pl-12"
                       placeholder="email@example.com"
                       required
                     />
@@ -535,29 +582,32 @@ const BookingFlow: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
                     Notes (Optional)
                   </label>
                   <textarea
                     value={customerInfo.notes}
                     onChange={(e) => setCustomerInfo(prev => ({ ...prev, notes: e.target.value }))}
                     rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="input-premium"
                     placeholder="Any special requests or notes for your barber..."
                   />
                 </div>
               </div>
 
               {paymentError && (
-                <div className="mt-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+                <div className="mt-6 bg-gradient-to-r from-red-50 to-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-2xl flex items-center space-x-3">
+                  <div className="bg-red-500 p-1.5 rounded-lg">
+                    <AlertCircle className="h-4 w-4 text-white" />
+                  </div>
                   {paymentError}
                 </div>
               )}
 
-              <div className="mt-6 flex justify-between">
+              <div className="mt-8 flex justify-between">
                 <button
                   onClick={() => setStep('datetime')}
-                  className="flex items-center space-x-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="btn-secondary"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span>Back</span>
@@ -565,7 +615,7 @@ const BookingFlow: React.FC = () => {
                 <button
                   onClick={handleDetailsSubmit}
                   disabled={paymentLoading || !customerInfo.firstName || !customerInfo.lastName || !customerInfo.phone || !customerInfo.email}
-                  className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-all duration-200"
                 >
                   {paymentLoading ? (
                     <Loader className="h-5 w-5 animate-spin" />
@@ -598,21 +648,21 @@ const BookingFlow: React.FC = () => {
           )}
 
           {step === 'confirmation' && confirmedBooking && (
-            <div className="p-6 text-center">
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Check className="h-8 w-8 text-green-600" />
+            <div className="p-8 sm:p-12 text-center">
+              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-premium animate-float">
+                <CheckCircle className="h-12 w-12 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Booking Confirmed!</h2>
+              <h2 className="text-3xl font-display font-bold text-gray-900 mb-6">Booking Confirmed!</h2>
               <div className="space-y-3 mb-6">
-                <p className="text-gray-600">
+                <p className="text-gray-600 text-lg leading-relaxed">
                   Your appointment has been successfully booked and payment processed.
                 </p>
                 {customerInfo.phone && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p className="text-blue-800 text-sm">
+                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-6">
+                    <p className="text-blue-800 font-semibold">
                       📱 SMS confirmation sent to {customerInfo.phone}
                     </p>
-                    <p className="text-blue-600 text-xs mt-1">
+                    <p className="text-blue-600 text-sm mt-2 font-medium">
                       You'll also receive a reminder 24 hours before your appointment
                     </p>
                   </div>
@@ -620,44 +670,44 @@ const BookingFlow: React.FC = () => {
               </div>
               
               {/* Booking Summary */}
-              <div className="bg-gray-50 rounded-lg p-6 mb-6 text-left max-w-md mx-auto">
-                <h3 className="font-semibold text-gray-900 mb-3">Booking Details</h3>
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-2xl p-8 mb-8 text-left max-w-md mx-auto shadow-sm">
+                <h3 className="font-display font-bold text-gray-900 mb-6 text-lg">Booking Details</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Service:</span>
-                    <span className="font-medium">{confirmedBooking.services?.name}</span>
+                    <span className="text-gray-600 font-medium">Service:</span>
+                    <span className="font-semibold text-gray-900">{confirmedBooking.services?.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Date:</span>
-                    <span className="font-medium">{format(new Date(confirmedBooking.appointment_date), 'EEEE, MMM d, yyyy')}</span>
+                    <span className="text-gray-600 font-medium">Date:</span>
+                    <span className="font-semibold text-gray-900">{format(new Date(confirmedBooking.appointment_date), 'EEEE, MMM d, yyyy')}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Time:</span>
-                    <span className="font-medium">{confirmedBooking.appointment_time}</span>
+                    <span className="text-gray-600 font-medium">Time:</span>
+                    <span className="font-semibold text-gray-900">{confirmedBooking.appointment_time}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Duration:</span>
-                    <span className="font-medium">{confirmedBooking.services?.duration_minutes} minutes</span>
+                    <span className="text-gray-600 font-medium">Duration:</span>
+                    <span className="font-semibold text-gray-900">{confirmedBooking.services?.duration_minutes} minutes</span>
                   </div>
-                  <div className="border-t pt-2 mt-2">
-                    <div className="flex justify-between font-semibold">
+                  <div className="border-t border-gray-300 pt-4 mt-4">
+                    <div className="flex justify-between font-bold text-lg">
                       <span>Total Paid:</span>
-                      <span>${confirmedBooking.total_amount}</span>
+                      <span className="text-emerald-600">${confirmedBooking.total_amount}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4 max-w-sm mx-auto">
                 <button
                   onClick={() => navigate('/dashboard')}
-                  className="w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium"
+                  className="btn-primary w-full hover:scale-105 transition-all duration-200"
                 >
                   View in Dashboard
                 </button>
                 <button
                   onClick={() => navigate('/barbers')}
-                  className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="btn-secondary w-full hover:scale-105 transition-all duration-200"
                 >
                   Book Another Appointment
                 </button>

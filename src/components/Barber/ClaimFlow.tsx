@@ -11,7 +11,10 @@ import {
   CreditCard,
   ArrowRight,
   Loader,
-  AlertCircle
+  AlertCircle,
+  Crown,
+  Sparkles,
+  Shield
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
@@ -436,26 +439,36 @@ const ClaimFlow: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 page-container">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 page-container relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-primary-500/5 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent-500/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-128 h-128 bg-white/5 rounded-full blur-3xl"></div>
+      </div>
+      
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Claim Your Profile</h1>
+        <div className="text-center mb-12 relative z-10">
+          <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-premium animate-float">
+            <Crown className="h-10 w-10 text-white" />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-gray-900 mb-6">Claim Your Profile</h1>
           <p className="text-gray-600">
             Verify your identity and start accepting bookings on Kutable
           </p>
         </div>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-12 relative z-10">
           {['signin', 'verify', 'details', 'complete'].map((stepName, index) => (
             <div key={stepName} className="flex items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-semibold shadow-premium transition-all duration-300 ${
                 step === stepName
-                  ? 'bg-orange-500 text-white'
+                  ? 'bg-gradient-to-br from-accent-500 to-accent-600 text-white shadow-premium-lg scale-110'
                   : index < ['signin', 'verify', 'details', 'complete'].indexOf(step)
-                  ? 'bg-green-500 text-white'
-                  : 'bg-gray-200 text-gray-600'
+                  ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white'
+                  : 'bg-white text-gray-600 border-2 border-gray-200'
               }`}>
                 {index < ['signin', 'verify', 'details', 'complete'].indexOf(step) ? (
                   <CheckCircle className="h-5 w-5" />
@@ -464,9 +477,9 @@ const ClaimFlow: React.FC = () => {
                 )}
               </div>
               {index < 3 && (
-                <div className={`w-12 h-1 mx-2 ${
+                <div className={`w-16 h-2 mx-3 rounded-full transition-all duration-300 ${
                   index < ['signin', 'verify', 'details', 'complete'].indexOf(step)
-                    ? 'bg-green-500'
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600'
                     : 'bg-gray-200'
                 }`} />
               )}
@@ -475,74 +488,85 @@ const ClaimFlow: React.FC = () => {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6">
+          <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 text-red-700 px-6 py-4 rounded-2xl mb-8 flex items-center space-x-3 relative z-10">
+            <div className="bg-red-500 p-1.5 rounded-lg">
+              <AlertCircle className="h-4 w-4 text-white" />
+            </div>
             {error}
           </div>
         )}
 
         {/* Step Content */}
-        <div className="bg-white rounded-lg shadow-sm">
+        <div className="card-premium relative z-10 animate-fade-in-up">
           {step === 'signin' && (
-            <div className="p-8 text-center">
-              <User className="h-16 w-16 text-orange-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            <div className="p-8 sm:p-12 text-center">
+              <div className="bg-gradient-to-br from-primary-500 to-primary-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-premium animate-float">
+                <User className="h-10 w-10 text-white" />
+              </div>
+              <h2 className="text-3xl font-display font-bold text-gray-900 mb-6">
                 Sign In Required
               </h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 mb-8 text-lg leading-relaxed">
                 To claim this barber profile, you need to sign in or create an account first.
               </p>
-              <div className="space-y-3">
+              <div className="space-y-4 max-w-sm mx-auto">
                 <Link
                   to="/login"
-                  className="w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium block"
+                  className="btn-primary w-full hover:scale-105 transition-all duration-200"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/signup"
-                  className="w-full border border-orange-500 text-orange-500 py-3 rounded-lg hover:bg-orange-50 transition-colors font-medium block"
+                  className="btn-secondary w-full hover:scale-105 transition-all duration-200"
                 >
                   Create Account
                 </Link>
               </div>
-              <p className="text-xs text-gray-500 mt-4">
+              <p className="text-sm text-gray-500 mt-6">
                 Don't worry - we'll bring you back here after you sign in
               </p>
             </div>
           )}
 
           {step === 'verify' && (
-            <div className="p-8 text-center">
-              <Building className="h-16 w-16 text-orange-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            <div className="p-8 sm:p-12 text-center">
+              <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-premium animate-float">
+                <Building className="h-10 w-10 text-white" />
+              </div>
+              <h2 className="text-3xl font-display font-bold text-gray-900 mb-6">
                 Is this your business?
               </h2>
-              <div className="bg-gray-50 rounded-lg p-6 mb-6 text-left">
-                <h3 className="font-semibold text-gray-900 mb-2">{barber.business_name}</h3>
-                <p className="text-gray-600">{barber.owner_name}</p>
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-2xl p-8 mb-8 text-left shadow-sm">
+                <h3 className="font-display font-bold text-gray-900 text-xl mb-3">{barber.business_name}</h3>
+                <p className="text-gray-700 font-medium mb-2">{barber.owner_name}</p>
                 {barber.address && (
-                  <p className="text-gray-600 mt-2">
-                    {barber.address}<br />
-                    {barber.city}, {barber.state} {barber.zip_code}
-                  </p>
+                  <div className="text-gray-600 mt-4 space-y-1">
+                    <p className="flex items-center space-x-2">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      <span>{barber.address}</span>
+                    </p>
+                    <p className="ml-6 text-gray-500">{barber.city}, {barber.state} {barber.zip_code}</p>
+                  </div>
                 )}
               </div>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 mb-8 text-lg leading-relaxed">
                 By claiming this profile, you confirm that you are the owner or authorized representative 
                 of this business.
               </p>
               <button
                 onClick={handleVerifyIdentity}
-                className="bg-orange-500 text-white px-8 py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium"
+                className="btn-primary hover:scale-105 transition-all duration-200"
               >
+                <Shield className="h-5 w-5" />
                 Yes, This is My Business
               </button>
               
               {!isConnected && (
-                <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="mt-8 p-6 bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-2xl">
                   <div className="flex items-center">
                     <AlertCircle className="h-5 w-5 text-yellow-600 mr-2" />
-                    <p className="text-yellow-800 text-sm">
+                    <p className="text-yellow-800 font-medium">
                       Connect to Supabase to complete the claiming process
                     </p>
                   </div>
@@ -552,36 +576,42 @@ const ClaimFlow: React.FC = () => {
           )}
 
           {step === 'details' && (
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Update Your Information</h2>
+            <div className="p-8 sm:p-12">
+              <div className="text-center mb-8">
+                <div className="bg-gradient-to-br from-primary-500 to-primary-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-premium animate-float">
+                  <Building className="h-10 w-10 text-white" />
+                </div>
+                <h2 className="text-3xl font-display font-bold text-gray-900 mb-4">Update Your Information</h2>
+                <p className="text-gray-600 text-lg">Complete your business details to finalize your profile</p>
+              </div>
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
                     Business Name
                   </label>
                   <div className="relative">
-                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Building className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
                       type="text"
                       value={claimData.businessName}
                       onChange={(e) => setClaimData(prev => ({ ...prev, businessName: e.target.value }))}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="input-premium pl-12"
                       placeholder="Your business name"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
                     Owner Name
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
                       type="text"
                       value={claimData.ownerName}
                       onChange={(e) => setClaimData(prev => ({ ...prev, ownerName: e.target.value }))}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="input-premium pl-12"
                       placeholder="Your full name"
                     />
                   </div>
@@ -589,31 +619,31 @@ const ClaimFlow: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
                       Phone Number
                     </label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                       <input
                         type="tel"
                         value={claimData.phone}
                         onChange={(e) => setClaimData(prev => ({ ...prev, phone: e.target.value }))}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="input-premium pl-12"
                         placeholder="(555) 123-4567"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
                       Email Address
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                       <input
                         type="email"
                         value={claimData.email}
                         onChange={(e) => setClaimData(prev => ({ ...prev, email: e.target.value }))}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="input-premium pl-12"
                         placeholder="email@example.com"
                       />
                     </div>
@@ -621,16 +651,16 @@ const ClaimFlow: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
                     Business Address
                   </label>
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <input
                       type="text"
                       value={claimData.address}
                       onChange={(e) => setClaimData(prev => ({ ...prev, address: e.target.value }))}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="input-premium pl-12"
                       placeholder="Street address"
                     />
                   </div>
@@ -638,62 +668,62 @@ const ClaimFlow: React.FC = () => {
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
                       City
                     </label>
                     <input
                       type="text"
                       value={claimData.city}
                       onChange={(e) => setClaimData(prev => ({ ...prev, city: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="input-premium"
                       placeholder="City"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
                       State
                     </label>
                     <input
                       type="text"
                       value={claimData.state}
                       onChange={(e) => setClaimData(prev => ({ ...prev, state: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="input-premium"
                       placeholder="State"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
                       ZIP Code
                     </label>
                     <input
                       type="text"
                       value={claimData.zipCode}
                       onChange={(e) => setClaimData(prev => ({ ...prev, zipCode: e.target.value }))}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      className="input-premium"
                       placeholder="12345"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
                     Business Description
                   </label>
                   <textarea
                     value={claimData.bio}
                     onChange={(e) => setClaimData(prev => ({ ...prev, bio: e.target.value }))}
                     rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="input-premium"
                     placeholder="Tell customers about your services and experience..."
                   />
                 </div>
               </div>
 
-              <div className="mt-8 flex justify-end">
+              <div className="mt-12 flex justify-center">
                 <button
                   onClick={handleDetailsSubmit}
                   disabled={loading || !isConnected || !user}
-                  className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 flex items-center space-x-2"
+                  className="btn-primary disabled:opacity-50 hover:scale-105 transition-all duration-200"
                 >
                   {loading ? <Loader className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
                   <span>
@@ -707,18 +737,21 @@ const ClaimFlow: React.FC = () => {
           )}
 
           {step === 'complete' && (
-            <div className="p-8 text-center">
-              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            <div className="p-8 sm:p-12 text-center">
+              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-premium animate-float">
+                <CheckCircle className="h-10 w-10 text-white" />
+              </div>
+              <h2 className="text-3xl font-display font-bold text-gray-900 mb-6">
                 Profile Claimed Successfully!
               </h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600 mb-8 text-lg leading-relaxed">
                 Your barber profile has been claimed! Complete your setup to start accepting bookings.
               </p>
               <Link
                 to="/onboarding?type=barber"
-                className="bg-orange-500 text-white px-8 py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium"
+                className="btn-primary hover:scale-105 transition-all duration-200"
               >
+                <Sparkles className="h-5 w-5" />
                 Complete Setup
               </Link>
             </div>
