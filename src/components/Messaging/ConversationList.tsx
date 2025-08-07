@@ -165,41 +165,26 @@ const ConversationList: React.FC<ConversationListProps> = ({
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  {/* Header row: Name and Status */}
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold text-gray-900 leading-tight">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="text-sm font-semibold text-gray-900 leading-tight pr-2">
                       {conversation.participant.name}
                     </h3>
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      conversation.booking.status === 'confirmed' 
-                        ? 'bg-green-100 text-green-800'
-                        : conversation.booking.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {conversation.booking.status.toUpperCase()}
-                    </span>
-                  </div>
-                  
-                  {/* Service name */}
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Calendar className="h-3 w-3 text-gray-400" />
-                    <span className="text-sm text-gray-700 font-medium">
-                      {conversation.booking.serviceName}
-                    </span>
-                  </div>
-
-                  {/* Date and time */}
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs text-gray-500 font-medium">
-                      {formatAppointmentDate(conversation.booking.appointmentDate)} at {conversation.booking.appointmentTime}
-                    </span>
                     {/* Unread badge */}
                     {conversation.unreadCount > 0 && (
-                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
-                        {conversation.unreadCount}
-                      </span>
+                      <div className="flex-shrink-0">
+                        <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                          {conversation.unreadCount}
+                        </span>
+                      </div>
                     )}
+                  </div>
+                  
+                  {/* Service and appointment info */}
+                  <div className="flex items-center space-x-1 mb-3">
+                    <Calendar className="h-3 w-3 text-gray-400" />
+                    <span className="text-xs text-gray-500 font-medium">
+                      {conversation.booking.serviceName} • {formatAppointmentDate(conversation.booking.appointmentDate)} at {conversation.booking.appointmentTime}
+                    </span>
                   </div>
 
                   {/* Last message */}
@@ -215,9 +200,15 @@ const ConversationList: React.FC<ConversationListProps> = ({
 
               {/* Bottom row with status and timestamp */}
               <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <div className="text-xs text-gray-400">
-                  Message Thread
-                </div>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  conversation.booking.status === 'confirmed' 
+                    ? 'bg-green-100 text-green-800'
+                    : conversation.booking.status === 'pending'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {conversation.booking.status.toUpperCase()}
+                </span>
                 {conversation.lastMessage && (
                   <span className="text-xs text-gray-500 font-medium">
                     {formatMessageTime(conversation.lastMessage.created_at)}
