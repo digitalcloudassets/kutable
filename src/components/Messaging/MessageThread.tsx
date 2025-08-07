@@ -124,6 +124,9 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     // Check if participant has a valid user ID
     if (!conversation.participant.id) {
       const errorMessage = conversation.participant.type === 'barber' 
+        ? 'This barber profile hasn\'t been claimed yet. Messages can only be sent to claimed profiles.'
+        : 'Client profile is not properly linked. Please contact support.';
+      setError(errorMessage);
       return;
     }
     setSending(true);
@@ -364,8 +367,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
                 }
               }}
             />
-            className="bg-primary-500 text-white p-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-          >
+          </div>
           <button
             type="submit"
             disabled={!newMessage.trim() || sending || !conversation.participant.id}
