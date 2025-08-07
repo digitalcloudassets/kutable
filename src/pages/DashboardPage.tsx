@@ -17,7 +17,6 @@ import { Database } from '../lib/supabase';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
-type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
 
 const DashboardPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
