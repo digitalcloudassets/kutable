@@ -75,44 +75,65 @@ export class MessagingService {
     }
 
     try {
-      // Get bookings where user is a barber
-      const { data: barberBookings, error: barberError } = await supabase
-        .from('bookings')
-        .select(`
-          id,
-          appointment_date,
-          appointment_time,
-          status,
-          services(name),
-          barber_profiles(id, user_id, business_name, owner_name, profile_image_url),
-          client_profiles(id, user_id, first_name, last_name)
-        `)
-        .eq('barber_profiles.user_id', userId)
-        .in('status', ['pending', 'confirmed', 'completed'])
-        .order('appointment_date', { ascending: false });
+      // First, get user's barber profile if they have one
+      const { data: barberProfile } = await supabase
+        .from('barber_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-      if (barberError) throw barberError;
+      // Get user's client profile if they have one
+      const { data: clientProfile } = await supabase
+        .from('client_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      let allBookings: any[] = [];
+
+      // Get bookings where user is a barber
+      if (barberProfile) {
+        const { data: barberBookings, error: barberError } = await supabase
+          .from('bookings')
+          .select(`
+            id,
+            appointment_date,
+            appointment_time,
+            status,
+            services(name),
+            barber_profiles(id, user_id, business_name, owner_name, profile_image_url),
+            client_profiles(id, user_id, first_name, last_name)
+          `)
+          .eq('barber_id', barberProfile.id)
+          .in('status', ['pending', 'confirmed', 'completed'])
+          .order('appointment_date', { ascending: false });
+
+        if (barberError) throw barberError;
+        allBookings.push(...(barberBookings || []));
+      }
 
       // Get bookings where user is a client
-      const { data: clientBookings, error: clientError } = await supabase
-        .from('bookings')
-        .select(`
-          id,
-          appointment_date,
-          appointment_time,
-          status,
-          services(name),
-          barber_profiles(id, user_id, business_name, owner_name, profile_image_url),
-          client_profiles(id, user_id, first_name, last_name)
-        `)
-        .eq('client_profiles.user_id', userId)
-        .in('status', ['pending', 'confirmed', 'completed'])
-        .order('appointment_date', { ascending: false });
+      if (clientProfile) {
+        const { data: clientBookings, error: clientError } = await supabase
+          .from('bookings')
+          .select(`
+            id,
+            appointment_date,
+            appointment_time,
+            status,
+            services(name),
+            barber_profiles(id, user_id, business_name, owner_name, profile_image_url),
+            client_profiles(id, user_id, first_name, last_name)
+          `)
+          .eq('client_id', clientProfile.id)
+          .in('status', ['pending', 'confirmed', 'completed'])
+          .order('appointment_date', { ascending: false });
 
-      if (clientError) throw clientError;
+        if (clientError) throw clientError;
+        allBookings.push(...(clientBookings || []));
+      }
 
-      // Combine and deduplicate bookings
-      const allBookings = [...(barberBookings || []), ...(clientBookings || [])];
+      // Deduplicate bookings (in case user is both barber and client)
       const uniqueBookings = Array.from(
         new Map(allBookings.map(booking => [booking.id, booking])).values()
       );
@@ -120,7 +141,7 @@ export class MessagingService {
       const conversations: Conversation[] = [];
 
       for (const booking of uniqueBookings) {
-        const isBarber = booking.barber_profiles?.user_id === userId;
+        const isBarber = barberProfile && booking.barber_id === barberProfile.id;
         const participant = isBarber 
           ? {
               id: booking.client_profiles?.user_id || '',
