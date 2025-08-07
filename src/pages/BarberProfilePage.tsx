@@ -387,9 +387,9 @@ const BarberProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
+    <div className="min-h-screen bg-gray-50 page-container">
       {/* Header with background image */}
-      <div className="relative h-96 bg-gray-900 overflow-hidden">
+      <div className="relative h-96 bg-gray-900 overflow-hidden -mt-24 pt-24">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"></div>
         

@@ -59,6 +59,13 @@ export default {
         'premium-lg': '0 20px 40px -12px rgba(0, 0, 0, 0.15), 0 8px 16px -4px rgba(0, 0, 0, 0.1)',
         'inner-premium': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.05)',
       },
+      spacing: {
+        '18': '4.5rem',
+        '22': '5.5rem', // 88px - matches header height + breathing room
+        '24': '6rem',   // 96px - standard page padding
+        '88': '22rem',
+        '128': '32rem',
+      },
       animation: {
         'fade-in-up': 'fade-in-up 0.6s ease-out forwards',
         'scale-in': 'scale-in 0.4s ease-out forwards',

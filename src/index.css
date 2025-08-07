@@ -52,6 +52,10 @@
   --font-display: 'Manrope', sans-serif;
   --font-body: 'Inter', sans-serif;
   
+  /* Layout Variables */
+  --header-height: 80px;
+  --page-padding-top: 96px; /* header height + 16px breathing room */
+  --page-padding-top-mobile: 88px; /* slightly less on mobile */
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -136,6 +140,18 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+/* Layout Utilities */
+.page-container {
+  padding-top: var(--page-padding-top);
+}
+
+.page-header-bg {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 50%, rgba(249, 250, 252, 1) 100%);
+}
+
+.page-content {
+  background: linear-gradient(to bottom, rgba(249, 250, 252, 0) 0%, rgba(249, 250, 252, 1) 40px);
+}
 .mobile-headline {
   @apply text-2xl sm:text-3xl md:text-4xl font-bold leading-tight;
 }
@@ -300,6 +316,7 @@ body {
   /* Ensure minimum touch target size */
   :root {
     --touch-target-min: 44px;
+    --page-padding-top: var(--page-padding-top-mobile);
   }
   
   /* Mobile-first spacing and sizing */

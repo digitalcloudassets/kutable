@@ -459,7 +459,7 @@ const OnboardingPage: React.FC = () => {
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 page-container">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <SupabaseConnectionBanner isConnected={isSupabaseConnected} />
         

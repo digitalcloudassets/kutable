@@ -414,9 +414,9 @@ const BarberListPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
+    <div className="min-h-screen bg-gray-50 page-container">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 shadow-sm">
+      <div className="bg-white border-b border-gray-100 shadow-sm page-header-bg -mt-24 pt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="flex flex-col space-y-4">
             <div>
