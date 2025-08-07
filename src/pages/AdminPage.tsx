@@ -25,8 +25,6 @@ import SupabaseConnectionBanner from '../components/Setup/SupabaseConnectionBann
 import AdminDataExport from '../components/Admin/AdminDataExport';
 import { NotificationManager, AdminNotifications } from '../utils/notifications';
 import ProductionSecurityCheck from '../components/Security/ProductionSecurityCheck';
-import KnowledgeBaseManager from '../components/Admin/KnowledgeBaseManager';
-import { Brain } from 'lucide-react';
 
 interface PlatformMetrics {
   totalBarbers: number;
@@ -356,8 +354,7 @@ const AdminPage: React.FC = () => {
                   { id: 'barbers', label: 'Barbers', icon: Users, color: 'accent' },
                   { id: 'bookings', label: 'Bookings', icon: Calendar, color: 'yellow' },
                   { id: 'payments', label: 'Payments', icon: CreditCard, color: 'emerald' },
-                  { id: 'export', label: 'Export', icon: Download, color: 'purple' },
-                  { id: 'ai', label: 'AI Chat', icon: Brain, color: 'indigo' }
+                  { id: 'export', label: 'Export', icon: Download, color: 'purple' }
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -731,21 +728,6 @@ const AdminPage: React.FC = () => {
                     </h3>
                   </div>
                   <AdminDataExport />
-                </div>
-              )}
-
-              {/* AI Chat Tab */}
-              {activeTab === 'ai' && (
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-3 mb-8">
-                    <div className="bg-indigo-100 p-3 rounded-2xl">
-                      <Brain className="h-6 w-6 text-indigo-600" />
-                    </div>
-                    <h3 className="text-3xl font-display font-bold text-gray-900">
-                      AI Chatbot Management
-                    </h3>
-                  </div>
-                  <KnowledgeBaseManager />
                 </div>
               )}
             </div>
