@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { useMessaging } from '../hooks/useMessaging';
 import { useSupabaseConnection } from '../hooks/useSupabaseConnection';
 import SupabaseConnectionBanner from '../components/Setup/SupabaseConnectionBanner';
 import ClientDashboardHeader from '../components/Dashboard/ClientDashboardHeader';
@@ -18,6 +19,7 @@ type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
 
 const DashboardPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
+  const { unreadCount } = useMessaging();
   const { isConnected } = useSupabaseConnection();
   const navigate = useNavigate();
   
@@ -165,6 +167,7 @@ const DashboardPage: React.FC = () => {
             userType="client"
             activeTab={activeTab}
             onTabChange={handleTabChange}
+            unreadCount={unreadCount}
           />
 
           <ClientDashboardContent activeTab={activeTab} />
@@ -189,6 +192,7 @@ const DashboardPage: React.FC = () => {
             userType="barber"
             activeTab={activeTab}
             onTabChange={handleTabChange}
+            unreadCount={unreadCount}
           />
 
           <BarberDashboardContent 

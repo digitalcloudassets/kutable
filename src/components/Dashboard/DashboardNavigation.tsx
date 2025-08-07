@@ -16,6 +16,7 @@ interface DashboardNavigationProps {
   userType: 'client' | 'barber';
   activeTab: string;
   onTabChange: (tab: string) => void;
+  unreadCount?: number;
 }
 
 interface NavButton {
@@ -29,7 +30,8 @@ interface NavButton {
 const DashboardNavigation = React.memo<DashboardNavigationProps>(({ 
   userType, 
   activeTab, 
-  onTabChange 
+  onTabChange,
+  unreadCount = 0
 }) => {
   const navigate = useNavigate();
 
@@ -82,6 +84,11 @@ const DashboardNavigation = React.memo<DashboardNavigationProps>(({
           >
             <button.icon className="h-5 w-5" />
             <span>{button.label}</span>
+            {button.id === 'messages' && unreadCount > 0 && (
+              <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                {unreadCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
