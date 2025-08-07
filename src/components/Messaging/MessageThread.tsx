@@ -178,6 +178,14 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     return format(date, 'EEEE, MMMM d');
   };
 
+  const formatTimeToAMPM = (timeString: string) => {
+    // Parse time string like "10:00:00" and convert to "10AM"
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return format(date, 'ha'); // Returns "10AM" format
+  };
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -308,7 +316,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
                       {isFromMe && message.read_at && (
                         <span className="ml-1">• Read</span>
                       )}
-                    </p>
+                    <span>{formatAppointmentDate(conversation.booking.appointmentDate)} at {formatTimeToAMPM(conversation.booking.appointmentTime)}</span>
                   </div>
 
                   {/* Spacer for messages from me without avatar */}
