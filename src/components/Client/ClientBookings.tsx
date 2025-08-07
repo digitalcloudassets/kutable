@@ -24,6 +24,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import RescheduleModal from '../Booking/RescheduleModal';
 import { NotificationManager, BookingNotifications } from '../../utils/notifications';
+import { getOrCreateClientProfile } from '../../utils/profileHelpers';
 import 'react-datepicker/dist/react-datepicker.css';
 
 interface Booking {
