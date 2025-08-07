@@ -23,6 +23,7 @@ import { useSupabaseConnection } from '../hooks/useSupabaseConnection';
 import SupabaseConnectionBanner from '../components/Setup/SupabaseConnectionBanner';
 import AdminDataExport from '../components/Admin/AdminDataExport';
 import { NotificationManager, AdminNotifications } from '../utils/notifications';
+import ProductionSecurityCheck from '../components/Security/ProductionSecurityCheck';
 
 interface PlatformMetrics {
   totalBarbers: number;
@@ -347,6 +348,7 @@ const AdminPage: React.FC = () => {
             <div className="border-b border-gray-100">
               <nav className="flex space-x-8 px-8 py-2">
                 {[
+                  { id: 'security', label: 'Security', icon: Shield, color: 'red' },
                   { id: 'overview', label: 'Overview', icon: BarChart3, color: 'primary' },
                   { id: 'barbers', label: 'Barbers', icon: Users, color: 'accent' },
                   { id: 'bookings', label: 'Bookings', icon: Calendar, color: 'yellow' },
@@ -370,6 +372,21 @@ const AdminPage: React.FC = () => {
             </div>
 
             <div className="p-8">
+              {/* Security Tab */}
+              {activeTab === 'security' && (
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-3 mb-8">
+                    <div className="bg-red-100 p-3 rounded-2xl">
+                      <Shield className="h-6 w-6 text-red-600" />
+                    </div>
+                    <h3 className="text-3xl font-display font-bold text-gray-900">
+                      Security & Production Readiness
+                    </h3>
+                  </div>
+                  <ProductionSecurityCheck />
+                </div>
+              )}
+
               {/* Overview Tab */}
               {activeTab === 'overview' && (
                 <div className="space-y-6">
