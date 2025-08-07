@@ -291,6 +291,15 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
         )}
         
         <form onSubmit={handleSendMessage} className="flex items-end space-x-3">
+          {!conversation.participant.id && (
+            <div className="mb-3 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm flex items-center space-x-2">
+              <AlertCircle className="h-4 w-4" />
+              <span>
+                This barber profile hasn't been claimed yet. Messages can only be sent to claimed profiles.
+              </span>
+            </div>
+          )}
+          
           <div className="flex-1">
             <textarea
               value={newMessage}
@@ -299,6 +308,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all duration-200"
               rows={newMessage.includes('\n') ? 3 : 1}
               maxLength={1000}
+              disabled={!conversation.participant.id}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -313,7 +323,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
           
           <button
             type="submit"
-            disabled={!newMessage.trim() || sending}
+            disabled={!newMessage.trim() || sending || !conversation.participant.id}
             className="bg-primary-500 text-white p-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           >
             {sending ? (
