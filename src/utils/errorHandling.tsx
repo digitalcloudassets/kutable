@@ -185,14 +185,6 @@ const initializeExternalErrorTracking = () => {
             },
             integrations, // <- use the array
           });
-            environment: import.meta.env.DEV ? 'development' : 'production',
-            tracesSampleRate: 0.1,
-            beforeSend(event) {
-              if (!import.meta.env.DEV && event.level === 'warning') return null;
-              return event;
-            },
-            integrations, // <- use the array
-          });
 
           setTag('component', 'kutable-frontend');
           console.log('✅ Sentry error tracking initialized');
