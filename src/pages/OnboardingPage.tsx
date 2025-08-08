@@ -367,6 +367,7 @@ const OnboardingPage: React.FC = () => {
           .from('barber_profiles')
           .insert({
             user_id: user.id,
+           slug: await generateUniqueSlug(data.businessInfo.businessName),
             business_name: data.businessInfo.businessName,
             owner_name: data.businessInfo.ownerName,
             phone: data.businessInfo.phone,
@@ -457,6 +458,41 @@ const OnboardingPage: React.FC = () => {
   };
 
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  const generateUniqueSlug = async (businessName: string): Promise<string> => {
+    let baseSlug = businessName
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .trim();
+    
+    if (!baseSlug) {
+      baseSlug = 'barber';
+    }
+    
+    let slug = baseSlug;
+    let counter = 1;
+    
+    // Check for conflicts and make unique
+    while (true) {
+      const { data: existingProfile } = await supabase
+        .from('barber_profiles')
+        .select('id')
+        .eq('slug', slug)
+        .maybeSingle();
+      
+      if (!existingProfile) {
+        break;
+      }
+      
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+    
+    return slug;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 page-container">

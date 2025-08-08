@@ -360,6 +360,41 @@ const ClaimFlow: React.FC = () => {
 
   const generateSlug = (businessName: string, index: number): string => {
     let slug = businessName
+  const generateUniqueSlug = async (businessName: string): Promise<string> => {
+    let baseSlug = businessName
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .trim();
+    
+    if (!baseSlug) {
+      baseSlug = 'barber';
+    }
+    
+    let slug = baseSlug;
+    let counter = 1;
+    
+    // Check for conflicts and make unique
+    while (true) {
+      const { data: existingProfile } = await supabase
+        .from('barber_profiles')
+        .select('id')
+        .eq('slug', slug)
+        .maybeSingle();
+      
+      if (!existingProfile) {
+        break;
+      }
+      
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+    
+    return slug;
+  };
+
       .toLowerCase()
       .replace(/[^\w\s-]/g, '')
       .replace(/\s+/g, '-')
@@ -400,24 +435,7 @@ const ClaimFlow: React.FC = () => {
       }
 
       // Generate a unique slug
-      let finalSlug = claimData.businessName
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .trim();
-        
-      // Check for slug conflicts and make unique if needed
-      const { data: slugConflict } = await supabase
-        .from('barber_profiles')
-        .select('id')
-        .eq('slug', finalSlug)
-        .maybeSingle();
-
-      if (slugConflict) {
-        finalSlug = `${finalSlug}-${Date.now()}`;
-      }
+      const finalSlug = await generateUniqueSlug(claimData.businessName);
 
       if (isCSVProfile) {
         // Create new profile for CSV profiles that don't exist in database
