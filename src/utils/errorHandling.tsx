@@ -177,7 +177,7 @@ const initializeExternalErrorTracking = () => {
           },
           integrations: [
             // Add performance monitoring
-            new (window as any).Sentry?.BrowserTracing?.({
+            new ((window as any).Sentry?.BrowserTracing)({
               tracingOrigins: [window.location.hostname],
             }),
           ],
