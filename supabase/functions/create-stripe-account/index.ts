@@ -81,6 +81,40 @@ Deno.serve(async (req) => {
       return json(400, { success: false, error: 'Invalid email format' });
     }
 
+    // Check if barber already has a Stripe account
+    const { data: existingBarber } = await supabase
+      .from('barber_profiles')
+      .select('stripe_account_id, stripe_onboarding_completed')
+      .eq('id', barberId)
+      .single();
+
+    // If they have an existing account, create a new account link instead of a new account
+    if (existingBarber?.stripe_account_id) {
+      try {
+        // Create a new account link for the existing account
+        const linkParams = form({
+          account: existingBarber.stripe_account_id,
+          type: 'account_onboarding',
+          refresh_url: `${SITE_URL}/dashboard?stripe_refresh=true&account_id=${existingBarber.stripe_account_id}`,
+          return_url: `${SITE_URL}/dashboard?stripe_setup=complete&account_id=${existingBarber.stripe_account_id}`,
+          collect: 'eventually_due',
+        });
+
+        const linkRes = await stripePost('account_links', linkParams, STRIPE_SECRET_KEY!);
+        if (linkRes.ok) {
+          return json(200, { 
+            success: true, 
+            accountId: existingBarber.stripe_account_id, 
+            onboardingUrl: linkRes.data.url,
+            isExistingAccount: true
+          });
+        } else {
+          console.warn('Failed to create account link for existing account, creating new account');
+        }
+      } catch (linkError) {
+        console.warn('Failed to create account link for existing account, creating new account:', linkError);
+      }
+    }
     const [first, ...rest] = ownerName.trim().split(/\s+/);
     const last = rest.join(' ') || first;
 
@@ -140,7 +174,7 @@ Deno.serve(async (req) => {
       account_status: 'pending', charges_enabled: false, payouts_enabled: false, updated_at: now
     });
 
-    return json(200, { success: true, accountId, onboardingUrl: linkRes.data.url });
+    return json(200, { success: true, accountId, onboardingUrl: linkRes.data.url, isExistingAccount: false });
   } catch {
     return json(500, { success: false, error: 'Unexpected server error' });
   }

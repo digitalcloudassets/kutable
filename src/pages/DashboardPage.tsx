@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useMessaging } from '../hooks/useMessaging';
@@ -14,6 +14,7 @@ import LoadingDashboard from '../components/Dashboard/LoadingDashboard';
 import FallbackDashboard from '../components/Dashboard/FallbackDashboard';
 import { getOrCreateClientProfile } from '../utils/profileHelpers';
 import { Database } from '../lib/supabase';
+import { NotificationManager } from '../utils/notifications';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
@@ -23,6 +24,7 @@ const DashboardPage: React.FC = () => {
   const { unreadCount } = useMessaging();
   const { isConnected } = useSupabaseConnection();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const [userType, setUserType] = useState<'client' | 'barber' | null>(null);
   const [barber, setBarber] = useState<Barber | null>(null);
@@ -55,6 +57,56 @@ const DashboardPage: React.FC = () => {
     handleUserTypeCheck();
   }, [handleUserTypeCheck]);
 
+  // Handle Stripe onboarding return
+  useEffect(() => {
+    const handleStripeReturn = async () => {
+      const stripeSetup = searchParams.get('stripe_setup');
+      const stripeRefresh = searchParams.get('stripe_refresh');
+      const accountId = searchParams.get('account_id');
+      
+      if ((stripeSetup === 'complete' || stripeRefresh === 'true') && accountId && user && isConnected) {
+        try {
+          // Check Stripe account status
+          const { data: statusData, error: statusError } = await supabase.functions.invoke('check-stripe-status', {
+            body: { accountId }
+          });
+
+          if (statusError) {
+            console.error('Error checking Stripe status:', statusError);
+            NotificationManager.error('Unable to verify payment setup status. Please check your dashboard.');
+          } else if (statusData?.success) {
+            if (statusData.onboardingComplete) {
+              NotificationManager.success('Payment setup complete! You can now accept online bookings.');
+              setActiveTab('profile'); // Show profile tab to see updated status
+            } else if (statusData.detailsSubmitted && statusData.requiresVerification) {
+              NotificationManager.info('Payment setup submitted for verification. You may need to provide additional information.');
+            } else {
+              NotificationManager.info('Payment setup in progress. Please complete all required steps in Stripe.');
+            }
+            
+            // Refresh barber data to show updated Stripe status
+            if (userType === 'barber') {
+              await refreshBarberData();
+            }
+          }
+        } catch (error) {
+          console.error('Error handling Stripe return:', error);
+          NotificationManager.error('Error checking payment setup status.');
+        }
+        
+        // Clean up URL parameters
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('stripe_setup');
+        newSearchParams.delete('stripe_refresh');
+        newSearchParams.delete('account_id');
+        setSearchParams(newSearchParams, { replace: true });
+      }
+    };
+
+    if (user && isConnected && userType === 'barber') {
+      handleStripeReturn();
+    }
+  }, [searchParams, user, isConnected, userType, setSearchParams, refreshBarberData]);
   const determineUserType = useCallback(async () => {
     if (!user) return;
 

@@ -236,6 +236,33 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
       return;
     }
 
+    // Check if user already has a Stripe account that needs completion
+    if (barber.stripe_account_id && !barber.stripe_onboarding_completed) {
+      try {
+        // Check current status of existing Stripe account
+        const { data: statusData, error: statusError } = await supabase.functions.invoke('check-stripe-status', {
+          body: { accountId: barber.stripe_account_id }
+        });
+
+        if (statusError) {
+          console.error('Error checking existing Stripe status:', statusError);
+          // Continue with new account creation as fallback
+        } else if (statusData?.success) {
+          if (statusData.onboardingComplete) {
+            // Account is actually complete, update local state
+            onUpdate();
+            NotificationManager.success('Your payment setup is already complete!');
+            return;
+          } else if (statusData.detailsSubmitted) {
+            NotificationManager.info('Your Stripe account is pending verification. Check your email for updates from Stripe.');
+            return;
+          }
+          // If not complete, continue to create new onboarding link
+        }
+      } catch (error) {
+        console.warn('Error checking existing Stripe account, proceeding with setup:', error);
+      }
+    }
     setSettingUpStripe(true);
     try {
       const payload = {
