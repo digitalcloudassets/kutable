@@ -10,44 +10,123 @@ import {
   MapPin,
   CreditCard,
   ArrowRight,
-        // CSV profiles are now loaded and parsed by supabase.ts
-        // We need to fetch the CSV profile data from the centralized loader
-        try {
-          const { loadCSVDirectory } = await import('../../lib/supabase');
-          const csvProfiles = await loadCSVDirectory();
-          
-          // Extract index from CSV ID (e.g., "csv-123" -> 123)
-          const csvIndex = parseInt(barberId.replace('csv-', '')) - 1;
-          const profile = csvProfiles[csvIndex];
-          
-          if (!profile) {
-            setError('Barber profile not found');
+  Crown,
+  AlertCircle,
+  Edit,
+  FileText,
+  Shield,
+  Sparkles,
+  Loader
+} from 'lucide-react';
+
+const ClaimFlow = () => {
+  const { barberId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const [barber, setBarber] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [claiming, setClaiming] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [user, setUser] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
+  
+  const [claimData, setClaimData] = useState({
+    businessName: '',
+    ownerName: '',
+    phone: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    bio: ''
+  });
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        
+        // Check if this is a CSV profile (ID starts with 'csv-')
+        const isCSVProfile = barberId.startsWith('csv-');
+        
+        if (isCSVProfile) {
+          // CSV profiles are now loaded and parsed by supabase.ts
+          // We need to fetch the CSV profile data from the centralized loader
+          try {
+            const { loadCSVDirectory } = await import('../../lib/supabase');
+            const csvProfiles = await loadCSVDirectory();
+            
+            // Extract index from CSV ID (e.g., "csv-123" -> 123)
+            const csvIndex = parseInt(barberId.replace('csv-', '')) - 1;
+            const profile = csvProfiles[csvIndex];
+            
+            if (!profile) {
+              setError('Barber profile not found');
+              setLoading(false);
+              return;
+            }
+            
+            console.log('📋 Found CSV barber profile:', profile.business_name);
+            setBarber(profile);
+            setClaimData({
+              businessName: profile.business_name || '',
+              ownerName: profile.owner_name || '',
+              phone: profile.phone || '',
+              email: profile.email || '',
+              address: profile.address || '',
+              city: profile.city || '',
+              state: profile.state || '',
+              zipCode: profile.zip_code || '',
+              bio: profile.bio || ''
+            });
+            setLoading(false);
+            return;
+          } catch (csvError) {
+            console.error('Error loading CSV profile:', csvError);
+            setError('Failed to load profile data');
             setLoading(false);
             return;
           }
-          
-          console.log('📋 Found CSV barber profile:', profile.business_name);
-          setBarber(profile);
-          setClaimData({
-            businessName: profile.business_name || '',
-            ownerName: profile.owner_name || '',
-            phone: profile.phone || '',
-            email: profile.email || '',
-            address: profile.address || '',
-            city: profile.city || '',
-            state: profile.state || '',
-            zipCode: profile.zip_code || '',
-            bio: profile.bio || ''
-          });
-          setLoading(false);
-          return;
-        } catch (csvError) {
-          console.error('Error loading CSV profile:', csvError);
-          setError('Failed to load profile data');
-          setLoading(false);
-          return;
         }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        setError('Failed to load profile data');
+        setLoading(false);
       }
+    };
+
+    loadProfile();
+  }, [barberId]);
+
+  const generateUniqueSlug = async (businessName) => {
+    const baseSlug = businessName
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim()
+      .slice(0, 50);
+    
+    return baseSlug;
+  };
+
+  const handleClaim = async () => {
+    if (!user || !isConnected) return;
+    
+    if (!claimData.businessName.trim() || !claimData.ownerName.trim()) {
+      setError('Business name and owner name are required');
+      return;
+    }
+
+    try {
+      setClaiming(true);
+      setError('');
+
+      const isCSVProfile = barberId.startsWith('csv-');
 
       // Generate a unique slug
       const finalSlug = await generateUniqueSlug(claimData.businessName);
@@ -125,7 +204,7 @@ import {
         }, 2000);
       }
       
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error claiming profile:', error);
       setError(error.message);
       NotificationManager.error('Failed to claim profile. Please try again.');
