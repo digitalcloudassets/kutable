@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:netlify": "NETLIFY_UPDATE_NOTIFIER=0 npm exec netlify dev --forceLocal",
+    "dev:netlify": "NETLIFY_UPDATE_NOTIFIER=0 pnpm exec netlify dev --forceLocal",
     "dev:netlify": "NETLIFY_UPDATE_NOTIFIER=0 npm exec netlify dev --forceLocal",
     "lint": "eslint .",
     "preview": "vite preview"
