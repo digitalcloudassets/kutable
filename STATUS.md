@@ -31,7 +31,8 @@
 - Created and disabled edge-functions folder by renaming to _edge-functions_disabled
 - Cleaned and reinstalled dependencies with hoisting
 - Simplified dev script to use --offline flag only
-- **Status:** Complete - Edge Functions hard-disabled with simplified script
+- Added netlify-cli as dev dependency
+- **Status:** Complete - Edge Functions hard-disabled with netlify-cli installed
 - **Next:** Start dev server and verify Node-only operation
 
 ### STEP X-06 — Curl test the function ⏳
