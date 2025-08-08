@@ -25,6 +25,7 @@ import SupabaseConnectionBanner from '../components/Setup/SupabaseConnectionBann
 import AdminDataExport from '../components/Admin/AdminDataExport';
 import { NotificationManager, AdminNotifications } from '../utils/notifications';
 import ProductionSecurityCheck from '../components/Security/ProductionSecurityCheck';
+import MonitoringDashboard from '../components/Admin/MonitoringDashboard';
 
 interface PlatformMetrics {
   totalBarbers: number;

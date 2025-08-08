@@ -81,6 +81,7 @@ class ErrorReporter {
     // In production, you would send this to a logging service
     if (!import.meta.env.DEV && severity === 'critical') {
       this.sendToLoggingService(report);
+      reportToExternalServices(errorObj, context);
     }
   }
 
