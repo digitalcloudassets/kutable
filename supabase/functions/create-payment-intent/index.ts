@@ -66,6 +66,8 @@ Deno.serve(async (req) => {
       return resJson(400, { error: 'Missing or invalid fields: barberId, amount (cents), currency' });
     }
 
+     console.log('Creating payment intent for:', { barberId, amount, currency, metadata });
+
     const { createClient } = await import('npm:@supabase/supabase-js@2');
     const db = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
@@ -92,8 +94,10 @@ Deno.serve(async (req) => {
       amount,
       currency,
       'automatic_payment_methods[enabled]': 'true',
-      'transfer_data[destination]': barber.stripe_account_id,
-      application_fee_amount,
+      ...(barber.stripe_account_id ? {
+        'transfer_data[destination]': barber.stripe_account_id,
+        application_fee_amount,
+      } : {}),
       ...(customerEmail ? { receipt_email: customerEmail } : {}),
       ...(metadata
         ? Object.fromEntries(
@@ -102,6 +106,8 @@ Deno.serve(async (req) => {
         : {}
       ),
     };
+
+    console.log('Payment intent params:', { ...params, metadata: metadata || {} });
 
     // Create PaymentIntent on the PLATFORM (destination charge)
     const pi = await stripePost('payment_intents', form(params), STRIPE_SECRET_KEY!);

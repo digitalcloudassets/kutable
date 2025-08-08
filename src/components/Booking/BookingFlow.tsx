@@ -241,45 +241,56 @@ const BookingFlow: React.FC = () => {
 
   const handlePaymentSuccess = async (paymentIntentId: string) => {
     try {
-      // Get the confirmed booking from database (created by Stripe webhook)
+      console.log('Payment succeeded, creating booking record...', { paymentIntentId });
+      
+      // Create the booking record directly since payment succeeded
       const { data: booking, error } = await supabase
         .from('bookings')
+        .insert({
+          barber_id: barber.id,
+          client_id: currentClientId,
+          service_id: selectedService.id,
+          appointment_date: format(selectedDate, 'yyyy-MM-dd'),
+          appointment_time: selectedTime,
+          total_amount: selectedService.price,
+          deposit_amount: selectedService.deposit_required ? selectedService.deposit_amount : 0,
+          platform_fee: Math.round(selectedService.price * 0.01 * 100) / 100,
+          status: 'confirmed',
+          stripe_payment_intent_id: paymentIntentId,
+          notes: customerInfo.notes || null
+        })
         .select(`
           *,
           services(name, duration_minutes),
           barber_profiles(business_name, owner_name)
         `)
-        .eq('stripe_payment_intent_id', paymentIntentId)
         .single();
 
-      if (error || !booking) {
-        // Booking might not be created yet by webhook, wait a moment and try again
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const { data: retryBooking, error: retryError } = await supabase
-          .from('bookings')
-          .select(`
-            *,
-            services(name, duration_minutes),
-            barber_profiles(business_name, owner_name)
-          `)
-          .eq('stripe_payment_intent_id', paymentIntentId)
-          .single();
-
-        if (retryError || !retryBooking) {
-          throw new Error('Payment succeeded but booking confirmation failed. Please contact support.');
-        }
-        
-        setConfirmedBooking(retryBooking);
-      } else {
-        setConfirmedBooking(booking);
+      if (error) {
+        console.error('Error creating booking:', error);
+        throw new Error('Failed to create booking record');
       }
 
+      console.log('Booking created successfully:', booking);
+      setConfirmedBooking(booking);
+
+      // Send booking confirmation notifications
+      try {
+        await supabase.functions.invoke('process-booking-notifications', {
+          body: {
+            bookingId: booking.id,
+            event: 'booking_confirmed'
+          }
+        });
+        console.log('Booking notifications sent');
+      } catch (notificationError) {
+        console.warn('Failed to send notifications (booking still created):', notificationError);
+      }
       setStep('confirmation');
       
     } catch (error: any) {
       console.error('Payment confirmation error:', error);
-      NotificationManager.error('Payment succeeded but booking confirmation failed. Please contact support.');
+      NotificationManager.error(error.message || 'Failed to confirm booking. Please contact support.');
     }
   };
 

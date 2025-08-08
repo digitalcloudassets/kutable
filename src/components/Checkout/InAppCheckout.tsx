@@ -90,7 +90,11 @@ function CheckoutForm({
             <PaymentElement 
               options={{
                 layout: 'tabs',
-                paymentMethodOrder: ['card'],
+                paymentMethodOrder: ['card'], 
+                wallets: {
+                  applePay: 'never',
+                  googlePay: 'never'
+                },
                 fields: {
                   billingDetails: 'auto'
                 }
@@ -268,6 +272,7 @@ export default function InAppCheckout({
       stripe={stripePromise} 
       options={{ 
         clientSecret,
+        paymentMethodTypes: ['card'],
         appearance: {
           theme: 'stripe',
           variables: {
@@ -279,7 +284,8 @@ export default function InAppCheckout({
             spacingUnit: '4px',
             borderRadius: '12px'
           }
-        }
+        },
+        paymentMethodCreation: 'manual'
       }}
     >
       <CheckoutForm
