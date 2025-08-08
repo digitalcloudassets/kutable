@@ -17,7 +17,8 @@ import {
   Building,
   Star,
   Clock,
-  Mail
+  Mail,
+  Database
 } from 'lucide-react';
 import { supabase, getRealBarberCount } from '../lib/supabase';
 import { useSupabaseConnection } from '../hooks/useSupabaseConnection';
