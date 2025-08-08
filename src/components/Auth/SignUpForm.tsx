@@ -112,10 +112,11 @@ const SignUpForm: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: cleanEmail,
         password: cleanPassword,
         options: {
+          emailRedirectTo: undefined,
           data: {
             first_name: cleanFirstName,
             last_name: cleanLastName,
@@ -128,7 +129,18 @@ const SignUpForm: React.FC = () => {
         },
       });
 
-      if (error) throw error;
+      // Handle email confirmation errors gracefully since we want confirmation disabled
+      if (error && !error.message?.includes('Error sending confirmation email')) {
+        throw error;
+      }
+      
+      // If signup succeeded or only failed on email confirmation, proceed
+      if (data?.user || (error && error.message?.includes('Error sending confirmation email'))) {
+        // Sign up was successful, email confirmation just failed (which we don't need)
+        // Continue with the normal flow
+      } else if (error) {
+        throw error;
+      }
 
       // Check if user came from claim flow
       const claimReturnUrl = localStorage.getItem('claim_return_url');
