@@ -29,19 +29,20 @@ export async function adminSignup(
   }
 
   const user = payload?.user;
+  if (!user) {
     throw new Error('Signup failed: no user returned');
   }
 
   // Immediately sign in
-  const raw = await resp.text();
+  const raw2 = await resp.text();
   let json = null;
   try {
-    json = raw ? JSON.parse(raw) : null;
+    json = raw2 ? JSON.parse(raw2) : null;
   } catch {}
   
   if (!resp.ok) {
-    throw new Error(json?.error || raw || `HTTP ${resp.status}`);
-  });
+    throw new Error(json?.error || raw2 || `HTTP ${resp.status}`);
+  }
   if (error) throw new Error(error.message);
   return json;
 }
