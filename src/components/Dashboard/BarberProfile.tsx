@@ -36,6 +36,7 @@ import ServicesManagement from './ServicesManagement';
 import { useAuth } from '../../hooks/useAuth';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { NotificationManager } from '../../utils/notifications';
+import { generateUniqueSlug } from '../../utils/updateBarberSlugs';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -53,41 +54,6 @@ const formatPhoneNumber = (phone: string) => {
     return `(${match[1]}) ${match[2]}-${match[3]}`;
   }
   return phone;
-};
-
-const generateUniqueSlug = async (businessName: string): Promise<string> => {
-  let baseSlug = businessName
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .trim();
-  
-  if (!baseSlug) {
-    baseSlug = 'barber';
-  }
-  
-  let slug = baseSlug;
-  let counter = 1;
-  
-  // Check for conflicts and make unique
-  while (true) {
-    const { data: existingProfile } = await supabase
-      .from('barber_profiles')
-      .select('id')
-      .eq('slug', slug)
-      .maybeSingle();
-    
-    if (!existingProfile) {
-      break;
-    }
-    
-    slug = `${baseSlug}-${counter}`;
-    counter++;
-  }
-  
-  return slug;
 };
 
 const BarberProfile: React.FC<BarberProfileProps> = ({ 
