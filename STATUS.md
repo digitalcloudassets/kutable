@@ -31,11 +31,15 @@
 - Added concurrently to run both servers simultaneously
 - Added Vite proxy to forward /api/admin/create-user to functions server
 - Removed edge-functions folder completely
-- **Status:** Complete - Pure Node Functions mode with Vite proxy
-- **Next:** Start combined dev servers and test function
-
-### STEP Dev-Local-01 — Vite+Functions mode ⏳
+- **Status:** Complete - Pure Node Functions mode with Vite proxy  
 - **Next:** Run npm run dev:local and verify both servers start
+
+### STEP Dev-Local-01 — Vite+Functions mode ✅
+- Fixed Vite proxy to point to /.netlify/functions/admin-create-user
+- Removed admin secret requirement for localhost dev
+- Simplified adminSignup.ts for local development
+- **Status:** Ready for local development testing
+- **Next:** Test with npm run dev:local
 
 ### STEP Function-02 — Curl test ⏳
 - **Next:** Test function with curl to localhost:9999

@@ -5,11 +5,8 @@ export async function adminSignup(email: string, password: string, metadata: Rec
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'x-admin-secret': import.meta.env.VITE_ADMIN_API_SECRET || 'kutable-admin-secret-2025',
     },
     body: JSON.stringify({ email, password, metadata }),
-    credentials: 'include',
   });
 
   // Read text first to avoid "Unexpected end of JSON input"

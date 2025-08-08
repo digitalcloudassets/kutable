@@ -6,7 +6,7 @@ export default defineConfig({
       "/api/admin/create-user": {
         target: "http://localhost:9999",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/admin\/create-user$/, "/admin-create-user")
+        rewrite: (path) => path.replace(/^\/api\/admin\/create-user$/, "/.netlify/functions/admin-create-user")
       }
     }
   },
