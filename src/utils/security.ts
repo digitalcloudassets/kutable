@@ -83,39 +83,8 @@ export const validatePassword = (password: string): {
 } => {
   const errors: string[] = [];
   
-  if (password.length < 12) {
-    errors.push('Password must be at least 12 characters long');
-  }
-  
-  if (password.length > 128) {
-    errors.push('Password must be less than 128 characters');
-  }
-  
-  if (!/(?=.*[a-z])/.test(password)) {
-    errors.push('Password must contain at least one lowercase letter');
-  }
-  
-  if (!/(?=.*[A-Z])/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter');
-  }
-  
-  if (!/(?=.*\d)/.test(password)) {
-    errors.push('Password must contain at least one number');
-  }
-  
-  if (!/(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])/.test(password)) {
-    errors.push('Password must contain at least one special character');
-  }
-
-  // Check for common patterns
-  if (/(.)\1{2,}/.test(password)) {
-    errors.push('Password cannot contain repeated characters');
-  }
-  
-  // Check for common weak passwords
-  const weakPasswords = ['password', '123456', 'qwerty', 'admin', 'letmein'];
-  if (weakPasswords.some(weak => password.toLowerCase().includes(weak))) {
-    errors.push('Password contains common weak patterns');
+  if (password.length < 6) {
+    errors.push('Password must be at least 6 characters long');
   }
 
   return {

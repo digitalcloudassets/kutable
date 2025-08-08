@@ -47,15 +47,6 @@ const ResetPassword: React.FC = () => {
     if (password.length < 6) {
       return 'Password must be at least 6 characters long';
     }
-    if (!/(?=.*[a-z])/.test(password)) {
-      return 'Password must contain at least one lowercase letter';
-    }
-    if (!/(?=.*[A-Z])/.test(password)) {
-      return 'Password must contain at least one uppercase letter';
-    }
-    if (!/(?=.*\d)/.test(password)) {
-      return 'Password must contain at least one number';
-    }
     return null;
   };
 
@@ -252,25 +243,13 @@ const ResetPassword: React.FC = () => {
 
             {/* Password Requirements */}
             <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-2xl p-6">
-              <h4 className="font-semibold text-gray-900 mb-4 text-center">Password Requirements:</h4>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className={`flex items-center space-x-2 ${password.length >= 6 ? 'text-green-600' : ''}`}>
+              <h4 className="font-semibold text-gray-900 mb-4 text-center">Password Requirement:</h4>
+              <div className="text-center">
+                <div className={`flex items-center justify-center space-x-2 ${password.length >= 6 ? 'text-green-600' : 'text-gray-600'}`}>
                   <div className={`w-3 h-3 rounded-full ${password.length >= 6 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
                   <span className="font-medium">At least 6 characters long</span>
-                </li>
-                <li className={`flex items-center space-x-2 ${/(?=.*[a-z])/.test(password) ? 'text-green-600' : ''}`}>
-                  <div className={`w-3 h-3 rounded-full ${/(?=.*[a-z])/.test(password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                  <span className="font-medium">Contains a lowercase letter</span>
-                </li>
-                <li className={`flex items-center space-x-2 ${/(?=.*[A-Z])/.test(password) ? 'text-green-600' : ''}`}>
-                  <div className={`w-3 h-3 rounded-full ${/(?=.*[A-Z])/.test(password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                  <span className="font-medium">Contains an uppercase letter</span>
-                </li>
-                <li className={`flex items-center space-x-2 ${/(?=.*\d)/.test(password) ? 'text-green-600' : ''}`}>
-                  <div className={`w-3 h-3 rounded-full ${/(?=.*\d)/.test(password) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                  <span className="font-medium">Contains a number</span>
-                </li>
-              </ul>
+                </div>
+              </div>
             </div>
 
             <button

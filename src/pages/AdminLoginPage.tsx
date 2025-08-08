@@ -55,7 +55,7 @@ const AdminLoginPage: React.FC = () => {
     }
 
     // Additional security checks
-    if (cleanUsername.length < 3 || cleanPassword.length < 8) {
+    if (cleanUsername.length < 3 || cleanPassword.length < 6) {
       setError('Invalid credentials format');
       setLoading(false);
       return;

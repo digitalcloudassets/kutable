@@ -348,11 +348,7 @@ const SignUpForm: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                   {passwordValidation.errors.length > 0 && (
-                    <ul className="text-xs text-red-600 space-y-1">
-                      {passwordValidation.errors.slice(0, 3).map((error, index) => (
-                        <li key={index}>• {error}</li>
-                      ))}
-                    </ul>
+                    <p className="text-xs text-red-600">{passwordValidation.errors[0]}</p>
                   )}
                   {passwordValidation.isValid && (
                     <p className="text-xs text-green-600 font-medium">✓ Password meets all requirements</p>
