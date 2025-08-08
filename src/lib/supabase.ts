@@ -190,7 +190,7 @@ const generateCSVSlug = (businessName: string, index: number): string => {
 };
 
 // Load real barber directory from CSV
-const loadCSVDirectory = async (): Promise<any[]> => {
+export const loadCSVDirectory = async (): Promise<any[]> => {
   if (csvDataLoaded) {
     console.log('📁 CSV already loaded, returning cached data:', realBarberDirectory.length, 'profiles');
     return realBarberDirectory;
@@ -459,10 +459,6 @@ if (!hasValidCredentials) {
 }
 
 export { supabase };
-
-export const loadCSVDirectory = async (): Promise<any[]> => {
-  return await loadCSVDirectory();
-};
 
 export const getRealBarberCount = async (): Promise<number> => {
   const data = await loadCSVDirectory();
