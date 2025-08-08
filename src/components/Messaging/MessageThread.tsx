@@ -203,10 +203,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-4 rounded-t-2xl">
+      <div className="bg-white border-b border-gray-200 p-6 rounded-t-2xl w-full max-w-none">
         <div className="space-y-3">
           {/* Top row with avatar and name */}
-          <div className="flex items-start space-x-4">
+          <div className="flex items-start space-x-6">
             {conversation.participant.avatar ? (
               <img
                 src={conversation.participant.avatar}
@@ -236,7 +236,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
           </div>
           
           {/* Service and Date Info - Left aligned under avatar */}
-          <div className="flex items-center space-x-1 text-sm text-gray-500 font-medium">
+          <div className="flex items-center space-x-2 text-sm text-gray-500 font-medium">
             <Calendar className="h-3 w-3 flex-shrink-0" />
             <span>{conversation.booking.serviceName}</span>
             <span>•</span>
