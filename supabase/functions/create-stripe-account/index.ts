@@ -22,42 +22,14 @@ interface CreateAccountRequest {
   address?: { line1: string; city: string; state: string; postal_code: string };
 }
 
-// US State mapping and validation helpers
+// Minimal state helpers (prod-safe)
 const STATE_MAP: Record<string, string> = {
-  alabama: 'AL', alaska: 'AK', arizona: 'AZ', arkansas: 'AR', california: 'CA',
-  colorado: 'CO', connecticut: 'CT', delaware: 'DE', 'district of columbia': 'DC',
-  florida: 'FL', georgia: 'GA', hawaii: 'HI', idaho: 'ID', illinois: 'IL',
-  indiana: 'IN', iowa: 'IA', kansas: 'KS', kentucky: 'KY', louisiana: 'LA',
-  maine: 'ME', maryland: 'MD', massachusetts: 'MA', michigan: 'MI', minnesota: 'MN',
-  mississippi: 'MS', missouri: 'MO', montana: 'MT', nebraska: 'NE', nevada: 'NV',
-  'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
-  'north carolina': 'NC', 'north dakota': 'ND', ohio: 'OH', oklahoma: 'OK',
-  oregon: 'OR', pennsylvania: 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-  'south dakota': 'SD', tennessee: 'TN', texas: 'TX', utah: 'UT', vermont: 'VT',
-  virginia: 'VA', washington: 'WA', 'west virginia': 'WV', wisconsin: 'WI', wyoming: 'WY',
-  // territories commonly needed
-  'puerto rico': 'PR', 'guam': 'GU', 'american samoa': 'AS', 'northern mariana islands': 'MP', 'us virgin islands': 'VI'
+  alabama:'AL', alaska:'AK', arizona:'AZ', arkansas:'AR', california:'CA', colorado:'CO', connecticut:'CT', delaware:'DE', 'district of columbia':'DC', florida:'FL', georgia:'GA', hawaii:'HI', idaho:'ID', illinois:'IL', indiana:'IN', iowa:'IA', kansas:'KS', kentucky:'KY', louisiana:'LA', maine:'ME', maryland:'MD', massachusetts:'MA', michigan:'MI', minnesota:'MN', mississippi:'MS', missouri:'MO', montana:'MT', nebraska:'NE', nevada:'NV', 'new hampshire':'NH', 'new jersey':'NJ', 'new mexico':'NM', 'new york':'NY', 'north carolina':'NC', 'north dakota':'ND', ohio:'OH', oklahoma:'OK', oregon:'OR', pennsylvania:'PA', 'rhode island':'RI', 'south carolina':'SC', 'south dakota':'SD', tennessee:'TN', texas:'TX', utah:'UT', vermont:'VT', virginia:'VA', washington:'WA', 'west virginia':'WV', wisconsin:'WI', wyoming:'WY',
+  'puerto rico':'PR', guam:'GU', 'american samoa':'AS', 'northern mariana islands':'MP', 'us virgin islands':'VI'
 };
-
-function normalizeUSState(input?: string): string | null {
-  if (!input) return null;
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-  // Already a two-letter code?
-  if (/^[A-Za-z]{2}$/.test(trimmed)) return trimmed.toUpperCase();
-  const key = trimmed.toLowerCase();
-  return STATE_MAP[key] ?? null;
-}
-
-function isValidUSZip(zip?: string): boolean {
-  if (!zip) return false;
-  const s = zip.trim();
-  return /^\d{5}(-\d{4})?$/.test(s);
-}
-
-function isNonEmpty(v?: string) {
-  return typeof v === 'string' && v.trim().length > 0;
-}
+const normalizeUSState = (s?: string) => !s ? null : (/^[A-Za-z]{2}$/.test(s.trim()) ? s.trim().toUpperCase() : STATE_MAP[s.trim().toLowerCase()] || null);
+const isValidUSZip = (z?: string) => !!z && /^\d{5}(-\d{4})?$/.test(z.trim());
+const nonEmpty = (v?: string) => typeof v === 'string' && v.trim().length > 0;
 
 async function stripePost(path: string, body: URLSearchParams, key: string) {
   const res = await fetch(`https://api.stripe.com/v1/${path}`, {
@@ -69,28 +41,21 @@ async function stripePost(path: string, body: URLSearchParams, key: string) {
     },
     body,
   });
-  const requestId = res.headers.get('request-id');
+  const requestId = res.headers.get('request-id') || undefined;
   const payload = await res.json().catch(() => ({}));
   if (!res.ok) {
-    console.error('Stripe error', { path, status: res.status, requestId, payload });
-    return {
-      ok: false,
-      status: res.status,
-      error: payload?.error?.message || 'Stripe API error',
-      requestId,
-      details: payload?.error || payload, // include full error details
-    };
+    // Minimal log (no secrets)
+    console.warn('Stripe request failed', { path, status: res.status, requestId });
+    const message = payload?.error?.message || 'Stripe API error';
+    return { ok: false, status: res.status, message, requestId };
   }
-  return { ok: true, status: res.status, data: payload, requestId };
+  return { ok: true, status: res.status, data: payload };
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const url = new URL(req.url);
-    const DEBUG = url.searchParams.get('debug') === '1';
-
     const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -100,75 +65,38 @@ Deno.serve(async (req) => {
     if (!STRIPE_SECRET_KEY) missing.push('STRIPE_SECRET_KEY');
     if (!SUPABASE_URL) missing.push('SUPABASE_URL');
     if (!SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY');
-
-    // Read body (or show why it fails)
-    let body: CreateAccountRequest | null = null;
-    try { 
-      body = await req.json(); 
-    } catch (parseError) { 
-      console.error('JSON parse error:', parseError);
-    }
-
-    if (DEBUG) {
-      return json(200, {
-        success: false,
-        debug: true,
-        note: 'Debug echo; Stripe not called',
-        missingEnv: missing,
-        receivedBody: body,
-        method: req.method,
-        headers: Object.fromEntries(req.headers.entries()),
-        url: req.url,
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    if (missing.length) {
-      // Always 200 so the client can read error message
-      return json(200, { success: false, error: `Missing env: ${missing.join(', ')}`, status: 500 });
-    }
+    if (missing.length) return json(500, { success: false, error: 'Server not configured' });
 
     const { createClient } = await import('npm:@supabase/supabase-js@2');
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    if (!body) {
-      return json(200, { success: false, error: 'Invalid JSON body', status: 400 });
-    }
+    let body: CreateAccountRequest;
+    try { body = await req.json(); } catch { return json(400, { success: false, error: 'Invalid JSON body' }); }
 
     const { barberId, businessName, ownerName, email, phone, address } = body;
     if (!barberId || !businessName || !ownerName || !email) {
-      return json(200, { success: false, error: 'Missing required fields: barberId, businessName, ownerName, email', status: 400 });
+      return json(400, { success: false, error: 'Missing required fields' });
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return json(200, { success: false, error: 'Invalid email format', status: 400 });
+      return json(400, { success: false, error: 'Invalid email format' });
     }
 
     const [first, ...rest] = ownerName.trim().split(/\s+/);
     const last = rest.join(' ') || first;
 
-    // Validate and normalize address before sending to Stripe
+    // Address (optional, only if valid)
     const normalizedState = normalizeUSState(address?.state);
-    const validZip = isValidUSZip(address?.postal_code);
-
-    // Build address fields conditionally: only include if state + zip are valid
-    const addressFields = (address && isNonEmpty(address.line1) && isNonEmpty(address.city) && normalizedState && validZip)
+    const addressOk = address && nonEmpty(address.line1) && nonEmpty(address.city) && normalizedState && isValidUSZip(address.postal_code);
+    const addressParams = addressOk
       ? {
-          'individual[address][line1]': address.line1,
-          'individual[address][city]': address.city,
-          'individual[address][state]': normalizedState,
-          'individual[address][postal_code]': address.postal_code.trim(),
+          'individual[address][line1]': address!.line1,
+          'individual[address][city]': address!.city,
+          'individual[address][state]': normalizedState!,
+          'individual[address][postal_code]': address!.postal_code.trim(),
           'individual[address][country]': 'US',
         }
-      : undefined;
+      : {};
 
-    console.log('Address validation:', {
-      provided: !!address,
-      normalizedState,
-      validZip,
-      willInclude: !!addressFields
-    });
-
-    // Create Express account
     const accountParams = form({
       type: 'express',
       country: 'US',
@@ -178,7 +106,7 @@ Deno.serve(async (req) => {
       'individual[last_name]': last,
       'individual[email]': email,
       ...(phone ? { 'individual[phone]': phone } : {}),
-      ...(addressFields ? addressFields : {}), // only include if valid
+      ...addressParams,
       'business_profile[name]': businessName,
       'business_profile[mcc]': '7230',
       'business_profile[url]': `${SITE_URL}/barber/${barberId}`,
@@ -189,20 +117,10 @@ Deno.serve(async (req) => {
     });
 
     const accountRes = await stripePost('accounts', accountParams, STRIPE_SECRET_KEY!);
-    if (!accountRes.ok) {
-      console.error('Account creation failed:', accountRes);
-      return json(200, { 
-        success: false, 
-        error: accountRes.error, 
-        requestId: accountRes.requestId, 
-        status: accountRes.status,
-        details: accountRes.details 
-      });
-    }
-    const accountId = accountRes.data.id as string;
-    console.log('Stripe account created:', { accountId, requestId: accountRes.requestId });
+    if (!accountRes.ok) return json(accountRes.status || 400, { success: false, error: accountRes.message });
 
-    // Create onboarding link — DO NOT pass client_id
+    const accountId = accountRes.data.id as string;
+
     const linkParams = form({
       account: accountId,
       type: 'account_onboarding',
@@ -212,48 +130,18 @@ Deno.serve(async (req) => {
     });
 
     const linkRes = await stripePost('account_links', linkParams, STRIPE_SECRET_KEY!);
-    if (!linkRes.ok) {
-      console.error('Account link creation failed:', linkRes);
-      return json(200, { 
-        success: false, 
-        error: linkRes.error, 
-        requestId: linkRes.requestId, 
-        status: linkRes.status,
-        details: linkRes.details 
-      });
-    }
+    if (!linkRes.ok) return json(linkRes.status || 400, { success: false, error: linkRes.message });
 
-    console.log('Onboarding link created:', { accountId, url: linkRes.data.url, requestId: linkRes.requestId });
-
-    // Persist to database (best-effort)
+    // Persist (best effort)
     const now = new Date().toISOString();
-    const { error: profileErr } = await supabase
-      .from('barber_profiles')
-      .update({ stripe_account_id: accountId, updated_at: now })
-      .eq('id', barberId);
-    if (profileErr) console.error('barber_profiles update error', profileErr);
-
-    const { error: upsertErr } = await supabase
-      .from('stripe_accounts')
-      .upsert({ 
-        barber_id: barberId, 
-        stripe_account_id: accountId, 
-        account_status: 'pending', 
-        charges_enabled: false, 
-        payouts_enabled: false, 
-        updated_at: now 
-      });
-    if (upsertErr) console.error('stripe_accounts upsert error', upsertErr);
-
-    return json(200, { 
-      success: true, 
-      accountId, 
-      onboardingUrl: linkRes.data.url,
-      requestId: linkRes.requestId 
+    await supabase.from('barber_profiles').update({ stripe_account_id: accountId, updated_at: now }).eq('id', barberId);
+    await supabase.from('stripe_accounts').upsert({
+      barber_id: barberId, stripe_account_id: accountId,
+      account_status: 'pending', charges_enabled: false, payouts_enabled: false, updated_at: now
     });
-  } catch (e: any) {
-    console.error('Stripe Connect edge error', e?.message || e);
-    // Always 200 so client can render the message
-    return json(200, { success: false, error: e?.message || 'Unexpected error', status: 500 });
+
+    return json(200, { success: true, accountId, onboardingUrl: linkRes.data.url });
+  } catch {
+    return json(500, { success: false, error: 'Unexpected server error' });
   }
 });

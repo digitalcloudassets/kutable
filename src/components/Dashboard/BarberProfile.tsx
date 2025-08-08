@@ -238,91 +238,41 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
 
     setSettingUpStripe(true);
     try {
-      // Pre-validate address to avoid Stripe errors
-      const rawAddr = barber.address
-        ? { line1: barber.address, city: barber.city || '', state: barber.state || '', postal_code: barber.zip_code || '' }
-        : undefined;
-
-      const state2 = (rawAddr?.state || '').trim().toUpperCase();
-      const zipOk = !!rawAddr?.postal_code && /^\d{5}(-\d{4})?$/.test(rawAddr.postal_code.trim());
-      const stateOk = /^[A-Z]{2}$/.test(state2);
-
-      // Only include address if state and zip are valid, otherwise let Stripe collect during onboarding
-      const validatedAddress = (rawAddr && stateOk && zipOk)
-        ? { ...rawAddr, state: state2 }
-        : undefined;
-
       const payload = {
         barberId: barber.id,
         businessName: barber.business_name,
         ownerName: barber.owner_name,
         email: barber.email || user.email,
         phone: barber.phone || undefined,
-        address: validatedAddress, // will be undefined if not valid → Stripe collects during onboarding
+        address: barber.address
+          ? { line1: barber.address, city: barber.city || '', state: (barber.state || '').toUpperCase(), postal_code: barber.zip_code || '' }
+          : undefined,
       };
 
-      // First, try debug echo (comment this out after you fix it)
-      // const dbg = await supabase.functions.invoke('create-stripe-account', { 
-      //   body: { ...payload, debug: '1' } 
-      // });
-      // console.log('DEBUG echo', dbg);
-
-      const { data, error } = await supabase.functions.invoke('create-stripe-account', {
-        body: payload,
-      });
+      const { data, error } = await supabase.functions.invoke('create-stripe-account', { body: payload });
 
       if (error) {
-        console.error('Functions error:', error, 'context:', error?.context ? JSON.stringify(error.context) : null);
-        throw new Error(error.message || 'Edge function error');
-      }
-
-      if (!data) throw new Error('No response from server');
-
-      // Always-200 envelope: success flag + error message included by server
-      if (!data.success) {
-        const msg = data.error || 'Payment setup failed';
-        console.error('Server error details:', { 
-          error: data.error, 
-          requestId: data.requestId, 
-          status: data.status,
-          details: data.details 
-        });
-        console.error('Server said no:', data);
+        // Supabase wraps non-2xx here; include context if present
+        console.warn('Edge error:', error?.context || error);
+        const msg = error?.context?.error || error?.message || 'Payment setup failed';
         NotificationManager.error(msg);
         return;
       }
 
-      if (data.accountId && data.onboardingUrl) {
-        const { error: updateError } = await supabase
-          .from('barber_profiles')
-          .update({ 
-            stripe_account_id: data.accountId, 
-            updated_at: new Date().toISOString() 
-          })
-          .eq('id', barber.id);
-        if (updateError) console.warn('Failed local update:', updateError);
-
-        NotificationManager.success('Redirecting to Stripe to complete payment setup…');
-        window.open(data.onboardingUrl, '_blank', 'noopener,noreferrer');
-        setTimeout(() => onUpdate(), 1000);
+      if (!data?.success || !data?.onboardingUrl) {
+        const msg = data?.error || 'Payment setup failed';
+        NotificationManager.error(msg);
         return;
       }
 
-      NotificationManager.error('Unexpected response from payment setup.');
+      // Success path unchanged
+      await supabase.from('barber_profiles').update({ stripe_account_id: data.accountId, updated_at: new Date().toISOString() }).eq('id', barber.id);
+      NotificationManager.success('Redirecting to Stripe to complete payment setup…');
+      window.open(data.onboardingUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => onUpdate(), 1000);
     } catch (e: any) {
-      // Extract the most relevant error message
-      let errorMessage = 'Failed to set up payment processing.';
-      
-      if (e?.context) {
-        console.error('Full error context:', JSON.stringify(e.context));
-        // Try to extract the actual error from the context
-        errorMessage = e.context.error || e.context.message || e.message || errorMessage;
-      } else {
-        errorMessage = e?.message || errorMessage;
-      }
-      
-      console.error('Stripe Connect error (client):', raw);
-      NotificationManager.error(errorMessage);
+      console.error('Stripe Connect unexpected error:', e);
+      NotificationManager.error('Something went wrong. Please try again.');
     } finally {
       setSettingUpStripe(false);
     }
