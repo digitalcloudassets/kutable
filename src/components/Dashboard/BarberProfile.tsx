@@ -259,7 +259,11 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
         throw error;
       }
 
-      if (data?.success && data?.accountId && data?.onboardingUrl) {
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to initialize Stripe account setup');
+      }
+
+      if (data?.accountId && data?.onboardingUrl) {
         // Update local state immediately
         const { error: updateError } = await supabase
           .from('barber_profiles')
@@ -293,27 +297,23 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
       
       // Handle Supabase Edge Function errors (FunctionsHttpError)
       if (error?.name === 'FunctionsHttpError' || error?.message?.includes('Edge Function returned a non-2xx status code')) {
-        try {
-          // Try to parse the error response body
-          let errorData = null;
-          if (error?.context?.body) {
-            errorData = typeof error.context.body === 'string' ? JSON.parse(error.context.body) : error.context.body;
-          }
-          
-          if (errorData?.error) {
-            if (errorData.error.includes('Missing required environment variables')) {
-              errorMessage = 'Payment setup is not configured yet. Please contact support to enable Stripe Connect.';
-            } else if (errorData.error.includes('STRIPE_SECRET_KEY')) {
-              errorMessage = 'Payment processing is not configured. Please contact support to enable payment features.';
-            } else {
-              errorMessage = errorData.error;
-            }
-          } else {
-            errorMessage = 'Payment setup service is not available. Please contact support.';
-          }
-        } catch (parseError) {
-          console.error('Failed to parse edge function error:', parseError);
-          errorMessage = 'Payment setup service error. Please contact support.';
+        // Extract the actual error message from the Edge Function response
+        const serverError = error?.context?.error || 
+                           error?.context?.message || 
+                           error?.message;
+        
+        if (serverError?.includes('Missing env:')) {
+          errorMessage = 'Payment setup is not configured yet. Please contact support to enable Stripe Connect.';
+        } else if (serverError?.includes('Missing required fields:')) {
+          errorMessage = serverError;
+        } else if (serverError?.includes('Invalid email format')) {
+          errorMessage = 'Please provide a valid email address in your profile.';
+        } else if (serverError?.includes('Stripe API error') || serverError?.includes('Stripe error')) {
+          errorMessage = `Stripe error: ${serverError}`;
+        } else if (serverError) {
+          errorMessage = serverError;
+        } else {
+          errorMessage = 'Payment setup service is not available. Please contact support.';
         }
       } else if (error?.message?.includes('environment variables')) {
         errorMessage = 'Payment setup is not configured. Please contact support.';
