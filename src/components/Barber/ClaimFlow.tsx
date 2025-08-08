@@ -360,6 +360,17 @@ const ClaimFlow: React.FC = () => {
 
   const generateSlug = (businessName: string, index: number): string => {
     let slug = businessName
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .trim();
+    
+    slug += `-${index}`;
+    return slug;
+  };
+
   const generateUniqueSlug = async (businessName: string): Promise<string> => {
     let baseSlug = businessName
       .toLowerCase()
@@ -392,17 +403,6 @@ const ClaimFlow: React.FC = () => {
       counter++;
     }
     
-    return slug;
-  };
-
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .trim();
-    
-    slug += `-${index}`;
     return slug;
   };
 
