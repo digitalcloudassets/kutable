@@ -1,3 +1,4 @@
+// supabase/functions/create-stripe-account/index.ts
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -36,10 +37,8 @@ async function stripePost(path: string, body: URLSearchParams, key: string) {
   const payload = await res.json().catch(() => ({}));
   if (!res.ok) {
     console.error('Stripe error', { path, status: res.status, requestId, payload });
-    // Bubble a clean error JSON to the client
-    return { ok: false, status: res.status, error: payload?.error?.message || 'Stripe API error', requestId };
+    return { ok: false, status: res.status, error: payload?.error?.message || 'Stripe API error', requestId, raw: payload };
   }
-  console.log('Stripe success', { path, status: res.status, requestId, id: payload.id });
   return { ok: true, status: res.status, data: payload, requestId };
 }
 
@@ -47,6 +46,9 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
+    const url = new URL(req.url);
+    const DEBUG = url.searchParams.get('debug') === '1';
+
     const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -56,30 +58,45 @@ Deno.serve(async (req) => {
     if (!STRIPE_SECRET_KEY) missing.push('STRIPE_SECRET_KEY');
     if (!SUPABASE_URL) missing.push('SUPABASE_URL');
     if (!SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY');
-    if (missing.length) return json(400, { success: false, error: `Missing env: ${missing.join(', ')}` });
+
+    // Read body (or show why it fails)
+    let body: CreateAccountRequest | null = null;
+    try { body = await req.json(); } catch { /* ignore */ }
+
+    if (DEBUG) {
+      return json(200, {
+        success: false,
+        debug: true,
+        note: 'Debug echo; Stripe not called',
+        missingEnv: missing,
+        receivedBody: body,
+        method: req.method,
+        headers: Object.fromEntries(req.headers.entries()),
+      });
+    }
+
+    if (missing.length) {
+      // Always 200 so the client can read error message
+      return json(200, { success: false, error: `Missing env: ${missing.join(', ')}`, status: 500 });
+    }
 
     const { createClient } = await import('npm:@supabase/supabase-js@2');
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
-    let body: CreateAccountRequest;
-    try {
-      body = await req.json();
-    } catch {
-      return json(400, { success: false, error: 'Invalid JSON body' });
-    }
+    if (!body) return json(200, { success: false, error: 'Invalid JSON body', status: 400 });
 
-    const { barberId, businessName, ownerName, email, phone, address } = body || ({} as CreateAccountRequest);
+    const { barberId, businessName, ownerName, email, phone, address } = body;
     if (!barberId || !businessName || !ownerName || !email) {
-      return json(400, { success: false, error: 'Missing required fields: barberId, businessName, ownerName, email' });
+      return json(200, { success: false, error: 'Missing required fields: barberId, businessName, ownerName, email', status: 400 });
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return json(400, { success: false, error: 'Invalid email format' });
+      return json(200, { success: false, error: 'Invalid email format', status: 400 });
     }
 
     const [first, ...rest] = ownerName.trim().split(/\s+/);
     const last = rest.join(' ') || first;
 
-    // Create Express account
+    // Create account
     const accountParams = form({
       type: 'express',
       country: 'US',
@@ -108,10 +125,12 @@ Deno.serve(async (req) => {
     });
 
     const accountRes = await stripePost('accounts', accountParams, STRIPE_SECRET_KEY!);
-    if (!accountRes.ok) return json(400, { success: false, error: accountRes.error, requestId: accountRes.requestId });
+    if (!accountRes.ok) {
+      return json(200, { success: false, error: accountRes.error, requestId: accountRes.requestId, status: accountRes.status });
+    }
     const accountId = accountRes.data.id as string;
 
-    // Create onboarding link — DO NOT pass client_id to account_links as it causes OAuth conflicts
+    // Create onboarding link (no client_id)
     const linkParams = form({
       account: accountId,
       type: 'account_onboarding',
@@ -121,9 +140,11 @@ Deno.serve(async (req) => {
     });
 
     const linkRes = await stripePost('account_links', linkParams, STRIPE_SECRET_KEY!);
-    if (!linkRes.ok) return json(400, { success: false, error: linkRes.error, requestId: linkRes.requestId });
+    if (!linkRes.ok) {
+      return json(200, { success: false, error: linkRes.error, requestId: linkRes.requestId, status: linkRes.status });
+    }
 
-    // Persist to database (best-effort)
+    // Persist (best-effort)
     const now = new Date().toISOString();
     const { error: profileErr } = await supabase
       .from('barber_profiles')
@@ -133,19 +154,13 @@ Deno.serve(async (req) => {
 
     const { error: upsertErr } = await supabase
       .from('stripe_accounts')
-      .upsert({ 
-        barber_id: barberId, 
-        stripe_account_id: accountId, 
-        account_status: 'pending', 
-        charges_enabled: false, 
-        payouts_enabled: false, 
-        updated_at: now 
-      });
+      .upsert({ barber_id: barberId, stripe_account_id: accountId, account_status: 'pending', charges_enabled: false, payouts_enabled: false, updated_at: now });
     if (upsertErr) console.error('stripe_accounts upsert error', upsertErr);
 
     return json(200, { success: true, accountId, onboardingUrl: linkRes.data.url });
   } catch (e: any) {
     console.error('Stripe Connect edge error', e?.message || e);
-    return json(400, { success: false, error: e?.message || 'Unexpected error' });
+    // Always 200 so client can render the message
+    return json(200, { success: false, error: e?.message || 'Unexpected error', status: 500 });
   }
 });
