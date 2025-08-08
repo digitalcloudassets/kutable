@@ -35,7 +35,7 @@ const MessagingDashboard: React.FC = () => {
         </div>
       )}
       
-    <div className="h-[600px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="h-[600px] lg:h-[600px] min-h-[400px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="h-full flex">
         {/* Conversation List - Desktop: Always visible, Mobile: Hidden when thread open */}
         <div className={`w-full lg:w-1/5 xl:w-1/6 border-r border-gray-200 ${
@@ -65,7 +65,7 @@ const MessagingDashboard: React.FC = () => {
         {/* Message Thread - Desktop: Always visible when selected, Mobile: Full screen when open */}
         <div className={`flex-1 ${
           showMobileThread ? 'block' : 'hidden lg:block'
-        }`}>
+        } h-full`}>
           {selectedConversation ? (
             <div className="h-full flex flex-col">
               {/* Mobile back button */}
@@ -86,7 +86,7 @@ const MessagingDashboard: React.FC = () => {
             </div>
           ) : (
             /* Empty State */
-            <div className="h-full flex items-center justify-center bg-gray-50">
+            <div className="h-full flex items-center justify-center bg-gray-50 min-h-[300px]">
               <div className="text-center max-w-sm mx-auto px-4">
                 <div className="bg-gradient-to-br from-primary-100 to-accent-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
                   <Users className="h-10 w-10 text-primary-600" />

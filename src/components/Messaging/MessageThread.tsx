@@ -201,17 +201,17 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-9 py-6 rounded-t-2xl w-full max-w-none">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-9 py-4 sm:py-6 rounded-t-2xl w-full max-w-none flex-shrink-0">
         <div className="space-y-3">
           {/* Top row with avatar and name */}
-          <div className="flex items-start space-x-6">
+          <div className="flex items-start space-x-3 sm:space-x-6">
             {conversation.participant.avatar ? (
               <img
                 src={conversation.participant.avatar}
                 alt={conversation.participant.name}
-                className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
               />
             ) : (
               <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
@@ -229,14 +229,14 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
             
             {/* Participant Name */}
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 leading-tight">
                 {conversation.participant.name}
               </h3>
             </div>
           </div>
           
           {/* Service and Date Info - Left aligned under avatar */}
-          <div className="flex items-center space-x-2 text-sm text-gray-500 font-medium">
+          <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-500 font-medium">
             <Calendar className="h-3 w-3 flex-shrink-0" />
             <span>{conversation.booking.serviceName}</span>
             <span>•</span>
@@ -246,7 +246,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 bg-gray-50 min-h-0">
         {messages.length === 0 ? (
           <div className="text-center py-12">
             <div className="bg-white w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-sm">
@@ -329,7 +329,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       </div>
 
       {/* Message Input */}
-      <div className="bg-white border-t border-gray-200 p-4 rounded-b-2xl">
+      <div className="bg-white border-t border-gray-200 p-3 sm:p-4 rounded-b-2xl flex-shrink-0">
         {error && (
           <div className="mb-3 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm flex items-center space-x-2">
             <AlertCircle className="h-4 w-4" />
@@ -354,7 +354,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder={`Message ${conversation.participant.name}...`}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all duration-200"
+              className="w-full px-3 sm:px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all duration-200 text-base"
               rows={newMessage.includes('\n') ? 3 : 1}
               maxLength={1000}
               disabled={!conversation.participant.id}
@@ -369,12 +369,12 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
           <button
             type="submit"
             disabled={!newMessage.trim() || sending || !conversation.participant.id}
-            className="bg-primary-500 text-white p-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+            className="bg-primary-500 text-white p-2.5 sm:p-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           >
             {sending ? (
-              <Loader className="h-5 w-5 animate-spin" />
+              <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
             ) : (
-              <Send className="h-5 w-5" />
+              <Send className="h-4 w-4 sm:h-5 sm:w-5" />
             )}
           </button>
           </>
