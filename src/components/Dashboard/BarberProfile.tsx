@@ -67,7 +67,6 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [disconnectingStripe, setDisconnectingStripe] = useState(false);
   const [settingUpStripe, setSettingUpStripe] = useState(false);
-  const [settingUpStripe, setSettingUpStripe] = useState(false);
   const { user } = useAuth();
   const { isConnected } = useSupabaseConnection();
   
@@ -230,86 +229,6 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
     }
   };
 
-  const handleStripeConnect = async () => {
-    if (!user || !isConnected) {
-      NotificationManager.error('Please ensure you are signed in and connected to Supabase');
-      return;
-    }
-
-    setSettingUpStripe(true);
-    try {
-      // Call edge function to create Stripe Connect account
-      const { data, error } = await supabase.functions.invoke('create-stripe-account', {
-        body: {
-          barberId: barber.id,
-          businessName: barber.business_name,
-          ownerName: barber.owner_name,
-          email: barber.email || user.email,
-          phone: barber.phone,
-          address: barber.address ? {
-            line1: barber.address,
-            city: barber.city,
-            state: barber.state,
-            postal_code: barber.zip_code
-          } : undefined
-        }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data?.success && data?.accountId && data?.onboardingUrl) {
-        // Update local state immediately
-        const { error: updateError } = await supabase
-          .from('barber_profiles')
-          .update({ 
-            stripe_account_id: data.accountId,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', barber.id);
-
-        if (updateError) {
-          console.warn('Failed to update local barber profile:', updateError);
-        }
-
-        // Redirect to Stripe onboarding
-        NotificationManager.success('Redirecting to Stripe to complete payment setup...');
-        
-        // Open in new window/tab
-        window.open(data.onboardingUrl, '_blank', 'noopener,noreferrer');
-        
-        // Refresh the profile data
-        setTimeout(() => {
-          onUpdate();
-        }, 1000);
-      } else {
-        throw new Error(data?.error || 'Failed to initialize Stripe account setup');
-      }
-    } catch (error: any) {
-      console.error('Stripe Connect error:', error);
-      
-      let errorMessage = 'Failed to set up payment processing. Please try again.';
-      
-      // Handle specific error cases
-      if (error?.message?.includes('environment variables')) {
-        errorMessage = 'Payment setup is not configured. Please contact support.';
-      } else if (error?.message?.includes('Stripe')) {
-        errorMessage = error.message;
-      } else if (error?.context?.body) {
-        try {
-          const errorData = JSON.parse(error.context.body);
-          errorMessage = errorData.error || errorMessage;
-        } catch {
-          // Use default message
-        }
-      }
-      
-      NotificationManager.error(errorMessage);
-    } finally {
-      setSettingUpStripe(false);
-    }
-  };
 
   const handleStripeConnect = async () => {
     if (!user || !isConnected) {
@@ -817,18 +736,6 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
               <button className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 font-semibold flex items-center space-x-2 shadow-lg hover:scale-105">
                 <CreditCard className="h-5 w-5" />
                 <span>Setup Payments</span>
-              </button>
-              <button 
-                onClick={handleStripeConnect}
-                disabled={settingUpStripe || !isConnected || !user}
-                className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 font-semibold flex items-center space-x-2 shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {settingUpStripe ? (
-                  <Loader className="h-5 w-5 animate-spin" />
-                ) : (
-                  <CreditCard className="h-5 w-5" />
-                )}
-                <span>{settingUpStripe ? 'Setting up...' : 'Setup Payments'}</span>
               </button>
               <button 
                 onClick={handleStripeConnect}

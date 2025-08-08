@@ -9,7 +9,7 @@ export async function adminSignup(
   password: string,
   metadata: Record<string, any> = {}
 ) {
-  const resp = await fetch(API_BASE, {
+  const resp = await fetch('/api/admin/create-user', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password, metadata }),
@@ -29,15 +29,19 @@ export async function adminSignup(
   }
 
   const user = payload?.user;
-  if (!user) {
     throw new Error('Signup failed: no user returned');
   }
 
   // Immediately sign in
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
+  const raw = await resp.text();
+  let json = null;
+  try {
+    json = raw ? JSON.parse(raw) : null;
+  } catch {}
+  
+  if (!resp.ok) {
+    throw new Error(json?.error || raw || `HTTP ${resp.status}`);
   });
   if (error) throw new Error(error.message);
-  return data.user;
+  return json;
 }
