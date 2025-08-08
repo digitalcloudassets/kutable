@@ -156,6 +156,12 @@ export const setupGlobalErrorHandling = (): void => {
   initializeExternalErrorTracking();
 };
 
+const initializeExternalErrorTracking = () => {
+  // Sentry integration (if configured)
+  const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
+  if (sentryDsn && sentryDsn !== 'your_sentry_dsn_here') {
+    try {
+      if (typeof window !== 'undefined') {
         import('@sentry/browser').then(({ init, setUser, setTag }) => {
           const S = (window as any).Sentry;
           const BrowserTracing = S && S.BrowserTracing;
@@ -185,13 +191,7 @@ export const setupGlobalErrorHandling = (): void => {
         }).catch(() => {
           console.warn('Sentry SDK not available');
         });
-        
-        // Set context
-        setTag('component', 'kutable-frontend');
-        console.log('✅ Sentry error tracking initialized');
-      }).catch(() => {
-        console.warn('Sentry SDK not available');
-      });
+      }
     } catch (error) {
       console.warn('Failed to initialize Sentry:', error);
     }
