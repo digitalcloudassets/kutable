@@ -13,4 +13,4 @@ status = 200
 
 [build]
 command = "npx vite build"
-publish = "▲ [WARNING] Duplicate key \"dev:netlify\" in object literal [duplicate-object-key]\r\n\r\n    package.json:9:4:\r\n      9 │     \"dev:netlify\": \"NETLIFY_UPDATE_NOTIFIER=0 npm exec netlify dev ...\r\n        ╵     ~~~~~~~~~~~~~\r\n\r\n  The original key \"dev:netlify\" is here:\r\n\r\n    package.json:8:4:\r\n      8 │     \"dev:netlify\": \"NETLIFY_UPDATE_NOTIFIER=0 npm exec netlify dev ...\r\n        ╵     ~~~~~~~~~~~~~\r\n\r\n▲ [WARNING] Duplicate key \"ci-info\" in object literal [duplicate-object-key]\r\n\r\n    package.json:42:4:\r\n      42 │     \"ci-info\": \"^4.1.0\",\r\n         ╵     ~~~~~~~~~\r\n\r\n  The original key \"ci-info\" is here:\r\n\r\n    package.json:41:4:\r\n      41 │     \"ci-info\": \"3.9.0\",\r\n         ╵     ~~~~~~~~~"
+publish = "dist"
