@@ -71,7 +71,6 @@ const ClientBookings: React.FC = () => {
     availableSlots: [] as string[]
   });
   const [rescheduling, setRescheduling] = useState(false);
-  const [completingPayment, setCompletingPayment] = useState<string | null>(null);
   const [removingBooking, setRemovingBooking] = useState<string | null>(null);
 
   useEffect(() => {
@@ -251,51 +250,6 @@ const ClientBookings: React.FC = () => {
       NotificationManager.error('Failed to cancel booking. Please try again.');
     } finally {
       setCancellingBooking(null);
-    }
-  };
-
-  const completePayment = async (bookingId: string) => {
-    const booking = bookings.find(b => b.id === bookingId);
-    if (!booking || !booking.barber_profiles?.slug) return;
-
-    setCompletingPayment(bookingId);
-    try {
-      // Create a new payment intent for this booking
-      const { data, error } = await supabase.functions.invoke('create-payment-intent', {
-        body: {
-          barberId: booking.barber_profiles.id,
-          amount: Math.round(booking.total_amount * 100), // Convert to cents
-          currency: 'usd',
-          customerEmail: booking.client_profiles?.email || user?.email,
-          metadata: {
-            bookingId: booking.id,
-            clientId: booking.client_profiles?.id || '',
-            barberId: booking.barber_profiles.id,
-            serviceId: booking.services?.id || '',
-            appointmentDate: booking.appointment_date,
-            appointmentTime: booking.appointment_time,
-            clientName: `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`,
-            clientPhone: booking.client_profiles?.phone || ''
-          }
-        }
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Failed to create payment intent');
-      }
-
-      if (!data?.clientSecret) {
-        throw new Error('Failed to initialize payment');
-      }
-
-      // Redirect to booking flow with payment step
-      navigate(`/book/${booking.barber_profiles.slug}?step=payment&booking=${booking.id}`);
-
-    } catch (error: any) {
-      console.error('Error creating payment intent:', error);
-      NotificationManager.error(error.message || 'Failed to initialize payment. Please try again.');
-    } finally {
-      setCompletingPayment(null);
     }
   };
 
@@ -639,40 +593,11 @@ const ClientBookings: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Actions - Only show for non-completed bookings */}
-                  {(booking.status === 'pending' || booking.status === 'cancelled' || (booking.status === 'confirmed' && upcoming)) && (
+                  {/* Actions - Only show for cancelled or confirmed upcoming bookings */}
+                  {(booking.status === 'cancelled' || (booking.status === 'confirmed' && upcoming)) && (
                     <div className="flex flex-col sm:flex-row items-center gap-3 pt-3 border-t border-gray-100">
-                      {/* Price for pending bookings */}
-                      {booking.status === 'pending' && (
-                        <div className="text-center sm:text-left">
-                          <div className="flex items-center space-x-1 text-lg font-bold text-gray-900">
-                            <DollarSign className="h-4 w-4" />
-                            <span>{booking.total_amount}</span>
-                          </div>
-                          <p className="text-xs text-red-600 font-medium">Payment required</p>
-                        </div>
-                      )}
-
                       {/* Action Buttons */}
                       <div className="flex gap-3 ml-auto">
-                        {/* Complete Payment */}
-                        {booking.status === 'pending' && (
-                          <button
-                            onClick={() => completePayment(booking.id)}
-                            disabled={completingPayment === booking.id}
-                            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all duration-200 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                          >
-                            {completingPayment === booking.id ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                            ) : (
-                              <CreditCard className="h-4 w-4" />
-                            )}
-                            <span>
-                              {completingPayment === booking.id ? 'Processing...' : 'Complete Payment'}
-                            </span>
-                          </button>
-                        )}
-
                         {/* Contact Barber */}
                         {booking.barber_profiles?.phone && (
                           <a

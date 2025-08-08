@@ -204,13 +204,13 @@ const BookingFlow: React.FC = () => {
     setPaymentError('');
 
     try {
-      // Get or create client profile and update with latest contact info
+      // Get or create client profile and update with latest contact info (but don't create booking yet)
       const clientProfile = await getOrCreateClientProfile(user);
       if (!clientProfile) {
         throw new Error('Failed to get client profile');
       }
 
-      // Store client ID for payment metadata
+      // Store client ID for payment
       setCurrentClientId(clientProfile.id);
 
       // Update profile with latest contact info from booking form
@@ -227,33 +227,13 @@ const BookingFlow: React.FC = () => {
 
       if (updateError) throw updateError;
       
-      // Create booking record first
-      const { data: bookingData, error: bookingError } = await supabase
-        .from('bookings')
-        .insert({
-          barber_id: barber.id,
-          client_id: clientProfile.id,
-          service_id: selectedService.id,
-          appointment_date: format(selectedDate, 'yyyy-MM-dd'),
-          appointment_time: selectedTime,
-          total_amount: selectedService.price,
-          deposit_amount: selectedService.deposit_required ? selectedService.deposit_amount : 0,
-          platform_fee: Math.round(selectedService.price * 0.01 * 100) / 100, // 1% platform fee
-          status: 'pending',
-          notes: sanitizedNotes || null
-        })
-        .select()
-        .single();
-
-      if (bookingError) throw bookingError;
-      
-      setBookingId(bookingData.id);
+      // Go directly to payment step without creating booking record
       setStep('payment');
       
     } catch (error: any) {
       // Don't expose internal error details
       console.error('Booking creation error:', error);
-      setPaymentError(error?.message || 'Unable to create booking. Please try again.');
+      setPaymentError(error?.message || 'Unable to proceed to payment. Please try again.');
     } finally {
       setPaymentLoading(false);
     }
@@ -261,7 +241,7 @@ const BookingFlow: React.FC = () => {
 
   const handlePaymentSuccess = async (paymentIntentId: string) => {
     try {
-      // Get the confirmed booking from database
+      // Get the confirmed booking from database (created by Stripe webhook)
       const { data: booking, error } = await supabase
         .from('bookings')
         .select(`
@@ -269,14 +249,32 @@ const BookingFlow: React.FC = () => {
           services(name, duration_minutes),
           barber_profiles(business_name, owner_name)
         `)
-        .eq('id', bookingId)
+        .eq('stripe_payment_intent_id', paymentIntentId)
         .single();
 
       if (error || !booking) {
-        throw new Error('Failed to fetch confirmed booking');
+        // Booking might not be created yet by webhook, wait a moment and try again
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const { data: retryBooking, error: retryError } = await supabase
+          .from('bookings')
+          .select(`
+            *,
+            services(name, duration_minutes),
+            barber_profiles(business_name, owner_name)
+          `)
+          .eq('stripe_payment_intent_id', paymentIntentId)
+          .single();
+
+        if (retryError || !retryBooking) {
+          throw new Error('Payment succeeded but booking confirmation failed. Please contact support.');
+        }
+        
+        setConfirmedBooking(retryBooking);
+      } else {
+        setConfirmedBooking(booking);
       }
 
-      setConfirmedBooking(booking);
       setStep('confirmation');
       
     } catch (error: any) {
@@ -691,7 +689,6 @@ const BookingFlow: React.FC = () => {
                 currency="usd"
                 customerEmail={customerInfo.email}
                 metadata={{
-                  bookingId: bookingId,
                   clientId: currentClientId || '',
                   barberId: barber.id,
                   serviceId: selectedService.id,
