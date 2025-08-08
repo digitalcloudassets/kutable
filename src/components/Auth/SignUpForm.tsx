@@ -10,6 +10,7 @@ import {
   rateLimiter,
   bruteForceProtection 
 } from '../../utils/security';
+import { adminSignup } from '../../lib/adminSignup';
 
 const SignUpForm: React.FC = () => {
   const { isConnected: isSupabaseConnected } = useSupabaseConnection();
@@ -28,7 +29,6 @@ const SignUpForm: React.FC = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [passwordValidation, setPasswordValidation] = useState({ isValid: false, errors: [] as string[] });
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -112,35 +112,15 @@ const SignUpForm: React.FC = () => {
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password: cleanPassword,
-        options: {
-          emailRedirectTo: undefined,
-          data: {
-            first_name: cleanFirstName,
-            last_name: cleanLastName,
-            user_type: formData.userType,
-            communication_consent: formData.communicationConsent,
-            sms_consent: formData.communicationConsent,
-            email_consent: formData.communicationConsent,
-            consent_date: new Date().toISOString(),
-          },
-        },
+      const user = await adminSignup(cleanEmail, cleanPassword, {
+        first_name: cleanFirstName,
+        last_name: cleanLastName,
+        user_type: formData.userType,
+        communication_consent: formData.communicationConsent,
+        sms_consent: formData.communicationConsent,
+        email_consent: formData.communicationConsent,
+        consent_date: new Date().toISOString(),
       });
-
-      // Handle email confirmation errors gracefully since we want confirmation disabled
-      if (error && !error.message?.includes('Error sending confirmation email')) {
-        throw error;
-      }
-      
-      // If signup succeeded or only failed on email confirmation, proceed
-      if (data?.user || (error && error.message?.includes('Error sending confirmation email'))) {
-        // Sign up was successful, email confirmation just failed (which we don't need)
-        // Continue with the normal flow
-      } else if (error) {
-        throw error;
-      }
 
       // Check if user came from claim flow
       const claimReturnUrl = localStorage.getItem('claim_return_url');
@@ -162,18 +142,10 @@ const SignUpForm: React.FC = () => {
       // Don't expose internal error details
       console.error('Signup error:', error);
       
-      if (error.message?.includes('User already registered')) {
+      if (error.message?.includes('already')) {
         setError('An account with this email already exists. Please sign in instead.');
-      } else if (error.message?.includes('Invalid email')) {
-        setError('Please enter a valid email address.');
-      } else if (error.message?.includes('Password should be at least')) {
-        setError('Password does not meet security requirements.');
-      } else if (error.message?.includes('Signup is disabled')) {
-        setError('Account creation is temporarily disabled. Please try again later.');
-      } else if (error.message?.includes('Supabase not configured')) {
-        setError('Service temporarily unavailable. Please try again later.');
       } else {
-        setError('Failed to create account. Please try again.');
+        setError(error?.message || 'Failed to create account. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -185,12 +157,6 @@ const SignUpForm: React.FC = () => {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    // Real-time password validation
-    if (field === 'password') {
-      const validation = validatePassword(value);
-      setPasswordValidation(validation);
-    }
-    
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -346,28 +312,6 @@ const SignUpForm: React.FC = () => {
                 </button>
               </div>
             </div>
-
-            {/* Password Strength Indicator */}
-            {formData.password && (
-              <div className="bg-gray-50 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Password Strength</span>
-                  <span className={`text-xs font-semibold ${
-                    passwordValidation.isValid ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {passwordValidation.isValid ? 'Strong' : 'Weak'}
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  {passwordValidation.errors.length > 0 && (
-                    <p className="text-xs text-red-600">{passwordValidation.errors[0]}</p>
-                  )}
-                  {passwordValidation.isValid && (
-                    <p className="text-xs text-green-600 font-medium">✓ Password meets all requirements</p>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Confirm Password */}
             <div>

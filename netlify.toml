@@ -1,0 +1,12 @@
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/admin/create-user"
+  to = "/.netlify/functions/admin-create-user"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
