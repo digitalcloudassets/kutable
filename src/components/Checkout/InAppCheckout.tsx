@@ -128,19 +128,29 @@ export default function InAppCheckout({
     const initializePayment = async () => {
       try {
         setError('');
+        console.log('Initializing payment with:', { barberId, amount, currency, customerEmail, metadata });
+        
         const { data, error } = await supabase.functions.invoke('create-payment-intent', {
-          body: { barberId, amount, currency, customerEmail, metadata },
+          body: { 
+            barberId, 
+            amount, 
+            currency, 
+            customerEmail, 
+            metadata: metadata || {} 
+          },
         });
         
         if (error) {
-          console.warn('Payment intent error', error?.context || error);
+          console.error('Payment intent error:', error);
           const errorMessage = error?.context?.error || error?.message || 'Unable to initialize payment';
           setError(errorMessage);
           NotificationManager.error(errorMessage);
           return;
         }
 
-        if (!data?.clientSecret) {
+        console.log('Payment intent response:', data);
+        
+        if (!data?.success || !data?.clientSecret) {
           const errorMessage = data?.error || 'Unable to initialize payment';
           setError(errorMessage);
           NotificationManager.error(errorMessage);

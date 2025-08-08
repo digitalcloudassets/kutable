@@ -77,11 +77,12 @@ Deno.serve(async (req) => {
       .single();
     
     if (barberErr || !barber?.stripe_account_id) {
-      return resJson(400, { error: 'Barber is not connected to Stripe' });
+      console.error('Barber lookup error:', barberErr, 'Barber data:', barber);
+      return resJson(400, { success: false, error: 'Barber is not connected to Stripe' });
     }
 
     if (!barber.stripe_onboarding_completed) {
-      return resJson(400, { error: 'Barber has not completed Stripe onboarding yet' });
+      return resJson(400, { success: false, error: 'Barber has not completed Stripe onboarding yet' });
     }
 
     // Calculate platform fee (1%)
@@ -104,10 +105,12 @@ Deno.serve(async (req) => {
 
     // Create PaymentIntent on the PLATFORM (destination charge)
     const pi = await stripePost('payment_intents', form(params), STRIPE_SECRET_KEY!);
-    if (!pi.ok) return resJson(pi.status || 400, { error: pi.message, requestId: pi.requestId });
+    if (!pi.ok) return resJson(pi.status || 400, { success: false, error: pi.message, requestId: pi.requestId });
 
-    return resJson(200, { clientSecret: pi.data.client_secret });
+    console.log('Payment intent created successfully:', pi.data.id);
+    return resJson(200, { success: true, clientSecret: pi.data.client_secret, paymentIntentId: pi.data.id });
   } catch (e: any) {
-    return resJson(500, { error: e?.message || 'Unexpected server error' });
+    console.error('Payment intent creation error:', e);
+    return resJson(500, { success: false, error: e?.message || 'Unexpected server error' });
   }
 });
