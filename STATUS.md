@@ -27,6 +27,7 @@
 - **Status:** Complete
 
 ### STEP D-05 — Start Netlify dev ⏳
+- **Status:** Updated script to use --offline flag instead of unsupported --forceLocal
 - **Next:** Start dev server and verify it runs without Edge/Deno errors
 
 ### STEP X-06 — Curl test the function ⏳
