@@ -10,7 +10,8 @@ import {
   Zap,
   Shield,
   Server,
-  RefreshCw
+  RefreshCw,
+  BarChart3
 } from 'lucide-react';
 import { productionMonitor, ProductionMetrics } from '../../utils/productionMonitoring';
 
