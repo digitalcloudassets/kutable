@@ -87,6 +87,49 @@ export class SecurityMonitor {
     // Alert on high-risk events
     if (risk === 'high') {
       console.warn('HIGH RISK SECURITY EVENT:', type, details);
+      this.reportToExternalServices(type, details);
+    }
+  }
+
+  private reportToExternalServices(eventType: string, details: any): void {
+    // Report security events to external monitoring
+    try {
+      // Sentry integration
+      if (typeof window !== 'undefined' && (window as any).Sentry) {
+        (window as any).Sentry.captureMessage(`Security Event: ${eventType}`, 'warning', {
+          tags: {
+            component: 'security_monitor',
+            event_type: eventType,
+            risk_level: 'high'
+          },
+          extra: {
+            details: this.sanitizeLogData(details),
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
+
+      // Send to backend monitoring endpoint (if configured)
+      const monitoringEndpoint = import.meta.env.VITE_MONITORING_ENDPOINT;
+      if (monitoringEndpoint && monitoringEndpoint !== 'your_monitoring_endpoint_here') {
+        fetch(monitoringEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            event_type: eventType,
+            risk_level: 'high',
+            details: this.sanitizeLogData(details),
+            timestamp: new Date().toISOString(),
+            source: 'kutable_frontend'
+          })
+        }).catch(error => {
+          console.warn('Failed to send security event to monitoring endpoint:', error);
+        });
+      }
+    } catch (error) {
+      console.error('Failed to report security event:', error);
     }
   }
 

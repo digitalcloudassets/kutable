@@ -150,6 +150,83 @@ export const setupGlobalErrorHandling = (): void => {
       'high'
     );
   });
+
+  // Initialize external error tracking
+  initializeExternalErrorTracking();
+};
+
+// External error tracking integration
+const initializeExternalErrorTracking = () => {
+  // Sentry integration (if configured)
+  const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
+  if (sentryDsn && sentryDsn !== 'your_sentry_dsn_here') {
+    try {
+      // Dynamic import to avoid loading Sentry in development
+      import('@sentry/browser').then(({ init, captureException, setUser, setTag }) => {
+        init({
+          dsn: sentryDsn,
+          environment: import.meta.env.DEV ? 'development' : 'production',
+          tracesSampleRate: 0.1, // 10% of transactions for performance monitoring
+          beforeSend(event) {
+            // Filter out non-critical errors in production
+            if (!import.meta.env.DEV && event.level === 'warning') {
+              return null;
+            }
+            return event;
+          },
+          integrations: [
+            // Add performance monitoring
+            new (window as any).Sentry?.BrowserTracing?.({
+              tracingOrigins: [window.location.hostname],
+            }),
+          ],
+        });
+        
+        // Set context
+        setTag('component', 'kutable-frontend');
+        console.log('✅ Sentry error tracking initialized');
+      }).catch(() => {
+        console.warn('Sentry SDK not available');
+      });
+    } catch (error) {
+      console.warn('Failed to initialize Sentry:', error);
+    }
+  }
+
+  // LogRocket integration (if configured)
+  const logRocketAppId = import.meta.env.VITE_LOGROCKET_APP_ID;
+  if (logRocketAppId && logRocketAppId !== 'your_logrocket_app_id_here') {
+    try {
+      import('logrocket').then((LogRocket) => {
+        LogRocket.default.init(logRocketAppId);
+        console.log('✅ LogRocket session recording initialized');
+      }).catch(() => {
+        console.warn('LogRocket SDK not available');
+      });
+    } catch (error) {
+      console.warn('Failed to initialize LogRocket:', error);
+    }
+  }
+};
+
+// Enhanced error reporting for external services
+export const reportToExternalServices = (error: Error, context: any) => {
+  // Report to Sentry if available
+  if (typeof window !== 'undefined' && (window as any).Sentry) {
+    (window as any).Sentry.captureException(error, {
+      tags: context,
+      extra: {
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        url: window.location.href
+      }
+    });
+  }
+
+  // Log to console in development
+  if (import.meta.env.DEV) {
+    console.error('External Error Report:', { error, context });
+  }
 };
 
 // Error boundary hook
