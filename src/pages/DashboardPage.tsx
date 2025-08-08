@@ -80,6 +80,7 @@ const DashboardPage: React.FC = () => {
       const stripeSetup = searchParams.get('stripe_setup');
       const stripeRefresh = searchParams.get('stripe_refresh');
       const accountId = searchParams.get('account_id');
+      const paymentSuccess = searchParams.get('payment');
       
       if ((stripeSetup === 'complete' || stripeRefresh === 'true') && accountId && user && isConnected) {
         try {
@@ -118,10 +119,35 @@ const DashboardPage: React.FC = () => {
         newSearchParams.delete('account_id');
         setSearchParams(newSearchParams, { replace: true });
       }
+      
+      // Handle payment success redirect
+      if (paymentSuccess === 'success') {
+        NotificationManager.success('Payment successful! Your booking has been confirmed.');
+        
+        // Clean up URL parameter
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('payment');
+        setSearchParams(newSearchParams, { replace: true });
+        
+        // Refresh user data to show new booking
+        if (userType === 'client') {
+          window.location.reload(); // Force refresh to show new booking
+        }
+      }
     };
 
     if (user && isConnected && userType === 'barber') {
       handleStripeReturn();
+    } else if (user && userType === 'client') {
+      // Also handle payment success for clients
+      const paymentSuccess = searchParams.get('payment');
+      if (paymentSuccess === 'success') {
+        NotificationManager.success('Payment successful! Your booking has been confirmed.');
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('payment');
+        setSearchParams(newSearchParams, { replace: true });
+        window.location.reload();
+      }
     }
   }, [searchParams, user, isConnected, userType, setSearchParams, refreshBarberData]);
   const determineUserType = useCallback(async () => {

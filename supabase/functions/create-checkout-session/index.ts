@@ -72,13 +72,68 @@ Deno.serve(async (req) => {
       return resJson(400, { success: false, error: 'amount must be integer cents > 0' });
     }
 
+    // Import Supabase client
+    const { createClient } = await import('npm:@supabase/supabase-js@2');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      return resJson(500, { success: false, error: 'Database not configured' });
+    }
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    // Extract booking details from metadata
+    const barberId = metadata?.barberId;
+    const clientId = metadata?.clientId;
+    const serviceId = metadata?.serviceId;
+    const appointmentDate = metadata?.appointmentDate;
+    const appointmentTime = metadata?.appointmentTime;
+    
+    if (!barberId || !clientId || !serviceId || !appointmentDate || !appointmentTime) {
+      return resJson(400, { success: false, error: 'Missing booking details in metadata' });
+    }
+    
+    // Calculate platform fee (1%)
+    const totalAmountDollars = amount ? amount / 100 : 0;
+    const platformFee = Math.round(totalAmountDollars * 0.01 * 100) / 100;
+    
+    // Create pending booking record
+    const { data: booking, error: bookingError } = await supabase
+      .from('bookings')
+      .insert({
+        barber_id: barberId,
+        client_id: clientId,
+        service_id: serviceId,
+        appointment_date: appointmentDate,
+        appointment_time: appointmentTime,
+        total_amount: totalAmountDollars,
+        deposit_amount: 0,
+        platform_fee: platformFee,
+        status: 'pending',
+        notes: metadata?.notes || null
+      })
+      .select()
+      .single();
+    
+    if (bookingError) {
+      console.error('Failed to create booking:', bookingError);
+      return resJson(400, { success: false, error: 'Failed to create booking record' });
+    }
+    
+    // Add booking ID to metadata
+    const enhancedMetadata = {
+      ...metadata,
+      bookingId: booking.id
+    };
+
     // Build session params
     const params: Record<string, any> = {
       mode,
       success_url: successUrl,
       cancel_url: cancelUrl,
       // Any metadata constraints: keep small strings
-      ...(metadata ? Object.fromEntries(Object.entries(metadata).map(([k, v]) => [`metadata[${k}]`, `${v}`.slice(0, 500)])) : {}),
+      ...(enhancedMetadata ? Object.fromEntries(Object.entries(enhancedMetadata).map(([k, v]) => [`metadata[${k}]`, `${v}`.slice(0, 500)])) : {}),
       ...(customerEmail ? { customer_email: customerEmail } : {}),
       ...(customerId ? { customer: customerId } : {}),
     };
@@ -96,10 +151,17 @@ Deno.serve(async (req) => {
 
     const resp = await stripePost('checkout/sessions', form(params), STRIPE_SECRET_KEY, connectedAccountId);
     if (!resp.ok) {
+      // If checkout session creation fails, clean up the booking
+      if (booking?.id) {
+        await supabase
+          .from('bookings')
+          .delete()
+          .eq('id', booking.id);
+      }
       return resJson(resp.status || 400, { success: false, error: resp.message, requestId: resp.requestId });
     }
 
-    return resJson(200, { success: true, sessionId: resp.data.id, url: resp.data.url });
+    return resJson(200, { success: true, sessionId: resp.data.id, url: resp.data.url, bookingId: booking.id });
   } catch (e: any) {
     return resJson(500, { success: false, error: e?.message || 'Unexpected server error' });
   }

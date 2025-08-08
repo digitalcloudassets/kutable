@@ -33,6 +33,45 @@ serve(async (req) => {
     const event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
 
     switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session
+        
+        // Update booking status to confirmed
+        const bookingId = session.metadata?.bookingId
+        if (bookingId) {
+          const { error } = await supabase
+            .from('bookings')
+            .update({
+              status: 'confirmed',
+              stripe_payment_intent_id: session.payment_intent as string,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', bookingId)
+
+          if (error) {
+            console.error('Error updating booking from checkout session:', error)
+          } else {
+            // Send booking confirmation notifications
+            try {
+              await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/process-booking-notifications`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  bookingId: bookingId,
+                  event: 'booking_confirmed'
+                })
+              });
+            } catch (notificationError) {
+              console.error('Failed to send booking notifications:', notificationError);
+            }
+          }
+        }
+        break
+      }
+
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
         
