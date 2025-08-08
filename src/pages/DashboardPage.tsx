@@ -57,6 +57,23 @@ const DashboardPage: React.FC = () => {
     handleUserTypeCheck();
   }, [handleUserTypeCheck]);
 
+  const refreshBarberData = useCallback(async () => {
+    if (!user || userType !== 'barber') return;
+
+    try {
+      const { data, error } = await supabase
+        .from('barber_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+      setBarber(data);
+    } catch (error) {
+      console.error('Error refreshing barber data:', error);
+    }
+  }, [user, userType]);
+
   // Handle Stripe onboarding return
   useEffect(() => {
     const handleStripeReturn = async () => {
@@ -165,23 +182,6 @@ const DashboardPage: React.FC = () => {
       setLoading(false);
     }
   }, [user]);
-
-  const refreshBarberData = useCallback(async () => {
-    if (!user || userType !== 'barber') return;
-
-    try {
-      const { data, error } = await supabase
-        .from('barber_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) throw error;
-      setBarber(data);
-    } catch (error) {
-      console.error('Error refreshing barber data:', error);
-    }
-  }, [user, userType]);
 
   const handleEditProfile = useCallback(() => {
     setActiveTab('profile');
