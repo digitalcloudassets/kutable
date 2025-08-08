@@ -27,8 +27,11 @@
 - **Status:** Complete
 
 ### STEP D-05 — Start Netlify dev ⏳
-- **Status:** Updated script to use --offline flag instead of unsupported --forceLocal
-- **Next:** Start dev server and verify it runs without Edge/Deno errors
+- Updated script to disable Edge Functions with multiple env vars and --framework=#static
+- Created and disabled edge-functions folder by renaming to _edge-functions_disabled
+- Cleaned and reinstalled dependencies with hoisting
+- **Status:** Complete - Edge Functions hard-disabled
+- **Next:** Start dev server and verify Node-only operation
 
 ### STEP X-06 — Curl test the function ⏳
 - **Next:** Test function endpoint with curl
