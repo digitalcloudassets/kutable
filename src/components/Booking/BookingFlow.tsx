@@ -77,6 +77,7 @@ const BookingFlow: React.FC = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [bookingId, setBookingId] = useState<string>('');
+  const [currentClientId, setCurrentClientId] = useState<string>('');
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
 
   useEffect(() => {
@@ -208,6 +209,9 @@ const BookingFlow: React.FC = () => {
       if (!clientProfile) {
         throw new Error('Failed to get client profile');
       }
+
+      // Store client ID for payment metadata
+      setCurrentClientId(clientProfile.id);
 
       // Update profile with latest contact info from booking form
       const { error: updateError } = await supabase
@@ -689,7 +693,7 @@ const BookingFlow: React.FC = () => {
                 metadata={{
                   bookingId: bookingId,
                   barberId: barber.id,
-                  clientId: (await getOrCreateClientProfile(user!))?.id || '',
+                  clientId: currentClientId || '',
                   barberId: barber.id,
                   serviceId: selectedService.id,
                   appointmentDate: format(selectedDate, 'yyyy-MM-dd'),
