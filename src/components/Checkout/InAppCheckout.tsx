@@ -272,7 +272,6 @@ export default function InAppCheckout({
       stripe={stripePromise} 
       options={{ 
         clientSecret,
-        mode: 'payment',
         appearance: {
           theme: 'stripe',
           variables: {
@@ -284,8 +283,7 @@ export default function InAppCheckout({
             spacingUnit: '4px',
             borderRadius: '12px'
           }
-        },
-        paymentMethodCreation: 'manual'
+        }
       }}
     >
       <CheckoutForm
