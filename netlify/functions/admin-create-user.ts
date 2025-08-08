@@ -9,56 +9,63 @@ const FROM_EMAIL = process.env.FROM_EMAIL || 'team@kutable.com';
 const FROM_NAME = process.env.FROM_NAME || 'Kutable';
 const SITE_URL = process.env.SITE_URL || 'https://kutable.com';
 
-const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE, {
-  auth: { persistSession: false },
+const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
+
+const json = (statusCode: number, payload: any) => ({
+  statusCode,
+  headers: {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'content-type,x-admin-secret',
+    'Access-Control-Allow-Methods': 'POST,OPTIONS',
+  },
+  body: JSON.stringify(payload),
 });
 
 export const handler: Handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
-  }
+  if (event.httpMethod === 'OPTIONS') return json(200, { ok: true });
+  if (event.httpMethod !== 'POST') return json(405, { error: 'Method Not Allowed' });
 
   if (event.headers['x-admin-secret'] !== ADMIN_SECRET) {
-    return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
+    return json(401, { error: 'Unauthorized' });
   }
 
+  let body: any = {};
   try {
-    const body = JSON.parse(event.body || '{}');
-    const { email, password, metadata = {} } = body;
+    body = event.body ? JSON.parse(event.body) : {};
+  } catch {
+    return json(400, { error: 'Invalid JSON body' });
+  }
 
-    if (!email || !password) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'email and password required' }) };
-    }
+  const { email, password, metadata = {} } = body;
+  if (!email || !password) return json(400, { error: 'email and password required' });
 
+  try {
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
       user_metadata: metadata,
     });
+    if (error) return json(400, { error: error.message });
 
-    if (error) {
-      return { statusCode: 400, body: JSON.stringify({ error: error.message }) };
-    }
-
+    // fire-and-forget welcome email (optional)
     if (RESEND_API_KEY) {
       fetch('https://api.resend.com/emails', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           from: `${FROM_NAME} <${FROM_EMAIL}>`,
           to: email,
           subject: 'Welcome to Kutable',
-          html: `<p>Welcome. Your account is ready. <a href="${SITE_URL}">Open Kutable</a></p>`,
+          html: `<p>Welcome! Your account is ready. <a href="${SITE_URL}">Open Kutable</a></p>`,
         }),
       }).catch(() => {});
     }
 
-    return { statusCode: 200, body: JSON.stringify({ user: data.user }) };
+    return json(200, { ok: true, user: data.user });
   } catch (e: any) {
-    return { statusCode: 500, body: JSON.stringify({ error: e?.message || 'Internal error' }) };
+    return json(500, { error: e?.message || 'Internal error' });
   }
 };
