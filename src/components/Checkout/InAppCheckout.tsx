@@ -273,7 +273,6 @@ export default function InAppCheckout({
       options={{ 
         clientSecret,
         mode: 'payment',
-        paymentMethodTypes: ['card'],
         appearance: {
           theme: 'stripe',
           variables: {
