@@ -31,12 +31,14 @@ Deno.serve(async (req) => {
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const stripeConnectClientId = Deno.env.get('STRIPE_CONNECT_CLIENT_ID');
     const siteUrl = 'https://kutable.com'; // Use live site URL
 
     const missingEnvVars = [];
     if (!stripeSecretKey) missingEnvVars.push('STRIPE_SECRET_KEY');
     if (!supabaseUrl) missingEnvVars.push('SUPABASE_URL');
     if (!supabaseServiceKey) missingEnvVars.push('SUPABASE_SERVICE_ROLE_KEY');
+    if (!stripeConnectClientId) missingEnvVars.push('STRIPE_CONNECT_CLIENT_ID');
 
     if (missingEnvVars.length > 0) {
       return new Response(
@@ -118,7 +120,8 @@ Deno.serve(async (req) => {
       refresh_url: `${siteUrl}/dashboard?stripe_refresh=true&account_id=${account.id}`,
       return_url: `${siteUrl}/dashboard?stripe_setup=complete&account_id=${account.id}`,
       type: 'account_onboarding',
-      collect: 'eventually_due' // Collect all required information
+      collect: 'eventually_due', // Collect all required information
+      ...(stripeConnectClientId && { client_id: stripeConnectClientId })
     })
 
     console.log('Created Stripe account:', account.id);
