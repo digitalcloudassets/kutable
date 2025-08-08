@@ -238,92 +238,68 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
 
     setSettingUpStripe(true);
     try {
-      // Call edge function to create Stripe Connect account
+      const payload = {
+        barberId: barber.id,
+        businessName: barber.business_name,
+        ownerName: barber.owner_name,
+        email: barber.email || user.email,
+        phone: barber.phone || undefined,
+        address: barber.address
+          ? { 
+              line1: barber.address, 
+              city: barber.city || '', 
+              state: barber.state || '', 
+              postal_code: barber.zip_code || '' 
+            }
+          : undefined,
+      };
+
+      // First, try debug echo (comment this out after you fix it)
+      // const dbg = await supabase.functions.invoke('create-stripe-account', { 
+      //   body: { ...payload, debug: '1' } 
+      // });
+      // console.log('DEBUG echo', dbg);
+
       const { data, error } = await supabase.functions.invoke('create-stripe-account', {
-        body: {
-          barberId: barber.id,
-          businessName: barber.business_name,
-          ownerName: barber.owner_name,
-          email: barber.email || user.email,
-          phone: barber.phone,
-          address: barber.address ? {
-            line1: barber.address,
-            city: barber.city,
-            state: barber.state,
-            postal_code: barber.zip_code
-          } : undefined
-        }
+        body: payload,
       });
 
       if (error) {
-        throw error;
+        console.error('Functions error:', error, 'context:', error?.context ? JSON.stringify(error.context) : null);
+        throw new Error(error.message || 'Edge function error');
       }
 
-      if (!data?.success) {
-        throw new Error(data?.error || 'Failed to initialize Stripe account setup');
+      if (!data) throw new Error('No response from server');
+
+      // Always-200 envelope: success flag + error message included by server
+      if (!data.success) {
+        const msg = data.error || 'Payment setup failed';
+        console.error('Server said no:', data);
+        NotificationManager.error(msg);
+        return;
       }
 
-      if (data?.accountId && data?.onboardingUrl) {
-        // Update local state immediately
+      if (data.accountId && data.onboardingUrl) {
         const { error: updateError } = await supabase
           .from('barber_profiles')
           .update({ 
-            stripe_account_id: data.accountId,
-            updated_at: new Date().toISOString()
+            stripe_account_id: data.accountId, 
+            updated_at: new Date().toISOString() 
           })
           .eq('id', barber.id);
+        if (updateError) console.warn('Failed local update:', updateError);
 
-        if (updateError) {
-          console.warn('Failed to update local barber profile:', updateError);
-        }
-
-        // Redirect to Stripe onboarding
-        NotificationManager.success('Redirecting to Stripe to complete payment setup...');
-        
-        // Open in new window/tab
+        NotificationManager.success('Redirecting to Stripe to complete payment setup…');
         window.open(data.onboardingUrl, '_blank', 'noopener,noreferrer');
-        
-        // Refresh the profile data
-        setTimeout(() => {
-          onUpdate();
-        }, 1000);
-      } else {
-        throw new Error(data?.error || 'Failed to initialize Stripe account setup');
+        setTimeout(() => onUpdate(), 1000);
+        return;
       }
-    } catch (error: any) {
-      console.error('Stripe Connect error:', error);
-      
-      let errorMessage = 'Failed to set up payment processing.';
-      
-      // Handle Supabase Edge Function errors (FunctionsHttpError)
-      if (error?.name === 'FunctionsHttpError' || error?.message?.includes('Edge Function returned a non-2xx status code')) {
-        // Extract the actual error message from the Edge Function response
-        const serverError = error?.context?.error || 
-                           error?.context?.message || 
-                           error?.message;
-        
-        if (serverError?.includes('Missing env:')) {
-          errorMessage = 'Payment setup is not configured yet. Please contact support to enable Stripe Connect.';
-        } else if (serverError?.includes('Missing required fields:')) {
-          errorMessage = serverError;
-        } else if (serverError?.includes('Invalid email format')) {
-          errorMessage = 'Please provide a valid email address in your profile.';
-        } else if (serverError?.includes('Stripe API error') || serverError?.includes('Stripe error')) {
-          errorMessage = `Stripe error: ${serverError}`;
-        } else if (serverError) {
-          errorMessage = serverError;
-        } else {
-          errorMessage = 'Payment setup service is not available. Please contact support.';
-        }
-      } else if (error?.message?.includes('environment variables')) {
-        errorMessage = 'Payment setup is not configured. Please contact support.';
-      } else if (error?.message?.includes('Stripe')) {
-        errorMessage = error.message;
-      } else {
-        errorMessage = error?.message || 'Failed to set up payment processing. Please try again.';
-      }
-      
-      NotificationManager.error(errorMessage);
+
+      NotificationManager.error('Unexpected response from payment setup.');
+    } catch (e: any) {
+      const raw = e?.context ? JSON.stringify(e.context) : e?.message || String(e);
+      console.error('Stripe Connect error (client):', raw);
+      NotificationManager.error(typeof raw === 'string' ? raw : 'Failed to set up payment processing.');
     } finally {
       setSettingUpStripe(false);
     }
