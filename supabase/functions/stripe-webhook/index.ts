@@ -75,47 +75,123 @@ serve(async (req) => {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
         
-        // Update booking status
+        // Update booking status to confirmed
         const { error } = await supabase
           .from('bookings')
           .update({
             status: 'confirmed',
             stripe_payment_intent_id: paymentIntent.id,
+            stripe_charge_id: paymentIntent.charges?.data?.[0]?.id || null,
             updated_at: new Date().toISOString()
           })
-          .eq('stripe_payment_intent_id', paymentIntent.id)
+          .eq('id', paymentIntent.metadata?.bookingId || '')
 
         if (error) {
           console.error('Error updating booking:', error)
+          break
         }
 
-        // Send SMS confirmation
+        // Send booking confirmation notifications
         const { data: booking } = await supabase
           .from('bookings')
           .select(`
             *,
-            barber_profiles(business_name, owner_name),
-            client_profiles(first_name, phone),
+            barber_profiles(business_name, owner_name, phone, email),
+            client_profiles(first_name, last_name, phone, email),
             services(name)
           `)
-          .eq('stripe_payment_intent_id', paymentIntent.id)
+          .eq('id', paymentIntent.metadata?.bookingId || '')
           .single()
 
-        if (booking && booking.client_profiles?.phone) {
-          const smsMessage = `Booking confirmed! ${booking.services?.name} with ${booking.barber_profiles?.business_name} on ${booking.appointment_date} at ${booking.appointment_time}. See you soon!`
-          
-          await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-sms`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              to: booking.client_profiles.phone,
-              message: smsMessage,
-              type: 'booking_confirmation'
-            })
+        if (booking) {
+          // Send comprehensive notifications
+          try {
+            await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/process-booking-notifications`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                bookingId: booking.id,
+                event: 'booking_confirmed'
+              })
+            });
+          } catch (notificationError) {
+            console.error('Failed to send booking confirmation notifications:', notificationError);
+          }
+        }
+        break
+      }
+
+      case 'payment_intent.payment_failed': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent
+        
+        // Mark booking as failed
+        const { error } = await supabase
+          .from('bookings')
+          .update({
+            status: 'cancelled',
+            updated_at: new Date().toISOString()
           })
+          .eq('id', paymentIntent.metadata?.bookingId || '')
+
+        if (error) {
+          console.error('Error updating failed booking:', error)
+        } else {
+          console.log('Booking marked as cancelled due to payment failure:', paymentIntent.metadata?.bookingId)
+        }
+        break
+      }
+
+      case 'payment_intent.requires_action': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent
+        console.log('Payment requires additional action (3DS):', paymentIntent.id)
+        // No action needed - the client will handle 3DS authentication
+        break
+      }
+
+      case 'charge.dispute.created': {
+        const dispute = event.data.object as Stripe.Dispute
+        console.log('Dispute created for charge:', dispute.charge)
+        
+        // Find booking by charge ID and mark for review
+        const { error } = await supabase
+          .from('bookings')
+          .update({
+            status: 'refund_requested',
+            updated_at: new Date().toISOString()
+          })
+          .eq('stripe_charge_id', dispute.charge)
+
+        if (error) {
+          console.error('Error updating disputed booking:', error)
+        }
+        break
+      }
+
+      case 'transfer.created': {
+        const transfer = event.data.object as Stripe.Transfer
+        console.log('Transfer created to barber account:', transfer.destination, 'Amount:', transfer.amount)
+        
+        // Record platform transaction
+        if (transfer.source_transaction && transfer.metadata?.bookingId) {
+          try {
+            await supabase
+              .from('platform_transactions')
+              .insert({
+                booking_id: transfer.metadata.bookingId,
+                barber_id: transfer.metadata.barberId,
+                transaction_type: 'booking',
+                gross_amount: (transfer.amount + (transfer.metadata.applicationFee || 0)) / 100,
+                platform_fee: (transfer.metadata.applicationFee || 0) / 100,
+                stripe_fee: 0, // Calculate from charge if needed
+                net_amount: transfer.amount / 100,
+                stripe_transaction_id: transfer.id
+              });
+          } catch (dbError) {
+            console.error('Error recording platform transaction:', dbError);
+          }
         }
         break
       }
@@ -124,7 +200,7 @@ serve(async (req) => {
         const account = event.data.object as Stripe.Account
         
         // Update barber's Stripe account status
-        const { error } = await supabase
+        const { error: stripeAccountError } = await supabase
           .from('stripe_accounts')
           .upsert({
             stripe_account_id: account.id,
@@ -134,8 +210,8 @@ serve(async (req) => {
             updated_at: new Date().toISOString()
           })
 
-        if (error) {
-          console.error('Error updating Stripe account:', error)
+        if (stripeAccountError) {
+          console.error('Error updating Stripe account:', stripeAccountError)
         }
 
         // Also update the barber profile's stripe_onboarding_completed status

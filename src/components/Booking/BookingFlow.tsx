@@ -31,6 +31,7 @@ import { Database } from '../../lib/supabase';
 import { createAvailabilityManager } from '../../utils/availabilityManager';
 import { NotificationManager } from '../../utils/notifications';
 import 'react-datepicker/dist/react-datepicker.css';
+import InAppCheckout from '../Checkout/InAppCheckout';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 type Service = Database['public']['Tables']['services']['Row'];
@@ -79,10 +80,8 @@ const BookingFlow: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState('');
-  const [clientSecret, setClientSecret] = useState<string>('');
   const [bookingId, setBookingId] = useState<string>('');
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
-  const [sendingSMS, setSendingSMS] = useState(false);
 
   useEffect(() => {
     if (barberSlug) {
@@ -227,49 +226,80 @@ const BookingFlow: React.FC = () => {
         .eq('id', clientProfile.id);
 
       if (updateError) throw updateError;
-      // Create checkout session via edge function
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+      
+      // Create booking record first
+      const { data: bookingData, error: bookingError } = await supabase
+        .from('bookings')
+        .insert({
+          barber_id: barber.id,
+          client_id: clientProfile.id,
+          service_id: selectedService.id,
+          appointment_date: format(selectedDate, 'yyyy-MM-dd'),
+          appointment_time: selectedTime,
+          total_amount: selectedService.price,
+          deposit_amount: selectedService.deposit_required ? selectedService.deposit_amount : 0,
+          platform_fee: Math.round(selectedService.price * 0.01 * 100) / 100, // 1% platform fee
+          status: 'pending',
+          notes: sanitizedNotes || null
+        })
+        .select()
+        .single();
+
+      if (bookingError) throw bookingError;
+      
+      setBookingId(bookingData.id);
+      setStep('payment');
+      
+    } catch (error: any) {
+      // Don't expose internal error details
+      console.error('Booking creation error:', error);
+      setPaymentError(error?.message || 'Unable to create booking. Please try again.');
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  const handlePaymentSuccess = async (paymentIntentId: string) => {
+    try {
+      // Confirm booking via edge function
+      const { data, error } = await supabase.functions.invoke('confirm-booking', {
         body: {
-          amount: Math.round(selectedService.price * 100), // Convert to cents
-          currency: 'usd',
-          name: `${selectedService.name} at ${barber.business_name}`,
-          mode: 'payment',
-          customerEmail: customerInfo.email,
-          metadata: {
-            barberId: barber.id,
-            clientId: clientProfile.id,
-            serviceId: selectedService.id,
-            appointmentDate: format(selectedDate, 'yyyy-MM-dd'),
-            appointmentTime: selectedTime,
-            clientName: `${customerInfo.firstName} ${customerInfo.lastName}`,
-            clientPhone: customerInfo.phone,
-            notes: sanitizedNotes || ''
-          },
-          successUrl: `${window.location.origin}/dashboard?payment=success`,
-          cancelUrl: `${window.location.origin}/book/${barberSlug}/${selectedService.id}?payment=cancelled`,
-          connectedAccountId: barber.stripe_account_id || undefined
+          bookingId: bookingId,
+          paymentIntentId: paymentIntentId
         }
       });
 
       if (error) {
-        console.warn('Edge error context:', error?.context);
-        throw new Error(error?.context?.error || error.message || 'Payment initialization failed');
+        throw error;
       }
 
-      if (!data?.success || !data?.url) {
-        throw new Error(data?.error || 'Payment initialization failed');
+      if (data?.booking) {
+        // Send booking confirmation notifications
+        try {
+          const { data: notificationResult, error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {
+            body: {
+              bookingId: data.booking.id,
+              event: 'booking_confirmed'
+            }
+          });
+
+          if (notificationError) {
+            console.warn('Failed to send booking notifications:', notificationError);
+          } else if (notificationResult?.success) {
+            console.log('Booking confirmation notifications sent successfully');
+          }
+        } catch (notificationError) {
+          console.warn('Notification error (booking still succeeded):', notificationError);
+        }
+
+        setConfirmedBooking(data.booking);
+        setStep('confirmation');
+      } else {
+        throw new Error('Failed to confirm booking');
       }
-      
-      // Redirect to Stripe Checkout
-      window.location.href = data.url;
-      
     } catch (error: any) {
-      // Don't expose internal error details
-      console.error('Payment initialization error:', error);
-      
-      setPaymentError(error?.message || 'Unable to start checkout. Please try again.');
-    } finally {
-      setPaymentLoading(false);
+      console.error('Payment confirmation error:', error);
+      NotificationManager.error('Payment succeeded but booking confirmation failed. Please contact support.');
     }
   };
 
@@ -621,23 +651,85 @@ const BookingFlow: React.FC = () => {
             </div>
           )}
 
-          {step === 'payment' && selectedService && clientSecret && (
-            <Elements stripe={stripePromise}>
-              <PaymentStep
-                barber={barber}
-                service={selectedService}
-                date={selectedDate}
-                time={selectedTime}
-                clientDetails={customerInfo}
-                clientSecret={clientSecret}
-                bookingId={bookingId}
-                onPaymentSuccess={(booking) => {
-                  setConfirmedBooking(booking);
-                  setStep('confirmation');
+          {step === 'payment' && selectedService && bookingId && (
+            <div className="p-6 sm:p-8 max-w-2xl mx-auto">
+              <div className="text-center mb-8">
+                <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium">
+                  <CreditCard className="h-8 w-8 text-white" />
+                </div>
+                <h2 className="text-2xl font-display font-bold text-gray-900 mb-4">Complete Payment</h2>
+                <p className="text-gray-600">Secure payment processing powered by Stripe</p>
+              </div>
+
+              {/* Booking Summary */}
+              <div className="bg-gray-50 rounded-2xl p-6 mb-8">
+                <h3 className="font-semibold text-gray-900 mb-4">Booking Summary</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Service:</span>
+                    <span className="font-medium text-gray-900">{selectedService.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Date:</span>
+                    <span className="font-medium text-gray-900">{format(selectedDate, 'EEEE, MMM d, yyyy')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Time:</span>
+                    <span className="font-medium text-gray-900">{selectedTime}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Duration:</span>
+                    <span className="font-medium text-gray-900">{selectedService.duration_minutes} minutes</span>
+                  </div>
+                  <div className="border-t border-gray-200 pt-3 mt-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Service Price:</span>
+                      <span className="font-medium text-gray-900">${selectedService.price.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>Platform Fee (1%):</span>
+                      <span>${(selectedService.price * 0.01).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>Processing Fee (~2.9%):</span>
+                      <span>${(selectedService.price * 0.029 + 0.30).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold text-lg border-t border-gray-300 pt-3 mt-3">
+                      <span>Total:</span>
+                      <span className="text-emerald-600">${selectedService.price.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* In-App Checkout */}
+              <InAppCheckout
+                barberId={barber.id}
+                amount={Math.round(selectedService.price * 100)} // Convert to cents
+                currency="usd"
+                customerEmail={customerInfo.email}
+                metadata={{
+                  bookingId: bookingId,
+                  barberId: barber.id,
+                  serviceId: selectedService.id,
+                  appointmentDate: format(selectedDate, 'yyyy-MM-dd'),
+                  appointmentTime: selectedTime,
+                  clientName: `${customerInfo.firstName} ${customerInfo.lastName}`,
+                  clientPhone: customerInfo.phone
                 }}
-                onBack={() => setStep('details')}
+                onComplete={handlePaymentSuccess}
               />
-            </Elements>
+
+              <div className="mt-8 flex justify-center">
+                <button
+                  onClick={() => setStep('details')}
+                  className="btn-secondary"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back to Details</span>
+                </button>
+              </div>
+            </div>
           )}
 
           {step === 'confirmation' && confirmedBooking && (
@@ -708,232 +800,6 @@ const BookingFlow: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
-    </div>
-  );
-};
-
-// Payment Step Component with Stripe Elements
-const PaymentStep: React.FC<{
-  barber: Barber;
-  service: Service;
-  date: Date;
-  time: string;
-  clientDetails: any;
-  clientSecret: string;
-  bookingId: string;
-  onPaymentSuccess: (booking: any) => void;
-  onBack: () => void;
-}> = ({ 
-  barber, 
-  service, 
-  date, 
-  time, 
-  clientDetails, 
-  clientSecret, 
-  bookingId, 
-  onPaymentSuccess, 
-  onBack 
-}) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!stripe || !elements) {
-      setError('Payment system not loaded. Please refresh and try again.');
-      return;
-    }
-
-    const cardElement = elements.getElement(CardElement);
-    if (!cardElement) {
-      setError('Payment form not loaded properly. Please refresh and try again.');
-      return;
-    }
-
-    setProcessing(true);
-    setError('');
-
-    try {
-      // Confirm payment with Stripe
-      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            name: `${clientDetails.firstName} ${clientDetails.lastName}`,
-            email: clientDetails.email,
-            phone: clientDetails.phone,
-          },
-        },
-      });
-
-      if (stripeError) {
-        throw new Error(stripeError.message || 'Payment failed');
-      }
-
-      if (paymentIntent?.status === 'succeeded') {
-        // Confirm booking via edge function
-        const { data, error } = await supabase.functions.invoke('confirm-booking', {
-          body: {
-            bookingId: bookingId,
-            paymentIntentId: paymentIntent.id
-          }
-        });
-
-        if (error) throw error;
-
-        if (data?.booking) {
-         // Send booking confirmation notifications
-         try {
-           const { data: notificationResult, error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {
-             body: {
-               bookingId: data.booking.id,
-               event: 'booking_confirmed'
-             }
-           });
-
-           if (notificationError) {
-             console.warn('Failed to send booking notifications:', notificationError);
-           } else if (notificationResult?.success) {
-             console.log('Booking confirmation notifications sent successfully');
-           }
-         } catch (notificationError) {
-           console.warn('Notification error (booking still succeeded):', notificationError);
-         }
-
-          onPaymentSuccess(data.booking);
-        } else {
-          throw new Error('Failed to confirm booking');
-        }
-      } else {
-        throw new Error('Payment was not completed successfully');
-      }
-    } catch (error: any) {
-      setError(error.message || 'Payment failed. Please try again.');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const fees = calculateFees(service.price);
-
-  return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Payment</h2>
-      
-      {/* Booking Summary */}
-      <div className="bg-gray-50 rounded-lg p-4 mb-6">
-        <h3 className="font-semibold text-gray-900 mb-3">Booking Summary</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span>Service:</span>
-            <span>{service.name}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Date:</span>
-            <span>{format(date, 'EEEE, MMM d, yyyy')}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Time:</span>
-            <span>{time}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Duration:</span>
-            <span>{service.duration_minutes} minutes</span>
-          </div>
-          <div className="border-t pt-2 mt-2">
-            <div className="flex justify-between">
-              <span>Service Price:</span>
-              <span>${service.price}</span>
-            </div>
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>Processing Fee:</span>
-              <span>${fees.stripeFee.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between font-semibold text-lg border-t pt-2 mt-2">
-              <span>Total:</span>
-              <span>${(service.price + fees.stripeFee).toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Payment Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Payment Information
-          </label>
-          <div className="border border-gray-300 rounded-lg p-4 bg-white">
-            <CardElement
-              options={{
-                style: {
-                  base: {
-                    fontSize: '16px',
-                    color: '#374151',
-                    '::placeholder': {
-                      color: '#9CA3AF',
-                    },
-                    fontFamily: 'system-ui, -apple-system, sans-serif',
-                  },
-                  invalid: {
-                    color: '#EF4444',
-                  },
-                },
-                hidePostalCode: false,
-              }}
-            />
-          </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Your payment information is encrypted and secure. Powered by Stripe.
-          </p>
-        </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
-
-        <div className="flex justify-between">
-          <button
-            type="button"
-            onClick={onBack}
-            disabled={processing}
-            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back</span>
-          </button>
-          
-          <button
-            type="submit"
-            disabled={!stripe || processing}
-            className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-          >
-            {processing ? (
-              <>
-                <Loader className="h-5 w-5 animate-spin" />
-                <span>Processing Payment...</span>
-              </>
-            ) : (
-              <>
-                <CreditCard className="h-5 w-5" />
-                <span>Pay ${service.price}</span>
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-
-      {/* Security Notice */}
-      <div className="mt-6 text-center">
-        <p className="text-xs text-gray-500">
-          🔒 Your payment is secured with bank-level encryption. We never store your card information.
-        </p>
       </div>
     </div>
   );
