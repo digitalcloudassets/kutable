@@ -16,7 +16,9 @@ import {
   DollarSign,
   Edit,
   Save,
-  Loader
+  Loader,
+  Trash2,
+  CreditCard
 } from 'lucide-react';
 import { format, isAfter, isBefore, addDays } from 'date-fns';
 import DatePicker from 'react-datepicker';
@@ -68,6 +70,8 @@ const ClientBookings: React.FC = () => {
     availableSlots: [] as string[]
   });
   const [rescheduling, setRescheduling] = useState(false);
+  const [completingPayment, setCompletingPayment] = useState<string | null>(null);
+  const [removingBooking, setRemovingBooking] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -246,6 +250,80 @@ const ClientBookings: React.FC = () => {
       NotificationManager.error('Failed to cancel booking. Please try again.');
     } finally {
       setCancellingBooking(null);
+    }
+  };
+
+  const completePayment = async (bookingId: string) => {
+    const booking = bookings.find(b => b.id === bookingId);
+    if (!booking || !booking.barber_profiles?.slug) return;
+
+    setCompletingPayment(bookingId);
+    try {
+      // Create a new payment intent for this booking
+      const { data, error } = await supabase.functions.invoke('create-payment-intent', {
+        body: {
+          barberId: booking.barber_profiles.id,
+          amount: Math.round(booking.total_amount * 100), // Convert to cents
+          currency: 'usd',
+          customerEmail: booking.client_profiles?.email || user?.email,
+          metadata: {
+            bookingId: booking.id,
+            clientId: booking.client_profiles?.id || '',
+            barberId: booking.barber_profiles.id,
+            serviceId: booking.services?.id || '',
+            appointmentDate: booking.appointment_date,
+            appointmentTime: booking.appointment_time,
+            clientName: `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`,
+            clientPhone: booking.client_profiles?.phone || ''
+          }
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to create payment intent');
+      }
+
+      if (!data?.clientSecret) {
+        throw new Error('Failed to initialize payment');
+      }
+
+      // Redirect to booking flow with payment step
+      navigate(`/book/${booking.barber_profiles.slug}?step=payment&booking=${booking.id}`);
+
+    } catch (error: any) {
+      console.error('Error creating payment intent:', error);
+      NotificationManager.error(error.message || 'Failed to initialize payment. Please try again.');
+    } finally {
+      setCompletingPayment(null);
+    }
+  };
+
+  const removeBooking = async (bookingId: string) => {
+    const booking = bookings.find(b => b.id === bookingId);
+    if (!booking) return;
+
+    if (!confirm(`Are you sure you want to permanently remove this ${booking.status} booking? This action cannot be undone.`)) {
+      return;
+    }
+
+    setRemovingBooking(bookingId);
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      // Update local state
+      setBookings(prev => prev.filter(booking => booking.id !== bookingId));
+      NotificationManager.success('Booking removed successfully');
+
+    } catch (error) {
+      console.error('Error removing booking:', error);
+      NotificationManager.error('Failed to remove booking. Please try again.');
+    } finally {
+      setRemovingBooking(null);
     }
   };
 
@@ -580,6 +658,24 @@ const ClientBookings: React.FC = () => {
 
                     {/* Action Buttons */}
                     <div className="flex flex-col gap-3 w-full sm:w-auto">
+                      {/* Complete Payment */}
+                      {booking.status === 'pending' && (
+                        <button
+                          onClick={() => completePayment(booking.id)}
+                          disabled={completingPayment === booking.id}
+                          className="bg-green-500 text-white px-4 py-3 rounded-xl hover:bg-green-600 transition-all duration-200 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 min-h-[48px]"
+                        >
+                          {completingPayment === booking.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          ) : (
+                            <CreditCard className="h-4 w-4" />
+                          )}
+                          <span>
+                            {completingPayment === booking.id ? 'Processing...' : 'Complete Payment'}
+                          </span>
+                        </button>
+                      )}
+
                       {/* Contact Barber */}
                       {booking.barber_profiles?.phone && (
                         <a
@@ -626,6 +722,24 @@ const ClientBookings: React.FC = () => {
                         >
                           <Edit className="h-4 w-4" />
                           <span>Reschedule</span>
+                        </button>
+                      )}
+
+                      {/* Remove Cancelled Booking */}
+                      {booking.status === 'cancelled' && (
+                        <button
+                          onClick={() => removeBooking(booking.id)}
+                          disabled={removingBooking === booking.id}
+                          className="bg-gray-500 text-white px-4 py-3 rounded-xl hover:bg-gray-600 transition-all duration-200 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 min-h-[48px]"
+                        >
+                          {removingBooking === booking.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                          <span>
+                            {removingBooking === booking.id ? 'Removing...' : 'Remove'}
+                          </span>
                         </button>
                       )}
                     </div>
