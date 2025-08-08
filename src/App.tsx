@@ -28,11 +28,6 @@ import ResetPassword from './components/Auth/ResetPassword';
 // Set up global error handling
 setupGlobalErrorHandling();
 
-// Initialize analytics
-React.useEffect(() => {
-  initializeAnalytics();
-}, []);
-
 // Track page views for SPA routing
 const AnalyticsRouter: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -106,6 +101,11 @@ const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children
 };
 
 function App() {
+  // Initialize analytics on app mount
+  React.useEffect(() => {
+    initializeAnalytics();
+  }, []);
+
   return (
     <Router>
       <AnalyticsRouter>

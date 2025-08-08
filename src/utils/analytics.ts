@@ -11,6 +11,7 @@ declare global {
 const GA_MEASUREMENT_ID = 'G-FFB0C3L0GQ';
 
 // Check if GA is properly configured
+const isGAEnabled = Boolean(GA_MEASUREMENT_ID && GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX');
 
 export const initializeAnalytics = () => {
   if (!isGAEnabled) {
