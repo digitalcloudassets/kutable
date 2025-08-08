@@ -733,10 +733,6 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                 </div>
               </div>
               
-              <button className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 font-semibold flex items-center space-x-2 shadow-lg hover:scale-105">
-                <CreditCard className="h-5 w-5" />
-                <span>Setup Payments</span>
-              </button>
               <button 
                 onClick={handleStripeConnect}
                 disabled={settingUpStripe || !isConnected || !user}
