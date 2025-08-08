@@ -34,8 +34,18 @@ Deno.serve(async (req) => {
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
+  // TEMP debug:
   if (!RESEND_API_KEY || !RESEND_FROM || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return ok({ success: false, error: 'Server not configured' }, 500);
+    return ok({
+      success: false,
+      error: 'Server not configured',
+      details: {
+        hasResendKey: !!RESEND_API_KEY,
+        hasFrom: !!RESEND_FROM,
+        hasUrl: !!SUPABASE_URL,
+        hasServiceKey: !!SUPABASE_SERVICE_ROLE_KEY
+      }
+    }, 500);
   }
 
   const { createClient } = await import('npm:@supabase/supabase-js@2');
