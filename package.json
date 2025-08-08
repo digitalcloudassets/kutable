@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npx vite build",
+    "build": "vite build",
     "dev:functions": "netlify functions:serve",
     "dev:local": "concurrently -k \"npm:dev\" \"npm:dev:functions\"",
     "lint": "eslint .",

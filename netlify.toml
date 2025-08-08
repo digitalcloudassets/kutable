@@ -58,5 +58,7 @@ publish = "dist"
 # Build optimization
 [build.environment]
   NODE_ENV = "production"
+  NODE_VERSION = "20"
+  NPM_CONFIG_PRODUCTION = "false"
   GENERATE_SOURCEMAP = "false"
   INLINE_RUNTIME_CHUNK = "false"
