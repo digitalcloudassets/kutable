@@ -203,7 +203,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 p-6 rounded-t-2xl w-full max-w-none">
+      <div className="bg-white border-b border-gray-200 px-9 py-6 rounded-t-2xl w-full max-w-none">
         <div className="space-y-3">
           {/* Top row with avatar and name */}
           <div className="flex items-start space-x-6">
