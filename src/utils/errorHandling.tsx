@@ -156,31 +156,34 @@ export const setupGlobalErrorHandling = (): void => {
   initializeExternalErrorTracking();
 };
 
-// External error tracking integration
-const initializeExternalErrorTracking = () => {
-  // Sentry integration (if configured)
-  const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
-  if (sentryDsn && sentryDsn !== 'your_sentry_dsn_here') {
-    try {
-      // Dynamic import to avoid loading Sentry in development
-      import('@sentry/browser').then(({ init, captureException, setUser, setTag }) => {
-        init({
-          dsn: sentryDsn,
-          environment: import.meta.env.DEV ? 'development' : 'production',
-          tracesSampleRate: 0.1, // 10% of transactions for performance monitoring
-          beforeSend(event) {
-            // Filter out non-critical errors in production
-            if (!import.meta.env.DEV && event.level === 'warning') {
-              return null;
-            }
-            return event;
-          },
-          integrations: [
-            // Add performance monitoring
-            new ((window as any).Sentry?.BrowserTracing)({
-              tracingOrigins: [window.location.hostname],
-            }),
-          ],
+        import('@sentry/browser').then(({ init, setUser, setTag }) => {
+          const S = (window as any).Sentry;
+          const BrowserTracing = S && S.BrowserTracing;
+
+          const integrations = [];
+          if (BrowserTracing) {
+            integrations.push(
+              new BrowserTracing({
+                tracingOrigins: [window.location.hostname],
+              })
+            );
+          }
+
+          init({
+            dsn: sentryDsn,
+            environment: import.meta.env.DEV ? 'development' : 'production',
+            tracesSampleRate: 0.1,
+            beforeSend(event) {
+              if (!import.meta.env.DEV && event.level === 'warning') return null;
+              return event;
+            },
+            integrations, // <- use the array
+          });
+
+          setTag('component', 'kutable-frontend');
+          console.log('✅ Sentry error tracking initialized');
+        }).catch(() => {
+          console.warn('Sentry SDK not available');
         });
         
         // Set context
