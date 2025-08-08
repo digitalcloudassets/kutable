@@ -128,7 +128,6 @@ const ClientBookings: React.FC = () => {
           deposit_amount,
           notes,
           created_at,
-          stripe_payment_intent_id,
           barber_profiles (
             id,
             slug,
@@ -146,7 +145,6 @@ const ClientBookings: React.FC = () => {
           )
         `)
         .eq('client_id', clientProfile.id)
-        .not('stripe_payment_intent_id', 'is', null)
         .order('appointment_date', { ascending: false })
         .order('appointment_time', { ascending: false });
 
