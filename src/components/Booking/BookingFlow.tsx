@@ -227,67 +227,47 @@ const BookingFlow: React.FC = () => {
         .eq('id', clientProfile.id);
 
       if (updateError) throw updateError;
-      // Create payment intent via edge function
-      const { data, error } = await supabase.functions.invoke('create-payment-intent', {
+      // Create checkout session via edge function
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
-          barberId: barber.id,
-          clientId: clientProfile.id,
-          serviceId: selectedService.id,
-          appointmentDate: format(selectedDate, 'yyyy-MM-dd'),
-          appointmentTime: selectedTime,
-          clientDetails: {
-            ...customerInfo,
-            notes: sanitizedNotes
+          amount: Math.round(selectedService.price * 100), // Convert to cents
+          currency: 'usd',
+          name: `${selectedService.name} at ${barber.business_name}`,
+          mode: 'payment',
+          customerEmail: customerInfo.email,
+          metadata: {
+            barberId: barber.id,
+            clientId: clientProfile.id,
+            serviceId: selectedService.id,
+            appointmentDate: format(selectedDate, 'yyyy-MM-dd'),
+            appointmentTime: selectedTime,
+            clientName: `${customerInfo.firstName} ${customerInfo.lastName}`,
+            clientPhone: customerInfo.phone,
+            notes: sanitizedNotes || ''
           },
-          totalAmount: selectedService.price,
-          depositAmount: selectedService.deposit_required ? selectedService.deposit_amount : 0
+          successUrl: `${window.location.origin}/dashboard?payment=success`,
+          cancelUrl: `${window.location.origin}/book/${barberSlug}/${selectedService.id}?payment=cancelled`,
+          connectedAccountId: barber.stripe_account_id || undefined
         }
       });
 
-      if (error) throw error;
-
-      if (data?.clientSecret && data?.bookingId) {
-        setClientSecret(data.clientSecret);
-        setBookingId(data.bookingId);
-        setStep('payment');
-      } else {
-        throw new Error('Failed to initialize payment');
+      if (error) {
+        console.warn('Edge error context:', error?.context);
+        throw new Error(error?.context?.error || error.message || 'Payment initialization failed');
       }
+
+      if (!data?.success || !data?.url) {
+        throw new Error(data?.error || 'Payment initialization failed');
+      }
+      
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
+      
     } catch (error: any) {
       // Don't expose internal error details
       console.error('Payment initialization error:', error);
       
-      // Handle Supabase Functions errors more gracefully
-      let errorMessage = 'Failed to initialize payment. Please try again.';
-      
-      if (error?.name === 'FunctionsHttpError' || error?.message?.includes('Edge Function returned a non-2xx status code')) {
-        // Try to extract the error message from the Edge Function response
-        try {
-          // The error details might be in different places depending on the response
-          if (error?.context?.body) {
-            const errorData = typeof error.context.body === 'string' 
-              ? JSON.parse(error.context.body) 
-              : error.context.body;
-            errorMessage = errorData?.error || errorMessage;
-          } else if (error?.body) {
-            const errorData = typeof error.body === 'string' 
-              ? JSON.parse(error.body) 
-              : error.body;
-            errorMessage = errorData?.error || errorMessage;
-          }
-          
-          // Handle specific configuration errors
-          if (errorMessage.includes('Missing required environment variables')) {
-            errorMessage = 'Payment processing is not configured yet. Please contact the barber directly to complete your booking.';
-          } else if (errorMessage.includes('Stripe account')) {
-            errorMessage = 'This barber is still setting up payment processing. Please contact them directly or try again later.';
-          }
-        } catch (parseError) {
-          console.error('Failed to parse edge function error:', parseError);
-        }
-      }
-      
-      setPaymentError(errorMessage);
+      setPaymentError(error?.message || 'Unable to start checkout. Please try again.');
     } finally {
       setPaymentLoading(false);
     }
