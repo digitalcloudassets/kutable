@@ -1,7 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { setupGlobalErrorHandling } from './utils/errorHandling';
+import { initializeAnalytics, trackPageView } from './utils/analytics';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import HomePage from './pages/HomePage';
@@ -26,6 +27,23 @@ import ResetPassword from './components/Auth/ResetPassword';
 
 // Set up global error handling
 setupGlobalErrorHandling();
+
+// Initialize analytics
+React.useEffect(() => {
+  initializeAnalytics();
+}, []);
+
+// Track page views for SPA routing
+const AnalyticsRouter: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
+  
+  React.useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location]);
+  
+  return <>{children}</>;
+};
+
 // Protected Admin Route Component
 const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
@@ -90,6 +108,7 @@ const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children
 function App() {
   return (
     <Router>
+      <AnalyticsRouter>
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
         
@@ -142,6 +161,7 @@ function App() {
         />
         
       </div>
+      </AnalyticsRouter>
     </Router>
   );
 }
