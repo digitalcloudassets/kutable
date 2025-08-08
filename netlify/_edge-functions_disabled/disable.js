@@ -1,0 +1,1 @@
+export default () => new Response("Edge Functions disabled in local dev", { status: 200 });
