@@ -37,6 +37,29 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
 
   useEffect(() => {
     fetchBookings();
+    
+    // Set up realtime subscription for instant booking updates
+    const channel = supabase
+      .channel('barber-bookings-realtime')
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'bookings',
+          filter: `barber_id=eq.${barberId}`
+        },
+        (payload) => {
+          console.log('Barber booking realtime update:', payload);
+          // Refresh bookings when changes occur
+          fetchBookings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [barberId]);
 
   const fetchBookings = async () => {

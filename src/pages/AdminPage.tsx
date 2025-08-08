@@ -148,13 +148,14 @@ const AdminPage: React.FC = () => {
       // Get booking metrics
       const { data: bookingsData } = await supabase
         .from('bookings')
-        .select('total_amount, platform_fee, appointment_date, created_at, status');
+        .select('total_amount, platform_fee, appointment_date, created_at, status, updated_at')
+        .order('updated_at', { ascending: false });
 
       const totalBookings = bookingsData?.length || 0;
       const totalRevenue = bookingsData?.reduce((sum, booking) => 
-        sum + Number(booking.total_amount), 0) || 0;
+        ['confirmed', 'completed'].includes(booking.status) ? sum + Number(booking.total_amount) : sum, 0) || 0;
       const platformFees = bookingsData?.reduce((sum, booking) => 
-        sum + Number(booking.platform_fee), 0) || 0;
+        ['confirmed', 'completed'].includes(booking.status) ? sum + Number(booking.platform_fee) : sum, 0) || 0;
 
       // Calculate today's bookings
       const today = new Date().toISOString().split('T')[0];

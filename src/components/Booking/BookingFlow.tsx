@@ -692,7 +692,6 @@ const BookingFlow: React.FC = () => {
                 customerEmail={customerInfo.email}
                 metadata={{
                   bookingId: bookingId,
-                  barberId: barber.id,
                   clientId: currentClientId || '',
                   barberId: barber.id,
                   serviceId: selectedService.id,
