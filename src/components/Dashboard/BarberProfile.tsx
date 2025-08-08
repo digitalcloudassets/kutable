@@ -289,20 +289,38 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
     } catch (error: any) {
       console.error('Stripe Connect error:', error);
       
-      let errorMessage = 'Failed to set up payment processing. Please try again.';
+      let errorMessage = 'Failed to set up payment processing.';
       
-      // Handle specific error cases
-      if (error?.message?.includes('environment variables')) {
+      // Handle Supabase Edge Function errors (FunctionsHttpError)
+      if (error?.name === 'FunctionsHttpError' || error?.message?.includes('Edge Function returned a non-2xx status code')) {
+        try {
+          // Try to parse the error response body
+          let errorData = null;
+          if (error?.context?.body) {
+            errorData = typeof error.context.body === 'string' ? JSON.parse(error.context.body) : error.context.body;
+          }
+          
+          if (errorData?.error) {
+            if (errorData.error.includes('Missing required environment variables')) {
+              errorMessage = 'Payment setup is not configured yet. Please contact support to enable Stripe Connect.';
+            } else if (errorData.error.includes('STRIPE_SECRET_KEY')) {
+              errorMessage = 'Payment processing is not configured. Please contact support to enable payment features.';
+            } else {
+              errorMessage = errorData.error;
+            }
+          } else {
+            errorMessage = 'Payment setup service is not available. Please contact support.';
+          }
+        } catch (parseError) {
+          console.error('Failed to parse edge function error:', parseError);
+          errorMessage = 'Payment setup service error. Please contact support.';
+        }
+      } else if (error?.message?.includes('environment variables')) {
         errorMessage = 'Payment setup is not configured. Please contact support.';
       } else if (error?.message?.includes('Stripe')) {
         errorMessage = error.message;
-      } else if (error?.context?.body) {
-        try {
-          const errorData = JSON.parse(error.context.body);
-          errorMessage = errorData.error || errorMessage;
-        } catch {
-          // Use default message
-        }
+      } else {
+        errorMessage = error?.message || 'Failed to set up payment processing. Please try again.';
       }
       
       NotificationManager.error(errorMessage);
