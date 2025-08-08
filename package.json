@@ -51,8 +51,7 @@
     "vite": "^5.4.2"
   },
   "overrides": {
-    "update-notifier": "7.3.1",
-    "ci-info": "3.9.0"
+    "update-notifier": "7.3.1"
   },
   "browserslist": [
     "defaults",
