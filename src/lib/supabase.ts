@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { shouldSkipCSVRecord, isReservedSlug } from './reservedSlugs';
+import { generateUniqueSlug } from '../utils/updateBarberSlugs';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -171,8 +172,9 @@ const parseCSV = (csvText: string): any[] => {
   return data;
 };
 
-const generateSlug = (businessName: string, index: number): string => {
-  let slug = businessName
+// Simple slug generation for temporary CSV entries (not stored in database)
+const generateCSVSlug = (businessName: string, index: number): string => {
+  let baseSlug = businessName
     .toLowerCase()
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-')
@@ -180,8 +182,11 @@ const generateSlug = (businessName: string, index: number): string => {
     .replace(/^-+|-+$/g, '')
     .trim();
   
-  slug += `-${index}`;
-  return slug;
+  if (!baseSlug) {
+    baseSlug = 'barber';
+  }
+  
+  return `${baseSlug}-${index}`;
 };
 
 // Load real barber directory from CSV
@@ -227,7 +232,7 @@ const loadCSVDirectory = async (): Promise<any[]> => {
         
         return {
           id: `csv-${index + 1}`,
-          slug: generateSlug(barber.business_name, index),
+          slug: generateCSVSlug(barber.business_name, index),
           user_id: null,
           business_name: barber.business_name,
           owner_name: barber.owner_name,
@@ -454,6 +459,10 @@ if (!hasValidCredentials) {
 }
 
 export { supabase };
+
+export const loadCSVDirectory = async (): Promise<any[]> => {
+  return await loadCSVDirectory();
+};
 
 export const getRealBarberCount = async (): Promise<number> => {
   const data = await loadCSVDirectory();

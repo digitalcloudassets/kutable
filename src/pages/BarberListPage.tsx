@@ -4,6 +4,7 @@ import { Search, MapPin, Star, Filter, Clock, DollarSign, Calendar, MapIcon, X, 
 import { supabase } from '../lib/supabase';
 import { shouldSkipCSVRecord, isReservedSlug } from '../lib/reservedSlugs';
 import { applySearchFilters, SearchFilters, DEFAULT_FILTERS } from '../utils/searchFilters';
+import { generateUniqueSlug } from '../utils/updateBarberSlugs';
 import AdvancedSearchPanel from '../components/Search/AdvancedSearchPanel';
 import { NotificationManager } from '../utils/notifications';
 
@@ -209,6 +210,23 @@ const BarberListPage: React.FC = () => {
     return slug;
   };
 
+  // Simple slug generation for temporary CSV entries (not stored in database)
+  const generateCSVSlug = (businessName: string, index: number): string => {
+    let baseSlug = businessName
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .trim();
+    
+    if (!baseSlug) {
+      baseSlug = 'barber';
+    }
+    
+    return `${baseSlug}-${index}`;
+  };
+
   useEffect(() => {
     loadCSVData();
   }, []);
@@ -267,7 +285,7 @@ const BarberListPage: React.FC = () => {
         
         return {
           id: `csv-${index + 1}`,
-          slug: generateSlug(barber.business_name, index),
+          slug: generateCSVSlug(barber.business_name, index),
           business_name: barber.business_name,
           owner_name: barber.owner_name,
           phone: barber.phone || barber.direct_phone || null,

@@ -18,6 +18,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { isReservedSlug } from '../lib/reservedSlugs';
 import GoogleMap from '../components/Maps/GoogleMap';
+import { generateUniqueSlug } from '../utils/updateBarberSlugs';
 
 interface BarberProfile {
   id: string;
@@ -220,6 +221,23 @@ const BarberProfilePage: React.FC = () => {
     return slug;
   };
 
+  // Simple slug generation for temporary CSV entries (not stored in database)
+  const generateCSVSlug = (businessName: string, index: number): string => {
+    let baseSlug = businessName
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .trim();
+    
+    if (!baseSlug) {
+      baseSlug = 'barber';
+    }
+    
+    return `${baseSlug}-${index}`;
+  };
+
   useEffect(() => {
     if (slug) {
       fetchBarberData();
@@ -327,7 +345,7 @@ const BarberProfilePage: React.FC = () => {
         
         return {
           id: `csv-${index + 1}`,
-          slug: generatedSlug,
+          slug: generateCSVSlug(barber.business_name, index),
           business_name: barber.business_name,
           owner_name: barber.owner_name,
           phone: barber.phone || barber.direct_phone || null,

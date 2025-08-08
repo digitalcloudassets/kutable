@@ -10,394 +10,43 @@ import {
   MapPin,
   CreditCard,
   ArrowRight,
-  Loader,
-  AlertCircle,
-  Crown,
-  Sparkles,
-  Shield,
-  Edit,
-  Save,
-  FileText
-} from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../hooks/useAuth';
-import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
-import { Database } from '../../lib/supabase';
-import { isReservedSlug } from '../../lib/reservedSlugs';
-import { NotificationManager } from '../../utils/notifications';
-import { generateUniqueSlug } from '../../utils/updateBarberSlugs';
-
-type Barber = Database['public']['Tables']['barber_profiles']['Row'];
-
-const ClaimFlow: React.FC = () => {
-  const { barberId } = useParams<{ barberId: string }>();
-  const { user } = useAuth();
-  const { isConnected } = useSupabaseConnection();
-  const location = useLocation();
-  const navigate = useNavigate();
-  
-  const [barber, setBarber] = useState<Barber | null>(null);
-  const [isCSVProfile, setIsCSVProfile] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [claiming, setClaiming] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [claimData, setClaimData] = useState({
-    businessName: '',
-    ownerName: '',
-    phone: '',
-    email: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    bio: ''
-  });
-
-  useEffect(() => {
-    // Only store claim URL for auth redirect if user is not logged in
-    // and we don't already have one stored (prevents overwriting)
-    if (!user && !localStorage.getItem('claim_return_url')) {
-      localStorage.setItem('claim_return_url', location.pathname);
-    }
-    
-    if (barberId) {
-      fetchBarberProfile();
-    }
-  }, [barberId, user]);
-
-  useEffect(() => {
-    // Enable editing when user logs in
-    if (user && barber && !isEditing) {
-      // Check if this user should be claiming profiles
-      const userType = user.user_metadata?.user_type;
-      if (userType === 'client') {
-        // Clients shouldn't be claiming profiles - redirect them away
-        localStorage.removeItem('claim_return_url');
-        navigate('/dashboard');
-        return;
-      }
-      setIsEditing(true);
-    }
-  }, [user, barber]);
-
-  const fetchBarberProfile = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      console.log('🔍 Fetching barber profile for ID:', barberId);
-      
-      // Check if this is a reserved slug that shouldn't be claimable
-      if (barberId && isReservedSlug(barberId)) {
-        setError('This profile is not available for claiming');
-        setLoading(false);
-        return;
-      }
-      
-      // Check if this is a CSV ID (starts with "csv-")
-      if (barberId?.startsWith('csv-')) {
-        setIsCSVProfile(true);
-        console.log('📋 Loading CSV barber profile for ID:', barberId);
-        
-        // Load CSV data directly
-        const response = await fetch('/Barbers.csv');
-        if (!response.ok) {
-          throw new Error(`Failed to load CSV file: ${response.status} ${response.statusText}`);
-        }
-        
-        const csvText = await response.text();
-        const csvData = parseCSV(csvText);
-        
-        // Extract index from CSV ID (e.g., "csv-123" -> 123)
-        const csvIndex = parseInt(barberId.replace('csv-', '')) - 1;
-        const barberData = csvData[csvIndex];
-        
-        if (!barberData) {
-          setError('Barber profile not found');
+        // CSV profiles are now loaded and parsed by supabase.ts
+        // We need to fetch the CSV profile data from the centralized loader
+        try {
+          const { loadCSVDirectory } = await import('../../lib/supabase');
+          const csvProfiles = await loadCSVDirectory();
+          
+          // Extract index from CSV ID (e.g., "csv-123" -> 123)
+          const csvIndex = parseInt(barberId.replace('csv-', '')) - 1;
+          const profile = csvProfiles[csvIndex];
+          
+          if (!profile) {
+            setError('Barber profile not found');
+            setLoading(false);
+            return;
+          }
+          
+          console.log('📋 Found CSV barber profile:', profile.business_name);
+          setBarber(profile);
+          setClaimData({
+            businessName: profile.business_name || '',
+            ownerName: profile.owner_name || '',
+            phone: profile.phone || '',
+            email: profile.email || '',
+            address: profile.address || '',
+            city: profile.city || '',
+            state: profile.state || '',
+            zipCode: profile.zip_code || '',
+            bio: profile.bio || ''
+          });
+          setLoading(false);
+          return;
+        } catch (csvError) {
+          console.error('Error loading CSV profile:', csvError);
+          setError('Failed to load profile data');
           setLoading(false);
           return;
         }
-        
-        // Transform CSV data to barber profile format
-        const localBarberImages = [
-          '/clean barbershop.jpeg',
-          '/clean barbers.webp'
-        ];
-        const imageUrl = localBarberImages[csvIndex % localBarberImages.length];
-        
-        const profile = {
-          id: barberId,
-          slug: generateSlug(barberData.business_name, csvIndex),
-          business_name: barberData.business_name,
-          owner_name: barberData.owner_name,
-          phone: barberData.phone || barberData.direct_phone || null,
-          email: barberData.email || null,
-          address: barberData.address || null,
-          city: barberData.city || null,
-          state: barberData.state || null,
-          zip_code: barberData.zip_code || null,
-          bio: barberData.industry ? `Professional ${barberData.industry.toLowerCase()} services at ${barberData.business_name}. Contact us for appointments and more information.` : `Professional services at ${barberData.business_name}. Contact us for appointments and more information.`,
-          profile_image_url: imageUrl,
-          is_claimed: false,
-          is_active: true,
-          average_rating: Number((4.0 + Math.random() * 1.0).toFixed(1)),
-          total_reviews: Math.floor(Math.random() * 50) + 5,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        
-        console.log('📋 Found CSV barber profile:', profile.business_name);
-        setBarber(profile);
-        setClaimData({
-          businessName: profile.business_name || '',
-          ownerName: profile.owner_name || '',
-          phone: profile.phone || '',
-          email: profile.email || '',
-          address: profile.address || '',
-          city: profile.city || '',
-          state: profile.state || '',
-          zipCode: profile.zip_code || '',
-          bio: profile.bio || ''
-        });
-        setLoading(false);
-        return;
-      }
-
-      // For non-CSV IDs, query the database
-      setIsCSVProfile(false);
-      const { data, error } = await supabase
-        .from('barber_profiles')
-        .select('*')
-        .eq('id', barberId)
-        .maybeSingle();
-      
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-      
-      if (!data) {
-        setError('Barber profile not found');
-        setLoading(false);
-        return;
-      }
-      
-      if (data.is_claimed) {
-        console.log('⚠️ Profile already claimed, redirecting...');
-        navigate(`/barber/${data.slug}`);
-        return;
-      }
-
-      console.log('📋 Found barber profile from database:', data.business_name);
-      setBarber(data);
-      setClaimData({
-        businessName: data.business_name || '',
-        ownerName: data.owner_name || '',
-        phone: data.phone || '',
-        email: data.email || '',
-        address: data.address || '',
-        city: data.city || '',
-        state: data.state || '',
-        zipCode: data.zip_code || '',
-        bio: data.bio || ''
-      });
-    } catch (error) {
-      console.error('Error fetching barber profile:', error);
-      setError('Unable to load barber profile');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Enhanced CSV parsing function
-  const parseCSVLine = (line: string): string[] => {
-    const values: string[] = [];
-    let current = '';
-    let inQuotes = false;
-    let i = 0;
-    
-    while (i < line.length) {
-      const char = line[i];
-      
-      if (char === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          current += '"';
-          i += 2;
-          continue;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === ',' && !inQuotes) {
-        values.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-      i++;
-    }
-    
-    values.push(current.trim());
-    return values;
-  };
-
-  const parseCSV = (csvText: string): any[] => {
-    const lines = csvText.split('\n').filter(line => line.trim());
-    if (lines.length === 0) return [];
-    
-    const headerLine = lines[0];
-    const headers = parseCSVLine(headerLine).map(h => h.toLowerCase().trim());
-    
-    const data: any[] = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-      
-      const values = parseCSVLine(line);
-      const row: any = {};
-      
-      headers.forEach((header, index) => {
-        const value = values[index]?.trim() || '';
-        if (!value) return;
-        
-        // Map CSV headers to our schema
-        switch (header) {
-          case 'company_name':
-          case 'company name':
-          case 'business_name':
-          case 'business name':
-          case 'name':
-            row.business_name = value;
-            break;
-          case 'contact_first':
-          case 'contact first':
-          case 'first_name':
-          case 'first name':
-            row.contact_first = value;
-            break;
-          case 'contact_last':
-          case 'contact last':
-          case 'last_name':
-          case 'last name':
-            row.contact_last = value;
-            break;
-          case 'owner_name':
-          case 'owner name':
-          case 'owner':
-            row.owner_name = value;
-            break;
-          case 'phone':
-          case 'phone_number':
-          case 'phone number':
-            row.phone = value;
-            break;
-          case 'direct_phone':
-          case 'direct phone':
-            row.direct_phone = value;
-            break;
-          case 'email':
-          case 'email_address':
-          case 'email address':
-            row.email = value;
-            break;
-          case 'address':
-          case 'street_address':
-          case 'street address':
-            row.address = value;
-            break;
-          case 'city':
-            row.city = value;
-            break;
-          case 'state':
-            row.state = value;
-            break;
-          case 'zip':
-          case 'zip_code':
-          case 'zip code':
-          case 'postal_code':
-          case 'postal code':
-            row.zip_code = value;
-            break;
-          case 'county':
-            row.county = value;
-            break;
-          case 'website':
-          case 'website_url':
-          case 'website url':
-            row.website = value;
-            break;
-          case 'industry':
-          case 'business_type':
-          case 'business type':
-          case 'category':
-            row.industry = value;
-            break;
-        }
-      });
-      
-      // Create owner_name from contact_first and contact_last if not provided
-      if (!row.owner_name && (row.contact_first || row.contact_last)) {
-        row.owner_name = `${row.contact_first || ''} ${row.contact_last || ''}`.trim();
-      }
-      
-      // Use business_name as owner_name if still missing
-      if (!row.owner_name && row.business_name) {
-        row.owner_name = row.business_name;
-      }
-      
-      // Use direct_phone if phone is missing
-      if (!row.phone && row.direct_phone) {
-        row.phone = row.direct_phone;
-      }
-      
-      // Only add rows that have required business name
-      if (row.business_name && row.business_name.length > 1) {
-        data.push(row);
-      }
-    }
-    
-    return data;
-  };
-
-  const generateSlug = (businessName: string, index: number): string => {
-    let slug = businessName
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .trim();
-    
-    slug += `-${index}`;
-    return slug;
-  };
-
-  const handleClaim = async () => {
-    if (!user) {
-      setError('Please sign in to claim this profile');
-      return;
-    }
-
-    if (!isConnected) {
-      setError('Please connect to Supabase to claim this profile');
-      return;
-    }
-
-    setClaiming(true);
-    setError('');
-
-    try {
-      // Check if this user already has a barber profile
-      const { data: existingUserProfile } = await supabase
-        .from('barber_profiles')
-        .select('id, slug')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (existingUserProfile) {
-        // User already has a profile, redirect to it
-        navigate(`/barber/${existingUserProfile.slug}`);
-        return;
       }
 
       // Generate a unique slug
