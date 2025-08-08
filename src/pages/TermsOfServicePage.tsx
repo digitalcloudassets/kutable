@@ -497,8 +497,8 @@ const TermsOfServicePage: React.FC = () => {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Governing Law</h2>
               <p className="text-gray-600 leading-relaxed">
                 These Terms shall be interpreted and enforced in accordance with the laws of the 
-                State of Delaware, without regard to conflict of law principles. Any disputes 
-                arising from these Terms will be resolved in the courts of Delaware.
+                State of Alaska, without regard to conflict of law principles. Any disputes 
+                arising from these Terms will be resolved in the courts of Alaska.
               </p>
             </div>
 
@@ -535,8 +535,9 @@ const TermsOfServicePage: React.FC = () => {
               
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <p className="text-gray-500 text-sm">
-                  <strong>Kutable LLC</strong><br />
-                  Wilmington, Delaware<br />
+                  <strong>Kutable</strong><br />
+                  Operated by Drake First Trust<br />
+                  Anchorage, Alaska<br />
                   Legal: legal@kutable.com<br />
                   Support: support@kutable.com
                 </p>
