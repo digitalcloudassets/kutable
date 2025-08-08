@@ -5,23 +5,26 @@
 ### STEP E-01 — Disable Edge Functions in dev ✅
 - Updated package.json dev:netlify script to add NETLIFY_DEV_DISABLE_EDGE_HANDLERS=1
 - Verified netlify.toml has no [edge_functions] block (only Node functions)
-- **Next:** STEP T-02 - Stabilize Netlify CLI + sub-deps
+- Removed --forceLocal option (unsupported)
+- **Status:** Complete
 
-### STEP T-02 — Stabilize Netlify CLI + sub-deps ⏳
-- Adding netlify-cli@17.34.3 and decache@4.6.1 to devDependencies
-- Forcing overrides for update-notifier@7.3.1, ci-info@3.9.0, decache@4.6.1
-- **Next:** Clean install dependencies
+### STEP T-02 — Stabilize Netlify CLI + sub-deps ✅
+- Pinned netlify-cli@17.34.3 and decache@4.6.1 in devDependencies
+- Added overrides for update-notifier@7.3.1, ci-info@3.9.0, decache@4.6.1
+- Clean installed dependencies with pnpm --shamefully-hoist
+- **Status:** Complete
 
-### STEP C-03 — PostCSS sanity ⏳
-- **Next:** Verify PostCSS configuration if needed
+### STEP C-03 — PostCSS sanity ✅
+- Verified postcss.config.cjs exists and is properly configured
+- PostCSS, autoprefixer, and tailwindcss dependencies confirmed
+- **Status:** Complete
 
-### STEP F-04 — Ensure function exists and returns JSON ⏳
 ### STEP F-04 — Ensure function exists and returns JSON ✅
 - Verified netlify/functions/admin-create-user.ts exists and uses proper JSON responses
 - Function uses Supabase service role for user creation
 - CORS headers and error handling properly implemented
 - netlify.toml redirect from /api/admin/create-user confirmed
-- **Next:** STEP D-05 - Start Netlify dev server
+- **Status:** Complete
 
 ### STEP D-05 — Start Netlify dev ⏳
 - **Next:** Start dev server and verify it runs without errors
@@ -36,4 +39,4 @@
 - **Next:** Configure production URLs in environment and Supabase
 
 ---
-*Last updated: Starting setup process*
+*Last updated: Dependencies stabilized, ready for dev server*
