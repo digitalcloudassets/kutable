@@ -187,7 +187,36 @@ const DashboardPage: React.FC = () => {
     setActiveTab('profile');
     setActiveSubTab('info');
     setTriggerEdit(true);
+    // Also trigger a slug update check when editing
+    checkAndUpdateSlug();
   }, []);
+
+  const checkAndUpdateSlug = useCallback(async () => {
+    if (!user || userType !== 'barber' || !barber || !isConnected) return;
+
+    // Check if barber has UUID slug and update it
+    const isUuidSlug = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(barber.slug || '');
+    
+    if (isUuidSlug && barber.business_name) {
+      try {
+        const { updateSingleBarberSlug } = await import('../utils/updateBarberSlugs');
+        const result = await updateSingleBarberSlug(barber.id);
+        
+        if (result.success && result.newSlug) {
+          // Update the current URL if the slug changed
+          if (window.location.pathname.includes(barber.slug)) {
+            window.history.replaceState({}, '', `/barber/${result.newSlug}`);
+          }
+          
+          // Refresh barber data to get the new slug
+          await refreshBarberData();
+          NotificationManager.success(`Profile URL updated to: /barber/${result.newSlug}`);
+        }
+      } catch (error) {
+        console.error('Error updating slug:', error);
+      }
+    }
+  }, [user, userType, barber, isConnected, refreshBarberData]);
 
   const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab);

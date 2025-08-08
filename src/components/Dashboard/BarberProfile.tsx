@@ -37,6 +37,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { NotificationManager } from '../../utils/notifications';
 import { generateUniqueSlug } from '../../utils/updateBarberSlugs';
+import { updateSingleBarberSlug } from '../../utils/updateBarberSlugs';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -95,12 +96,18 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
     try {
       // Generate a proper slug if the current one is a UUID
       const isUuidSlug = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(barber.slug || '');
-      let updateData = { ...editData, updated_at: new Date().toISOString() };
+      let updateData: any = { ...editData, updated_at: new Date().toISOString() };
       
       if (isUuidSlug && editData.business_name) {
-        // Generate a proper slug from business name
-        const newSlug = await generateUniqueSlug(editData.business_name);
-        updateData = { ...updateData, slug: newSlug };
+        // Use the centralized slug update function
+        const result = await updateSingleBarberSlug(barber.id);
+        if (result.success && result.newSlug) {
+          // Update the current URL if we're on the barber profile page
+          if (window.location.pathname.includes(barber.slug)) {
+            window.history.replaceState({}, '', `/barber/${result.newSlug}`);
+          }
+          NotificationManager.success(`Profile URL updated to: /barber/${result.newSlug}`);
+        }
       }
       
       // Update barber profile
