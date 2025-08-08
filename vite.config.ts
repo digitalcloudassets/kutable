@@ -49,11 +49,6 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      "/api/admin/create-user": {
-        target: "http://localhost:9999",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/admin\/create-user$/, "/.netlify/functions/admin-create-user")
-      },
       // Direct proxy for admin-create-user
       '/api/admin/create-user': {
         target: 'http://localhost:9999',
