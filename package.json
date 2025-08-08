@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:netlify": "NETLIFY_UPDATE_NOTIFIER=0 pnpm exec netlify dev --offline --port=8888",
+    "dev:functions": "netlify functions:serve",
+    "dev:local": "concurrently -k \"npm:dev\" \"npm:dev:functions\"",
     "lint": "eslint .",
     "preview": "vite preview"
   },

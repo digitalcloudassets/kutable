@@ -27,16 +27,21 @@
 - **Status:** Complete
 
 ### STEP D-05 — Start Netlify dev ⏳
-- Updated script to disable Edge Functions with multiple env vars and --framework=#static
-- Created and disabled edge-functions folder by renaming to _edge-functions_disabled
-- Cleaned and reinstalled dependencies with hoisting
-- Simplified dev script to use --offline flag only
-- Added netlify-cli as dev dependency
-- **Status:** Complete - Edge Functions hard-disabled with netlify-cli installed
-- **Next:** Start dev server and verify Node-only operation
+- Switched to Vite + Netlify functions:serve architecture
+- Added concurrently to run both servers simultaneously
+- Added Vite proxy to forward /api/admin/create-user to functions server
+- Removed edge-functions folder completely
+- **Status:** Complete - Pure Node Functions mode with Vite proxy
+- **Next:** Start combined dev servers and test function
 
-### STEP X-06 — Curl test the function ⏳
-- **Next:** Test function endpoint with curl
+### STEP Dev-Local-01 — Vite+Functions mode ⏳
+- **Next:** Run npm run dev:local and verify both servers start
+
+### STEP Function-02 — Curl test ⏳
+- **Next:** Test function with curl to localhost:9999
+
+### STEP UI-03 — Signup via UI ⏳
+- **Next:** Test signup form via Vite proxy
 
 ### STEP UI-07 — Ensure client uses the admin route ⏳
 - **Next:** Verify UI calls admin route and handles responses  
