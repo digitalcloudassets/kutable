@@ -77,6 +77,8 @@ export default defineConfig({
       'react',
       'react-dom',
       'react-router-dom',
+      'react-hot-toast',
+      'react-router',
       '@supabase/supabase-js',
       'date-fns'
     ]
