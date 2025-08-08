@@ -21,11 +21,8 @@ import {
 } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import { format, addDays, isToday, isTomorrow } from 'date-fns';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
-import { calculateFees } from '../../lib/stripe';
 import { getOrCreateClientProfile } from '../../utils/profileHelpers';
 import { Database } from '../../lib/supabase';
 import { createAvailabilityManager } from '../../utils/availabilityManager';
@@ -55,7 +52,6 @@ interface BookingData {
   };
 }
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 const BookingFlow: React.FC = () => {
   const { barberSlug, serviceId } = useParams<{ barberSlug: string; serviceId?: string }>();
@@ -261,42 +257,24 @@ const BookingFlow: React.FC = () => {
 
   const handlePaymentSuccess = async (paymentIntentId: string) => {
     try {
-      // Confirm booking via edge function
-      const { data, error } = await supabase.functions.invoke('confirm-booking', {
-        body: {
-          bookingId: bookingId,
-          paymentIntentId: paymentIntentId
-        }
-      });
+      // Get the confirmed booking from database
+      const { data: booking, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          services(name, duration_minutes),
+          barber_profiles(business_name, owner_name)
+        `)
+        .eq('id', bookingId)
+        .single();
 
-      if (error) {
-        throw error;
+      if (error || !booking) {
+        throw new Error('Failed to fetch confirmed booking');
       }
 
-      if (data?.booking) {
-        // Send booking confirmation notifications
-        try {
-          const { data: notificationResult, error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {
-            body: {
-              bookingId: data.booking.id,
-              event: 'booking_confirmed'
-            }
-          });
-
-          if (notificationError) {
-            console.warn('Failed to send booking notifications:', notificationError);
-          } else if (notificationResult?.success) {
-            console.log('Booking confirmation notifications sent successfully');
-          }
-        } catch (notificationError) {
-          console.warn('Notification error (booking still succeeded):', notificationError);
-        }
-
-        setConfirmedBooking(data.booking);
-        setStep('confirmation');
-      } else {
-        throw new Error('Failed to confirm booking');
-      }
+      setConfirmedBooking(booking);
+      setStep('confirmation');
+      
     } catch (error: any) {
       console.error('Payment confirmation error:', error);
       NotificationManager.error('Payment succeeded but booking confirmation failed. Please contact support.');
@@ -711,9 +689,12 @@ const BookingFlow: React.FC = () => {
                 metadata={{
                   bookingId: bookingId,
                   barberId: barber.id,
+                  clientId: (await getOrCreateClientProfile(user!))?.id || '',
+                  barberId: barber.id,
                   serviceId: selectedService.id,
                   appointmentDate: format(selectedDate, 'yyyy-MM-dd'),
                   appointmentTime: selectedTime,
+                  notes: customerInfo.notes,
                   clientName: `${customerInfo.firstName} ${customerInfo.lastName}`,
                   clientPhone: customerInfo.phone
                 }}
