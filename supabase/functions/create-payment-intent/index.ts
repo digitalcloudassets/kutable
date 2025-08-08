@@ -491,7 +491,7 @@ Deno.serve(async (req) => {
       },
       description: `${serviceData.name} at ${barberData.business_name}`,
       receipt_email: sanitizedDetails.email,
-      statement_descriptor: 'KUTABLE*' + sanitizeInput(barberData.business_name, 15).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 15)
+      statement_descriptor: 'KUTABLE*' + barberData.business_name.toUpperCase().replace(/[^A-Z0-9\s\*\.\/\-]/g, '').slice(0, 14)
     })
 
     // Create pending booking record
