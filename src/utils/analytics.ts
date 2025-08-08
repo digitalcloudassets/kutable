@@ -8,13 +8,9 @@ declare global {
   }
 }
 
-const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
+const GA_MEASUREMENT_ID = 'G-FFB0C3L0GQ';
 
 // Check if GA is properly configured
-const isGAEnabled = GA_MEASUREMENT_ID && 
-  GA_MEASUREMENT_ID !== 'GA_MEASUREMENT_ID' && 
-  GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX' &&
-  GA_MEASUREMENT_ID.startsWith('G-');
 
 export const initializeAnalytics = () => {
   if (!isGAEnabled) {
