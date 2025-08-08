@@ -1,166 +1,203 @@
-// supabase/functions/create-stripe-account/index.ts
+import { createClient } from 'npm:@supabase/supabase-js@2'
+import Stripe from 'npm:stripe@14.21.0'
+ 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-};
-
-const json = (status: number, data: any) =>
-  new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-
-const form = (body: Record<string, any>) => {
-  const p = new URLSearchParams();
-  for (const [k, v] of Object.entries(body)) if (v !== undefined && v !== null) p.append(k, String(v));
-  return p;
-};
+}
 
 interface CreateAccountRequest {
-  barberId: string;
+  barberId?: string;
   businessName: string;
   ownerName: string;
   email: string;
   phone?: string;
-  address?: { line1: string; city: string; state: string; postal_code: string };
-}
-
-async function stripePost(path: string, body: URLSearchParams, key: string) {
-  const res = await fetch(`https://api.stripe.com/v1/${path}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Stripe-Version': '2023-10-16',
-    },
-    body,
-  });
-  const requestId = res.headers.get('request-id');
-  const payload = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    console.error('Stripe error', { path, status: res.status, requestId, payload });
-    return { ok: false, status: res.status, error: payload?.error?.message || 'Stripe API error', requestId, raw: payload };
-  }
-  return { ok: true, status: res.status, data: payload, requestId };
+  address?: {
+    line1: string;
+    city: string;
+    state: string;
+    postal_code: string;
+  };
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
 
   try {
-    const url = new URL(req.url);
-    const DEBUG = url.searchParams.get('debug') === '1';
+    // Check for required environment variables
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const siteUrl = 'https://kutable.com'; // Use live site URL
 
-    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://kutable.com';
+    const missingEnvVars = [];
+    if (!stripeSecretKey) missingEnvVars.push('STRIPE_SECRET_KEY');
+    if (!supabaseUrl) missingEnvVars.push('SUPABASE_URL');
+    if (!supabaseServiceKey) missingEnvVars.push('SUPABASE_SERVICE_ROLE_KEY');
 
-    const missing: string[] = [];
-    if (!STRIPE_SECRET_KEY) missing.push('STRIPE_SECRET_KEY');
-    if (!SUPABASE_URL) missing.push('SUPABASE_URL');
-    if (!SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY');
-
-    // Read body (or show why it fails)
-    let body: CreateAccountRequest | null = null;
-    try { body = await req.json(); } catch { /* ignore */ }
-
-    if (DEBUG) {
-      return json(200, {
-        success: false,
-        debug: true,
-        note: 'Debug echo; Stripe not called',
-        missingEnv: missing,
-        receivedBody: body,
-        method: req.method,
-        headers: Object.fromEntries(req.headers.entries()),
-      });
+    if (missingEnvVars.length > 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Missing required environment variables: ${missingEnvVars.join(', ')}. Please configure these in your Supabase Edge Functions settings.`
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
     }
 
-    if (missing.length) {
-      // Always 200 so the client can read error message
-      return json(200, { success: false, error: `Missing env: ${missing.join(', ')}`, status: 500 });
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2023-10-16',
+    })
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    const { 
+      barberId, 
+      businessName, 
+      ownerName, 
+      email, 
+      phone, 
+      address 
+    }: CreateAccountRequest = await req.json()
+
+    // Validate required fields
+    if (!businessName || !ownerName || !email) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Missing required fields: businessName, ownerName, and email are required.'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        },
+      )
     }
 
-    const { createClient } = await import('npm:@supabase/supabase-js@2');
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
-
-    if (!body) return json(200, { success: false, error: 'Invalid JSON body', status: 400 });
-
-    const { barberId, businessName, ownerName, email, phone, address } = body;
-    if (!barberId || !businessName || !ownerName || !email) {
-      return json(200, { success: false, error: 'Missing required fields: barberId, businessName, ownerName, email', status: 400 });
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return json(200, { success: false, error: 'Invalid email format', status: 400 });
-    }
-
-    const [first, ...rest] = ownerName.trim().split(/\s+/);
-    const last = rest.join(' ') || first;
-
-    // Create account
-    const accountParams = form({
+    // Create Stripe Express account
+    const account = await stripe.accounts.create({
       type: 'express',
       country: 'US',
-      email,
-      business_type: 'individual',
-      'individual[first_name]': first,
-      'individual[last_name]': last,
-      'individual[email]': email,
-      ...(phone ? { 'individual[phone]': phone } : {}),
-      ...(address
-        ? {
-            'individual[address][line1]': address.line1,
-            'individual[address][city]': address.city,
-            'individual[address][state]': address.state,
-            'individual[address][postal_code]': address.postal_code,
-            'individual[address][country]': 'US',
-          }
-        : {}),
-      'business_profile[name]': businessName,
-      'business_profile[mcc]': '7230',
-      'business_profile[url]': `${SITE_URL}/barber/${barberId}`,
-      ...(phone ? { 'business_profile[support_phone]': phone } : {}),
-      'business_profile[support_email]': email,
-      'capabilities[card_payments][requested]': 'true',
-      'capabilities[transfers][requested]': 'true',
-    });
+      email: email,
+      business_type: 'individual', // Most barbers are sole proprietors
+      individual: {
+        first_name: ownerName.split(' ')[0],
+        last_name: ownerName.split(' ').slice(1).join(' ') || ownerName.split(' ')[0],
+        email: email,
+        phone: phone,
+        address: address ? {
+          line1: address.line1,
+          city: address.city,
+          state: address.state,
+          postal_code: address.postal_code,
+          country: 'US'
+        } : undefined
+      },
+      business_profile: {
+        name: businessName,
+        mcc: '7230', // Barber and beauty shops
+        url: `${siteUrl}/barber/${barberId || 'new'}`,
+        support_phone: phone,
+        support_email: email
+      },
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true }
+      }
+    })
 
-    const accountRes = await stripePost('accounts', accountParams, STRIPE_SECRET_KEY!);
-    if (!accountRes.ok) {
-      return json(200, { success: false, error: accountRes.error, requestId: accountRes.requestId, status: accountRes.status });
-    }
-    const accountId = accountRes.data.id as string;
-
-    // Create onboarding link (no client_id)
-    const linkParams = form({
-      account: accountId,
+    // Create account link for onboarding
+    const accountLink = await stripe.accountLinks.create({
+      account: account.id,
+      refresh_url: `${siteUrl}/dashboard?stripe_refresh=true&account_id=${account.id}`,
+      return_url: `${siteUrl}/dashboard?stripe_setup=complete&account_id=${account.id}`,
       type: 'account_onboarding',
-      refresh_url: `${SITE_URL}/dashboard?stripe_refresh=true&account_id=${accountId}`,
-      return_url: `${SITE_URL}/dashboard?stripe_setup=complete&account_id=${accountId}`,
-      collect: 'eventually_due',
-    });
+      collect: 'eventually_due' // Collect all required information
+    })
 
-    const linkRes = await stripePost('account_links', linkParams, STRIPE_SECRET_KEY!);
-    if (!linkRes.ok) {
-      return json(200, { success: false, error: linkRes.error, requestId: linkRes.requestId, status: linkRes.status });
+    console.log('Created Stripe account:', account.id);
+    console.log('Account link URL:', accountLink.url);
+    console.log('Return URL will be:', `${siteUrl}/dashboard?stripe_setup=complete&account_id=${account.id}`);
+
+    // Store in database if barberId is provided
+    if (barberId) {
+      try {
+        // First, update the barber profile with the Stripe account ID
+        const { error: profileUpdateError } = await supabase
+          .from('barber_profiles')
+          .update({
+            stripe_account_id: account.id,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', barberId)
+
+        if (profileUpdateError) {
+          console.error('Error updating barber profile:', profileUpdateError);
+        }
+
+        // Then create/update the stripe_accounts record
+        const { error: stripeAccountError } = await supabase
+          .from('stripe_accounts')
+          .upsert({
+            barber_id: barberId,
+            stripe_account_id: account.id,
+            account_status: 'pending',
+            charges_enabled: false,
+            payouts_enabled: false,
+            updated_at: new Date().toISOString()
+          })
+
+        if (stripeAccountError) {
+          console.error('Error storing Stripe account:', stripeAccountError);
+        }
+      } catch (dbError) {
+        console.error('Database operation failed:', dbError);
+      }
     }
 
-    // Persist (best-effort)
-    const now = new Date().toISOString();
-    const { error: profileErr } = await supabase
-      .from('barber_profiles')
-      .update({ stripe_account_id: accountId, updated_at: now })
-      .eq('id', barberId);
-    if (profileErr) console.error('barber_profiles update error', profileErr);
+    return new Response(
+      JSON.stringify({
+        success: true,
+        accountId: account.id,
+        onboardingUrl: accountLink.url
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      },
+    )
 
-    const { error: upsertErr } = await supabase
-      .from('stripe_accounts')
-      .upsert({ barber_id: barberId, stripe_account_id: accountId, account_status: 'pending', charges_enabled: false, payouts_enabled: false, updated_at: now });
-    if (upsertErr) console.error('stripe_accounts upsert error', upsertErr);
-
-    return json(200, { success: true, accountId, onboardingUrl: linkRes.data.url });
-  } catch (e: any) {
-    console.error('Stripe Connect edge error', e?.message || e);
-    // Always 200 so client can render the message
-    return json(200, { success: false, error: e?.message || 'Unexpected error', status: 500 });
+  } catch (error) {
+    console.error('Stripe Connect error:', error)
+    
+    // Provide more specific error messages
+    let errorMessage = 'An unexpected error occurred';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('Invalid API Key')) {
+        errorMessage = 'Invalid Stripe API key. Please check your STRIPE_SECRET_KEY environment variable.';
+      } else if (error.message.includes('No such')) {
+        errorMessage = 'Stripe configuration error. Please verify your Stripe account settings.';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: errorMessage
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      },
+    )
   }
-});
+})
