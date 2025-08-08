@@ -1,0 +1,60 @@
+{
+  "name": "Kutable - Professional Barber Booking",
+  "short_name": "Kutable",
+  "description": "Book appointments with professional barbers instantly. Secure payments, SMS confirmations, and seamless booking experience.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0066FF",
+  "background_color": "#FAFBFC",
+  "categories": ["business", "lifestyle", "productivity"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/Kutable%20Logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Kutable%20Logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Find Barbers",
+      "short_name": "Find",
+      "description": "Browse verified barber profiles",
+      "url": "/barbers",
+      "icons": [
+        {
+          "src": "/Kutable%20Logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Manage your bookings and profile",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/Kutable%20Logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "scope": "/",
+  "id": "com.kutable.booking",
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  }
+}

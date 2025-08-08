@@ -27,6 +27,9 @@ import { NotificationManager, AdminNotifications } from '../utils/notifications'
 import ProductionSecurityCheck from '../components/Security/ProductionSecurityCheck';
 import MonitoringDashboard from '../components/Admin/MonitoringDashboard';
 import { updateAllBarberSlugs } from '../utils/updateBarberSlugs';
+import EnvironmentValidator from '../components/Admin/EnvironmentValidator';
+import ProductionReadinessPanel from '../components/Admin/ProductionReadinessPanel';
+import ProductionMetricsDashboard from '../components/Admin/ProductionMetricsDashboard';
 
 interface PlatformMetrics {
   totalBarbers: number;
@@ -413,7 +416,34 @@ const AdminPage: React.FC = () => {
                       Security & Production Readiness
                     </h3>
                   </div>
-                  <ProductionSecurityCheck />
+                  <div className="space-y-8">
+                    <ProductionSecurityCheck />
+                    
+                    {/* Import and add new components */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <div className="card-premium p-8">
+                        <div className="flex items-center space-x-3 mb-6">
+                          <div className="bg-blue-100 p-3 rounded-2xl">
+                            <Database className="h-6 w-6 text-blue-600" />
+                          </div>
+                          <h4 className="text-xl font-bold text-gray-900">Environment Status</h4>
+                        </div>
+                        <EnvironmentValidator />
+                      </div>
+                      
+                      <div className="card-premium p-8">
+                        <div className="flex items-center space-x-3 mb-6">
+                          <div className="bg-green-100 p-3 rounded-2xl">
+                            <CheckCircle className="h-6 w-6 text-green-600" />
+                          </div>
+                          <h4 className="text-xl font-bold text-gray-900">Production Readiness</h4>
+                        </div>
+                        <ProductionReadinessPanel />
+                      </div>
+                    </div>
+                    
+                    <ProductionMetricsDashboard />
+                  </div>
                 </div>
               )}
 
