@@ -130,7 +130,112 @@ Deno.serve(async (req) => {
       if (!skipSMS && (barber.sms_consent !== false) && barber.phone) {
         try {
           const smsMessage = generateBarberSMS(event, booking, formattedDate);
-          const smsResponse = await fetch(`${supabaseUrl}/functions/v1/send-sms`, {
+          const { data: smsResult, error: smsError } = await supabase.functions.invoke('send-sms', {
+            body: {
+              to: barber.phone,
+              message: smsMessage,
+              type: mapEventToSMSType(event)
+            }
+          });
+
+          if (smsError) {
+            console.error('SMS Error for barber:', smsError);
+            results.sms.barber = false;
+          } else {
+            results.sms.barber = smsResult?.success || false;
+          }
+        } catch (error) {
+          console.error('Error sending SMS to barber:', error);
+          results.sms.barber = false;
+        }
+      }
+
+      // Email to barber
+      if (!skipEmail && (barber.email_consent !== false) && barber.email) {
+        try {
+          const emailSubject = generateBarberEmailSubject(event, booking);
+          const emailMessage = generateBarberEmailMessage(event, booking, formattedDate);
+          
+          const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email', {
+            body: {
+              to: barber.email,
+              name: barber.owner_name,
+              subject: emailSubject,
+              message: emailMessage,
+              type: event
+            }
+          });
+
+          if (emailError) {
+            console.error('Email Error for barber:', emailError);
+            results.email.barber = false;
+          } else {
+            results.email.barber = emailResult?.success || false;
+          }
+        } catch (error) {
+          console.error('Error sending email to barber:', error);
+          results.email.barber = false;
+        }
+      }
+    }
+
+    // Send notifications to client
+    if ((recipients === 'both' || recipients === 'client') && booking.client_profiles) {
+      const client = booking.client_profiles;
+      
+      
+      // SMS to client
+      if (!skipSMS && (client.sms_consent !== false) && client.phone) {
+        try {
+          const smsMessage = generateClientSMS(event, booking, formattedDate);
+          const { data: smsResult, error: smsError } = await supabase.functions.invoke('send-sms', {
+            body: {
+              to: client.phone,
+              message: smsMessage,
+              type: mapEventToSMSType(event)
+            }
+          });
+
+          if (smsError) {
+            console.error('SMS Error for client:', smsError);
+            results.sms.client = false;
+          } else {
+            results.sms.client = smsResult?.success || false;
+          }
+        } catch (error) {
+          console.error('Error sending SMS to client:', error);
+          results.sms.client = false;
+        }
+      }
+
+      // Email to client
+      if (!skipEmail && (client.email_consent !== false) && client.email) {
+        try {
+          const emailSubject = generateClientEmailSubject(event, booking);
+          const emailMessage = generateClientEmailMessage(event, booking, formattedDate);
+          
+          const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email', {
+            body: {
+              to: client.email,
+              name: `${client.first_name} ${client.last_name}`,
+              subject: emailSubject,
+              message: emailMessage,
+              type: event
+            }
+          });
+
+          if (emailError) {
+            console.error('Email Error for client:', emailError);
+            results.email.client = false;
+          } else {
+            results.email.client = emailResult?.success || false;
+          }
+        } catch (error) {
+          console.error('Error sending email to client:', error);
+          results.email.client = false;
+        }
+      }
+    }
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${supabaseServiceKey}`,
