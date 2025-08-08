@@ -30,7 +30,8 @@
 - Updated script to disable Edge Functions with multiple env vars and --framework=#static
 - Created and disabled edge-functions folder by renaming to _edge-functions_disabled
 - Cleaned and reinstalled dependencies with hoisting
-- **Status:** Complete - Edge Functions hard-disabled
+- Simplified dev script to use --offline flag only
+- **Status:** Complete - Edge Functions hard-disabled with simplified script
 - **Next:** Start dev server and verify Node-only operation
 
 ### STEP X-06 — Curl test the function ⏳

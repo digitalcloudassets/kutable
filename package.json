@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:netlify": "NETLIFY_UPDATE_NOTIFIER=0 NETLIFY_EDGE_HANDLERS_DISABLED=1 NETLIFY_DEV_DISABLE_EDGE_HANDLERS=1 pnpm exec netlify dev --offline --framework=#static --port=8888",
+    "dev:netlify": "NETLIFY_UPDATE_NOTIFIER=0 pnpm exec netlify dev --offline --port=8888",
     "lint": "eslint .",
     "preview": "vite preview"
   },
