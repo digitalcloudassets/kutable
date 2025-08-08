@@ -72,6 +72,29 @@ const ClientBookings: React.FC = () => {
   useEffect(() => {
     if (user) {
       fetchBookings();
+      
+      // Set up realtime subscription for instant booking updates
+      const channel = supabase
+        .channel('client-bookings-realtime')
+        .on(
+          'postgres_changes',
+          { 
+            event: '*', 
+            schema: 'public', 
+            table: 'bookings',
+            filter: `client_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Booking realtime update:', payload);
+            // Refresh bookings when changes occur
+            fetchBookings();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [user]);
 

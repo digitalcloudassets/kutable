@@ -57,18 +57,19 @@ Deno.serve(async (req) => {
     }
 
     // Upsert payment record (idempotent)
-    const { error: paymentError } = await db.from('platform_transactions').upsert({
+    const { error: paymentError } = await db.from('payments').upsert({
+      payment_intent_id: session.payment_intent,
+      session_id: session.id,
       booking_id: bookingId,
       barber_id: md.barberId ?? null,
-      transaction_type: 'booking',
-      gross_amount: session.amount_total ? session.amount_total / 100 : 0,
-      platform_fee: session.amount_total ? Math.floor(session.amount_total * 0.01) / 100 : 0,
-      stripe_fee: 0, // Will be calculated from actual charge
-      net_amount: session.amount_total ? (session.amount_total - Math.floor(session.amount_total * 0.01)) / 100 : 0,
-      stripe_transaction_id: session.payment_intent,
-      created_at: new Date().toISOString()
+      user_id: md.clientId ?? null,
+      amount: session.amount_total ?? 0,
+      currency: session.currency ?? 'usd',
+      status: 'succeeded',
+      raw: session,
+      updated_at: new Date().toISOString()
     }, {
-      onConflict: 'stripe_transaction_id'
+      onConflict: 'payment_intent_id'
     });
 
     if (paymentError) {
