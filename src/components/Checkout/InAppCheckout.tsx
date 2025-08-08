@@ -272,6 +272,7 @@ export default function InAppCheckout({
       stripe={stripePromise} 
       options={{ 
         clientSecret,
+        mode: 'payment',
         paymentMethodTypes: ['card'],
         appearance: {
           theme: 'stripe',
