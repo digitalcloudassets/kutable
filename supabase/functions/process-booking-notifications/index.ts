@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
       // SMS to barber
       if (!skipSMS && (barber.sms_consent !== false) && barber.phone) {
         try {
-          const smsMessage = this.generateBarberSMS(event, booking, formattedDate);
+          const smsMessage = generateBarberSMS(event, booking, formattedDate);
           const smsResponse = await fetch(`${supabaseUrl}/functions/v1/send-sms`, {
             method: 'POST',
             headers: {
@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
             body: JSON.stringify({
               to: barber.phone,
               message: smsMessage,
-              type: this.mapEventToSMSType(event)
+              type: mapEventToSMSType(event)
             })
           });
 
@@ -154,8 +154,8 @@ Deno.serve(async (req) => {
       // Email to barber
       if (!skipEmail && (barber.email_consent !== false) && barber.email) {
         try {
-          const emailSubject = this.generateBarberEmailSubject(event, booking);
-          const emailMessage = this.generateBarberEmailMessage(event, booking, formattedDate);
+          const emailSubject = generateBarberEmailSubject(event, booking);
+          const emailMessage = generateBarberEmailMessage(event, booking, formattedDate);
           
           const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
             method: 'POST',
@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
       // SMS to client
       if (!skipSMS && (client.sms_consent !== false) && client.phone) {
         try {
-          const smsMessage = this.generateClientSMS(event, booking, formattedDate);
+          const smsMessage = generateClientSMS(event, booking, formattedDate);
           const smsResponse = await fetch(`${supabaseUrl}/functions/v1/send-sms`, {
             method: 'POST',
             headers: {
@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
             body: JSON.stringify({
               to: client.phone,
               message: smsMessage,
-              type: this.mapEventToSMSType(event)
+              type: mapEventToSMSType(event)
             })
           });
 
@@ -214,8 +214,8 @@ Deno.serve(async (req) => {
       // Email to client
       if (!skipEmail && (client.email_consent !== false) && client.email) {
         try {
-          const emailSubject = this.generateClientEmailSubject(event, booking);
-          const emailMessage = this.generateClientEmailMessage(event, booking, formattedDate);
+          const emailSubject = generateClientEmailSubject(event, booking);
+          const emailMessage = generateClientEmailMessage(event, booking, formattedDate);
           
           const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
             method: 'POST',
