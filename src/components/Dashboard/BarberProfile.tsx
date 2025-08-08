@@ -55,6 +55,41 @@ const formatPhoneNumber = (phone: string) => {
   return phone;
 };
 
+const generateUniqueSlug = async (businessName: string): Promise<string> => {
+  let baseSlug = businessName
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .trim();
+  
+  if (!baseSlug) {
+    baseSlug = 'barber';
+  }
+  
+  let slug = baseSlug;
+  let counter = 1;
+  
+  // Check for conflicts and make unique
+  while (true) {
+    const { data: existingProfile } = await supabase
+      .from('barber_profiles')
+      .select('id')
+      .eq('slug', slug)
+      .maybeSingle();
+    
+    if (!existingProfile) {
+      break;
+    }
+    
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+  
+  return slug;
+};
+
 const BarberProfile: React.FC<BarberProfileProps> = ({ 
   barber, 
   onUpdate, 
@@ -92,13 +127,20 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
   const handleSave = async () => {
     setLoading(true);
     try {
+      // Generate a proper slug if the current one is a UUID
+      const isUuidSlug = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(barber.slug || '');
+      let updateData = { ...editData, updated_at: new Date().toISOString() };
+      
+      if (isUuidSlug && editData.business_name) {
+        // Generate a proper slug from business name
+        const newSlug = await generateUniqueSlug(editData.business_name);
+        updateData = { ...updateData, slug: newSlug };
+      }
+      
       // Update barber profile
       const { error: profileError } = await supabase
         .from('barber_profiles')
-        .update({
-          ...editData,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', barber.id);
 
       if (profileError) throw profileError;

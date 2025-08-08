@@ -261,6 +261,25 @@ const BarberProfilePage: React.FC = () => {
     try {
       console.log('🔍 Loading barber profile for slug:', slug);
       
+      // PRIORITY 1: Check database for profiles with UUID slugs (legacy profiles)
+      const isUuidSlug = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
+      
+      if (isUuidSlug) {
+        // For UUID slugs, check by ID instead of slug
+        const { data: dbBarberById, error: dbErrorById } = await supabase
+          .from('barber_profiles')
+          .select('*')
+          .eq('id', slug)
+          .maybeSingle();
+
+        if (!dbErrorById && dbBarberById) {
+          console.log('✅ Found barber profile by ID (legacy UUID slug):', dbBarberById.business_name);
+          setBarber(dbBarberById);
+          setLoading(false);
+          return;
+        }
+      }
+      
       // PRIORITY 1: Check database for claimed profiles first
       const { data: dbBarber, error: dbError } = await supabase
         .from('barber_profiles')
