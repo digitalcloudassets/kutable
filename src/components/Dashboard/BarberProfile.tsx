@@ -238,20 +238,27 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
 
     setSettingUpStripe(true);
     try {
+      // Pre-validate address to avoid Stripe errors
+      const rawAddr = barber.address
+        ? { line1: barber.address, city: barber.city || '', state: barber.state || '', postal_code: barber.zip_code || '' }
+        : undefined;
+
+      const state2 = (rawAddr?.state || '').trim().toUpperCase();
+      const zipOk = !!rawAddr?.postal_code && /^\d{5}(-\d{4})?$/.test(rawAddr.postal_code.trim());
+      const stateOk = /^[A-Z]{2}$/.test(state2);
+
+      // Only include address if state and zip are valid, otherwise let Stripe collect during onboarding
+      const validatedAddress = (rawAddr && stateOk && zipOk)
+        ? { ...rawAddr, state: state2 }
+        : undefined;
+
       const payload = {
         barberId: barber.id,
         businessName: barber.business_name,
         ownerName: barber.owner_name,
         email: barber.email || user.email,
         phone: barber.phone || undefined,
-        address: barber.address
-          ? { 
-              line1: barber.address, 
-              city: barber.city || '', 
-              state: barber.state || '', 
-              postal_code: barber.zip_code || '' 
-            }
-          : undefined,
+        address: validatedAddress, // will be undefined if not valid → Stripe collects during onboarding
       };
 
       // First, try debug echo (comment this out after you fix it)
@@ -274,6 +281,12 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
       // Always-200 envelope: success flag + error message included by server
       if (!data.success) {
         const msg = data.error || 'Payment setup failed';
+        console.error('Server error details:', { 
+          error: data.error, 
+          requestId: data.requestId, 
+          status: data.status,
+          details: data.details 
+        });
         console.error('Server said no:', data);
         NotificationManager.error(msg);
         return;
@@ -297,9 +310,19 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
 
       NotificationManager.error('Unexpected response from payment setup.');
     } catch (e: any) {
-      const raw = e?.context ? JSON.stringify(e.context) : e?.message || String(e);
+      // Extract the most relevant error message
+      let errorMessage = 'Failed to set up payment processing.';
+      
+      if (e?.context) {
+        console.error('Full error context:', JSON.stringify(e.context));
+        // Try to extract the actual error from the context
+        errorMessage = e.context.error || e.context.message || e.message || errorMessage;
+      } else {
+        errorMessage = e?.message || errorMessage;
+      }
+      
       console.error('Stripe Connect error (client):', raw);
-      NotificationManager.error(typeof raw === 'string' ? raw : 'Failed to set up payment processing.');
+      NotificationManager.error(errorMessage);
     } finally {
       setSettingUpStripe(false);
     }

@@ -22,6 +22,43 @@ interface CreateAccountRequest {
   address?: { line1: string; city: string; state: string; postal_code: string };
 }
 
+// US State mapping and validation helpers
+const STATE_MAP: Record<string, string> = {
+  alabama: 'AL', alaska: 'AK', arizona: 'AZ', arkansas: 'AR', california: 'CA',
+  colorado: 'CO', connecticut: 'CT', delaware: 'DE', 'district of columbia': 'DC',
+  florida: 'FL', georgia: 'GA', hawaii: 'HI', idaho: 'ID', illinois: 'IL',
+  indiana: 'IN', iowa: 'IA', kansas: 'KS', kentucky: 'KY', louisiana: 'LA',
+  maine: 'ME', maryland: 'MD', massachusetts: 'MA', michigan: 'MI', minnesota: 'MN',
+  mississippi: 'MS', missouri: 'MO', montana: 'MT', nebraska: 'NE', nevada: 'NV',
+  'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
+  'north carolina': 'NC', 'north dakota': 'ND', ohio: 'OH', oklahoma: 'OK',
+  oregon: 'OR', pennsylvania: 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+  'south dakota': 'SD', tennessee: 'TN', texas: 'TX', utah: 'UT', vermont: 'VT',
+  virginia: 'VA', washington: 'WA', 'west virginia': 'WV', wisconsin: 'WI', wyoming: 'WY',
+  // territories commonly needed
+  'puerto rico': 'PR', 'guam': 'GU', 'american samoa': 'AS', 'northern mariana islands': 'MP', 'us virgin islands': 'VI'
+};
+
+function normalizeUSState(input?: string): string | null {
+  if (!input) return null;
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  // Already a two-letter code?
+  if (/^[A-Za-z]{2}$/.test(trimmed)) return trimmed.toUpperCase();
+  const key = trimmed.toLowerCase();
+  return STATE_MAP[key] ?? null;
+}
+
+function isValidUSZip(zip?: string): boolean {
+  if (!zip) return false;
+  const s = zip.trim();
+  return /^\d{5}(-\d{4})?$/.test(s);
+}
+
+function isNonEmpty(v?: string) {
+  return typeof v === 'string' && v.trim().length > 0;
+}
+
 async function stripePost(path: string, body: URLSearchParams, key: string) {
   const res = await fetch(`https://api.stripe.com/v1/${path}`, {
     method: 'POST',
@@ -36,7 +73,13 @@ async function stripePost(path: string, body: URLSearchParams, key: string) {
   const payload = await res.json().catch(() => ({}));
   if (!res.ok) {
     console.error('Stripe error', { path, status: res.status, requestId, payload });
-    return { ok: false, status: res.status, error: payload?.error?.message || 'Stripe API error', requestId, raw: payload };
+    return {
+      ok: false,
+      status: res.status,
+      error: payload?.error?.message || 'Stripe API error',
+      requestId,
+      details: payload?.error || payload, // include full error details
+    };
   }
   return { ok: true, status: res.status, data: payload, requestId };
 }
@@ -103,6 +146,28 @@ Deno.serve(async (req) => {
     const [first, ...rest] = ownerName.trim().split(/\s+/);
     const last = rest.join(' ') || first;
 
+    // Validate and normalize address before sending to Stripe
+    const normalizedState = normalizeUSState(address?.state);
+    const validZip = isValidUSZip(address?.postal_code);
+
+    // Build address fields conditionally: only include if state + zip are valid
+    const addressFields = (address && isNonEmpty(address.line1) && isNonEmpty(address.city) && normalizedState && validZip)
+      ? {
+          'individual[address][line1]': address.line1,
+          'individual[address][city]': address.city,
+          'individual[address][state]': normalizedState,
+          'individual[address][postal_code]': address.postal_code.trim(),
+          'individual[address][country]': 'US',
+        }
+      : undefined;
+
+    console.log('Address validation:', {
+      provided: !!address,
+      normalizedState,
+      validZip,
+      willInclude: !!addressFields
+    });
+
     // Create Express account
     const accountParams = form({
       type: 'express',
@@ -113,15 +178,7 @@ Deno.serve(async (req) => {
       'individual[last_name]': last,
       'individual[email]': email,
       ...(phone ? { 'individual[phone]': phone } : {}),
-      ...(address
-        ? {
-            'individual[address][line1]': address.line1,
-            'individual[address][city]': address.city,
-            'individual[address][state]': address.state,
-            'individual[address][postal_code]': address.postal_code,
-            'individual[address][country]': 'US',
-          }
-        : {}),
+      ...(addressFields ? addressFields : {}), // only include if valid
       'business_profile[name]': businessName,
       'business_profile[mcc]': '7230',
       'business_profile[url]': `${SITE_URL}/barber/${barberId}`,
@@ -139,7 +196,7 @@ Deno.serve(async (req) => {
         error: accountRes.error, 
         requestId: accountRes.requestId, 
         status: accountRes.status,
-        details: accountRes.raw 
+        details: accountRes.details 
       });
     }
     const accountId = accountRes.data.id as string;
@@ -162,7 +219,7 @@ Deno.serve(async (req) => {
         error: linkRes.error, 
         requestId: linkRes.requestId, 
         status: linkRes.status,
-        details: linkRes.raw 
+        details: linkRes.details 
       });
     }
 
