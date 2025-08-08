@@ -5,17 +5,33 @@ export async function adminSignup(email: string, password: string, metadata: Rec
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       'x-admin-secret': import.meta.env.VITE_ADMIN_API_SECRET || 'kutable-admin-secret-2025',
     },
     body: JSON.stringify({ email, password, metadata }),
     credentials: 'include',
   });
 
-  const json = await resp.json();
-  if (!resp.ok) {
-    throw new Error(json?.error || 'Signup failed');
+  // Read text first to avoid "Unexpected end of JSON input"
+  const raw = await resp.text();
+  let payload: any = null;
+  try {
+    payload = raw ? JSON.parse(raw) : null;
+  } catch {
+    // non-JSON; leave payload as null
   }
 
+  if (!resp.ok) {
+    const msg = payload?.error || raw || `HTTP ${resp.status}`;
+    throw new Error(msg);
+  }
+
+  const user = payload?.user;
+  if (!user) {
+    throw new Error('Signup failed: no user returned');
+  }
+
+  // Immediately sign in
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw new Error(error.message);
   return data.user;
