@@ -184,15 +184,26 @@ export default function InAppCheckout({
       </div>
     );
   }
-
-  const options = useMemo(() => ({ clientSecret }), [clientSecret]);
+  const options = useMemo(() => ({ 
+    clientSecret: clientSecret || '' 
+  }), [clientSecret]);
 
   return (
     <Elements stripe={stripePromise} options={options}>
-      <CheckoutForm
-        clientSecret={clientSecret}
-        onSuccess={onComplete}
-      />
+      {clientSecret ? (
+        <CheckoutForm
+          clientSecret={clientSecret}
+          onSuccess={onComplete}
+        />
+      ) : (
+        <div className="text-center py-8">
+          <div className="relative mb-6">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-100 border-t-primary-500 mx-auto"></div>
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-accent-500 opacity-20 blur-lg"></div>
+          </div>
+          <p className="text-gray-600 font-medium">Initializing secure payment...</p>
+        </div>
+      )}
     </Elements>
   );
 }
