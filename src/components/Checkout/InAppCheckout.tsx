@@ -1,11 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { Loader, CreditCard, Shield, Lock } from 'lucide-react';
+import { Loader, CreditCard, Shield, Lock, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { NotificationManager } from '../../utils/notifications';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY!);
+// Check if Stripe key is configured
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripeKey && 
+  stripeKey !== 'your_stripe_publishable_key_here' && 
+  stripeKey.startsWith('pk_') 
+    ? loadStripe(stripeKey) 
+    : null;
 
 function CheckoutForm({
   clientSecret,
@@ -17,6 +23,17 @@ function CheckoutForm({
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    // Check if Stripe and Elements are ready
+    if (stripe && elements) {
+      setIsReady(true);
+      console.log('Stripe and Elements are ready');
+    } else {
+      console.log('Waiting for Stripe/Elements:', { stripe: !!stripe, elements: !!elements });
+    }
+  }, [stripe, elements]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +70,15 @@ function CheckoutForm({
 
   return (
     <div className="space-y-6">
+      {!isReady && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <Loader className="h-4 w-4 text-blue-600 animate-spin" />
+            <span className="text-blue-800 text-sm">Loading payment form...</span>
+          </div>
+        </div>
+      )}
+      
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Payment Element */}
         <div>
@@ -61,8 +87,21 @@ function CheckoutForm({
             Payment Information
           </label>
           <div className="border border-gray-300 rounded-xl p-4 bg-white">
-            <PaymentElement />
+            <PaymentElement 
+              options={{
+                layout: 'tabs',
+                paymentMethodOrder: ['card'],
+                fields: {
+                  billingDetails: 'auto'
+                }
+              }}
+            />
           </div>
+          {!isReady && (
+            <p className="text-sm text-gray-500 mt-2">
+              If the payment form doesn't appear, please check your Stripe configuration.
+            </p>
+          )}
         </div>
 
         {/* Submit Button */}
@@ -123,6 +162,24 @@ export default function InAppCheckout({
 }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
+
+  // Check if Stripe is properly configured
+  if (!stripePromise) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+        <AlertCircle className="h-8 w-8 text-yellow-600 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-yellow-800 mb-2">Stripe Not Configured</h3>
+        <p className="text-yellow-700 mb-4">
+          Please add your Stripe publishable key to the environment variables to enable payments.
+        </p>
+        <div className="bg-yellow-100 rounded-lg p-4 text-left">
+          <p className="text-yellow-800 text-sm font-mono">
+            VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_key_here
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     const initializePayment = async () => {
@@ -207,7 +264,24 @@ export default function InAppCheckout({
   }
 
   return (
-    <Elements stripe={stripePromise} options={{ clientSecret }}>
+    <Elements 
+      stripe={stripePromise} 
+      options={{ 
+        clientSecret,
+        appearance: {
+          theme: 'stripe',
+          variables: {
+            colorPrimary: '#0066FF',
+            colorBackground: '#ffffff',
+            colorText: '#1f2937',
+            colorDanger: '#ef4444',
+            fontFamily: 'Inter, system-ui, sans-serif',
+            spacingUnit: '4px',
+            borderRadius: '12px'
+          }
+        }
+      }}
+    >
       <CheckoutForm
         clientSecret={clientSecret}
         onSuccess={onComplete}
