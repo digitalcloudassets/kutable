@@ -1,15 +1,20 @@
 import { supabase } from './supabase';
 
-export async function adminSignup(email: string, password: string, metadata: Record<string, any> = {}) {
-  const resp = await fetch('/api/admin/create-user', {
+const API_BASE = import.meta.env.DEV
+  ? '/api/admin/create-user' // dev - goes through Vite proxy
+  : '/.netlify/functions/admin-create-user'; // prod - direct Netlify function path
+
+export async function adminSignup(
+  email: string,
+  password: string,
+  metadata: Record<string, any> = {}
+) {
+  const resp = await fetch(API_BASE, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password, metadata }),
   });
 
-  // Read text first to avoid "Unexpected end of JSON input"
   const raw = await resp.text();
   let payload: any = null;
   try {
@@ -29,7 +34,10 @@ export async function adminSignup(email: string, password: string, metadata: Rec
   }
 
   // Immediately sign in
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
   if (error) throw new Error(error.message);
   return data.user;
 }
