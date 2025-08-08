@@ -7,11 +7,123 @@ import { NotificationManager } from '../../utils/notifications';
 
 // Check if Stripe key is configured
 const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = stripeKey && 
+const isStripeConfigured = stripeKey && 
   stripeKey !== 'your_stripe_publishable_key_here' && 
-  stripeKey.startsWith('pk_') 
-    ? loadStripe(stripeKey) 
-    : null;
+  stripeKey !== 'pk_test_placeholder_key_for_development' &&
+  stripeKey.startsWith('pk_');
+
+const stripePromise = isStripeConfigured ? loadStripe(stripeKey) : null;
+
+// Mock Payment Component for Development
+const MockPaymentForm: React.FC<{
+  onSuccess: (paymentIntentId: string) => void;
+  amount: number;
+}> = ({ onSuccess, amount }) => {
+  const [mockProcessing, setMockProcessing] = useState(false);
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvc, setCvc] = useState('');
+
+  const handleMockPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMockProcessing(true);
+    
+    // Simulate payment processing
+    setTimeout(() => {
+      const mockPaymentIntentId = `pi_mock_${Date.now()}`;
+      NotificationManager.success('Mock payment successful! (Development mode)');
+      onSuccess(mockPaymentIntentId);
+      setMockProcessing(false);
+    }, 2000);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center space-x-2">
+          <AlertCircle className="h-5 w-5 text-blue-600" />
+          <span className="text-blue-800 font-semibold">Development Mode - Mock Payment</span>
+        </div>
+        <p className="text-blue-700 text-sm mt-2">
+          This is a simulated payment form. Add your Stripe publishable key to enable real payment processing.
+        </p>
+      </div>
+
+      <form onSubmit={handleMockPayment} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            <CreditCard className="h-4 w-4 inline mr-1" />
+            Card Number (Mock)
+          </label>
+          <input
+            type="text"
+            value={cardNumber}
+            onChange={(e) => setCardNumber(e.target.value)}
+            placeholder="4242 4242 4242 4242"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Expiry (Mock)
+            </label>
+            <input
+              type="text"
+              value={expiry}
+              onChange={(e) => setExpiry(e.target.value)}
+              placeholder="12/25"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              CVC (Mock)
+            </label>
+            <input
+              type="text"
+              value={cvc}
+              onChange={(e) => setCvc(e.target.value)}
+              placeholder="123"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              required
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={mockProcessing}
+          className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {mockProcessing ? (
+            <>
+              <Loader className="h-5 w-5 animate-spin" />
+              <span>Processing Mock Payment...</span>
+            </>
+          ) : (
+            <>
+              <Lock className="h-5 w-5" />
+              <span>Pay ${(amount / 100).toFixed(2)} (Mock)</span>
+            </>
+          )}
+        </button>
+      </form>
+
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <h4 className="font-medium text-yellow-800 mb-2">To Enable Real Payments:</h4>
+        <ol className="text-yellow-700 text-sm space-y-1">
+          <li>1. Get your Stripe publishable key from the Stripe Dashboard</li>
+          <li>2. Add it to your environment variables as VITE_STRIPE_PUBLISHABLE_KEY</li>
+          <li>3. Restart your development server</li>
+        </ol>
+      </div>
+    </div>
+  );
+};
 
 function CheckoutForm({
   clientSecret,
@@ -167,20 +279,22 @@ export default function InAppCheckout({
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
 
-  // Check if Stripe is properly configured
+  // If Stripe is not configured, show mock payment interface
+  if (!isStripeConfigured) {
+    return (
+      <MockPaymentForm onSuccess={onComplete} amount={amount} />
+    );
+  }
+
+  // Check if Stripe promise is available
   if (!stripePromise) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-        <AlertCircle className="h-8 w-8 text-yellow-600 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-yellow-800 mb-2">Stripe Not Configured</h3>
-        <p className="text-yellow-700 mb-4">
-          Please add your Stripe publishable key to the environment variables to enable payments.
+      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+        <AlertCircle className="h-8 w-8 text-red-600 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-red-800 mb-2">Stripe Loading Error</h3>
+        <p className="text-red-700">
+          Failed to load Stripe. Please check your configuration and try again.
         </p>
-        <div className="bg-yellow-100 rounded-lg p-4 text-left">
-          <p className="text-yellow-800 text-sm font-mono">
-            VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_key_here
-          </p>
-        </div>
       </div>
     );
   }
@@ -255,25 +369,12 @@ export default function InAppCheckout({
       </div>
     );
   }
-  if (!clientSecret) {
-    return (
-      <div className="text-center py-8">
-        <div className="relative mb-6">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-100 border-t-primary-500 mx-auto"></div>
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-accent-500 opacity-20 blur-lg"></div>
-        </div>
-        <p className="text-gray-600 font-medium">Initializing secure payment...</p>
-      </div>
-    );
-  }
 
   return (
     <Elements 
       stripe={stripePromise} 
       options={{ 
         clientSecret,
-        mode: 'payment',
-        paymentMethodTypes: ['card'],
         appearance: {
           theme: 'stripe',
           variables: {
@@ -286,7 +387,6 @@ export default function InAppCheckout({
             borderRadius: '12px'
           }
         },
-        paymentMethodCreation: 'manual'
       }}
     >
       <CheckoutForm
