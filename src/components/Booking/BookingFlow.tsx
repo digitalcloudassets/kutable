@@ -256,7 +256,38 @@ const BookingFlow: React.FC = () => {
     } catch (error: any) {
       // Don't expose internal error details
       console.error('Payment initialization error:', error);
-      setPaymentError('Failed to initialize payment. Please try again.');
+      
+      // Handle Supabase Functions errors more gracefully
+      let errorMessage = 'Failed to initialize payment. Please try again.';
+      
+      if (error?.name === 'FunctionsHttpError' || error?.message?.includes('Edge Function returned a non-2xx status code')) {
+        // Try to extract the error message from the Edge Function response
+        try {
+          // The error details might be in different places depending on the response
+          if (error?.context?.body) {
+            const errorData = typeof error.context.body === 'string' 
+              ? JSON.parse(error.context.body) 
+              : error.context.body;
+            errorMessage = errorData?.error || errorMessage;
+          } else if (error?.body) {
+            const errorData = typeof error.body === 'string' 
+              ? JSON.parse(error.body) 
+              : error.body;
+            errorMessage = errorData?.error || errorMessage;
+          }
+          
+          // Handle specific configuration errors
+          if (errorMessage.includes('Missing required environment variables')) {
+            errorMessage = 'Payment processing is not configured yet. Please contact the barber directly to complete your booking.';
+          } else if (errorMessage.includes('Stripe account')) {
+            errorMessage = 'This barber is still setting up payment processing. Please contact them directly or try again later.';
+          }
+        } catch (parseError) {
+          console.error('Failed to parse edge function error:', parseError);
+        }
+      }
+      
+      setPaymentError(errorMessage);
     } finally {
       setPaymentLoading(false);
     }
