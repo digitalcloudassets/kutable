@@ -39,6 +39,35 @@ const generateUniqueSlug = async (businessName: string): Promise<string> => {
   return slug;
 };
 
+export const generateUniqueSlug = async (businessName: string): Promise<string> => {
+  let baseSlug = generateSlugFromBusinessName(businessName);
+  
+  if (!baseSlug) {
+    baseSlug = 'barber';
+  }
+  
+  let slug = baseSlug;
+  let counter = 1;
+  
+  // Check for conflicts and make unique
+  while (true) {
+    const { data: existingProfile } = await supabase
+      .from('barber_profiles')
+      .select('id')
+      .eq('slug', slug)
+      .maybeSingle();
+    
+    if (!existingProfile) {
+      break;
+    }
+    
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+  
+  return slug;
+};
+
 export const updateAllBarberSlugs = async (): Promise<{
   success: boolean;
   updated: number;

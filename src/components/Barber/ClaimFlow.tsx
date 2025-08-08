@@ -25,6 +25,7 @@ import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { Database } from '../../lib/supabase';
 import { isReservedSlug } from '../../lib/reservedSlugs';
 import { NotificationManager } from '../../utils/notifications';
+import { generateUniqueSlug } from '../../utils/updateBarberSlugs';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -368,41 +369,6 @@ const ClaimFlow: React.FC = () => {
       .trim();
     
     slug += `-${index}`;
-    return slug;
-  };
-
-  const generateUniqueSlug = async (businessName: string): Promise<string> => {
-    let baseSlug = businessName
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .trim();
-    
-    if (!baseSlug) {
-      baseSlug = 'barber';
-    }
-    
-    let slug = baseSlug;
-    let counter = 1;
-    
-    // Check for conflicts and make unique
-    while (true) {
-      const { data: existingProfile } = await supabase
-        .from('barber_profiles')
-        .select('id')
-        .eq('slug', slug)
-        .maybeSingle();
-      
-      if (!existingProfile) {
-        break;
-      }
-      
-      slug = `${baseSlug}-${counter}`;
-      counter++;
-    }
-    
     return slug;
   };
 
