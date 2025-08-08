@@ -416,7 +416,7 @@ const PrivacyPolicyPage: React.FC = () => {
             <div className="mb-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">International Users</h2>
               <p className="text-gray-600 leading-relaxed">
-                Kutable is based in the United States. If you are accessing our services from outside 
+                Kutable is based in Delaware, United States. If you are accessing our services from outside 
                 the United States, please be aware that your information may be transferred to, stored, 
                 and processed in the United States where our servers are located.
               </p>
@@ -452,6 +452,15 @@ const PrivacyPolicyPage: React.FC = () => {
                 >
                   Contact Support
                 </a>
+              </div>
+              
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <p className="text-gray-500 text-sm">
+                  <strong>Kutable LLC</strong><br />
+                  Wilmington, Delaware<br />
+                  Privacy: privacy@kutable.com<br />
+                  Support: support@kutable.com
+                </p>
               </div>
             </div>
           </div>
