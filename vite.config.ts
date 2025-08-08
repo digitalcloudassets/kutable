@@ -1,12 +1,15 @@
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
 import { resolve } from 'path';
 
 export default defineConfig({
+  plugins: [react()],
+  
   // Production optimizations
   build: {
     target: 'es2020',
-    sourcemap: false, // Disable source maps in production for security
-    minify: 'terser',
+    sourcemap: false,
+    minify: 'esbuild', // Use esbuild instead of terser
     rollupOptions: {
       output: {
         manualChunks: {
@@ -72,7 +75,6 @@ export default defineConfig({
   },
   
   optimizeDeps: {
-    exclude: ['lucide-react'],
     include: [
       'react',
       'react-dom',

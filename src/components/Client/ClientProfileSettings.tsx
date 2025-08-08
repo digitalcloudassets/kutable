@@ -141,7 +141,6 @@ const ClientProfileSettings: React.FC = () => {
         email: editData.email.trim() || null,
         preferred_contact: editData.preferred_contact,
         profile_image_url: editData.profile_image_url || null,
-        profile_image_url: editData.profile_image_url || null,
         updated_at: new Date().toISOString()
       } : null);
 
