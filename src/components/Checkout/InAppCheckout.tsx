@@ -39,7 +39,7 @@ function CheckoutForm({
         NotificationManager.success('Payment successful!');
         onSuccess(paymentIntent.id);
       } else if (paymentIntent?.status === 'processing') {
-        NotificationManager.info('Payment processing — you'll be notified when it completes.');
+        NotificationManager.info('Payment processing — you\'ll be notified when it completes.');
         onSuccess(paymentIntent.id);
       } else {
         NotificationManager.error('Payment not completed.');
