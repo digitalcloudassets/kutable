@@ -543,16 +543,16 @@ const ClientBookings: React.FC = () => {
             return (
               <div 
                 key={booking.id} 
-                className={`card-premium p-4 sm:p-8 transition-all duration-300 hover:scale-[1.01] ${
+                className={`card-premium p-4 sm:p-6 transition-all duration-200 hover:shadow-lg ${
                   upcoming && booking.status === 'confirmed' 
                     ? 'border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-primary-50/30' 
                     : ''
                 }`}
               >
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-4">
                   {/* Booking Info */}
                   <div className="flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
+                    <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
                       {/* Barber Image */}
                       <Link 
                         to={`/barber/${booking.barber_profiles?.slug}`}
@@ -561,51 +561,51 @@ const ClientBookings: React.FC = () => {
                         <img
                           src={booking.barber_profiles?.profile_image_url || 'https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=100'}
                           alt={booking.barber_profiles?.business_name}
-                          className="w-24 h-24 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-white shadow-premium hover:border-primary-300 transition-all duration-200 hover:scale-105"
+                          className="w-16 h-16 sm:w-14 sm:h-14 rounded-xl object-cover border-2 border-white shadow-sm hover:border-primary-300 transition-all duration-200"
                         />
                       </Link>
 
                       {/* Booking Details */}
                       <div className="flex-1 min-w-0 text-center sm:text-left">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 space-y-2 sm:space-y-0">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 space-y-2 sm:space-y-0">
                           <div className="space-y-1">
                             <Link 
                               to={`/barber/${booking.barber_profiles?.slug}`}
-                              className="text-lg sm:text-xl font-display font-bold text-gray-900 hover:text-primary-600 transition-colors block"
+                              className="text-base sm:text-lg font-display font-bold text-gray-900 hover:text-primary-600 transition-colors block"
                             >
                               {booking.barber_profiles?.business_name}
                             </Link>
-                            <p className="text-gray-600 font-medium">{booking.barber_profiles?.owner_name}</p>
+                            <p className="text-gray-600 font-medium text-sm">{booking.barber_profiles?.owner_name}</p>
                           </div>
                           
-                          <div className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(booking.status)} flex items-center space-x-2`}>
+                          <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(booking.status)} flex items-center space-x-1`}>
                             {getStatusIcon(booking.status)}
                             <span>{booking.status.replace('_', ' ').toUpperCase()}</span>
                           </div>
                         </div>
 
-                        <div className="space-y-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-6">
+                        <div className="space-y-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4">
                             <div className="flex items-center space-x-2">
                               <div className="bg-primary-100 p-1.5 rounded-lg">
                               <User className="h-4 w-4" />
                               </div>
-                              <span className="font-semibold text-gray-900">{booking.services?.name}</span>
+                              <span className="font-semibold text-gray-900 text-sm">{booking.services?.name}</span>
                             </div>
                             <div className="flex items-center space-x-2">
                               <div className="bg-gray-200 p-1.5 rounded-lg">
                               <Clock className="h-4 w-4" />
                               </div>
-                              <span className="text-gray-600 font-medium">{booking.services?.duration_minutes} min</span>
+                              <span className="text-gray-600 font-medium text-sm">{booking.services?.duration_minutes} min</span>
                             </div>
                           </div>
 
-                          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-6">
+                          <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4">
                             <div className="flex items-center space-x-2">
                               <div className="bg-accent-100 p-1.5 rounded-lg">
                               <Calendar className="h-4 w-4" />
                               </div>
-                              <span className="font-semibold text-gray-900">
+                              <span className="font-semibold text-gray-900 text-sm">
                                 {format(new Date(booking.appointment_date), 'EEEE, MMMM d, yyyy')}
                               </span>
                             </div>
@@ -613,7 +613,7 @@ const ClientBookings: React.FC = () => {
                               <div className="bg-yellow-100 p-1.5 rounded-lg">
                               <Clock className="h-4 w-4" />
                               </div>
-                              <span className="font-semibold text-gray-900">{booking.appointment_time}</span>
+                              <span className="font-semibold text-gray-900 text-sm">{booking.appointment_time}</span>
                             </div>
                           </div>
 
@@ -622,13 +622,13 @@ const ClientBookings: React.FC = () => {
                               <div className="bg-gray-200 p-1.5 rounded-lg">
                               <MapPin className="h-4 w-4" />
                               </div>
-                              <span className="text-gray-600 font-medium">{booking.barber_profiles.city}, {booking.barber_profiles.state}</span>
+                              <span className="text-gray-600 font-medium text-sm">{booking.barber_profiles.city}, {booking.barber_profiles.state}</span>
                             </div>
                           )}
 
                           {booking.notes && (
-                            <div className="bg-gray-50 rounded-xl p-4 mt-4">
-                              <p className="text-gray-700">
+                            <div className="bg-gray-50 rounded-lg p-3 mt-2">
+                              <p className="text-gray-700 text-sm">
                                 <strong>Notes:</strong> {booking.notes}
                               </p>
                             </div>
@@ -638,144 +638,93 @@ const ClientBookings: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Booking Actions & Price */}
-                  <div className="flex flex-col items-center sm:items-end gap-4">
-                    {/* Price Info */}
-                    <div className="text-center sm:text-right bg-gray-50 rounded-2xl p-4 w-full sm:w-auto">
-                      <div className="flex items-center justify-center sm:justify-end space-x-2 text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
-                        <DollarSign className="h-5 w-5" />
-                        <span>{booking.total_amount}</span>
-                      </div>
-                      {booking.deposit_amount > 0 && (
-                        <p className="text-sm text-accent-600 font-medium">
-                          ${booking.deposit_amount} deposit paid
-                        </p>
-                      )}
-                      <p className="text-sm text-gray-500">
-                        Booked {format(new Date(booking.created_at), 'MMM d')}
-                      </p>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex flex-col gap-3 w-full sm:w-auto">
-                      {/* Complete Payment */}
+                  {/* Actions - Only show for non-completed bookings */}
+                  {(booking.status === 'pending' || booking.status === 'cancelled' || (booking.status === 'confirmed' && upcoming)) && (
+                    <div className="flex flex-col sm:flex-row items-center gap-3 pt-3 border-t border-gray-100">
+                      {/* Price for pending bookings */}
                       {booking.status === 'pending' && (
-                        <button
-                          onClick={() => completePayment(booking.id)}
-                          disabled={completingPayment === booking.id}
-                          className="bg-green-500 text-white px-4 py-3 rounded-xl hover:bg-green-600 transition-all duration-200 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 min-h-[48px]"
-                        >
-                          {completingPayment === booking.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                          ) : (
-                            <CreditCard className="h-4 w-4" />
-                          )}
-                          <span>
-                            {completingPayment === booking.id ? 'Processing...' : 'Complete Payment'}
-                          </span>
-                        </button>
-                      )}
-
-                      {/* Contact Barber */}
-                      {booking.barber_profiles?.phone && (
-                        <a
-                          href={`tel:${booking.barber_profiles.phone}`}
-                          className="btn-secondary text-sm justify-center min-h-[48px]"
-                        >
-                          <Phone className="h-4 w-4" />
-                          <span>Call</span>
-                        </a>
-                      )}
-
-                      {/* View Barber Profile */}
-                      <Link
-                        to={`/barber/${booking.barber_profiles?.slug}`}
-                        className="btn-secondary text-primary-600 border-primary-200 hover:bg-primary-50 text-sm justify-center min-h-[48px]"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        <span>View Profile</span>
-                      </Link>
-
-                      {/* Cancel Booking */}
-                      {canCancelBooking(booking) && (
-                        <button
-                          onClick={() => cancelBooking(booking.id)}
-                          disabled={cancellingBooking === booking.id}
-                          className="bg-red-500 text-white px-4 py-3 rounded-xl hover:bg-red-600 transition-all duration-200 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 min-h-[48px]"
-                        >
-                          {cancellingBooking === booking.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                          ) : (
-                            <X className="h-4 w-4" />
-                          )}
-                          <span>
-                            {cancellingBooking === booking.id ? 'Cancelling...' : 'Cancel'}
-                          </span>
-                        </button>
-                      )}
-
-                      {/* Reschedule Button (for future implementation) */}
-                      {booking.status === 'confirmed' && upcoming && (
-                        <button
-                          onClick={() => setReschedulingBooking(booking)}
-                          className="btn-secondary text-primary-600 border-primary-200 hover:bg-primary-50 text-sm justify-center min-h-[48px]"
-                        >
-                          <Edit className="h-4 w-4" />
-                          <span>Reschedule</span>
-                        </button>
-                      )}
-
-                      {/* Remove Cancelled Booking */}
-                      {booking.status === 'cancelled' && (
-                        <button
-                          onClick={() => removeBooking(booking.id)}
-                          disabled={removingBooking === booking.id}
-                          className="bg-gray-500 text-white px-4 py-3 rounded-xl hover:bg-gray-600 transition-all duration-200 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 min-h-[48px]"
-                        >
-                          {removingBooking === booking.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                          <span>
-                            {removingBooking === booking.id ? 'Removing...' : 'Remove'}
-                          </span>
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Cancellation Policy Notice */}
-                    {upcoming && ['pending', 'confirmed'].includes(booking.status) && (
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mt-3 w-full sm:w-auto">
-                        <p className="text-xs text-yellow-700 font-medium">
-                        {canCancelBooking(booking) 
-                          ? 'Can cancel up to 24hrs before appointment'
-                          : 'Contact barber directly for changes within 24hrs'
-                        }
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Additional Info for Upcoming Appointments */}
-                {upcoming && booking.status === 'confirmed' && (
-                  <div className="mt-6 pt-6 border-t border-gray-100">
-                    <div className="bg-gradient-to-r from-emerald-50 to-primary-50 border border-emerald-200 rounded-2xl p-4 sm:p-6">
-                      <div className="flex items-center space-x-3 text-emerald-800">
-                        <div className="bg-emerald-500 p-1.5 rounded-lg">
-                          <CheckCircle className="h-4 w-4 text-white" />
+                        <div className="text-center sm:text-left">
+                          <div className="flex items-center space-x-1 text-lg font-bold text-gray-900">
+                            <DollarSign className="h-4 w-4" />
+                            <span>{booking.total_amount}</span>
+                          </div>
+                          <p className="text-xs text-red-600 font-medium">Payment required</p>
                         </div>
-                        <span className="text-sm font-medium">
-                          Confirmed appointment in {Math.ceil((appointmentDateTime.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days
-                        </span>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3 ml-auto">
+                        {/* Complete Payment */}
+                        {booking.status === 'pending' && (
+                          <button
+                            onClick={() => completePayment(booking.id)}
+                            disabled={completingPayment === booking.id}
+                            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all duration-200 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                          >
+                            {completingPayment === booking.id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                            ) : (
+                              <CreditCard className="h-4 w-4" />
+                            )}
+                            <span>
+                              {completingPayment === booking.id ? 'Processing...' : 'Complete Payment'}
+                            </span>
+                          </button>
+                        )}
+
+                        {/* Contact Barber */}
+                        {booking.barber_profiles?.phone && (
+                          <a
+                            href={`tel:${booking.barber_profiles.phone}`}
+                            className="btn-secondary text-sm px-3 py-2"
+                          >
+                            <Phone className="h-4 w-4" />
+                          </a>
+                        )}
+
+                        {/* Cancel Booking */}
+                        {canCancelBooking(booking) && (
+                          <button
+                            onClick={() => cancelBooking(booking.id)}
+                            disabled={cancellingBooking === booking.id}
+                            className="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                          >
+                            {cancellingBooking === booking.id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                            ) : (
+                              <X className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
+
+                        {/* Reschedule Button (for future implementation) */}
+                        {booking.status === 'confirmed' && upcoming && (
+                          <button
+                            onClick={() => setReschedulingBooking(booking)}
+                            className="btn-secondary text-primary-600 border-primary-200 hover:bg-primary-50 text-sm px-3 py-2"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                        )}
+
+                        {/* Remove Cancelled Booking */}
+                        {booking.status === 'cancelled' && (
+                          <button
+                            onClick={() => removeBooking(booking.id)}
+                            disabled={removingBooking === booking.id}
+                            className="bg-gray-500 text-white px-3 py-2 rounded-lg hover:bg-gray-600 transition-all duration-200 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                          >
+                            {removingBooking === booking.id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
                       </div>
-                      <p className="text-sm text-emerald-700 mt-2 ml-0 sm:ml-8 text-center sm:text-left">
-                        You'll receive an SMS reminder 24 hours before your appointment
-                      </p>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             );
           })
@@ -891,51 +840,6 @@ const ClientBookings: React.FC = () => {
         onClose={() => setReschedulingBooking(null)}
         onReschedule={handleReschedule}
       />
-
-      {/* Quick Stats */}
-      {bookings.length > 0 && (
-        <div className="card-premium p-8">
-          <h3 className="text-2xl font-display font-bold text-gray-900 mb-8">Booking Summary</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center group">
-              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium group-hover:scale-110 transition-transform duration-300">
-                <CheckCircle className="h-8 w-8 text-white" />
-              </div>
-              <p className="text-3xl font-bold text-gray-900 mb-1">
-                {bookings.filter(b => b.status === 'completed').length}
-              </p>
-              <p className="text-gray-600 font-medium">Completed</p>
-            </div>
-            <div className="text-center group">
-              <div className="bg-gradient-to-br from-primary-500 to-primary-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium group-hover:scale-110 transition-transform duration-300">
-                <Calendar className="h-8 w-8 text-white" />
-              </div>
-              <p className="text-3xl font-bold text-primary-600 mb-1">
-                {bookings.filter(b => ['pending', 'confirmed'].includes(b.status) && isUpcoming(b)).length}
-              </p>
-              <p className="text-gray-600 font-medium">Upcoming</p>
-            </div>
-            <div className="text-center group">
-              <div className="bg-gradient-to-br from-red-500 to-red-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium group-hover:scale-110 transition-transform duration-300">
-                <X className="h-8 w-8 text-white" />
-              </div>
-              <p className="text-3xl font-bold text-red-600 mb-1">
-                {bookings.filter(b => b.status === 'cancelled').length}
-              </p>
-              <p className="text-gray-600 font-medium">Cancelled</p>
-            </div>
-            <div className="text-center group">
-              <div className="bg-gradient-to-br from-gray-700 to-gray-800 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium group-hover:scale-110 transition-transform duration-300">
-                <DollarSign className="h-8 w-8 text-white" />
-              </div>
-              <p className="text-3xl font-bold text-gray-900 mb-1">
-                ${bookings.filter(b => b.status === 'completed').reduce((sum, b) => sum + Number(b.total_amount), 0).toFixed(2)}
-              </p>
-              <p className="text-gray-600 font-medium">Total Spent</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
