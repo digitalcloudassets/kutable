@@ -26,6 +26,7 @@ import AdminDataExport from '../components/Admin/AdminDataExport';
 import { NotificationManager, AdminNotifications } from '../utils/notifications';
 import ProductionSecurityCheck from '../components/Security/ProductionSecurityCheck';
 import MonitoringDashboard from '../components/Admin/MonitoringDashboard';
+import { updateAllBarberSlugs } from '../utils/updateBarberSlugs';
 
 interface PlatformMetrics {
   totalBarbers: number;
@@ -70,6 +71,7 @@ const AdminPage: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'barbers' | 'bookings' | 'payments' | 'export'>('overview');
+  const [updatingSlugs, setUpdatingSlugs] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -229,6 +231,31 @@ const AdminPage: React.FC = () => {
       AdminNotifications.dataExported(type);
     } catch (error) {
       NotificationManager.error(`Failed to export ${type} data`);
+    }
+  };
+  const handleUpdateSlugs = async () => {
+    if (!confirm('This will update all barber profiles that have UUID-based slugs to use their business names. Continue?')) {
+      return;
+    }
+
+    setUpdatingSlugs(true);
+    try {
+      const result = await updateAllBarberSlugs();
+      
+      if (result.success) {
+        NotificationManager.success(`Successfully updated ${result.updated} barber profile slugs!`);
+      } else {
+        NotificationManager.error(`Updated ${result.updated} profiles, but ${result.errors.length} had errors. Check console for details.`);
+        console.error('Slug update errors:', result.errors);
+      }
+      
+      // Refresh metrics after update
+      await loadPlatformMetrics();
+    } catch (error) {
+      console.error('Error updating slugs:', error);
+      NotificationManager.error('Failed to update barber slugs. Please try again.');
+    } finally {
+      setUpdatingSlugs(false);
     }
   };
 
@@ -601,6 +628,38 @@ const AdminPage: React.FC = () => {
                           Connect Supabase to see detailed barber analytics and claimed profile data
                         </p>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Slug Update Tool */}
+                  {isConnected && (
+                    <div className="card-premium p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-900">Profile URL Management</h4>
+                          <p className="text-gray-600 text-sm">Update barber profile URLs to use business names instead of UUIDs</p>
+                        </div>
+                        <button
+                          onClick={handleUpdateSlugs}
+                          disabled={updatingSlugs}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                        >
+                          {updatingSlugs ? (
+                            <>
+                              <Loader className="h-4 w-4 animate-spin" />
+                              <span>Updating...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Edit className="h-4 w-4" />
+                              <span>Update All Slugs</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <p className="text-gray-600 text-sm">
+                        This will convert URLs like <code>/barber/uuid</code> to <code>/barber/business-name</code> for better SEO and usability.
+                      </p>
                     </div>
                   )}
                 </div>
