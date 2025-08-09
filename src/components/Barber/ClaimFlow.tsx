@@ -26,7 +26,7 @@ import { Database } from '../../lib/supabase';
 import { isReservedSlug } from '../../lib/reservedSlugs';
 import { NotificationManager } from '../../utils/notifications';
 import { generateUniqueSlug } from '../../utils/updateBarberSlugs';
-import { isUuid } from '../../utils/security';
+import { isUuid, sanitizeInput } from '../../utils/security';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -55,6 +55,173 @@ const ClaimFlow: React.FC = () => {
     zipCode: '',
     bio: ''
   });
+
+  // Enhanced CSV parsing function (same as BarberProfilePage)
+  const parseCSVLine = (line: string): string[] => {
+    const values: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    let i = 0;
+    
+    while (i < line.length) {
+      const char = line[i];
+      
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i += 2;
+          continue;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+      i++;
+    }
+    
+    values.push(current.trim());
+    return values;
+  };
+
+  const parseCSV = (csvText: string): any[] => {
+    const lines = csvText.split('\n').filter(line => line.trim());
+    if (lines.length === 0) return [];
+    
+    const headerLine = lines[0];
+    const headers = parseCSVLine(headerLine).map(h => h.toLowerCase().trim());
+    
+    const data: any[] = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      const values = parseCSVLine(line);
+      const row: any = {};
+      
+      headers.forEach((header, index) => {
+        const value = values[index]?.trim() || '';
+        if (!value) return;
+        
+        // Map CSV headers to our schema
+        switch (header) {
+          case 'company_name':
+          case 'company name':
+          case 'business_name':
+          case 'business name':
+          case 'name':
+            row.business_name = value;
+            break;
+          case 'contact_first':
+          case 'contact first':
+          case 'first_name':
+          case 'first name':
+            row.contact_first = value;
+            break;
+          case 'contact_last':
+          case 'contact last':
+          case 'last_name':
+          case 'last name':
+            row.contact_last = value;
+            break;
+          case 'owner_name':
+          case 'owner name':
+          case 'owner':
+            row.owner_name = value;
+            break;
+          case 'phone':
+          case 'phone_number':
+          case 'phone number':
+            row.phone = value;
+            break;
+          case 'direct_phone':
+          case 'direct phone':
+            row.direct_phone = value;
+            break;
+          case 'email':
+          case 'email_address':
+          case 'email address':
+            row.email = value;
+            break;
+          case 'address':
+          case 'street_address':
+          case 'street address':
+            row.address = value;
+            break;
+          case 'city':
+            row.city = value;
+            break;
+          case 'state':
+            row.state = value;
+            break;
+          case 'zip':
+          case 'zip_code':
+          case 'zip code':
+          case 'postal_code':
+          case 'postal code':
+            row.zip_code = value;
+            break;
+          case 'county':
+            row.county = value;
+            break;
+          case 'website':
+          case 'website_url':
+          case 'website url':
+            row.website = value;
+            break;
+          case 'industry':
+          case 'business_type':
+          case 'business type':
+          case 'category':
+            row.industry = value;
+            break;
+        }
+      });
+      
+      // Create owner_name from contact_first and contact_last if not provided
+      if (!row.owner_name && (row.contact_first || row.contact_last)) {
+        row.owner_name = `${row.contact_first || ''} ${row.contact_last || ''}`.trim();
+      }
+      
+      // Use business_name as owner_name if still missing
+      if (!row.owner_name && row.business_name) {
+        row.owner_name = row.business_name;
+      }
+      
+      // Use direct_phone if phone is missing
+      if (!row.phone && row.direct_phone) {
+        row.phone = row.direct_phone;
+      }
+      
+      // Only add rows that have required business name
+      if (row.business_name && row.business_name.length > 1) {
+        data.push(row);
+      }
+    }
+    
+    return data;
+  };
+
+  // Simple slug generation for temporary CSV entries (same as BarberProfilePage)
+  const generateCSVSlug = (businessName: string, index: number): string => {
+    let baseSlug = businessName
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .trim();
+    
+    if (!baseSlug) {
+      baseSlug = 'barber';
+    }
+    
+    return `${baseSlug}-${index}`;
+  };
 
   useEffect(() => {
     const fetchBarber = async () => {
@@ -88,10 +255,52 @@ const ClaimFlow: React.FC = () => {
         }
         
         // If not found in database or not a UUID, try CSV data
-        const csvData = localStorage.getItem('csvBarberData');
-        if (csvData) {
-          const parsedData = JSON.parse(csvData);
-          const csvBarber = parsedData.find((b: any) => b.id === barberId);
+        try {
+          console.log('Loading CSV data for claim flow...');
+          const response = await fetch('/Barbers.csv');
+          if (!response.ok) {
+            throw new Error('CSV file not found');
+          }
+          
+          const csvText = await response.text();
+          const csvData = parseCSV(csvText);
+          
+          // Transform CSV data to barber profiles
+          const localBarberImages = [
+            '/clean barbershop.jpeg',
+            '/clean barbers.webp'
+          ];
+          
+          const profiles = csvData.map((barber, index) => {
+            const imageUrl = localBarberImages[index % localBarberImages.length];
+            
+            return {
+              id: `csv-${index + 1}`,
+              slug: generateCSVSlug(barber.business_name, index),
+              business_name: barber.business_name,
+              owner_name: barber.owner_name,
+              phone: barber.phone || barber.direct_phone || null,
+              email: barber.email || null,
+              address: barber.address || null,
+              city: barber.city || null,
+              state: barber.state || null,
+              zip_code: barber.zip_code || null,
+              bio: barber.industry ? `Professional ${barber.industry.toLowerCase()} services at ${barber.business_name}. Contact us for appointments and more information.` : `Professional services at ${barber.business_name}. Contact us for appointments and more information.`,
+              profile_image_url: imageUrl,
+              banner_image_url: null,
+              is_claimed: false,
+              is_active: true,
+              stripe_account_id: null,
+              stripe_onboarding_completed: false,
+              average_rating: Number((4.0 + Math.random() * 1.0).toFixed(1)),
+              total_reviews: Math.floor(Math.random() * 50) + 5,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+          });
+          
+          // Find the specific barber
+          const csvBarber = profiles.find(p => p.id === barberId);
           if (csvBarber) {
             setBarber(csvBarber);
             setIsCSVProfile(true);
@@ -107,6 +316,8 @@ const ClaimFlow: React.FC = () => {
               bio: csvBarber.bio || ''
             });
           }
+        } catch (csvError) {
+          console.error('Error loading CSV data for claim flow:', csvError);
         }
       } catch (error) {
         console.error('Error fetching barber:', error);
