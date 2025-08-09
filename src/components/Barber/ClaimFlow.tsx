@@ -26,6 +26,7 @@ import { Database } from '../../lib/supabase';
 import { isReservedSlug } from '../../lib/reservedSlugs';
 import { NotificationManager } from '../../utils/notifications';
 import { generateUniqueSlug } from '../../utils/updateBarberSlugs';
+import { isUuid } from '../../utils/security';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -60,49 +61,51 @@ const ClaimFlow: React.FC = () => {
       if (!barberId) return;
       
       try {
-        // First try to fetch from database
-        const { data: dbBarber, error: dbError } = await supabase
-          .from('barber_profiles')
-          .select('*')
-          .eq('id', barberId)
-          .maybeSingle();
+        // Only try to fetch from database if barberId is a valid UUID
+        if (isUuid(barberId)) {
+          const { data: dbBarber, error: dbError } = await supabase
+            .from('barber_profiles')
+            .select('*')
+            .eq('id', barberId)
+            .maybeSingle();
 
-        if (dbBarber) {
-          setBarber(dbBarber);
-          setIsCSVProfile(false);
-          setClaimData({
-            businessName: dbBarber.business_name || '',
-            ownerName: dbBarber.owner_name || '',
-            phone: dbBarber.phone || '',
-            email: dbBarber.email || '',
-            address: dbBarber.address || '',
-            city: dbBarber.city || '',
-            state: dbBarber.state || '',
-            zipCode: dbBarber.zip_code || '',
-            bio: dbBarber.bio || ''
-          });
-        } else {
-          // Try to fetch from CSV data stored in localStorage
-          const csvData = localStorage.getItem('csvBarberData');
-          if (csvData) {
-            const parsedData = JSON.parse(csvData);
-            const csvBarber = parsedData.find((b: any) => b.id === barberId);
-            
-            if (csvBarber) {
-              setBarber(csvBarber);
-              setIsCSVProfile(true);
-              setClaimData({
-                businessName: csvBarber.business_name || '',
-                ownerName: csvBarber.owner_name || '',
-                phone: csvBarber.phone || '',
-                email: csvBarber.email || '',
-                address: csvBarber.address || '',
-                city: csvBarber.city || '',
-                state: csvBarber.state || '',
-                zipCode: csvBarber.zip_code || '',
-                bio: csvBarber.bio || ''
-              });
-            }
+          if (dbBarber) {
+            setBarber(dbBarber);
+            setIsCSVProfile(false);
+            setClaimData({
+              businessName: dbBarber.business_name || '',
+              ownerName: dbBarber.owner_name || '',
+              phone: dbBarber.phone || '',
+              email: dbBarber.email || '',
+              address: dbBarber.address || '',
+              city: dbBarber.city || '',
+              state: dbBarber.state || '',
+              zipCode: dbBarber.zip_code || '',
+              bio: dbBarber.bio || ''
+            });
+            return; // Exit early if found in database
+          }
+        }
+        
+        // If not found in database or not a UUID, try CSV data
+        const csvData = localStorage.getItem('csvBarberData');
+        if (csvData) {
+          const parsedData = JSON.parse(csvData);
+          const csvBarber = parsedData.find((b: any) => b.id === barberId);
+          if (csvBarber) {
+            setBarber(csvBarber);
+            setIsCSVProfile(true);
+            setClaimData({
+              businessName: csvBarber.business_name || '',
+              ownerName: csvBarber.owner_name || '',
+              phone: csvBarber.phone || '',
+              email: csvBarber.email || '',
+              address: csvBarber.address || '',
+              city: csvBarber.city || '',
+              state: csvBarber.state || '',
+              zipCode: csvBarber.zip_code || '',
+              bio: csvBarber.bio || ''
+            });
           }
         }
       } catch (error) {
