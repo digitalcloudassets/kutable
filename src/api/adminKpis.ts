@@ -9,6 +9,13 @@ export interface AdminKPIs {
   bookingsToday: number;
   totalRevenue: number; // Platform revenue in dollars
   avgBookingValue: number;
+  topPerformingBarbers: Array<{
+    business_name: string;
+    owner_name: string;
+    booking_count: number;
+    total_revenue: number;
+    average_rating: number;
+  }>;
 }
 
 export async function fetchAdminKpis(): Promise<AdminKPIs> {
