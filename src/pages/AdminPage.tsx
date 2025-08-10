@@ -397,10 +397,10 @@ const AdminPage: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-3xl font-display font-bold text-gray-900 mb-2">
-                        {metrics.claimedBarbers > 0 ? 'Active' : 'Growing'}
+                        {(kpis?.claimedBarbers ?? 0) > 0 ? 'Active' : 'Growing'}
                       </div>
                       <p className="text-sm text-emerald-700 font-medium">
-                        {((metrics.claimedBarbers / metrics.totalBarbers) * 100).toFixed(1)}% profiles claimed
+                        {(((kpis?.claimedBarbers ?? 0) / (kpis?.totalBarbers ?? 1)) * 100).toFixed(1)}% profiles claimed
                       </p>
                     </div>
 
@@ -412,7 +412,7 @@ const AdminPage: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-3xl font-display font-bold text-gray-900 mb-2">
-                        {metrics.totalRevenue > 0 ? ((metrics.platformFees / metrics.totalRevenue) * 100).toFixed(1) + '%' : '0%'}
+                        {(kpis?.totalRevenue ?? 0) > 0 ? '1%' : '0%'}
                       </div>
                       <p className="text-sm text-primary-700 font-medium">
                         Platform fee percentage
@@ -427,7 +427,7 @@ const AdminPage: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-3xl font-display font-bold text-gray-900 mb-2">
-                        {metrics.bookingsThisMonth > 0 ? '+' : ''}{metrics.bookingsThisMonth}
+                        {(kpis?.bookingsThisMonth ?? 0) > 0 ? '+' : ''}{kpis?.bookingsThisMonth ?? 0}
                       </div>
                       <p className="text-sm text-accent-700 font-medium">
                         Bookings this month
@@ -445,9 +445,9 @@ const AdminPage: React.FC = () => {
                       Top Performing Barbers
                       </h4>
                     </div>
-                    {metrics.topPerformingBarbers.length > 0 ? (
+                    {(kpis?.topPerformingBarbers ?? []).length > 0 ? (
                       <div className="space-y-6">
-                        {metrics.topPerformingBarbers.map((barber, index) => (
+                        {(kpis?.topPerformingBarbers ?? []).map((barber, index) => (
                           <div key={index} className="flex items-center justify-between p-6 bg-gray-50 border border-gray-100 rounded-2xl hover:shadow-md transition-all duration-200">
                             <div>
                               <p className="font-display font-bold text-gray-900 text-lg">{barber.business_name}</p>
@@ -540,7 +540,7 @@ const AdminPage: React.FC = () => {
                         <span className="text-xs font-bold text-primary-700 bg-primary-200 px-3 py-1.5 rounded-full">DIRECTORY</span>
                       </div>
                       <div className="text-4xl font-display font-bold text-gray-900 mb-2">
-                        {metrics.totalBarbers.toLocaleString()}
+                        {(kpis?.totalBarbers ?? 0).toLocaleString()}
                       </div>
                       <p className="text-primary-800 font-semibold mb-2">Total Barber Profiles</p>
                       <p className="text-sm text-primary-600 font-medium">Includes CSV directory + claimed profiles</p>
@@ -554,11 +554,11 @@ const AdminPage: React.FC = () => {
                         <span className="text-xs font-bold text-emerald-700 bg-emerald-200 px-3 py-1.5 rounded-full">CLAIMED</span>
                       </div>
                       <div className="text-4xl font-display font-bold text-gray-900 mb-2">
-                        {metrics.claimedBarbers.toLocaleString()}
+                        {(kpis?.claimedBarbers ?? 0).toLocaleString()}
                       </div>
                       <p className="text-emerald-800 font-semibold mb-2">Claimed Profiles</p>
                       <p className="text-sm text-emerald-600 font-medium">
-                        {((metrics.claimedBarbers / metrics.totalBarbers) * 100).toFixed(1)}% of total directory
+                        {(((kpis?.claimedBarbers ?? 0) / (kpis?.totalBarbers ?? 1)) * 100).toFixed(1)}% of total directory
                       </p>
                     </div>
 
@@ -570,7 +570,7 @@ const AdminPage: React.FC = () => {
                         <span className="text-xs font-bold text-orange-700 bg-orange-200 px-3 py-1.5 rounded-full">AVAILABLE</span>
                       </div>
                       <div className="text-4xl font-display font-bold text-gray-900 mb-2">
-                        {(metrics.totalBarbers - metrics.claimedBarbers).toLocaleString()}
+                        {((kpis?.totalBarbers ?? 0) - (kpis?.claimedBarbers ?? 0)).toLocaleString()}
                       </div>
                       <p className="text-orange-800 font-semibold mb-2">Unclaimed Profiles</p>
                       <p className="text-sm text-orange-600 font-medium">Available for claiming</p>
@@ -640,19 +640,19 @@ const AdminPage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                       <div className="card-premium p-6">
                         <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">Total Bookings</p>
-                        <p className="text-3xl font-display font-bold text-gray-900">{metrics.totalBookings.toLocaleString()}</p>
+                        <p className="text-3xl font-display font-bold text-gray-900">{(kpis?.totalBookings ?? 0).toLocaleString()}</p>
                       </div>
                       <div className="card-premium p-6">
                         <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">This Month</p>
-                        <p className="text-3xl font-display font-bold text-primary-600">{metrics.bookingsThisMonth.toLocaleString()}</p>
+                        <p className="text-3xl font-display font-bold text-primary-600">{(kpis?.bookingsThisMonth ?? 0).toLocaleString()}</p>
                       </div>
                       <div className="card-premium p-6">
                         <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">Today</p>
-                        <p className="text-3xl font-display font-bold text-emerald-600">{metrics.bookingsToday.toLocaleString()}</p>
+                        <p className="text-3xl font-display font-bold text-emerald-600">{(kpis?.bookingsToday ?? 0).toLocaleString()}</p>
                       </div>
                       <div className="card-premium p-6">
                         <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">Average Value</p>
-                        <p className="text-3xl font-display font-bold text-accent-600">{formatCurrency(metrics.avgBookingValue)}</p>
+                        <p className="text-3xl font-display font-bold text-accent-600">{formatCurrency(kpis?.avgBookingValue ?? 0)}</p>
                       </div>
                     </div>
                   ) : (
