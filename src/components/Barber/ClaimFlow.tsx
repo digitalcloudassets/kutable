@@ -339,7 +339,11 @@ const ClaimFlow: React.FC = () => {
         body: { barberId, claimData }
       });
 
-      if (res.error) throw new Error(res.error.message || 'Claim failed');
+      if (res.error) {
+        // Access more specific error message from Edge Function
+        const specificError = res.error.context?.error || res.error.message || 'Claim failed';
+        throw new Error(specificError);
+      }
       
       const result = res.data;
       if (!result?.success) throw new Error(result?.error || 'Claim failed');
