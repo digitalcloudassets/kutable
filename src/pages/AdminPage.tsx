@@ -412,11 +412,11 @@ const AdminPage: React.FC = () => {
               {/* Security Tab */}
               {activeTab === 'security' && (
                 <div className="space-y-6">
-                  <div className="flex items-center space-x-3 mb-8">
-                    <div className="bg-red-100 p-3 rounded-2xl">
+                  <div className="flex items-center space-x-3 mb-8 min-w-0">
+                    <div className="bg-red-100 p-3 rounded-2xl flex-none">
                       <Shield className="h-6 w-6 text-red-600" />
                     </div>
-                    <h3 className="text-3xl font-display font-bold text-gray-900">
+                    <h3 className="text-3xl font-display font-bold text-gray-900 wrap-anywhere">
                       Security & Production Readiness
                     </h3>
                   </div>
@@ -425,24 +425,32 @@ const AdminPage: React.FC = () => {
                     
                     {/* Import and add new components */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      <div className="card-premium p-8">
-                        <div className="flex items-center space-x-3 mb-6">
-                          <div className="bg-blue-100 p-3 rounded-2xl">
+                      <div className="card-premium p-8 overflow-hidden">
+                        <div className="flex items-center space-x-3 mb-6 min-w-0">
+                          <div className="bg-blue-100 p-3 rounded-2xl flex-none">
                             <Database className="h-6 w-6 text-blue-600" />
                           </div>
-                          <h4 className="text-xl font-bold text-gray-900">Environment Status</h4>
+                          <h4 className="text-xl font-bold text-gray-900 nowrap-ellipsis">Environment Status</h4>
                         </div>
-                        <EnvironmentValidator />
+                        <div className="scroll-x">
+                          <div className="min-w-[640px] sm:min-w-0">
+                            <EnvironmentValidator />
+                          </div>
+                        </div>
                       </div>
                       
-                      <div className="card-premium p-8">
-                        <div className="flex items-center space-x-3 mb-6">
-                          <div className="bg-green-100 p-3 rounded-2xl">
+                      <div className="card-premium p-8 overflow-hidden">
+                        <div className="flex items-center space-x-3 mb-6 min-w-0">
+                          <div className="bg-green-100 p-3 rounded-2xl flex-none">
                             <CheckCircle className="h-6 w-6 text-green-600" />
                           </div>
-                          <h4 className="text-xl font-bold text-gray-900">Production Readiness</h4>
+                          <h4 className="text-xl font-bold text-gray-900 nowrap-ellipsis">Production Readiness</h4>
                         </div>
-                        <ProductionReadinessPanel />
+                        <div className="scroll-x">
+                          <div className="min-w-[640px] sm:min-w-0">
+                            <ProductionReadinessPanel />
+                          </div>
+                        </div>
                       </div>
                     </div>
                     

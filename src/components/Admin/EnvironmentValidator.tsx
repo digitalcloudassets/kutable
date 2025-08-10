@@ -347,7 +347,7 @@ const EnvironmentValidator: React.FC = () => {
               </div>
               <div className="bg-white border border-gray-200 rounded-lg p-3">
                 <p className="font-medium mb-1">2. Set Function Secrets</p>
-                <div className="text-gray-600 space-y-1 font-mono text-xs">
+                <div className="text-gray-600 space-y-1 font-mono text-xs scroll-x">
                   <div>supabase secrets set RESEND_API_KEY=re_...</div>
                   <div>supabase secrets set TWILIO_ACCOUNT_SID=AC...</div>
                   <div>supabase secrets set STRIPE_SECRET_KEY=sk_live_...</div>

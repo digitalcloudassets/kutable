@@ -356,6 +356,21 @@ body {
   }
 }
 
+/* Text overflow and wrapping utilities */
+.wrap-anywhere { 
+  overflow-wrap: anywhere; 
+  word-break: break-word; 
+}
+
+.nowrap-ellipsis { 
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+}
+
+.scroll-x { 
+  overflow-x: auto; 
+}
 .badge-warning {
   @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800;
 }

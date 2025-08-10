@@ -316,7 +316,7 @@ const ProductionReadinessPanel: React.FC = () => {
             
             <div className="mt-6 bg-white border border-blue-300 rounded-xl p-4">
               <h4 className="font-bold text-blue-900 mb-2">Supabase Edge Function Secrets:</h4>
-              <div className="space-y-1 text-sm font-mono text-blue-800">
+              <div className="space-y-1 text-sm font-mono text-blue-800 scroll-x wrap-anywhere">
                 <div>RESEND_API_KEY=re_your_key</div>
                 <div>RESEND_FROM="Kutable &lt;notifications@mail.kutable.com&gt;"</div>
                 <div>TWILIO_ACCOUNT_SID=AC_your_sid</div>
