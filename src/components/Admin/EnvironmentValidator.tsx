@@ -270,13 +270,22 @@ const EnvironmentValidator: React.FC = () => {
       {/* Service Checks Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
         {checks.map((check) => (
-          <div key={check.service} className={`h-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 transition-shadow hover:shadow-sm min-w-0 ${getStatusColor(check.status)}`}>
+          <div key={check.service} className={`relative isolate h-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 transition-shadow hover:shadow-sm min-w-0 ${getStatusColor(check.status)}`}>
             <div className="flex items-start gap-3 min-w-0 mb-3">
-              <div className={`flex-none h-9 w-9 rounded-xl grid place-items-center bg-${check.color}-100`}>
+              <div className={`flex-none h-9 w-9 rounded-xl grid place-items-center ${
+                {
+                  blue: 'bg-blue-100',
+                  purple: 'bg-purple-100', 
+                  green: 'bg-green-100',
+                  orange: 'bg-orange-100',
+                  red: 'bg-red-100',
+                  indigo: 'bg-indigo-100'
+                }[check.color] || 'bg-gray-100'
+              }`}>
                 <check.icon className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-gray-900 text-sm whitespace-normal break-words">{check.service}</h3>
+                <h3 className="font-semibold text-gray-900 text-sm whitespace-normal break-normal hyphens-none">{check.service}</h3>
                 <p className="text-xs text-gray-600 leading-5 whitespace-normal break-words">{check.description}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
                   {check.required && (
