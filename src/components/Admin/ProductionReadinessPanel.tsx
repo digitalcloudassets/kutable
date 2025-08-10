@@ -36,11 +36,6 @@ const ProductionReadinessPanel: React.FC = () => {
     }, 1000);
   };
 
-  const loadHealthStatus = () => {
-    const health = productionMonitor.getHealthStatus();
-    setHealthStatus(health);
-  };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pass': return <CheckCircle className="h-5 w-5 text-emerald-600 flex-none" />;
@@ -91,7 +86,7 @@ const ProductionReadinessPanel: React.FC = () => {
       <div className="space-y-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="h-24 bg-gray-200 rounded"></div>
             ))}
@@ -105,11 +100,11 @@ const ProductionReadinessPanel: React.FC = () => {
     <div className="space-y-8 min-w-0">
       {/* Overall Status */}
       <div
-        className={`border-2 rounded-2xl p-8 overflow-hidden isolate ${
+        className={`border-2 rounded-2xl p-6 overflow-hidden isolate ${
           overallStatus.ready ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'
         }`}
       >
-        <div className="flex items-center justify-between mb-6 gap-4 min-w-0">
+        <div className="flex items-center justify-between mb-5 gap-4 min-w-0">
           <div className="flex items-center gap-4 min-w-0">
             <div
               className={`p-4 rounded-2xl flex-none ${
@@ -124,7 +119,7 @@ const ProductionReadinessPanel: React.FC = () => {
             </div>
             <div className="min-w-0">
               <h2
-                className={`font-bold wrap-anywhere text-[clamp(1.25rem,2.2vw,1.875rem)] ${
+                className={`font-bold whitespace-normal break-words text-[clamp(1.25rem,2.2vw,1.875rem)] ${
                   overallStatus.ready ? 'text-emerald-900' : 'text-red-900'
                 }`}
               >
@@ -149,7 +144,7 @@ const ProductionReadinessPanel: React.FC = () => {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
           <div className="text-center min-w-0">
             <div className="text-3xl font-bold text-red-600">{overallStatus.criticalIssues}</div>
             <div className="text-sm font-medium text-gray-600">Critical Issues</div>
@@ -192,7 +187,7 @@ const ProductionReadinessPanel: React.FC = () => {
       </div>
 
       {/* Detailed Checklist by Category */}
-      <div className="space-y-6 min-w-0">
+      <div className="space-y-5 min-w-0">
         {categories.map((category) => {
           const categoryItems = checklist.filter((item) => item.category === category);
           const passCount = categoryItems.filter((item) => item.status === 'pass').length;
@@ -283,7 +278,7 @@ const ProductionReadinessPanel: React.FC = () => {
       </div>
 
       {/* Production Environment Variables Guide */}
-      <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-8 overflow-hidden isolate">
+      <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-6 overflow-hidden isolate">
         <div className="flex items-start gap-4 min-w-0">
           <div className="bg-blue-500 p-3 rounded-2xl flex-none">
             <Lock className="h-6 w-6 text-white" />
@@ -332,7 +327,7 @@ STRIPE_SECRET_KEY=sk_live_your_secret`}
 
       {/* Critical Issues Alert */}
       {overallStatus.criticalIssues > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-8 overflow-hidden isolate">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 overflow-hidden isolate">
           <div className="flex items-start gap-4 min-w-0">
             <div className="bg-red-500 p-3 rounded-2xl flex-none">
               <AlertTriangle className="h-6 w-6 text-white" />
@@ -359,7 +354,7 @@ STRIPE_SECRET_KEY=sk_live_your_secret`}
       )}
 
       {/* Production Deployment Checklist */}
-      <div className="bg-gradient-to-r from-green-50 to-emerald-100 border border-emerald-200 rounded-2xl p-8 overflow-hidden isolate">
+      <div className="bg-gradient-to-r from-green-50 to-emerald-100 border border-emerald-200 rounded-2xl p-6 overflow-hidden isolate">
         <div className="flex items-start gap-4 min-w-0">
           <div className="bg-emerald-500 p-3 rounded-2xl flex-none">
             <CheckCircle className="h-6 w-6 text-white" />
