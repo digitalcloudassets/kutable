@@ -270,8 +270,6 @@ const EnvironmentValidator: React.FC = () => {
       {/* Service Checks Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch auto-rows-fr">
         {checks.map((check) => (
-          <div key={check.service} className={`relative isolate h-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 transition-shadow hover:shadow-sm min-w-0 ${getStatusColor(check.status)}`}>
-            <div className="flex items-start gap-3 min-w-0 mb-3">
           <div
             key={check.service}
             className={`relative isolate flex h-full flex-col rounded-2xl border bg-white p-4 transition-shadow hover:shadow-sm min-w-0 ${getStatusColor(check.status)}`}
@@ -333,10 +331,6 @@ const EnvironmentValidator: React.FC = () => {
                   Test
                 </button>
               )}
-            </div>
-          </div>
-            <div className="absolute top-4 right-4">
-              {getStatusIcon(check.status)}
             </div>
           </div>
         ))}
