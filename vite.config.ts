@@ -66,6 +66,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: () => '/.netlify/functions/admin-create-user'
       },
+      // Direct proxy for .netlify/functions paths
+      '/.netlify/functions/': {
+        target: 'http://localhost:9999',
+        changeOrigin: true
+      },
       // Optional: catch-all for any /api/* function
       '/api/': {
         target: 'http://localhost:9999',
