@@ -268,51 +268,73 @@ const EnvironmentValidator: React.FC = () => {
       </div>
 
       {/* Service Checks Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch auto-rows-fr">
         {checks.map((check) => (
           <div key={check.service} className={`relative isolate h-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 transition-shadow hover:shadow-sm min-w-0 ${getStatusColor(check.status)}`}>
             <div className="flex items-start gap-3 min-w-0 mb-3">
-              <div className={`flex-none h-9 w-9 rounded-xl grid place-items-center ${
-                {
-                  blue: 'bg-blue-100',
-                  purple: 'bg-purple-100', 
-                  green: 'bg-green-100',
-                  orange: 'bg-orange-100',
-                  red: 'bg-red-100',
-                  indigo: 'bg-indigo-100'
-                }[check.color] || 'bg-gray-100'
-              }`}>
+          <div
+            key={check.service}
+            className={`relative isolate flex h-full flex-col rounded-2xl border bg-white p-4 transition-shadow hover:shadow-sm min-w-0 ${getStatusColor(check.status)}`}
+          >
+            <div className="absolute top-3 right-3 z-10 pointer-events-none">
+              {getStatusIcon(check.status)}
+            </div>
+
+            <div className="flex items-start gap-3 min-w-0 mb-2 pr-8">
+              <div
+                className={`flex-none h-9 w-9 rounded-xl grid place-items-center ${
+                  {
+                    blue: 'bg-blue-100',
+                    purple: 'bg-purple-100',
+                    green: 'bg-green-100',
+                    orange: 'bg-orange-100',
+                    red: 'bg-red-100',
+                    indigo: 'bg-indigo-100'
+                  }[check.color] || 'bg-gray-100'
+                }`}
+              >
                 <check.icon className="h-5 w-5" />
               </div>
+
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-gray-900 text-sm whitespace-normal break-normal hyphens-none">{check.service}</h3>
-                <p className="text-xs text-gray-600 leading-5 whitespace-normal break-words">{check.description}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-                  {check.required && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap bg-red-100 text-red-800">
-                      Required
-                    </span>
-                  )}
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap capitalize ${
-                    check.status === 'configured' ? 'bg-emerald-100 text-emerald-800' :
-                    check.status === 'missing' ? 'bg-red-100 text-red-800' :
-                    check.status === 'invalid' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-blue-100 text-blue-800'
-                  }`}>
-                    {check.status}
-                  </span>
-                  {check.testEndpoint && (
-                    <button
-                      onClick={() => testService(check)}
-                      disabled={check.status === 'testing'}
-                      className="text-xs text-primary-600 hover:underline shrink-0"
-                    >
-                      Test
-                    </button>
-                  )}
-                </div>
+                <h3 className="font-semibold text-gray-900 text-sm break-words leading-5">
+                  {check.service}
+                </h3>
+                <p className="text-xs text-gray-600 leading-5 break-words">{check.description}</p>
               </div>
             </div>
+
+            <div className="mt-auto pt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+              {check.required && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap bg-red-100 text-red-800">
+                  Required
+                </span>
+              )}
+              <span
+                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap capitalize ${
+                  check.status === 'configured'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : check.status === 'missing'
+                    ? 'bg-red-100 text-red-800'
+                    : check.status === 'invalid'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-blue-100 text-blue-800'
+                }`}
+              >
+                {check.status}
+              </span>
+
+              {check.testEndpoint && (
+                <button
+                  onClick={() => testService(check)}
+                  disabled={check.status === 'testing'}
+                  className="text-xs text-primary-600 hover:underline shrink-0"
+                >
+                  Test
+                </button>
+              )}
+            </div>
+          </div>
             <div className="absolute top-4 right-4">
               {getStatusIcon(check.status)}
             </div>

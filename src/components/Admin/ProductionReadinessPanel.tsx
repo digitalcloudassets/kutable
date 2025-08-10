@@ -112,36 +112,31 @@ const ProductionReadinessPanel: React.FC = () => {
       <div
         className={`border-2 rounded-2xl p-6 overflow-hidden isolate ${
           overallStatus.ready ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'
-        }`}
-      >
-        <div className="flex flex-wrap items-center justify-between mb-5 gap-4 gap-y-3 min-w-0">
-          <div className="flex items-center gap-4 min-w-0 flex-1">
-            <div
-              className={`p-4 rounded-2xl flex-none ${
-                overallStatus.ready ? 'bg-emerald-500' : 'bg-red-500'
-              }`}
-            >
+        <div className="flex flex-wrap items-center gap-4 justify-between mb-5">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className={`p-4 rounded-2xl flex-none ${overallStatus.ready ? 'bg-emerald-500' : 'bg-red-500'}`}>
               {overallStatus.ready ? (
                 <CheckCircle className="h-8 w-8 text-white" />
               ) : (
                 <AlertTriangle className="h-8 w-8 text-white" />
               )}
             </div>
-            <div className="min-w-[260px] sm:min-w-[300px] flex-1">
+
+            <div className="min-w-[260px] sm:min-w-[300px]">
               <h2
-                className={`font-bold whitespace-normal break-words leading-tight text-[clamp(1.25rem,2.2vw,1.875rem)] ${
+                className={`font-bold leading-tight break-words text-[clamp(1.25rem,2.2vw,1.875rem)] ${
                   overallStatus.ready ? 'text-emerald-900' : 'text-red-900'
                 }`}
               >
                 {overallStatus.ready ? 'Production Ready' : 'Not Production Ready'}
               </h2>
-              <p className={`${overallStatus.ready ? 'text-emerald-800' : 'text-red-800'}`}>
+              <p className={overallStatus.ready ? 'text-emerald-800' : 'text-red-800'}>
                 {overallStatus.completionPercentage.toFixed(1)}% Complete
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0 flex-wrap">
+          <div className="flex items-center gap-3">
             <button onClick={loadChecklist} className="btn-secondary">
               <RefreshCw className="h-4 w-4" />
               <span>Refresh</span>
