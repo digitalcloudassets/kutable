@@ -268,48 +268,44 @@ const EnvironmentValidator: React.FC = () => {
       </div>
 
       {/* Service Checks Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
         {checks.map((check) => (
-          <div key={check.service} className={`border rounded-2xl p-6 transition-all ${getStatusColor(check.status)}`}>
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className={`bg-${check.color}-100 p-2 rounded-xl`}>
-                  <check.icon className={`h-5 w-5 text-${check.color}-600`} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">{check.service}</h3>
+          <div key={check.service} className={`h-full overflow-hidden rounded-2xl border border-gray-200 bg-white p-4 transition-shadow hover:shadow-sm min-w-0 ${getStatusColor(check.status)}`}>
+            <div className="flex items-start gap-3 min-w-0 mb-3">
+              <div className={`flex-none h-9 w-9 rounded-xl grid place-items-center bg-${check.color}-100`}>
+                <check.icon className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-gray-900 text-sm whitespace-normal break-words">{check.service}</h3>
+                <p className="text-xs text-gray-600 leading-5 whitespace-normal break-words">{check.description}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
                   {check.required && (
-                    <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap bg-red-100 text-red-800">
                       Required
                     </span>
                   )}
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap capitalize ${
+                    check.status === 'configured' ? 'bg-emerald-100 text-emerald-800' :
+                    check.status === 'missing' ? 'bg-red-100 text-red-800' :
+                    check.status === 'invalid' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-blue-100 text-blue-800'
+                  }`}>
+                    {check.status}
+                  </span>
+                  {check.testEndpoint && (
+                    <button
+                      onClick={() => testService(check)}
+                      disabled={check.status === 'testing'}
+                      className="text-xs text-primary-600 hover:underline shrink-0"
+                    >
+                      Test
+                    </button>
+                  )}
                 </div>
               </div>
-              {getStatusIcon(check.status)}
             </div>
-            
-            <p className="text-sm text-gray-700 mb-4">{check.description}</p>
-            
-            <div className="flex items-center justify-between">
-              <span className={`text-sm font-medium capitalize ${
-                check.status === 'configured' ? 'text-emerald-600' :
-                check.status === 'missing' ? 'text-red-600' :
-                check.status === 'invalid' ? 'text-yellow-600' :
-                'text-blue-600'
-              }`}>
-                {check.status}
-              </span>
-              
-              {check.testEndpoint && (
-                <button
-                  onClick={() => testService(check)}
-                  disabled={check.status === 'testing'}
-                  className="text-blue-600 hover:text-blue-500 text-sm font-medium flex items-center space-x-1"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  <span>Test</span>
-                </button>
-              )}
+            <div className="absolute top-4 right-4">
+              {getStatusIcon(check.status)}
             </div>
           </div>
         ))}
