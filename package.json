@@ -4,9 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k \"vite\" \"netlify functions:serve\"",
+    "dev": "concurrently -k \"vite\" \"netlify functions:serve --port 9999\"",
     "build": "vite build",
-    "dev:functions": "netlify functions:serve",
+    "dev:functions": "netlify functions:serve --port 9999",
     "dev:local": "concurrently -k \"npm:dev\" \"npm:dev:functions\"",
     "lint": "eslint .",
     "preview": "vite preview"
