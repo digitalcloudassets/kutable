@@ -49,29 +49,29 @@ serve(async (req) => {
           metadata: session.metadata
         });
 
-        // Retrieve full PaymentIntent with expanded charge and balance transaction data
+        // Retrieve PaymentIntent with charge data to get application fee
         const pi = await stripe.paymentIntents.retrieve(session.payment_intent as string, {
-          expand: ['charges.data.balance_transaction']
+          expand: ['charges.data.application_fee']
         });
         const charge = pi.charges.data[0];
 
         const grossAmountCents = charge.amount; // e.g., 5000 for $50.00
-        const platformFeeCents = charge.application_fee_amount ?? 0; // your platform fee
+        const platformFeeCents = charge.application_fee_amount ?? 0; // Platform fee from Stripe Connect
         const live = charge.livemode;
+        
+        console.log('Stripe charge details for platform fee recording:', {
+          chargeId: charge.id,
+          grossAmountCents,
+          platformFeeCents,
+          applicationFeeAmount: charge.application_fee_amount,
+          livemode: live,
+          currency: charge.currency
+        });
+        
         // Handle different metadata key formats
         const bookingId = session.metadata?.bookingId ?? session.metadata?.booking_id ?? null;
         const barberId = session.metadata?.barberId ?? session.metadata?.barber_id ?? null;
         const customerId = session.metadata?.customerId ?? session.metadata?.customer_id ?? null;
-
-        console.log('Stripe charge details:', {
-          chargeId: charge.id,
-          grossAmountCents,
-          platformFeeCents,
-          livemode: live,
-          bookingId,
-          barberId,
-          customerId
-        });
 
         // Insert accurate payment record from Stripe webhook data
         const { data: paymentRecord, error: paymentError } = await supabase.from('payments').insert({
@@ -89,14 +89,33 @@ serve(async (req) => {
 
         if (paymentError) {
           console.error('Error inserting payment record:', paymentError);
+          console.error('Payment data that failed to insert:', {
+            booking_id: bookingId,
+            barber_id: barberId,
+            customer_id: customerId,
+            currency: charge.currency,
+            gross_amount_cents: grossAmountCents,
+            application_fee_cents: platformFeeCents,
+            stripe_charge_id: charge.id,
+            livemode: live,
+            status: charge.status
+          });
         } else {
           console.log('Payment record created successfully:', {
             paymentId: paymentRecord.id,
             grossAmountCents: paymentRecord.gross_amount_cents,
             platformFeeCents: paymentRecord.application_fee_cents,
+            platformFeeInDollars: (paymentRecord.application_fee_cents / 100),
             livemode: paymentRecord.livemode,
             status: paymentRecord.status
           });
+          
+          // Verify the platform fee was recorded correctly
+          if (paymentRecord.application_fee_cents > 0) {
+            console.log(`✅ Platform fee recorded: $${(paymentRecord.application_fee_cents / 100).toFixed(2)} from $${(paymentRecord.gross_amount_cents / 100).toFixed(2)} booking`);
+          } else {
+            console.warn('⚠️ Platform fee is 0 - check Stripe Connect configuration');
+          }
         }
 
         // Update booking status if booking exists

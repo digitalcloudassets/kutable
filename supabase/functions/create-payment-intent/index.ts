@@ -90,6 +90,12 @@ Deno.serve(async (req) => {
     // Calculate platform fee (1%)
     const application_fee_amount = Math.floor(amount * 0.01);
 
+    console.log('Payment intent fee calculation:', {
+      originalAmount: amount,
+      calculatedPlatformFee: application_fee_amount,
+      percentageCheck: (application_fee_amount / amount * 100).toFixed(2) + '%'
+    });
+
     const params: Record<string, any> = {
       amount,
       currency,
@@ -107,7 +113,12 @@ Deno.serve(async (req) => {
       ),
     };
 
-    console.log('Payment intent params:', { ...params, metadata: metadata || {} });
+    console.log('Payment intent params with platform fee:', { 
+      amount, 
+      application_fee_amount, 
+      destination: barber.stripe_account_id,
+      metadata: metadata || {} 
+    });
 
     // Create PaymentIntent on the PLATFORM (destination charge)
     const pi = await stripePost('payment_intents', form(params), STRIPE_SECRET_KEY!);
