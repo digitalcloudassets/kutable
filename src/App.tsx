@@ -24,9 +24,22 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import ForgotPassword from './components/Auth/ForgotPassword';
 import ResetPassword from './components/Auth/ResetPassword';
+import AIChatWidget from './components/Chat/AIChatWidget';
 
 // Set up global error handling
 setupGlobalErrorHandling();
+
+// Chat Widget Gate - Hide on admin routes
+const ChatWidgetGate: React.FC = () => {
+  const location = useLocation();
+  const HIDE_ROUTES = [/^\/admin-login$/, /^\/admin($|\/)/];
+
+  if (HIDE_ROUTES.some(regex => regex.test(location.pathname))) {
+    return null; // Hide chat widget on admin pages
+  }
+  
+  return <AIChatWidget />;
+};
 
 // Track page views for SPA routing
 const AnalyticsRouter: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -159,6 +172,9 @@ function App() {
             },
           }}
         />
+        
+        {/* AI Chat Widget - Hidden on admin pages */}
+        <ChatWidgetGate />
         
       </div>
       </AnalyticsRouter>
