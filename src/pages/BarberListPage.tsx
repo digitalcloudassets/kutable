@@ -458,19 +458,19 @@ const BarberListPage: React.FC = () => {
               <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                 <div className="flex flex-col lg:flex-row gap-4">
                   {/* Search Input */}
-                  <div className="flex-1 relative z-0">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400 pointer-events-none" />
+                  <div className="flex-1 relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search barbers or businesses..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-14 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-gray-50 placeholder-gray-400 text-gray-900 caret-primary-500 text-lg min-h-[56px]"
+                    className="w-full pl-14 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-gray-50 placeholder-gray-400 text-lg min-h-[56px]"
                   />
                   </div>
                   
                   {/* City Selector */}
-                  <div className="relative lg:w-64 shrink-0">
+                  <div className="relative lg:w-64">
                     <MapIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
                     <select
                       value={selectedCity}
@@ -487,11 +487,11 @@ const BarberListPage: React.FC = () => {
                   {/* Filters Button */}
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`px-4 py-4 border rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 font-medium min-h-[52px] w-full lg:w-36 shrink-0 ${
+                    className={`px-6 py-4 border rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 font-medium min-h-[52px] w-full ${
                       showFilters || activeFilterCount > 0
                         ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-md'
                         : 'border-gray-200 text-gray-700 hover:border-primary-300 hover:bg-primary-50'
-                    }`}
+                    } lg:w-40`}
                   >
                     <SlidersHorizontal className="h-5 w-5" />
                     <span>Filters</span>
