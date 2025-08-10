@@ -33,16 +33,5 @@ export async function adminSignup(
     throw new Error('Signup failed: no user returned');
   }
 
-  // Immediately sign in
-  const raw2 = await resp.text();
-  let json = null;
-  try {
-    json = raw2 ? JSON.parse(raw2) : null;
-  } catch {}
-  
-  if (!resp.ok) {
-    throw new Error(json?.error || raw2 || `HTTP ${resp.status}`);
-  }
-  if (error) throw new Error(error.message);
-  return json;
+  return payload;
 }
