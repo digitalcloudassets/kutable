@@ -112,6 +112,8 @@ const ProductionReadinessPanel: React.FC = () => {
       <div
         className={`border-2 rounded-2xl p-6 overflow-hidden isolate ${
           overallStatus.ready ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'
+        }`}
+      >
         <div className="flex flex-wrap items-center gap-4 justify-between mb-5">
           <div className="flex items-center gap-4 min-w-0">
             <div className={`p-4 rounded-2xl flex-none ${overallStatus.ready ? 'bg-emerald-500' : 'bg-red-500'}`}>
