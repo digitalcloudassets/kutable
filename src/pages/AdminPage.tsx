@@ -27,6 +27,7 @@ import { supabase, getRealBarberCount } from '../lib/supabase';
 import { useSupabaseConnection } from '../hooks/useSupabaseConnection';
 import SupabaseConnectionBanner from '../components/Setup/SupabaseConnectionBanner';
 import AdminDataExport from '../components/Admin/AdminDataExport';
+import { fetchAdminKpis, AdminKPIs } from '../api/adminKpis';
 import { NotificationManager, AdminNotifications } from '../utils/notifications';
 import ProductionSecurityCheck from '../components/Security/ProductionSecurityCheck';
 import MonitoringDashboard from '../components/Admin/MonitoringDashboard';
@@ -64,18 +65,7 @@ const AdminPage: React.FC = () => {
   const navigate = useNavigate();
   const { isConnected } = useSupabaseConnection();
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
-  const [metrics, setMetrics] = useState<PlatformMetrics>({
-    totalBarbers: 0,
-    activeBarbers: 0,
-    claimedBarbers: 0,
-    totalBookings: 0,
-    totalRevenue: 0,
-    platformFees: 0,
-    bookingsToday: 0,
-    bookingsThisMonth: 0,
-    avgBookingValue: 0,
-    topPerformingBarbers: []
-  });
+  const [kpis, setKpis] = useState<AdminKPIs | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'barbers' | 'bookings' | 'payments' | 'export'>('overview');
   const [updatingSlugs, setUpdatingSlugs] = useState(false);
@@ -122,107 +112,26 @@ const AdminPage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Get total barber count from CSV
-      const csvBarberCount = await getRealBarberCount();
-      
       if (!isConnected) {
-        // When Supabase not connected, show CSV directory stats
-        setMetrics({
+        // When Supabase not connected, show CSV directory stats  
+        const csvBarberCount = await getRealBarberCount();
+        setKpis({
           totalBarbers: csvBarberCount,
-          activeBarbers: csvBarberCount, // All CSV barbers are considered active
-          claimedBarbers: 0, // No claimed barbers without database
+          activeBarbers: csvBarberCount,
+          claimedBarbers: 0,
           totalBookings: 0,
-          totalRevenue: 0,
-          platformFees: 0,
-          bookingsToday: 0,
           bookingsThisMonth: 0,
-          avgBookingValue: 0,
-          topPerformingBarbers: []
+          bookingsToday: 0,
+          totalRevenue: 0,
+          avgBookingValue: 0
         });
         setLoading(false);
         return;
       }
 
-      // Get barber metrics
-      const { data: barbersData } = await supabase
-        .from('barber_profiles')
-        .select('id, business_name, owner_name, is_claimed, is_active, average_rating');
-
-      const totalBarbers = csvBarberCount + (barbersData?.length || 0);
-      const claimedBarbers = barbersData?.filter(b => b.is_claimed).length || 0;
-      const activeBarbers = csvBarberCount + (barbersData?.filter(b => b.is_active).length || 0);
-
-      // Get booking count metrics
-      const { data: bookingsData } = await supabase
-        .from('bookings')
-        .select('id, appointment_date, created_at, status, updated_at')
-        .order('updated_at', { ascending: false });
-
-      const totalBookings = bookingsData?.length || 0;
-
-      // Calculate today's bookings
-      const today = new Date().toISOString().split('T')[0];
-      const bookingsToday = bookingsData?.filter(booking => 
-        booking.created_at.split('T')[0] === today).length || 0;
-
-      // Calculate this month's bookings
-      const thisMonth = new Date().toISOString().substring(0, 7); // YYYY-MM format
-      const bookingsThisMonth = bookingsData?.filter(booking => 
-        booking.created_at.substring(0, 7) === thisMonth).length || 0;
-
-      // Get accurate revenue metrics from payments table (Stripe webhook data)
-      const { data: paymentsData } = await supabase
-        .from('payments')
-        .select('gross_amount_cents, application_fee_cents, status, livemode')
-        .eq('status', 'succeeded')
-        .eq('livemode', true); // Only count live/production payments
-
-      const totalRevenue = paymentsData?.reduce((sum, payment) => 
-        sum + (payment.gross_amount_cents / 100), 0) || 0;
-      const platformFees = paymentsData?.reduce((sum, payment) => 
-        sum + (payment.application_fee_cents / 100), 0) || 0;
-      const avgBookingValue = paymentsData?.length > 0 ? totalRevenue / paymentsData.length : 0;
-
-      // Get top performing barbers
-      const { data: topBarbers } = await supabase
-        .from('barber_profiles')
-        .select(`
-          business_name,
-          owner_name,
-          average_rating,
-          bookings!inner(total_amount)
-        `)
-        .eq('is_claimed', true)
-        .eq('is_active', true)
-        .limit(5);
-
-      const topPerformingBarbers = topBarbers?.map(barber => {
-        const bookingCount = Array.isArray(barber.bookings) ? barber.bookings.length : 0;
-        const totalRevenue = Array.isArray(barber.bookings) 
-          ? barber.bookings.reduce((sum: number, booking: any) => sum + Number(booking.total_amount), 0)
-          : 0;
-        
-        return {
-          business_name: barber.business_name,
-          owner_name: barber.owner_name,
-          booking_count: bookingCount,
-          total_revenue: totalRevenue,
-          average_rating: barber.average_rating
-        };
-      }).sort((a, b) => b.total_revenue - a.total_revenue) || [];
-
-      setMetrics({
-        totalBarbers,
-        activeBarbers,
-        claimedBarbers,
-        totalBookings,
-        totalRevenue,
-        platformFees,
-        bookingsToday,
-        bookingsThisMonth,
-        avgBookingValue,
-        topPerformingBarbers
-      });
+      // Use single source of truth RPC for all KPIs
+      const kpiData = await fetchAdminKpis();
+      setKpis(kpiData);
 
     } catch (error) {
       console.error('Error loading platform metrics:', error);
@@ -337,24 +246,24 @@ const AdminPage: React.FC = () => {
                   <Users className="h-5 w-5 text-primary-600" />
                 </div>
               </div>
-              <div className="text-3xl font-display font-bold text-gray-900 mb-2">{metrics.totalBarbers.toLocaleString()}</div>
+              <div className="text-3xl font-display font-bold text-gray-900 mb-2">{kpis?.totalBarbers.toLocaleString() || '0'}</div>
               <p className="text-sm text-gray-500 font-medium">
-                {metrics.claimedBarbers.toLocaleString()} claimed • {metrics.activeBarbers.toLocaleString()} active
+                {kpis?.claimedBarbers.toLocaleString() || '0'} claimed • {kpis?.activeBarbers.toLocaleString() || '0'} active
               </p>
             </div>
 
             <div className="card-premium p-8">
               <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <h3 className="text-sm font-medium text-gray-600 uppercase tracking-wide">Total Revenue</h3>
+                <h3 className="text-sm font-medium text-gray-600 uppercase tracking-wide">Platform Revenue</h3>
                 <div className="bg-emerald-100 p-2 rounded-xl">
                   <DollarSign className="h-5 w-5 text-emerald-600" />
                 </div>
               </div>
               <div className="text-3xl font-display font-bold text-gray-900 mb-2">
-                {formatCurrency(metrics.totalRevenue)}
+                {formatCurrency(kpis?.totalRevenue || 0)}
               </div>
               <p className="text-sm text-gray-500 font-medium">
-                Platform fees: {formatCurrency(metrics.platformFees)}
+                From application fees (live payments only)
               </p>
             </div>
 
@@ -365,9 +274,9 @@ const AdminPage: React.FC = () => {
                   <Calendar className="h-5 w-5 text-accent-600" />
                 </div>
               </div>
-              <div className="text-3xl font-display font-bold text-gray-900 mb-2">{metrics.totalBookings.toLocaleString()}</div>
+              <div className="text-3xl font-display font-bold text-gray-900 mb-2">{kpis?.totalBookings.toLocaleString() || '0'}</div>
               <p className="text-sm text-gray-500 font-medium">
-                {metrics.bookingsThisMonth.toLocaleString()} this month • {metrics.bookingsToday.toLocaleString()} today
+                {kpis?.bookingsThisMonth.toLocaleString() || '0'} this month • {kpis?.bookingsToday.toLocaleString() || '0'} today
               </p>
             </div>
 
@@ -379,7 +288,7 @@ const AdminPage: React.FC = () => {
                 </div>
               </div>
               <div className="text-3xl font-display font-bold text-gray-900 mb-2">
-                {formatCurrency(metrics.avgBookingValue)}
+                {formatCurrency(kpis?.avgBookingValue || 0)}
               </div>
               <p className="text-sm text-gray-500 font-medium">
                 Per booking average
