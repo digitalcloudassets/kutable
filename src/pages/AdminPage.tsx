@@ -540,7 +540,7 @@ const AdminPage: React.FC = () => {
                         <span className="text-xs font-bold text-primary-700 bg-primary-200 px-3 py-1.5 rounded-full">DIRECTORY</span>
                       </div>
                       <div className="text-4xl font-display font-bold text-gray-900 mb-2">
-                        {kpis?.totalBarbers.toLocaleString() || '0'}
+                        {metrics.totalBarbers.toLocaleString()}
                       </div>
                       <p className="text-primary-800 font-semibold mb-2">Total Barber Profiles</p>
                       <p className="text-sm text-primary-600 font-medium">Includes CSV directory + claimed profiles</p>
@@ -554,11 +554,11 @@ const AdminPage: React.FC = () => {
                         <span className="text-xs font-bold text-emerald-700 bg-emerald-200 px-3 py-1.5 rounded-full">CLAIMED</span>
                       </div>
                       <div className="text-4xl font-display font-bold text-gray-900 mb-2">
-                        {kpis?.claimedBarbers.toLocaleString() || '0'}
+                        {metrics.claimedBarbers.toLocaleString()}
                       </div>
                       <p className="text-emerald-800 font-semibold mb-2">Claimed Profiles</p>
                       <p className="text-sm text-emerald-600 font-medium">
-                        {kpis ? ((kpis.claimedBarbers / kpis.totalBarbers) * 100).toFixed(1) : '0'}% of total directory
+                        {((metrics.claimedBarbers / metrics.totalBarbers) * 100).toFixed(1)}% of total directory
                       </p>
                     </div>
 
@@ -570,7 +570,7 @@ const AdminPage: React.FC = () => {
                         <span className="text-xs font-bold text-orange-700 bg-orange-200 px-3 py-1.5 rounded-full">AVAILABLE</span>
                       </div>
                       <div className="text-4xl font-display font-bold text-gray-900 mb-2">
-                        {kpis ? (kpis.totalBarbers - kpis.claimedBarbers).toLocaleString() : '0'}
+                        {(metrics.totalBarbers - metrics.claimedBarbers).toLocaleString()}
                       </div>
                       <p className="text-orange-800 font-semibold mb-2">Unclaimed Profiles</p>
                       <p className="text-sm text-orange-600 font-medium">Available for claiming</p>
@@ -689,7 +689,7 @@ const AdminPage: React.FC = () => {
                           <span className="text-xs font-bold text-emerald-700 bg-emerald-200 px-3 py-1.5 rounded-full">EARNED</span>
                         </div>
                         <div className="text-4xl font-display font-bold text-gray-900 mb-2">
-                          {formatCurrency(metrics.platformFees)}
+                          {formatCurrency(kpis?.totalRevenue || 0)}
                         </div>
                         <p className="text-emerald-800 font-semibold mb-2">Platform Fees Collected</p>
                         <p className="text-sm text-emerald-600 font-medium">1% of gross volume</p>
@@ -703,7 +703,7 @@ const AdminPage: React.FC = () => {
                           <span className="text-xs font-bold text-primary-700 bg-primary-200 px-3 py-1.5 rounded-full">VOLUME</span>
                         </div>
                         <div className="text-4xl font-display font-bold text-gray-900 mb-2">
-                          {formatCurrency(metrics.totalRevenue)}
+                          ${((kpis?.totalRevenue || 0) / 0.01).toFixed(0)}
                         </div>
                         <p className="text-primary-800 font-semibold mb-2">Total Volume Processed</p>
                         <p className="text-sm text-primary-600 font-medium">Gross booking revenue</p>
@@ -717,7 +717,7 @@ const AdminPage: React.FC = () => {
                           <span className="text-xs font-bold text-orange-700 bg-orange-200 px-3 py-1.5 rounded-full">ACTIVE</span>
                         </div>
                         <div className="text-4xl font-display font-bold text-gray-900 mb-2">
-                          {metrics.claimedBarbers.toLocaleString()}
+                          {kpis?.claimedBarbers.toLocaleString() || '0'}
                         </div>
                         <p className="text-orange-800 font-semibold mb-2">Connected Accounts</p>
                         <p className="text-sm text-orange-600 font-medium">Barbers with Stripe accounts</p>
