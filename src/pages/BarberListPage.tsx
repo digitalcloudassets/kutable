@@ -470,12 +470,12 @@ const BarberListPage: React.FC = () => {
                   </div>
                   
                   {/* City Selector */}
-                  <div className="relative lg:w-64">
+                  <div className="relative basis-[200px] sm:basis-[240px] lg:basis-64 shrink-0">
                     <MapIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
                     <select
                       value={selectedCity}
                       onChange={(e) => setSelectedCity(e.target.value)}
-                      className="w-full pl-14 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-gray-50 font-medium min-h-[56px]"
+                      className="w-full pl-14 pr-10 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-gray-50 font-medium min-h-[56px] text-gray-900"
                     >
                       <option value="">All Cities</option>
                       {cities.map(city => (
