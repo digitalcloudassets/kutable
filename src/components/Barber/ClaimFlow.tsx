@@ -331,108 +331,36 @@ const ClaimFlow: React.FC = () => {
   }, [barberId]);
 
   const handleClaim = async () => {
-    if (!user) {
-      setError('Please sign in to claim this profile');
-      return;
-    }
-
-    if (!isConnected) {
-      setError('Please connect to Supabase to claim this profile');
-      return;
-    }
-
     setClaiming(true);
     setError('');
 
     try {
-      // Check if this user already has a barber profile
-      const { data: existingUserProfile } = await supabase
-        .from('barber_profiles')
-        .select('id, slug')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const res = await supabase.functions.invoke('claim', {
+        body: { barberId, claimData }
+      });
 
-      if (existingUserProfile) {
-        // User already has a profile, redirect to it
-        navigate(`/barber/${existingUserProfile.slug}`);
+      if (res.error) throw new Error(res.error.message || 'Claim failed');
+      
+      const result = res.data;
+      if (!result?.success) throw new Error(result?.error || 'Claim failed');
+
+      NotificationManager.success('Profile claimed successfully!');
+
+      // If a one-click magic link was returned, redirect immediately
+      if (result.actionLink) {
+        window.location.href = result.actionLink;
         return;
       }
 
-      // Generate a unique slug
-      const finalSlug = await generateUniqueSlug(claimData.businessName);
-
-      if (isCSVProfile) {
-        // Create new profile for CSV profiles that don't exist in database
-        const { data: newProfile, error: createError } = await supabase
-          .from('barber_profiles')
-          .insert({
-            user_id: user.id,
-            slug: finalSlug,
-            business_name: claimData.businessName,
-            owner_name: claimData.ownerName,
-            phone: claimData.phone || null,
-            email: claimData.email || null,
-            address: claimData.address || null,
-            city: claimData.city || null,
-            state: claimData.state || null,
-            zip_code: claimData.zipCode || null,
-            bio: claimData.bio || null,
-            profile_image_url: barber?.profile_image_url || null,
-            banner_image_url: barber?.banner_image_url || null,
-            is_claimed: true,
-            is_active: true,
-            updated_at: new Date().toISOString()
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        
-        // Clear the stored return URL
-        localStorage.removeItem('claim_return_url');
-        
-        setSuccess(true);
-        NotificationManager.success('Profile claimed successfully!');
-        
-        // Redirect to the new profile after showing success
-        setTimeout(() => {
-          navigate(`/barber/${finalSlug}`);
-        }, 2000);
-      } else {
-        // Update existing database profile
-        const { error: updateError } = await supabase
-          .from('barber_profiles')
-          .update({
-            user_id: user.id,
-            slug: finalSlug,
-            business_name: claimData.businessName,
-            owner_name: claimData.ownerName,
-            phone: claimData.phone || null,
-            email: claimData.email || null,
-            address: claimData.address || null,
-            city: claimData.city || null,
-            state: claimData.state || null,
-            zip_code: claimData.zipCode || null,
-            bio: claimData.bio || null,
-            is_claimed: true,
-            is_active: true,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', barberId);
-
-        if (updateError) throw updateError;
-        
-        // Clear the stored return URL
-        localStorage.removeItem('claim_return_url');
-        
-        setSuccess(true);
-        NotificationManager.success('Profile claimed successfully!');
-        
-        // Redirect to the updated profile after showing success
-        setTimeout(() => {
-          navigate(`/barber/${finalSlug}`);
-        }, 2000);
-      }
+      // Otherwise, show success and redirect to their profile/dashboard
+      setSuccess(true);
+      setTimeout(() => {
+        if (result.slug) {
+          navigate(`/barber/${result.slug}`);
+        } else {
+          navigate('/dashboard');
+        }
+      }, 1500);
       
     } catch (error: any) {
       console.error('Error claiming profile:', error);
@@ -810,97 +738,37 @@ const ClaimFlow: React.FC = () => {
 
             {/* Action Section */}
             <div className="mt-8 pt-8 border-t border-gray-100">
-              {!user ? (
-                /* Not Authenticated State */
-                <div className="text-center space-y-6">
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-8">
-                    <div className="flex items-center justify-center space-x-3 mb-4">
-                      <div className="bg-blue-500 p-2 rounded-xl">
-                        <Shield className="h-5 w-5 text-white" />
-                      </div>
-                      <h4 className="font-display font-bold text-blue-800 text-lg">Ready to Claim?</h4>
+              <div className="text-center space-y-6">
+                <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-2xl p-8">
+                  <div className="flex items-center justify-center space-x-3 mb-4">
+                    <div className="bg-emerald-500 p-2 rounded-xl">
+                      <CheckCircle className="h-5 w-5 text-white" />
                     </div>
-                    <p className="text-blue-700 leading-relaxed font-medium mb-6">
-                      Sign in or create an account to claim <strong>{barber.business_name}</strong> and start accepting online bookings.
-                    </p>
-                    
-                    <div className="space-y-4">
-                      <Link
-                        to="/login"
-                        className="btn-primary w-full hover:scale-105 transition-all duration-200"
-                      >
-                        <User className="h-5 w-5" />
-                        <span>Sign In to Claim</span>
-                      </Link>
-                      
-                      <Link
-                        to="/signup?type=barber"
-                        className="btn-secondary w-full hover:scale-105 transition-all duration-200"
-                      >
-                        <Sparkles className="h-5 w-5" />
-                        <span>Create Account & Claim</span>
-                      </Link>
-                    </div>
+                    <h4 className="font-display font-bold text-emerald-800 text-lg">Ready to Claim</h4>
                   </div>
-
-                  <button
-                    disabled
-                    className="btn-primary w-full opacity-50 cursor-not-allowed"
-                  >
-                    <Crown className="h-5 w-5" />
-                    <span>Claim Profile (Sign In Required)</span>
-                  </button>
+                  <p className="text-emerald-700 leading-relaxed font-medium">
+                    Review the information above, then claim your profile. We'll create your barber account and send a secure sign-in link.
+                  </p>
                 </div>
-              ) : (
-                /* Authenticated State */
-                <div className="text-center space-y-6">
-                  <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-2xl p-8">
-                    <div className="flex items-center justify-center space-x-3 mb-4">
-                      <div className="bg-emerald-500 p-2 rounded-xl">
-                        <CheckCircle className="h-5 w-5 text-white" />
-                      </div>
-                      <h4 className="font-display font-bold text-emerald-800 text-lg">Ready to Approve & Claim</h4>
-                    </div>
-                    <p className="text-emerald-700 leading-relaxed font-medium">
-                      Review the information above, make any necessary updates, then claim your profile to start accepting online bookings.
-                    </p>
-                  </div>
 
-                  <button
-                    onClick={handleClaim}
-                    disabled={claiming || !isConnected}
-                    className="btn-primary w-full hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {claiming ? (
-                      <>
-                        <Loader className="h-5 w-5 animate-spin" />
-                        <span>Claiming Profile...</span>
-                      </>
-                    ) : !isConnected ? (
-                      <>
-                        <AlertCircle className="h-5 w-5" />
-                        <span>Connect Supabase Required</span>
-                      </>
-                    ) : (
-                      <>
-                        <Crown className="h-5 w-5" />
-                        <span>Approve & Claim Profile</span>
-                      </>
-                    )}
-                  </button>
-
-                  {!isConnected && (
-                    <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-2xl p-6">
-                      <div className="flex items-center justify-center space-x-2">
-                        <AlertCircle className="h-5 w-5 text-yellow-600" />
-                        <p className="text-yellow-800 font-medium">
-                          Connect to Supabase to complete the claiming process
-                        </p>
-                      </div>
-                    </div>
+                <button
+                  onClick={handleClaim}
+                  disabled={claiming}
+                  className="btn-primary w-full hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {claiming ? (
+                    <>
+                      <Loader className="h-5 w-5 animate-spin" />
+                      <span>Claiming Profile...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Crown className="h-5 w-5" />
+                      <span>Claim Profile & Get Magic Link</span>
+                    </>
                   )}
-                </div>
-              )}
+                </button>
+              </div>
             </div>
 
             {/* Benefits Section */}
