@@ -439,41 +439,55 @@ const AdminPage: React.FC = () => {
                   <div className="card-premium p-8">
                     <div className="flex items-center space-x-3 mb-8">
                       <div className="bg-yellow-100 p-3 rounded-2xl">
-                        <Star className="h-6 w-6 text-yellow-600" />
+                        <BarChart3 className="h-6 w-6 text-yellow-600" />
                       </div>
                       <h4 className="text-2xl font-display font-bold text-gray-900">
-                      Top Performing Barbers
+                        Platform Summary
                       </h4>
                     </div>
-                    {metrics.topPerformingBarbers.length > 0 ? (
-                      <div className="space-y-6">
-                        {metrics.topPerformingBarbers.map((barber, index) => (
-                          <div key={index} className="flex items-center justify-between p-6 bg-gray-50 border border-gray-100 rounded-2xl hover:shadow-md transition-all duration-200">
-                            <div>
-                              <p className="font-display font-bold text-gray-900 text-lg">{barber.business_name}</p>
-                              <p className="text-gray-600 font-medium">{barber.owner_name} • {barber.booking_count} bookings</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-display font-bold text-emerald-600 text-xl">
-                                {formatCurrency(barber.total_revenue)}
-                              </p>
-                              <div className="flex items-center space-x-1">
-                                <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                                <span className="text-sm text-gray-500 font-medium">{barber.average_rating.toFixed(1)}</span>
-                              </div>
-                            </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6">
+                        <h5 className="font-semibold text-emerald-800 mb-3">Revenue Metrics</h5>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-emerald-700">Platform Revenue:</span>
+                            <span className="font-bold text-emerald-900">{formatCurrency(kpis?.totalRevenue || 0)}</span>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-16">
-                        <div className="bg-gray-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                          <BarChart3 className="h-10 w-10 text-gray-400" />
+                          <div className="flex justify-between">
+                            <span className="text-emerald-700">Avg Booking:</span>
+                            <span className="font-bold text-emerald-900">{formatCurrency(kpis?.avgBookingValue || 0)}</span>
+                          </div>
                         </div>
-                        <h5 className="text-xl font-display font-bold text-gray-900 mb-3">No performance data yet</h5>
-                        <p className="text-gray-600 font-medium">Data will appear here once barbers start receiving bookings.</p>
                       </div>
-                    )}
+                      
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                        <h5 className="font-semibold text-blue-800 mb-3">Booking Activity</h5>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-blue-700">Total:</span>
+                            <span className="font-bold text-blue-900">{kpis?.totalBookings.toLocaleString() || '0'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-blue-700">This Month:</span>
+                            <span className="font-bold text-blue-900">{kpis?.bookingsThisMonth.toLocaleString() || '0'}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-purple-50 border border-purple-200 rounded-xl p-6">
+                        <h5 className="font-semibold text-purple-800 mb-3">Directory Status</h5>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-purple-700">Total Profiles:</span>
+                            <span className="font-bold text-purple-900">{kpis?.totalBarbers.toLocaleString() || '0'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-purple-700">Claimed:</span>
+                            <span className="font-bold text-purple-900">{kpis?.claimedBarbers.toLocaleString() || '0'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Notification System Status */}
