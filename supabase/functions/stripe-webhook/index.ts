@@ -11,6 +11,7 @@ const ok = (data: any, status = 200) => new Response(JSON.stringify(data), {
   status,
   headers: { ...corsHeaders, 'Content-Type': 'application/json' }
 });
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -112,7 +113,6 @@ serve(async (req) => {
         }
 
         return ok({ received: true, bookingId: bookingId });
-        break
       }
 
       case 'payment_intent.succeeded': {
@@ -169,83 +169,6 @@ serve(async (req) => {
 
         return ok({ received: true, paymentIntentId: pi.id });
       }
-      case 'payment_intent.succeeded': {
-        const pi = event.data.object as any;
-        const md = pi.metadata || {};
-        const bookingId = md.bookingId || crypto.randomUUID();
-        const barberId = md.barberId;
-        const clientId = md.clientId || md.userId;
-
-        console.log('Processing payment_intent.succeeded:', {
-          paymentIntentId: pi.id,
-          bookingId,
-          barberId,
-          clientId,
-          amount: pi.amount
-        });
-
-        // 1) Create/update booking (idempotent)
-        const { error: bookingError } = await supabase.from('bookings').upsert({
-          id: bookingId,
-          barber_id: barberId,
-          client_id: clientId,
-          service_id: md.serviceId || null,
-          appointment_date: md.appointmentDate || null,
-          appointment_time: md.appointmentTime || null,
-          total_amount: pi.amount / 100,
-          deposit_amount: 0,
-          platform_fee: Math.floor(pi.amount * 0.01) / 100,
-          notes: md.notes || null,
-          status: 'confirmed',
-          stripe_payment_intent_id: pi.id,
-          stripe_charge_id: pi.charges?.data?.[0]?.id || null,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'id'
-        });
-
-        if (bookingError) {
-          console.error('Error upserting booking from PaymentIntent:', bookingError);
-        }
-
-        // 2) Record payment (idempotent)
-        const charge = pi.charges?.data?.[0];
-        const { error: paymentError } = await supabase.from('payments').upsert({
-          payment_intent_id: pi.id,
-          charge_id: charge?.id || null,
-          booking_id: bookingId,
-          barber_id: barberId,
-          user_id: clientId,
-          amount: pi.amount,
-          currency: pi.currency,
-          status: pi.status,
-          raw: pi,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'payment_intent_id'
-        });
-
-        if (paymentError) {
-          console.error('Error recording payment:', paymentError);
-        }
-
-        // 3) Send notifications if booking was created/confirmed
-        if (pi.status === 'succeeded') {
-          try {
-            await supabase.functions.invoke('process-booking-notifications', {
-              body: {
-                bookingId: bookingId,
-                event: 'booking_confirmed'
-              }
-            });
-          } catch (notificationError) {
-            console.error('Failed to send booking notifications:', notificationError);
-          }
-        }
-        
-        return ok({ received: true, paymentIntentId: pi.id });
-        break
-      }
 
       case 'payment_intent.payment_failed': {
         const pi = event.data.object as any;
@@ -278,23 +201,6 @@ serve(async (req) => {
           console.error('Error recording failed payment:', paymentError);
         }
 
-        // Mark booking as failed
-        if (bookingId) {
-          const { error: bookingUpdateError } = await supabase
-            .from('bookings')
-            .update({
-              status: 'cancelled',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', bookingId);
-
-          if (bookingUpdateError) {
-            console.error('Error updating failed booking:', bookingUpdateError);
-          }
-        }
-
-        return ok({ received: true, paymentIntentId: pi.id });
-      }
         // Mark booking as failed
         if (bookingId) {
           const { error: bookingUpdateError } = await supabase
