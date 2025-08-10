@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -k \"vite\" \"netlify functions:serve\"",
     "build": "vite build",
     "dev:functions": "netlify functions:serve",
     "dev:local": "concurrently -k \"npm:dev\" \"npm:dev:functions\"",
