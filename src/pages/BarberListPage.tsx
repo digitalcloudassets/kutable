@@ -465,7 +465,7 @@ const BarberListPage: React.FC = () => {
                     placeholder="Search barbers or businesses..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-14 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-gray-50 placeholder-gray-400 text-lg min-h-[56px]"
+                    className="w-full min-w-[280px] lg:min-w-[360px] pl-14 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-gray-50 placeholder-gray-400 text-gray-900 text-lg min-h-[56px]"
                   />
                   </div>
                   
