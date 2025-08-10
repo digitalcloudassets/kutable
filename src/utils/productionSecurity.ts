@@ -10,15 +10,15 @@ export const validateProductionEnvironment = (): { isValid: boolean; warnings: s
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
   
-  if (!supabaseUrl || supabaseUrl.includes('placeholder') || supabaseUrl.includes('localhost')) {
+  if (!supabaseUrl || (supabaseUrl && (supabaseUrl.includes('placeholder') || supabaseUrl.includes('localhost')))) {
     warnings.push('Supabase URL appears to be invalid for production');
   }
   
-  if (!supabaseKey || supabaseKey.includes('placeholder') || supabaseKey.length < 50) {
+  if (!supabaseKey || (supabaseKey && (supabaseKey.includes('placeholder') || supabaseKey.length < 50))) {
     warnings.push('Supabase anon key appears to be invalid for production');
   }
   
-  if (!stripeKey || stripeKey.includes('placeholder') || !stripeKey.startsWith('pk_')) {
+  if (!stripeKey || (stripeKey && (stripeKey.includes('placeholder') || !stripeKey.startsWith('pk_')))) {
     warnings.push('Stripe publishable key appears to be invalid for production');
   }
   
