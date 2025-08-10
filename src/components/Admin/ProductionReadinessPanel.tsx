@@ -36,6 +36,16 @@ const ProductionReadinessPanel: React.FC = () => {
     }, 1000);
   };
 
+  const loadHealthStatus = async () => {
+    try {
+      const health = productionMonitor.getHealthStatus();
+      setHealthStatus(health);
+    } catch (error) {
+      console.error('Failed to load health status:', error);
+      setHealthStatus(null);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pass': return <CheckCircle className="h-5 w-5 text-emerald-600 flex-none" />;
