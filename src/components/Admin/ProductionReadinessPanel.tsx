@@ -176,7 +176,7 @@ const ProductionReadinessPanel: React.FC = () => {
         {healthStatus && (
           <div className="mt-8 pt-8 border-t border-gray-200 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">System Health</h3>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+            <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
               {healthStatus.checks.map((check: any, index: number) => (
                 <div key={index} className={`border rounded-lg p-4 ${getStatusColor(check.status)} min-w-0`}>
                   <div className="flex items-center justify-between gap-3">
@@ -293,7 +293,7 @@ const ProductionReadinessPanel: React.FC = () => {
               Production Environment Setup
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="min-w-0">
                 <h4 className="font-bold text-blue-800 mb-3 nowrap-ellipsis">Required Environment Variables:</h4>
                 <div className="space-y-1.5 text-[12px] leading-5 font-mono bg-blue-100 rounded-lg p-3 wrap-anywhere">
@@ -318,7 +318,7 @@ const ProductionReadinessPanel: React.FC = () => {
 
             <div className="mt-6 bg-white border border-blue-300 rounded-xl p-3">
               <h4 className="font-bold text-blue-900 mb-2 nowrap-ellipsis">Supabase Edge Function Secrets:</h4>
-              <pre className="scroll-x no-scrollbar whitespace-pre text-[11px] leading-5 font-mono text-blue-800 wrap-anywhere max-w-full">
+              <pre className="scroll-x whitespace-pre text-xs leading-5 font-mono text-blue-800 wrap-anywhere max-w-full">
 RESEND_API_KEY=re_your_key
 RESEND_FROM="Kutable <notifications@mail.kutable.com>"
 TWILIO_ACCOUNT_SID=AC_your_sid
