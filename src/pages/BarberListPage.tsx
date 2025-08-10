@@ -400,7 +400,6 @@ const BarberListPage: React.FC = () => {
   };
 
   const hasMoreProfiles = displayedBarbers.length < filteredBarbers.length;
-  
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 pt-20">
@@ -492,7 +491,7 @@ const BarberListPage: React.FC = () => {
                       showFilters || activeFilterCount > 0
                         ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-md'
                         : 'border-gray-200 text-gray-700 hover:border-primary-300 hover:bg-primary-50'
-                    } lg:w-auto`}
+                    } lg:w-40`}
                   >
                     <SlidersHorizontal className="h-5 w-5" />
                     <span>Filters</span>
