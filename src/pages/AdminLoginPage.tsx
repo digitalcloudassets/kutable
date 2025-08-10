@@ -189,9 +189,7 @@ const AdminLoginPage: React.FC = () => {
                 Username
               </label>
               <div className="relative">
-                <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  id="username"
+                <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
                   type="text"
                   value={credentials.username}
                   onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value.slice(0, 50) }))}
@@ -199,7 +197,7 @@ const AdminLoginPage: React.FC = () => {
                   required
                   disabled={isLocked}
                   spellCheck={false}
-                  className="input-premium pl-12"
+                  className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                   placeholder="Enter username"
                 />
               </div>
@@ -211,6 +209,7 @@ const AdminLoginPage: React.FC = () => {
               </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -219,13 +218,13 @@ const AdminLoginPage: React.FC = () => {
                   autoComplete="current-password"
                   required
                   disabled={isLocked}
-                  className="input-premium pl-12 pr-12"
+                  className="w-full pl-12 pr-12 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                   placeholder="Enter password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors pointer-events-auto"
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
