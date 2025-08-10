@@ -38,93 +38,15 @@ serve(async (req) => {
 
     switch (event.type) {
       case 'checkout.session.completed': {
-        const s = event.data.object as any;
-        const bookingId = s.metadata?.bookingId ?? null;
-        const barberId = s.metadata?.barberId ?? null;
-        const clientId = s.metadata?.clientId ?? null;
-        const serviceId = s.metadata?.serviceId ?? null;
-        const appointmentDate = s.metadata?.appointmentDate ?? null;
-        const appointmentTime = s.metadata?.appointmentTime ?? null;
-        const notes = s.metadata?.notes ?? '';
-
-        console.log('Processing checkout.session.completed:', {
-          sessionId: s.id,
-          paymentIntent: s.payment_intent,
-          bookingId,
-          barberId,
-          clientId
-        });
-
-        // 1) Create/attach booking (idempotent)
-        const newBookingId = bookingId || crypto.randomUUID();
-        const { error: bookingError } = await supabase.from('bookings').upsert({
-          id: newBookingId,
-          barber_id: barberId,
-          client_id: clientId,
-          service_id: serviceId,
-          appointment_date: appointmentDate,
-          appointment_time: appointmentTime,
-          total_amount: s.amount_total / 100, // Convert cents to dollars
-          deposit_amount: 0,
-          platform_fee: Math.floor(s.amount_total * 0.01) / 100, // 1% platform fee
-          notes: notes || null,
-          status: 'confirmed',
-          stripe_payment_intent_id: s.payment_intent,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'id'
-        });
-
-        if (bookingError) {
-          console.error('Error upserting booking:', bookingError);
-        }
-
-        // 2) Record payment (idempotent)
-        const { error: paymentError } = await supabase.from('platform_transactions').upsert({
-          booking_id: newBookingId,
-          barber_id: barberId,
-          transaction_type: 'booking',
-          gross_amount: s.amount_total / 100,
-          platform_fee: Math.floor(s.amount_total * 0.01) / 100,
-          stripe_fee: 0, // Will be calculated from actual charge
-          net_amount: (s.amount_total - Math.floor(s.amount_total * 0.01)) / 100,
-          stripe_transaction_id: s.payment_intent,
-          created_at: new Date().toISOString()
-        }, {
-          onConflict: 'stripe_transaction_id'
-        });
-
-        if (paymentError) {
-          console.error('Error recording payment transaction:', paymentError);
-        }
-
-        // 3) Send booking confirmation notifications
-        try {
-          await supabase.functions.invoke('process-booking-notifications', {
-            body: {
-              bookingId: newBookingId,
-              event: 'booking_confirmed'
-            }
-          });
-        } catch (notificationError) {
-          console.error('Failed to send booking notifications:', notificationError);
-        }
-
-        return ok({ received: true, bookingId: newBookingId });
-      }
-
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session
-        
-        // Extract metadata for booking creation
+        const session = event.data.object as any;
         const md = session.metadata || {};
-        const bookingId = md.bookingId || crypto.randomUUID();
+        const bookingId = md.bookingId ?? crypto.randomUUID();
         const barberId = md.barberId;
         const clientId = md.clientId;
         const serviceId = md.serviceId;
         const appointmentDate = md.appointmentDate;
         const appointmentTime = md.appointmentTime;
-        const notes = md.notes || '';
+        const notes = md.notes ?? '';
 
         console.log('Processing checkout.session.completed:', {
           sessionId: session.id,
@@ -142,12 +64,12 @@ serve(async (req) => {
           service_id: serviceId,
           appointment_date: appointmentDate,
           appointment_time: appointmentTime,
-          total_amount: session.amount_total ? session.amount_total / 100 : 0,
+          total_amount: session.amount_total / 100, // Convert cents to dollars
           deposit_amount: 0,
-          platform_fee: session.amount_total ? Math.floor(session.amount_total * 0.01) / 100 : 0,
+          platform_fee: (session.application_fee_amount || 0) / 100, // Use actual Stripe fee
           notes: notes || null,
           status: 'confirmed',
-          stripe_payment_intent_id: session.payment_intent as string,
+          stripe_payment_intent_id: session.payment_intent,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'id'
@@ -157,24 +79,24 @@ serve(async (req) => {
           console.error('Error upserting booking:', bookingError);
         }
 
-        // 2) Record payment (idempotent)
+        // 2) Record accurate payment data (idempotent)
         const { error: paymentError } = await supabase.from('payments').upsert({
-          payment_intent_id: session.payment_intent as string,
-          session_id: session.id,
           booking_id: bookingId,
           barber_id: barberId,
-          user_id: clientId,
-          amount: session.amount_total || 0,
+          customer_id: clientId,
           currency: session.currency || 'usd',
+          gross_amount_cents: session.amount_total || 0,
+          application_fee_cents: session.application_fee_amount || 0,
+          stripe_charge_id: session.payment_intent, // Will be updated with actual charge ID
+          livemode: session.livemode || false,
           status: 'succeeded',
-          raw: session,
-          updated_at: new Date().toISOString()
+          created_at: new Date().toISOString()
         }, {
-          onConflict: 'payment_intent_id'
+          onConflict: 'stripe_charge_id'
         });
 
         if (paymentError) {
-          console.error('Error recording payment:', paymentError);
+          console.error('Error recording payment transaction:', paymentError);
         }
 
         // 3) Send booking confirmation notifications
@@ -188,7 +110,7 @@ serve(async (req) => {
         } catch (notificationError) {
           console.error('Failed to send booking notifications:', notificationError);
         }
-        
+
         return ok({ received: true, bookingId: bookingId });
         break
       }
@@ -196,31 +118,32 @@ serve(async (req) => {
       case 'payment_intent.succeeded': {
         const pi = event.data.object as any;
         const md = pi.metadata || {};
-        const bookingId = md.bookingId ?? null;
-        const barberId = md.barberId ?? null;
-        const clientId = md.clientId ?? md.userId ?? null;
+        const bookingId = md.bookingId;
+        const barberId = md.barberId;
+        const clientId = md.clientId || md.userId;
 
         console.log('Processing payment_intent.succeeded:', {
           paymentIntentId: pi.id,
           bookingId,
           barberId,
-          clientId,
-          amount: pi.amount
+          amount: pi.amount,
+          applicationFee: pi.application_fee_amount
         });
 
-        // Record payment transaction (idempotent)
-        const { error: paymentError } = await supabase.from('platform_transactions').upsert({
+        // Record accurate payment data (idempotent)
+        const { error: paymentError } = await supabase.from('payments').upsert({
           booking_id: bookingId,
           barber_id: barberId,
-          transaction_type: 'booking',
-          gross_amount: pi.amount / 100,
-          platform_fee: Math.floor(pi.amount * 0.01) / 100,
-          stripe_fee: 0, // Will be updated from charge object if available
-          net_amount: (pi.amount - Math.floor(pi.amount * 0.01)) / 100,
-          stripe_transaction_id: pi.id,
+          customer_id: clientId,
+          currency: pi.currency,
+          gross_amount_cents: pi.amount,
+          application_fee_cents: pi.application_fee_amount || 0,
+          stripe_charge_id: pi.id,
+          livemode: pi.livemode || false,
+          status: pi.status === 'succeeded' ? 'succeeded' : 'pending',
           created_at: new Date().toISOString()
         }, {
-          onConflict: 'stripe_transaction_id'
+          onConflict: 'stripe_charge_id'
         });
 
         if (paymentError) {
@@ -327,7 +250,7 @@ serve(async (req) => {
       case 'payment_intent.payment_failed': {
         const pi = event.data.object as any;
         const md = pi.metadata || {};
-        const bookingId = md.bookingId ?? null;
+        const bookingId = md.bookingId;
 
         console.log('Processing payment_intent.payment_failed:', {
           paymentIntentId: pi.id,
@@ -335,19 +258,20 @@ serve(async (req) => {
           lastError: pi.last_payment_error?.message
         });
 
-        // Record failed payment
-        const { error: paymentError } = await supabase.from('platform_transactions').upsert({
+        // Record failed payment data
+        const { error: paymentError } = await supabase.from('payments').upsert({
           booking_id: bookingId,
-          barber_id: md.barberId ?? null,
-          transaction_type: 'booking',
-          gross_amount: pi.amount / 100,
-          platform_fee: 0,
-          stripe_fee: 0,
-          net_amount: 0,
-          stripe_transaction_id: pi.id,
+          barber_id: md.barberId,
+          customer_id: md.clientId || md.userId,
+          currency: pi.currency,
+          gross_amount_cents: pi.amount,
+          application_fee_cents: 0,
+          stripe_charge_id: pi.id,
+          livemode: pi.livemode || false,
+          status: 'failed',
           created_at: new Date().toISOString()
         }, {
-          onConflict: 'stripe_transaction_id'
+          onConflict: 'stripe_charge_id'
         });
 
         if (paymentError) {
@@ -371,36 +295,6 @@ serve(async (req) => {
 
         return ok({ received: true, paymentIntentId: pi.id });
       }
-      case 'payment_intent.payment_failed': {
-        const pi = event.data.object as any;
-        const md = pi.metadata || {};
-        const bookingId = md.bookingId;
-
-        console.log('Processing payment_intent.payment_failed:', {
-          paymentIntentId: pi.id,
-          bookingId,
-          lastError: pi.last_payment_error?.message
-        });
-
-        // Record failed payment
-        const { error: paymentError } = await supabase.from('payments').upsert({
-          payment_intent_id: pi.id,
-          booking_id: bookingId,
-          barber_id: md.barberId || null,
-          user_id: md.clientId || md.userId || null,
-          amount: pi.amount,
-          currency: pi.currency,
-          status: 'failed',
-          raw: pi,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'payment_intent_id'
-        });
-
-        if (paymentError) {
-          console.error('Error recording failed payment:', paymentError);
-        }
-        
         // Mark booking as failed
         if (bookingId) {
           const { error: bookingUpdateError } = await supabase
@@ -417,7 +311,6 @@ serve(async (req) => {
         }
 
         return ok({ received: true, paymentIntentId: pi.id });
-        break
       }
 
       case 'payment_intent.requires_action': {

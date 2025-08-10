@@ -152,17 +152,13 @@ const AdminPage: React.FC = () => {
       const claimedBarbers = barbersData?.filter(b => b.is_claimed).length || 0;
       const activeBarbers = csvBarberCount + (barbersData?.filter(b => b.is_active).length || 0);
 
-      // Get booking metrics
+      // Get booking count metrics
       const { data: bookingsData } = await supabase
         .from('bookings')
-        .select('total_amount, platform_fee, appointment_date, created_at, status, updated_at')
+        .select('id, appointment_date, created_at, status, updated_at')
         .order('updated_at', { ascending: false });
 
       const totalBookings = bookingsData?.length || 0;
-      const totalRevenue = bookingsData?.reduce((sum, booking) => 
-        ['confirmed', 'completed'].includes(booking.status) ? sum + Number(booking.total_amount) : sum, 0) || 0;
-      const platformFees = bookingsData?.reduce((sum, booking) => 
-        ['confirmed', 'completed'].includes(booking.status) ? sum + Number(booking.platform_fee) : sum, 0) || 0;
 
       // Calculate today's bookings
       const today = new Date().toISOString().split('T')[0];
@@ -174,7 +170,18 @@ const AdminPage: React.FC = () => {
       const bookingsThisMonth = bookingsData?.filter(booking => 
         booking.created_at.substring(0, 7) === thisMonth).length || 0;
 
-      const avgBookingValue = totalBookings > 0 ? totalRevenue / totalBookings : 0;
+      // Get accurate revenue metrics from payments table (Stripe webhook data)
+      const { data: paymentsData } = await supabase
+        .from('payments')
+        .select('gross_amount_cents, application_fee_cents, status, livemode')
+        .eq('status', 'succeeded')
+        .eq('livemode', true); // Only count live/production payments
+
+      const totalRevenue = paymentsData?.reduce((sum, payment) => 
+        sum + (payment.gross_amount_cents / 100), 0) || 0;
+      const platformFees = paymentsData?.reduce((sum, payment) => 
+        sum + (payment.application_fee_cents / 100), 0) || 0;
+      const avgBookingValue = paymentsData?.length > 0 ? totalRevenue / paymentsData.length : 0;
 
       // Get top performing barbers
       const { data: topBarbers } = await supabase
