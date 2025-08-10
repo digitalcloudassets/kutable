@@ -319,11 +319,11 @@ const ProductionReadinessPanel: React.FC = () => {
             <div className="mt-6 bg-white border border-blue-300 rounded-xl p-3">
               <h4 className="font-bold text-blue-900 mb-2 nowrap-ellipsis">Supabase Edge Function Secrets:</h4>
               <pre className="scroll-x whitespace-pre text-xs leading-5 font-mono text-blue-800 wrap-anywhere max-w-full">
-RESEND_API_KEY=re_your_key
+{`RESEND_API_KEY=re_your_key
 RESEND_FROM="Kutable <notifications@mail.kutable.com>"
 TWILIO_ACCOUNT_SID=AC_your_sid
 TWILIO_AUTH_TOKEN=your_auth_token
-STRIPE_SECRET_KEY=sk_live_your_secret
+STRIPE_SECRET_KEY=sk_live_your_secret`}
               </pre>
             </div>
           </div>
