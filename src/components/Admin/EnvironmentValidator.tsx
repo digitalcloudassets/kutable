@@ -268,7 +268,10 @@ const EnvironmentValidator: React.FC = () => {
       </div>
 
       {/* Service Checks Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch auto-rows-fr">
+      <div
+        className="grid gap-4 items-stretch auto-rows-fr
+                   [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]"
+      >
         {checks.map((check) => (
           <div
             key={check.service}
@@ -295,10 +298,10 @@ const EnvironmentValidator: React.FC = () => {
               </div>
 
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-gray-900 text-sm break-words leading-5">
+                <h3 className="font-semibold text-gray-900 text-sm leading-5 break-keep hyphens-auto">
                   {check.service}
                 </h3>
-                <p className="text-xs text-gray-600 leading-5 break-words">{check.description}</p>
+                <p className="text-xs text-gray-600 leading-5 break-keep hyphens-auto">{check.description}</p>
               </div>
             </div>
 
