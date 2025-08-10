@@ -42,7 +42,9 @@ class ProductionMonitor {
       lastUpdated: new Date()
     };
 
-    this.initializeMonitoring();
+    if (typeof window !== 'undefined') {
+      this.initializeMonitoring();
+    }
   }
 
   static getInstance(): ProductionMonitor {
