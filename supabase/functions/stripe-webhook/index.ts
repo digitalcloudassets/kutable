@@ -41,33 +41,40 @@ serve(async (req) => {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
 
+        console.log('Processing checkout.session.completed:', {
+          sessionId: session.id,
+          paymentIntent: session.payment_intent,
+          amountTotal: session.amount_total,
+          mode: session.mode,
+          metadata: session.metadata
+        });
+
         // Retrieve full PaymentIntent with expanded charge and balance transaction data
         const pi = await stripe.paymentIntents.retrieve(session.payment_intent as string, {
           expand: ['charges.data.balance_transaction']
         });
         const charge = pi.charges.data[0];
-        const bt = charge.balance_transaction as Stripe.BalanceTransaction;
 
-        const grossAmountCents = charge.amount; // e.g., 500 for $5.00
-        const platformFeeCents = charge.application_fee_amount ?? 0; // your fee
+        const grossAmountCents = charge.amount; // e.g., 5000 for $50.00
+        const platformFeeCents = charge.application_fee_amount ?? 0; // your platform fee
         const live = charge.livemode;
+        // Handle different metadata key formats
+        const bookingId = session.metadata?.bookingId ?? session.metadata?.booking_id ?? null;
+        const barberId = session.metadata?.barberId ?? session.metadata?.barber_id ?? null;
+        const customerId = session.metadata?.customerId ?? session.metadata?.customer_id ?? null;
 
-        const bookingId  = session.metadata?.booking_id ?? null;
-        const barberId   = session.metadata?.barber_id ?? null;
-        const customerId = session.metadata?.customer_id ?? null;
-
-        console.log('Processing checkout.session.completed with accurate Stripe data:', {
-          sessionId: session.id,
+        console.log('Stripe charge details:', {
           chargeId: charge.id,
           grossAmountCents,
           platformFeeCents,
           livemode: live,
           bookingId,
-          barberId
+          barberId,
+          customerId
         });
 
         // Insert accurate payment record from Stripe webhook data
-        await supabase.from('payments').insert({
+        const { data: paymentRecord, error: paymentError } = await supabase.from('payments').insert({
           booking_id: bookingId,
           barber_id: barberId,
           customer_id: customerId,
@@ -76,8 +83,21 @@ serve(async (req) => {
           application_fee_cents: platformFeeCents,
           stripe_charge_id: charge.id,
           livemode: live,
-          status: charge.status // expect 'succeeded'
-        });
+          status: charge.status, // expect 'succeeded'
+          created_at: new Date().toISOString()
+        }).select().single();
+
+        if (paymentError) {
+          console.error('Error inserting payment record:', paymentError);
+        } else {
+          console.log('Payment record created successfully:', {
+            paymentId: paymentRecord.id,
+            grossAmountCents: paymentRecord.gross_amount_cents,
+            platformFeeCents: paymentRecord.application_fee_cents,
+            livemode: paymentRecord.livemode,
+            status: paymentRecord.status
+          });
+        }
 
         // Update booking status if booking exists
         if (bookingId) {
