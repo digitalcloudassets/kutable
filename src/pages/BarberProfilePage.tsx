@@ -15,7 +15,7 @@ import {
   Crown
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import GoogleMap from '../components/GoogleMap';
+import GoogleMap from '../components/Maps/GoogleMap';
 
 interface BarberProfile {
   id: string;
