@@ -54,7 +54,6 @@ const BarberProfilePage: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [claimingId, setClaimingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (slug) {
@@ -62,119 +61,27 @@ const BarberProfilePage: React.FC = () => {
     }
   }, [slug]);
 
-  const parseCSV = (csvText: string) => {
-    const lines = csvText.split('\n');
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    const data = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-      if (lines[i].trim()) {
-        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-        const row: any = {};
-        headers.forEach((header, index) => {
-          row[header] = values[index] || '';
-        });
-        data.push(row);
-      }
-    }
-    
-    return data;
-  };
-
-  const generateSlug = (businessName: string, index: number) => {
-    return businessName
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim()
-      + '-' + (index + 1);
-  };
-
-  const generateCSVSlug = (businessName: string, index: number) => {
-    return businessName
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim()
-      + '-' + (index + 1);
-  };
-
-  const isReservedSlug = (slug: string) => {
-    const reservedSlugs = ['kutable', 'admin', 'api', 'www'];
-    return reservedSlugs.includes(slug);
-  };
-
-  const handleClaimClick = (barber: BarberProfile) => {
-    setClaimingId(barber.id || barber.slug);
-    // Add claim logic here
-  };
-
   const fetchBarberData = async () => {
     try {
       setLoading(true);
       
-      // First try to fetch from Supabase
+      // Fetch verified barber from database
       const { data: supabaseBarber, error } = await supabase
         .from('barber_profiles')
         .select('*')
+        .eq('is_claimed', true)
+        .eq('is_active', true)
         .eq('slug', slug)
         .single();
 
       if (supabaseBarber && !error) {
         setBarber(supabaseBarber);
-        if (supabaseBarber.is_claimed) {
-          fetchServices(supabaseBarber.id);
-        }
+        fetchServices(supabaseBarber.id);
         return;
       }
 
-      // If not found in Supabase, try CSV data
-      const response = await fetch('/barber-data.csv');
-      if (!response.ok) {
-        setBarber(null);
-        return;
-      }
-      
-      const csvText = await response.text();
-      const csvData = parseCSV(csvText);
-      
-      // Transform CSV data to barber profiles
-      // Use only local clean barber images for CSV profiles
-      const localBarberImages = [
-        '/clean barbershop.jpeg',
-        '/clean barbers.webp'
-      ];
-      
-      const profiles: BarberProfile[] = csvData.map((barber, index) => {
-        const imageUrl = localBarberImages[index % localBarberImages.length];
-        const generatedSlug = generateSlug(barber.business_name, index);
-        
-        return {
-          id: `csv-${index + 1}`,
-          slug: generateCSVSlug(barber.business_name, index),
-          business_name: barber.business_name,
-          owner_name: barber.owner_name,
-          phone: barber.phone || barber.direct_phone || null,
-          email: barber.email || null,
-          address: barber.address || null,
-          city: barber.city || null,
-          state: barber.state || null,
-          zip_code: barber.zip_code || null,
-          bio: barber.industry ? `Professional ${barber.industry.toLowerCase()} services at ${barber.business_name}. Contact us for appointments and more information.` : `Professional services at ${barber.business_name}. Contact us for appointments and more information.`,
-          profile_image_url: imageUrl,
-          is_claimed: false,
-          is_active: true,
-          average_rating: Number((4.0 + Math.random() * 1.0).toFixed(1)),
-          total_reviews: Math.floor(Math.random() * 50) + 5
-        };
-      });
-      
-      // Find barber by slug or create demo profile for "kutable"
-      let foundBarber = profiles.find(p => p.slug === slug);
-      
-      setBarber(foundBarber || null);
+      // No barber found
+      setBarber(null);
     } catch (error) {
       console.error('Error fetching barber data:', error);
       setBarber(null);
@@ -238,13 +145,13 @@ const BarberProfilePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Barber not found</h2>
-          <p className="text-gray-600 mb-6">The barber profile you're looking for doesn't exist.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Barber profile not found</h2>
+          <p className="text-gray-600 mb-6">This barber profile doesn't exist or isn't verified yet.</p>
           <Link
             to="/barbers"
             className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors"
           >
-            Browse All Barbers
+            Browse Verified Barbers
           </Link>
         </div>
       </div>
@@ -281,17 +188,10 @@ const BarberProfilePage: React.FC = () => {
           <div className="max-w-4xl">
             <div className="flex items-center space-x-3 mb-4">
               <h1 className="text-4xl md:text-5xl font-display font-bold">{barber.business_name}</h1>
-              {!barber.is_claimed && !isReservedSlug(barber.slug) && (
-                <span className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
-                  Unclaimed
-                </span>
-              )}
-              {barber.is_claimed && (
-                <span className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg flex items-center space-x-1">
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Verified</span>
-                </span>
-              )}
+              <span className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg flex items-center space-x-1">
+                <CheckCircle className="h-4 w-4" />
+                <span>Verified</span>
+              </span>
             </div>
             <p className="text-xl text-white/90 mb-4 font-medium">{barber.owner_name}</p>
             <div className="flex items-center space-x-6 text-lg">
@@ -312,22 +212,16 @@ const BarberProfilePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Claim Button */}
-        {!barber.is_claimed && !isReservedSlug(barber.slug) && (
-          <div className="absolute top-6 right-6 z-20">
-            <button
-              disabled={claimingId === (barber.id || barber.slug)}
-              className="bg-gradient-to-r from-accent-500 to-accent-600 text-white px-6 py-3 rounded-2xl hover:from-accent-600 hover:to-accent-700 transition-all duration-200 font-semibold flex items-center space-x-2 shadow-premium-lg hover:scale-105 whitespace-nowrap"
-              onClick={(e) => {
-                e.preventDefault();
-                handleClaimClick(barber);
-              }}
-            >
-              <Crown className="h-5 w-5" />
-              <span>{claimingId === (barber.id || barber.slug) ? 'Opening…' : 'Claim This Listing'}</span>
-            </button>
-          </div>
-        )}
+        {/* Book Appointment Button */}
+        <div className="absolute top-6 right-6 z-20">
+          <Link
+            to={`/book/${barber.slug}`}
+            className="bg-gradient-to-r from-accent-500 to-accent-600 text-white px-6 py-3 rounded-2xl hover:from-accent-600 hover:to-accent-700 transition-all duration-200 font-semibold flex items-center space-x-2 shadow-premium-lg hover:scale-105 whitespace-nowrap"
+          >
+            <Calendar className="h-5 w-5" />
+            <span>Book Appointment</span>
+          </Link>
+        </div>
       </div>
 
       {/* Content */}
@@ -397,75 +291,58 @@ const BarberProfilePage: React.FC = () => {
                 </div>
                 <h3 className="text-2xl font-display font-bold text-gray-900">Services & Pricing</h3>
               </div>
-              {barber.is_claimed ? (
-                loadingServices ? (
-                  <div className="text-center py-12">
-                    <div className="relative mb-6">
-                      <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-100 border-t-primary-500 mx-auto"></div>
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-accent-500 opacity-20 blur-lg"></div>
-                    </div>
-                    <p className="text-gray-600 font-medium">Loading services...</p>
+              {loadingServices ? (
+                <div className="text-center py-12">
+                  <div className="relative mb-6">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-100 border-t-primary-500 mx-auto"></div>
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-accent-500 opacity-20 blur-lg"></div>
                   </div>
-                ) : services.length > 0 ? (
-                  <div className="space-y-8">
-                    {services.map((service) => (
-                      <div key={service.id} className="bg-gray-50 border border-gray-100 rounded-2xl p-6 hover:border-primary-300 hover:shadow-md transition-all duration-200 group">
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <h4 className="text-xl font-display font-bold text-gray-900 group-hover:text-primary-600 transition-colors">{service.name}</h4>
-                            {service.description && (
-                              <p className="text-gray-600 mt-2">{service.description}</p>
-                            )}
-                          </div>
-                          <div className="text-right bg-white rounded-xl p-4 shadow-sm">
-                            <p className="text-3xl font-bold text-gray-900">${service.price}</p>
-                            {service.deposit_required && (
-                              <p className="text-sm text-accent-600 font-medium">${service.deposit_amount} deposit</p>
-                            )}
-                          </div>
+                  <p className="text-gray-600 font-medium">Loading services...</p>
+                </div>
+              ) : services.length > 0 ? (
+                <div className="space-y-8">
+                  {services.map((service) => (
+                    <div key={service.id} className="bg-gray-50 border border-gray-100 rounded-2xl p-6 hover:border-primary-300 hover:shadow-md transition-all duration-200 group">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h4 className="text-xl font-display font-bold text-gray-900 group-hover:text-primary-600 transition-colors">{service.name}</h4>
+                          {service.description && (
+                            <p className="text-gray-600 mt-2">{service.description}</p>
+                          )}
                         </div>
-                        <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-                          <div className="flex items-center space-x-6">
-                            <div className="flex items-center space-x-2">
-                              <div className="bg-gray-200 p-1.5 rounded-lg">
-                                <Clock className="h-4 w-4" />
-                              </div>
-                              <span className="font-medium text-gray-700">{service.duration_minutes} min</span>
-                            </div>
-                          </div>
-                          <Link
-                            to={`/book/${barber.slug}/${service.id}`}
-                            className="btn-primary hover:scale-105 transition-all duration-200"
-                          >
-                            Book Now
-                          </Link>
+                        <div className="text-right bg-white rounded-xl p-4 shadow-sm">
+                          <p className="text-3xl font-bold text-gray-900">${service.price}</p>
+                          {service.deposit_required && (
+                            <p className="text-sm text-accent-600 font-medium">${service.deposit_amount} deposit</p>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <div className="bg-gray-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                      <Calendar className="h-10 w-10 text-gray-400" />
+                      <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+                        <div className="flex items-center space-x-6">
+                          <div className="flex items-center space-x-2">
+                            <div className="bg-gray-200 p-1.5 rounded-lg">
+                              <Clock className="h-4 w-4" />
+                            </div>
+                            <span className="font-medium text-gray-700">{service.duration_minutes} min</span>
+                          </div>
+                        </div>
+                        <Link
+                          to={`/book/${barber.slug}/${service.id}`}
+                          className="btn-primary hover:scale-105 transition-all duration-200"
+                        >
+                          Book Now
+                        </Link>
+                      </div>
                     </div>
-                    <h4 className="text-xl font-display font-bold text-gray-900 mb-2">No services available</h4>
-                    <p className="text-gray-600">Please contact the business directly for service information.</p>
-                  </div>
-                )
+                  ))}
+                </div>
               ) : (
                 <div className="text-center py-12">
-                  <div className="bg-yellow-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                    <Calendar className="h-10 w-10 text-yellow-600" />
+                  <div className="bg-gray-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <Calendar className="h-10 w-10 text-gray-400" />
                   </div>
-                  <h4 className="text-xl font-display font-bold text-gray-900 mb-3">Services Coming Soon</h4>
-                  <p className="text-gray-600 mb-6">Services and pricing will be available after this profile is claimed.</p>
-                  <Link
-                    to={`/claim/${barber.id}`}
-                    className="btn-secondary group"
-                  >
-                    <Crown className="h-4 w-4 group-hover:rotate-12 transition-transform" />
-                    <span>Claim Profile to Add Services</span>
-                  </Link>
+                  <h4 className="text-xl font-display font-bold text-gray-900 mb-2">No services available</h4>
+                  <p className="text-gray-600">Please contact this barber directly for service information.</p>
                 </div>
               )}
             </div>
@@ -547,66 +424,25 @@ const BarberProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Claim Your Business */}
-            {!barber.is_claimed && !isReservedSlug(barber.slug) && (
-              <div className="card-premium p-8 bg-gradient-to-br from-accent-50 to-primary-50 border border-accent-200">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="bg-accent-500 p-2 rounded-xl">
-                    <Crown className="h-5 w-5 text-white" />
-                  </div>
-                  <h3 className="text-xl font-display font-bold text-gray-900">Is This Your Business?</h3>
+            {/* Book Appointment */}
+            <div className="card-premium p-8 bg-gradient-to-br from-emerald-50 to-primary-50 border border-emerald-200">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="bg-emerald-500 p-2 rounded-xl">
+                  <CheckCircle className="h-5 w-5 text-white" />
                 </div>
-                <p className="text-gray-700 mb-6 leading-relaxed">
-                  Claim this profile to start accepting online bookings, manage your services, and build your reputation on Kutable.
-                </p>
-                <Link
-                  to={`/claim/${barber.id}`}
-                  className="btn-accent w-full justify-center mb-4"
-                >
-                  <Crown className="h-5 w-5" />
-                  <span>Claim This Listing</span>
-                </Link>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center space-x-2 text-emerald-700">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Free to claim</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-emerald-700">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Start accepting bookings</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-emerald-700">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Manage services & pricing</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-emerald-700">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Build customer reviews</span>
-                  </div>
-                </div>
+                <h3 className="text-xl font-display font-bold text-gray-900">Verified Business</h3>
               </div>
-            )}
-
-            {barber.is_claimed && (
-              <div className="card-premium p-8 bg-gradient-to-br from-emerald-50 to-primary-50 border border-emerald-200">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="bg-emerald-500 p-2 rounded-xl">
-                    <CheckCircle className="h-5 w-5 text-white" />
-                  </div>
-                  <h3 className="text-xl font-display font-bold text-gray-900">Verified Business</h3>
-                </div>
-                <p className="text-gray-700 mb-6 leading-relaxed">
-                  This is a verified barber profile. Book appointments and contact them directly with confidence.
-                </p>
-                <Link
-                  to={`/book/${barber.slug}`}
-                  className="btn-accent w-full justify-center"
-                >
-                  <Calendar className="h-5 w-5" />
-                  <span>Book Appointment</span>
-                </Link>
-              </div>
-            )}
+              <p className="text-gray-700 mb-6 leading-relaxed">
+                This is a verified barber profile. Book appointments and contact them directly with confidence.
+              </p>
+              <Link
+                to={`/book/${barber.slug}`}
+                className="btn-accent w-full justify-center"
+              >
+                <Calendar className="h-5 w-5" />
+                <span>Book Appointment</span>
+              </Link>
+            </div>
 
             {/* Location */}
             {barber.address && (

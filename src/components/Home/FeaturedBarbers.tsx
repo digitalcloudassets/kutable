@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, MapPin, Clock, TrendingUp, Award, Calendar, Crown, CheckCircle, ArrowRight, DollarSign, Smartphone } from 'lucide-react';
+import { Star, MapPin, Clock, TrendingUp, Award, Calendar, Crown, CheckCircle, ArrowRight, DollarSign, Smartphone, Scissors } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Database } from '../../lib/supabase';
 
@@ -17,6 +17,7 @@ const FeaturedBarbers: React.FC = () => {
         const { data, error } = await supabase
           .from('barber_profiles')
           .select('*')
+          .eq('is_claimed', true)
           .eq('is_active', true)
           .order('average_rating', { ascending: false })
           .limit(6);
@@ -24,8 +25,7 @@ const FeaturedBarbers: React.FC = () => {
         if (error) throw error;
         setBarbers(data || []);
       } catch (error) {
-        console.warn('Supabase not configured, will use CSV data:', error);
-        // Data will be loaded from CSV via the mock client
+        console.warn('Database not available, no featured barbers to show:', error);
         setBarbers([]);
       } finally {
         setLoading(false);
@@ -74,10 +74,10 @@ const FeaturedBarbers: React.FC = () => {
             <span className="font-medium">Success Stories</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-display font-bold text-gray-900 mb-6">
-            Barbers Growing with Kutable
+            Verified Barbers on Kutable
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            See how barbers are modernizing their business and increasing earnings
+            Meet our verified professionals who are accepting online bookings
           </p>
         </div>
 
@@ -118,14 +118,12 @@ const FeaturedBarbers: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 
                 {/* Verified Badge */}
-                {barber.is_claimed && (
-                  <div className="absolute top-4 right-4">
-                    <div className="bg-emerald-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg flex items-center space-x-1">
-                      <CheckCircle className="h-3 w-3" />
-                      <span>Verified</span>
-                    </div>
+                <div className="absolute top-4 right-4">
+                  <div className="bg-emerald-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg flex items-center space-x-1">
+                    <CheckCircle className="h-3 w-3" />
+                    <span>Verified</span>
                   </div>
-                )}
+                </div>
               </div>
               
               <div className="p-8">
@@ -172,15 +170,36 @@ const FeaturedBarbers: React.FC = () => {
           ))}
         </div>
 
-        <div className="relative z-10 text-center mt-16">
-          <Link
-            to="/signup?type=barber"
-            className="btn-secondary group mx-auto"
-          >
-            <span>Join Kutable Today</span>
-            <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
+        {barbers.length === 0 && (
+          <div className="relative z-10 text-center mt-16">
+            <div className="bg-gray-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+              <Scissors className="h-10 w-10 text-gray-400" />
+            </div>
+            <h3 className="text-2xl font-display font-bold text-gray-900 mb-3">Building Our Network</h3>
+            <p className="text-gray-600 max-w-md mx-auto mb-8">
+              We're currently expanding our network of verified barber professionals. Stay tuned for amazing talent coming soon!
+            </p>
+            <Link
+              to="/signup?type=barber"
+              className="btn-secondary group mx-auto"
+            >
+              <span>Join Kutable</span>
+              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+        )}
+        
+        {barbers.length > 0 && (
+          <div className="relative z-10 text-center mt-16">
+            <Link
+              to="/signup?type=barber"
+              className="btn-secondary group mx-auto"
+            >
+              <span>Join Kutable</span>
+              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );
