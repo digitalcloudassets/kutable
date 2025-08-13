@@ -8,17 +8,11 @@ import {
   Clock, 
   Calendar, 
   ArrowLeft,
-  UserPlus,
-  Building,
   CheckCircle,
-  Crown,
   Users,
   Scissors
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { isReservedSlug } from '../lib/reservedSlugs';
-import GoogleMap from '../components/Maps/GoogleMap';
-import { generateUniqueSlug } from '../utils/updateBarberSlugs';
 
 interface BarberProfile {
   id: string;
@@ -56,315 +50,8 @@ const BarberProfilePage: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [claimingId, setClaimingId] = useState<string | null>(null);
 
-  // Add claim handler
-  const handleClaimClick = async (barberProfile: BarberProfile) => {
-    if (claimingId) return; // prevent spam while one is in-flight
-    setClaimingId(barberProfile.id || barberProfile.slug);
-    
-    try {
-      const payload = {
-        slug: barberProfile.slug,
-        business_name: barberProfile.business_name,
-        owner_name: barberProfile.owner_name,
-        phone: barberProfile.phone,
-        email: barberProfile.email,
-        address: barberProfile.address,
-        city: barberProfile.city,
-        state: barberProfile.state,
-        zip_code: barberProfile.zip_code,
-        import_source: barberProfile.id?.startsWith?.('csv-') ? 'csv' : 'db',
-        import_external_id: barberProfile.id?.startsWith?.('csv-') ? barberProfile.id : null,
-      };
 
-      sessionStorage.setItem('claim:payload', JSON.stringify(payload));
-
-      const { data, error } = await supabase.functions.invoke('claim-start', { body: payload });
-      if (error) throw error;
-      if (!data?.success || !data?.claimUrl) throw new Error(data?.error || 'Failed to start claim flow');
-
-      console.log('Claim flow started, redirecting to:', data.claimUrl);
-      window.location.href = data.claimUrl; // Navigate to /claim/:token
-    } catch (e: any) {
-      // Show the real server message if present
-      const serverMsg = e?.context?.error || e?.context?.response || e?.message || 'Could not start claim';
-      console.error('Claim start error:', serverMsg, e);
-      alert(`Error: ${serverMsg}`);
-    } finally {
-      setClaimingId(null);
-    }
-  };
-
-  // Enhanced CSV parsing function
-  const parseCSVLine = (line: string): string[] => {
-    const values: string[] = [];
-    let current = '';
-    let inQuotes = false;
-    let i = 0;
-    
-    while (i < line.length) {
-      const char = line[i];
-      
-      if (char === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          current += '"';
-          i += 2;
-          continue;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === ',' && !inQuotes) {
-        values.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-      i++;
-    }
-    
-    values.push(current.trim());
-    return values;
-  };
-
-  const parseCSV = (csvText: string): any[] => {
-    const lines = csvText.split('\n').filter(line => line.trim());
-    if (lines.length === 0) return [];
-    
-    const headerLine = lines[0];
-    const headers = parseCSVLine(headerLine).map(h => h.toLowerCase().trim());
-    console.log('📋 CSV Headers found:', headers);
-    
-    const data: any[] = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-      
-      const values = parseCSVLine(line);
-      const row: any = {};
-      
-      headers.forEach((header, index) => {
-        const value = values[index]?.trim() || '';
-        if (!value) return;
-        
-        // Map CSV headers to our schema
-        switch (header) {
-          case 'company_name':
-          case 'company name':
-          case 'business_name':
-          case 'business name':
-          case 'name':
-            row.business_name = value;
-            break;
-          case 'contact_first':
-          case 'contact first':
-          case 'first_name':
-          case 'first name':
-            row.contact_first = value;
-            break;
-          case 'contact_last':
-          case 'contact last':
-          case 'last_name':
-          case 'last name':
-            row.contact_last = value;
-            break;
-          case 'owner_name':
-          case 'owner name':
-          case 'owner':
-            row.owner_name = value;
-            break;
-          case 'phone':
-          case 'phone_number':
-          case 'phone number':
-            row.phone = value;
-            break;
-          case 'direct_phone':
-          case 'direct phone':
-            row.direct_phone = value;
-            break;
-          case 'email':
-          case 'email_address':
-          case 'email address':
-            row.email = value;
-            break;
-          case 'address':
-          case 'street_address':
-          case 'street address':
-            row.address = value;
-            break;
-          case 'city':
-            row.city = value;
-            break;
-          case 'state':
-            row.state = value;
-            break;
-          case 'zip':
-          case 'zip_code':
-          case 'zip code':
-          case 'postal_code':
-          case 'postal code':
-            row.zip_code = value;
-            break;
-          case 'county':
-            row.county = value;
-            break;
-          case 'website':
-          case 'website_url':
-          case 'website url':
-            row.website = value;
-            break;
-          case 'industry':
-          case 'business_type':
-          case 'business type':
-          case 'category':
-            row.industry = value;
-            break;
-        }
-      });
-      
-      // Create owner_name from contact_first and contact_last if not provided
-      if (!row.owner_name && (row.contact_first || row.contact_last)) {
-        row.owner_name = `${row.contact_first || ''} ${row.contact_last || ''}`.trim();
-      }
-      
-      // Use business_name as owner_name if still missing
-      if (!row.owner_name && row.business_name) {
-        row.owner_name = row.business_name;
-      }
-      
-      // Use direct_phone if phone is missing
-      if (!row.phone && row.direct_phone) {
-        row.phone = row.direct_phone;
-      }
-      
-      // Only add rows that have required business name
-      if (row.business_name && row.business_name.length > 1) {
-        data.push(row);
-      }
-    }
-    
-    return data;
-  };
-
-  const generateSlug = (businessName: string, index: number): string => {
-    let slug = businessName
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .trim();
-    
-    slug += `-${index}`;
-    return slug;
-  };
-
-  // Simple slug generation for temporary CSV entries (not stored in database)
-  const generateCSVSlug = (businessName: string, index: number): string => {
-    let baseSlug = businessName
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .trim();
-    
-    if (!baseSlug) {
-      baseSlug = 'barber';
-    }
-    
-    return `${baseSlug}-${index}`;
-  };
-
-  useEffect(() => {
-    if (slug) {
-      fetchBarberData();
-    }
-  }, [slug]);
-
-  useEffect(() => {
-    if (barber && barber.is_claimed) {
-      fetchServices();
-    }
-  }, [barber]);
-
-  const fetchServices = async () => {
-    if (!barber) return;
-    
-    setLoadingServices(true);
-    try {
-      const { data: servicesData, error } = await supabase
-        .from('services')
-        .select('*')
-        .eq('barber_id', barber.id)
-        .eq('is_active', true)
-        .order('price');
-
-      if (error && error.message !== 'Connect to Supabase for database tables') {
-        throw error;
-      }
-
-      setServices(servicesData || []);
-    } catch (error) {
-      console.warn('Could not fetch services:', error);
-      setServices([]);
-    } finally {
-      setLoadingServices(false);
-    }
-  };
-
-  const fetchBarberData = async () => {
-    try {
-      console.log('🔍 Loading barber profile for slug:', slug);
-      
-      // PRIORITY 1: Check database for profiles with UUID slugs (legacy profiles)
-      const isUuidSlug = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(slug);
-      
-      if (isUuidSlug) {
-        // For UUID slugs, check by ID instead of slug
-        const { data: dbBarberById, error: dbErrorById } = await supabase
-          .from('barber_profiles')
-          .select('*')
-          .eq('id', slug)
-          .maybeSingle();
-
-        if (!dbErrorById && dbBarberById) {
-          console.log('✅ Found barber profile by ID (legacy UUID slug):', dbBarberById.business_name);
-          setBarber(dbBarberById);
-          setLoading(false);
-          return;
-        }
-      }
-      
-      // PRIORITY 1: Check database for claimed profiles first
-      const { data: dbBarber, error: dbError } = await supabase
-        .from('barber_profiles')
-        .select('*')
-        .eq('slug', slug)
-        .maybeSingle();
-
-      if (!dbError && dbBarber) {
-        console.log('✅ Found barber profile in database:', dbBarber.business_name);
-        setBarber(dbBarber);
-        setLoading(false);
-        return;
-      }
-
-      // PRIORITY 2: Fallback to CSV directory (only if no database match and not reserved)
-      if (isReservedSlug(slug)) {
-        console.log(`🚫 Reserved slug "${slug}" requested but no database profile found`);
-        setBarber(null);
-        setLoading(false);
-        return;
-      }
-
-      // PRIORITY 3: Check CSV directory for unclaimed profiles
-      const response = await fetch('/Barbers.csv');
-      if (!response.ok) {
-        console.log('📄 No CSV file found and no database profile, profile not found');
-        setBarber(null);
-        setLoading(false);
         return;
       }
       
@@ -608,7 +295,7 @@ const BarberProfilePage: React.FC = () => {
                 </div>
                 <h3 className="text-2xl font-display font-bold text-gray-900">Services & Pricing</h3>
               </div>
-              {barber.is_claimed ? (
+              {barber.is_active ? (
                 loadingServices ? (
                   <div className="text-center py-12">
                     <div className="relative mb-6">
@@ -659,15 +346,9 @@ const BarberProfilePage: React.FC = () => {
                     <div className="bg-gray-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
                       <Calendar className="h-10 w-10 text-gray-400" />
                     </div>
-                    <h4 className="text-xl font-display font-bold text-gray-900 mb-2">No services available</h4>
-                    <p className="text-gray-600">Please contact the business directly for service information.</p>
-                  </div>
-                )
-              ) : (
-                <div className="text-center py-12">
-                  <div className="bg-yellow-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                    <Calendar className="h-10 w-10 text-yellow-600" />
-                  </div>
+                    <h4 className="text-xl font-display font-bold text-gray-900 mb-3">Services Not Available</h4>
+                    <p className="text-gray-600 mb-6">This barber hasn't set up online booking yet. Contact them directly for appointments.</p>
+                    {/* TODO: Invite-based onboarding - Show contact form or invitation request */}
                   <h4 className="text-xl font-display font-bold text-gray-900 mb-3">Services Coming Soon</h4>
                   <p className="text-gray-600 mb-6">Services and pricing will be available after this profile is claimed.</p>
                   <Link
@@ -758,47 +439,8 @@ const BarberProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Claim Your Business */}
-            {!barber.is_claimed && !isReservedSlug(barber.slug) && (
-              <div className="card-premium p-8 bg-gradient-to-br from-accent-50 to-primary-50 border border-accent-200">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="bg-accent-500 p-2 rounded-xl">
-                    <Crown className="h-5 w-5 text-white" />
-                  </div>
-                  <h3 className="text-xl font-display font-bold text-gray-900">Is This Your Business?</h3>
-                </div>
-                <p className="text-gray-700 mb-6 leading-relaxed">
-                  Claim this profile to start accepting online bookings, manage your services, and build your reputation on Kutable.
-                </p>
-                <Link
-                  to={`/claim/${barber.id}`}
-                  className="btn-accent w-full justify-center mb-4"
-                >
-                  <Crown className="h-5 w-5" />
-                  <span>Claim This Listing</span>
-                </Link>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center space-x-2 text-emerald-700">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Free to claim</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-emerald-700">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Start accepting bookings</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-emerald-700">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Manage services & pricing</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-emerald-700">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Build customer reviews</span>
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {barber.is_claimed && (
+            {barber.is_active && (
               <div className="card-premium p-8 bg-gradient-to-br from-emerald-50 to-primary-50 border border-emerald-200">
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="bg-emerald-500 p-2 rounded-xl">
@@ -816,6 +458,21 @@ const BarberProfilePage: React.FC = () => {
                   <Calendar className="h-5 w-5" />
                   <span>Book Appointment</span>
                 </Link>
+              </div>
+            )}
+
+            {/* TODO: Invite-based onboarding - Contact or invitation request form */}
+            {!barber.is_active && (
+              <div className="card-premium p-8 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="bg-gray-400 p-2 rounded-xl">
+                    <Building className="h-5 w-5 text-white" />
+                  </div>
+                  <h3 className="text-xl font-display font-bold text-gray-900">Business Profile</h3>
+                </div>
+                <p className="text-gray-700 mb-6 leading-relaxed">
+                  This business profile is not yet set up for online booking. Contact them directly for appointments.
+                </p>
               </div>
             )}
 

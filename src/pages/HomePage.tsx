@@ -83,9 +83,9 @@ const HomePage: React.FC = () => {
                       <span className="text-2xl font-bold text-white">1</span>
                     </div>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Find Your Profile</h3>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Get Your Invitation</h3>
                   <p className="text-gray-600 text-sm">
-                    Locate your business in our directory and claim it for free.
+                    Sign up to join our exclusive barber network by invitation.
                   </p>
                 </div>
                 

@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, MapPin, Star, Filter, Clock, DollarSign, Calendar, MapIcon, X, SlidersHorizontal, Scissors, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { shouldSkipCSVRecord, isReservedSlug } from '../lib/reservedSlugs';
 import { applySearchFilters, SearchFilters, DEFAULT_FILTERS } from '../utils/searchFilters';
-import { generateUniqueSlug } from '../utils/updateBarberSlugs';
 import AdvancedSearchPanel from '../components/Search/AdvancedSearchPanel';
 import { NotificationManager } from '../utils/notifications';
 
@@ -44,343 +42,50 @@ const BarberListPage: React.FC = () => {
   const [availableServiceTypes] = useState([
     'Haircut', 'Beard Trim', 'Shave', 'Hair Wash', 'Styling', 'Fade', 'Buzz Cut', 'Line Up'
   ]);
-  const [claimingId, setClaimingId] = useState<string | null>(null);
   const PROFILES_PER_PAGE = 24;
 
-  // Enhanced claim handler with magic link flow
-  const handleClaimClick = async (barberProfile: BarberProfile) => {
-    if (claimingId) return; // prevent spam while one is in-flight
-    setClaimingId(barberProfile.id || barberProfile.slug || null);
-    
-    try {
-      // Stash payload for claim page prefill (required for magic link flow)
-      const payload = {
-        slug: barberProfile.slug,
-        business_name: barberProfile.business_name,
-        owner_name: barberProfile.owner_name,
-        phone: barberProfile.phone,
-        email: barberProfile.email,
-        address: barberProfile.address,
-        city: barberProfile.city,
-        state: barberProfile.state,
-        zip_code: barberProfile.zip_code,
-        import_source: barberProfile.id?.startsWith?.('csv-') ? 'csv' : 'db',
-        import_external_id: barberProfile.id?.startsWith?.('csv-') ? barberProfile.id : null,
-        barberId: !barberProfile.id?.startsWith?.('csv-') ? barberProfile.id : undefined
-      };
-
-      sessionStorage.setItem('claim:payload', JSON.stringify(payload));
-
-      const { data, error } = await supabase.functions.invoke('claim-start', { body: payload });
-      console.log('claim-start result:', data, error);
-      
-      if (error) throw error;
-      if (!data?.success || !data?.claimUrl) throw new Error(data?.error || 'Failed to start claim flow');
-
-      // If needs email, show error for now (could enhance with modal)
-      if (data.needsEmail) {
-        NotificationManager.error('Email address required to claim this profile. Please add an email and try again.');
-        return;
-      }
-
-      // If magic link available, open it immediately (creates session and redirects back)
-      if (data.action_link) {
-        console.log('Opening magic link for instant authentication and session creation...');
-        NotificationManager.success('Creating your account and opening claim flow...');
-        window.location.replace(data.action_link); // Creates session, redirects to /claim/:token
-        return;
-      }
-
-      // Fallback to direct claim URL
-      console.log('Claim flow started, redirecting to:', data.claimUrl);
-      window.location.assign(data.claimUrl);
-    } catch (e: any) {
-      // Show the real server message if present  
-      const serverMsg = e?.context?.error || e?.context?.response || e?.message || 'Could not start claim';
-      console.error('Claim start error:', serverMsg, e);
-      if (NotificationManager?.error) {
-        NotificationManager.error(serverMsg);
-      } else {
-        alert(`Error: ${serverMsg}`);
-      }
-    } finally {
-      setClaimingId(null);
-    }
-  };
-
-  // Enhanced CSV parsing function
-  const parseCSVLine = (line: string): string[] => {
-    const values: string[] = [];
-    let current = '';
-    let inQuotes = false;
-    let i = 0;
-    
-    while (i < line.length) {
-      const char = line[i];
-      
-      if (char === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          current += '"';
-          i += 2;
-          continue;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === ',' && !inQuotes) {
-        values.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-      i++;
-    }
-    
-    values.push(current.trim());
-    return values;
-  };
-
-  const parseCSV = (csvText: string): any[] => {
-    const lines = csvText.split('\n').filter(line => line.trim());
-    if (lines.length === 0) return [];
-    
-    const headerLine = lines[0];
-    const headers = parseCSVLine(headerLine).map(h => h.toLowerCase().trim());
-    console.log('📋 CSV Headers found:', headers);
-    
-    const data: any[] = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-      
-      const values = parseCSVLine(line);
-      const row: any = {};
-      
-      headers.forEach((header, index) => {
-        const value = values[index]?.trim() || '';
-        if (!value) return;
-        
-        // Map CSV headers to our schema
-        switch (header) {
-          case 'company_name':
-          case 'company name':
-          case 'business_name':
-          case 'business name':
-          case 'name':
-            row.business_name = value;
-            break;
-          case 'contact_first':
-          case 'contact first':
-          case 'first_name':
-          case 'first name':
-            row.contact_first = value;
-            break;
-          case 'contact_last':
-          case 'contact last':
-          case 'last_name':
-          case 'last name':
-            row.contact_last = value;
-            break;
-          case 'owner_name':
-          case 'owner name':
-          case 'owner':
-            row.owner_name = value;
-            break;
-          case 'phone':
-          case 'phone_number':
-          case 'phone number':
-            row.phone = value;
-            break;
-          case 'direct_phone':
-          case 'direct phone':
-            row.direct_phone = value;
-            break;
-          case 'email':
-          case 'email_address':
-          case 'email address':
-            row.email = value;
-            break;
-          case 'address':
-          case 'street_address':
-          case 'street address':
-            row.address = value;
-            break;
-          case 'city':
-            row.city = value;
-            break;
-          case 'state':
-            row.state = value;
-            break;
-          case 'zip':
-          case 'zip_code':
-          case 'zip code':
-          case 'postal_code':
-          case 'postal code':
-            row.zip_code = value;
-            break;
-          case 'county':
-            row.county = value;
-            break;
-          case 'website':
-          case 'website_url':
-          case 'website url':
-            row.website = value;
-            break;
-          case 'industry':
-          case 'business_type':
-          case 'business type':
-          case 'category':
-            row.industry = value;
-            break;
-        }
-      });
-      
-      // Create owner_name from contact_first and contact_last if not provided
-      if (!row.owner_name && (row.contact_first || row.contact_last)) {
-        row.owner_name = `${row.contact_first || ''} ${row.contact_last || ''}`.trim();
-      }
-      
-      // Use business_name as owner_name if still missing
-      if (!row.owner_name && row.business_name) {
-        row.owner_name = row.business_name;
-      }
-      
-      // Use direct_phone if phone is missing
-      if (!row.phone && row.direct_phone) {
-        row.phone = row.direct_phone;
-      }
-      
-      // Only add rows that have required business name
-      if (row.business_name && row.business_name.length > 1 && !shouldSkipCSVRecord(row.business_name, row.email, row.phone)) {
-        data.push(row);
-      }
-    }
-    
-    return data;
-  };
-
-  const generateSlug = (businessName: string, index: number): string => {
-    let slug = businessName
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .trim();
-    
-    slug += `-${index}`;
-    return slug;
-  };
-
-  // Simple slug generation for temporary CSV entries (not stored in database)
-  const generateCSVSlug = (businessName: string, index: number): string => {
-    let baseSlug = businessName
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .trim();
-    
-    if (!baseSlug) {
-      baseSlug = 'barber';
-    }
-    
-    return `${baseSlug}-${index}`;
-  };
-
   useEffect(() => {
-    loadCSVData();
+    loadBarberData();
   }, []);
 
-  const loadCSVData = async () => {
+  const loadBarberData = async () => {
     try {
-      console.log('📁 Loading barber directory from /Barbers.csv...');
+      console.log('📁 Loading barber profiles from database...');
       
-      // PRIORITY 1: Load claimed profiles from database first
-      let claimedProfiles: BarberProfile[] = [];
-      
-      try {
-        const { data: dbProfiles } = await supabase
-          .from('barber_profiles')
-          .select('*')
-          .eq('is_active', true)
-          .order('is_claimed', { ascending: false }) // Claimed profiles first
-          .order('created_at', { ascending: false });
+      const { data: dbProfiles, error } = await supabase
+        .from('barber_profiles')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
-        if (dbProfiles) {
-          claimedProfiles = dbProfiles.map(profile => ({
-            ...profile,
-            profile_image_url: profile.profile_image_url || 'https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=400'
-          }));
-          console.log(`✅ Found ${claimedProfiles.length} database profiles`);
-        }
-      } catch (error) {
-        console.warn('Database query failed, proceeding with CSV only:', error);
-      }
-      
-      // PRIORITY 2: Load CSV as directory listings (unclaimed)
-      const response = await fetch('/Barbers.csv');
-      if (!response.ok) {
-        // If no CSV, just use database profiles
-        setBarbers(claimedProfiles);
-        setFilteredBarbers(claimedProfiles);
-        setDisplayedBarbers(claimedProfiles.slice(0, PROFILES_PER_PAGE));
-        setCurrentPage(1);
+      if (error) {
+        console.warn('Database query failed:', error);
+        setBarbers([]);
+        setFilteredBarbers([]);
+        setDisplayedBarbers([]);
         setCities([]);
         setLoading(false);
         return;
       }
+
+      const profiles: BarberProfile[] = (dbProfiles || []).map(profile => ({
+        ...profile,
+        profile_image_url: profile.profile_image_url || 'https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=400'
+      }));
+
+      console.log(`✅ Found ${profiles.length} barber profiles`);
       
-      const csvText = await response.text();
-      const csvData = parseCSV(csvText);
-      
-      // Transform CSV data to unclaimed directory profiles
-      // Use only local clean barber images for CSV profiles
-      const localBarberImages = [
-        '/clean barbershop.jpeg',
-        '/clean barbers.webp'
-      ];
-      
-      const csvProfiles: BarberProfile[] = csvData.map((barber, index) => {
-        const imageUrl = localBarberImages[index % localBarberImages.length];
-        
-        return {
-          id: `csv-${index + 1}`,
-          slug: generateCSVSlug(barber.business_name, index),
-          business_name: barber.business_name,
-          owner_name: barber.owner_name,
-          phone: barber.phone || barber.direct_phone || null,
-          email: barber.email || null,
-          address: barber.address || null,
-          city: barber.city || null,
-          state: barber.state || null,
-          zip_code: barber.zip_code || null,
-          bio: barber.industry ? `Professional ${barber.industry.toLowerCase()} services at ${barber.business_name}. Contact us for appointments and more information.` : `Professional services at ${barber.business_name}. Contact us for appointments and more information.`,
-          profile_image_url: imageUrl,
-          is_claimed: false,
-          is_active: true,
-          average_rating: Number((4.0 + Math.random() * 1.0).toFixed(1)),
-          total_reviews: Math.floor(Math.random() * 50) + 5
-        };
-      });
-      
-      // Combine: Database profiles first (claimed), then CSV profiles (directory)
-      const allProfiles = [...claimedProfiles, ...csvProfiles];
-      console.log(`📋 Total profiles: ${allProfiles.length} (${claimedProfiles.length} claimed + ${csvProfiles.length} directory)`);
-      
-      setBarbers(allProfiles);
-      setFilteredBarbers(allProfiles);
-      setDisplayedBarbers(allProfiles.slice(0, PROFILES_PER_PAGE));
+      setBarbers(profiles);
+      setFilteredBarbers(profiles);
+      setDisplayedBarbers(profiles.slice(0, PROFILES_PER_PAGE));
       setCurrentPage(1);
       
       // Extract unique cities for filter
-      const uniqueCities = [...new Set(allProfiles.map(p => p.city).filter(Boolean))] as string[];
+      const uniqueCities = [...new Set(profiles.map(p => p.city).filter(Boolean))] as string[];
       setCities(uniqueCities.sort());
-      
+
     } catch (error) {
       console.error('❌ Failed to load profiles:', error);
-      // Set empty state instead of crashing
       setBarbers([]);
       setFilteredBarbers([]);
       setDisplayedBarbers([]);
@@ -462,6 +167,41 @@ const BarberListPage: React.FC = () => {
   };
 
   const hasMoreProfiles = displayedBarbers.length < filteredBarbers.length;
+    applyFiltersAsync();
+  }, [searchTerm, selectedCity, barbers, filters]);
+
+  const clearAllFilters = () => {
+    setFilters(DEFAULT_FILTERS);
+    setSelectedCity('');
+    setSearchTerm('');
+    NotificationManager.info('All filters cleared');
+  };
+
+  const activeFilterCount = [
+    filters.minRating > 0,
+    filters.availableToday,
+    filters.availableThisWeek,
+    filters.serviceTypes.length > 0,
+    selectedCity !== ''
+  ].filter(Boolean).length;
+
+  const loadMoreProfiles = () => {
+    setLoadingMore(true);
+    
+    // Simulate loading delay for better UX
+    setTimeout(() => {
+      const nextPage = currentPage + 1;
+      const startIndex = currentPage * PROFILES_PER_PAGE;
+      const endIndex = startIndex + PROFILES_PER_PAGE;
+      const newProfiles = filteredBarbers.slice(startIndex, endIndex);
+      
+      setDisplayedBarbers(prev => [...prev, ...newProfiles]);
+      setCurrentPage(nextPage);
+      setLoadingMore(false);
+    }, 500);
+  };
+
+  const hasMoreProfiles = displayedBarbers.length < filteredBarbers.length;
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 pt-20">
@@ -508,7 +248,7 @@ const BarberListPage: React.FC = () => {
                 <div className="text-center sm:text-left">
                   <h1 className="mobile-headline font-display text-gray-900">Find Your Perfect Barber</h1>
                   <p className="text-gray-600 mobile-body mt-2">
-                Directory of {barbers.length.toLocaleString()} barber shops and businesses
+                  Directory of {barbers.length.toLocaleString()} verified barber professionals
                   </p>
                 </div>
               </div>
@@ -702,20 +442,8 @@ const BarberListPage: React.FC = () => {
                     
                     {/* Status Badges */}
                     <div className="absolute top-3 right-3 flex space-x-2">
-                      {!barber.is_claimed && !isReservedSlug(barber.slug) && (
-                        <Link
-                          to={`/claim/${barber.id}`}
-                          disabled={claimingId === (barber.id || barber.slug)}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleClaimClick(barber);
-                          }}
-                          className="bg-accent-500 text-white text-xs px-3 py-2 rounded-full font-semibold hover:bg-accent-600 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {claimingId === (barber.id || barber.slug) ? 'Opening…' : 'Claim'}
-                        </Link>
-                      )}
-                      {barber.is_claimed && (
+                      {/* TODO: Invite-based onboarding - Show invitation status */}
+                      {barber.is_active && (
                         <span className="bg-emerald-500 text-white text-xs px-3 py-2 rounded-full font-semibold shadow-lg">
                           Verified
                         </span>
@@ -746,7 +474,7 @@ const BarberListPage: React.FC = () => {
                         </div>
                         <span className="font-bold text-gray-900">{barber.average_rating}</span>
                         <span className="text-gray-500">({barber.total_reviews})</span>
-                        {barber.is_claimed && (
+                        {barber.is_active && (
                           <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-semibold ml-2">
                             Verified
                           </span>

@@ -10,8 +10,6 @@ import BarberListPage from './pages/BarberListPage';
 import BarberProfilePage from './pages/BarberProfilePage';
 import DashboardPage from './pages/DashboardPage';
 import BookingFlow from './components/Booking/BookingFlow';
-import ClaimFlow from './components/Barber/ClaimFlow';
-import ClaimPage from './pages/ClaimPage';
 import LoginForm from './components/Auth/LoginForm';
 import SignUpForm from './components/Auth/SignUpForm';
 import ProfileSetupPage from './pages/ProfileSetupPage';
@@ -137,8 +135,6 @@ function App() {
             <Route path="/barber/:slug" element={<BarberProfilePage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/book/:barberSlug/:serviceId?" element={<BookingFlow />} />
-            <Route path="/claim/:barberId" element={<ClaimFlow />} />
-            <Route path="/claim/:token" element={<ClaimPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/admin" element={
               <ProtectedAdminRoute>
