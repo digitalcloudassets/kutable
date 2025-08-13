@@ -325,34 +325,36 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
               )}
 
               {booking.status === 'confirmed' && (
-                <button
-                  onClick={() => updateBookingStatus(booking.id, 'completed')}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors flex items-center space-x-2"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  <span>Mark Complete</span>
-                </button>
-              )}
-
-              {/* Refund Button - Show for confirmed/completed bookings with payment */}
-              {booking.status === 'confirmed' && booking.stripe_payment_intent_id && (
-                <button
-                  onClick={() => processRefund(booking)}
-                  disabled={refundingBooking === booking.id}
-                  className="bg-red-500 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:bg-red-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 shadow-sm hover:shadow-md"
-                >
-                  {refundingBooking === booking.id ? (
-                    <>
-                      <Loader className="h-4 w-4 animate-spin" />
-                      <span>Processing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="h-4 w-4" />
-                      <span>Process Refund</span>
-                    </>
+                <>
+                  <button
+                    onClick={() => updateBookingStatus(booking.id, 'completed')}
+                    className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors flex items-center space-x-2"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Mark Complete</span>
+                  </button>
+                  
+                  {/* Refund Button - Show for confirmed bookings with payment */}
+                  {booking.stripe_payment_intent_id && (
+                    <button
+                      onClick={() => processRefund(booking)}
+                      disabled={refundingBooking === booking.id}
+                      className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                    >
+                      {refundingBooking === booking.id ? (
+                        <>
+                          <Loader className="h-4 w-4 animate-spin" />
+                          <span>Processing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="h-4 w-4" />
+                          <span>Refund</span>
+                        </>
+                      )}
+                    </button>
                   )}
-                </button>
+                </>
               )}
 
               {/* Refunded Status - Show for cancelled bookings that had payments */}
