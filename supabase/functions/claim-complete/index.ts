@@ -28,11 +28,8 @@ Deno.serve(async (req) => {
     
     const { token, user_id, email } = body || {};
     
-    if (!token || !user_id) {
-      // Allow fallback with email if user_id missing
-      if (!token || (!user_id && !email)) {
-        return json(400, { success: false, error: 'Missing token and user identification' });
-      }
+    if (!token) {
+      return json(400, { success: false, error: 'Missing token' });
     }
 
     // 1) Validate token
@@ -66,7 +63,7 @@ Deno.serve(async (req) => {
     }
 
     if (!finalUserId) {
-      return json(400, { success: false, error: 'Could not identify user for claim' });
+      return json(400, { success: false, error: 'Could not identify user for claim. Please ensure you followed the magic link.' });
     }
 
     // 2) Check if profile is already claimed by someone else

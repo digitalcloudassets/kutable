@@ -359,6 +359,7 @@ const ClaimFlow: React.FC = () => {
       const { data, error } = await supabase.functions.invoke('claim-start', {
         body: payload
       });
+      console.log('claim-start result:', data, error);
 
       if (error) throw error;
       if (!data?.success || !data?.claimUrl) throw new Error(data?.error || 'Failed to start claim process');
@@ -373,21 +374,23 @@ const ClaimFlow: React.FC = () => {
       if (data.action_link) {
         NotificationManager.success('Creating your account and opening claim flow...');
         console.log('Opening magic link for instant authentication...');
-        window.location.href = data.action_link;
+        window.location.replace(data.action_link); // Creates session and redirects back to /claim/:token
         return;
       }
 
       // Fallback to direct claim URL
       NotificationManager.success('Opening claim flow...');
       console.log('Claim flow started, redirecting to:', data.claimUrl);
-      window.location.href = data.claimUrl;
+      window.location.assign(data.claimUrl);
       
     } catch (error: any) {
       // Show the real server message if present
       const serverMsg = error?.context?.error || error?.context?.response || error?.message || 'Could not start claim';
       console.error('Error starting claim:', error);
       setError(serverMsg);
-      NotificationManager?.error?.(serverMsg);
+      if (NotificationManager?.error) {
+        NotificationManager.error(serverMsg);
+      }
     } finally {
       setClaiming(false);
     }

@@ -57,15 +57,15 @@ self.addEventListener('fetch', (event) => {
 
   // Only cache same-origin requests - completely ignore third-party domains
   if (url.origin !== self.location.origin) {
-    // Don't intercept Stripe, Google Fonts, Analytics, etc.
+    // Don't intercept Stripe, Google Fonts, Analytics, Supabase auth redirects, etc.
     return;
   }
 
   event.respondWith((async () => {
     try {
       const net = await fetch(req);
-      // Cache a copy (best-effort)
-      if (net.ok) {
+      // Cache a copy (best-effort) - only cache successful responses
+      if (net.ok && net.status < 400) {
         const cache = await caches.open('app-cache');
         cache.put(req, net.clone()).catch(() => {}); // Silent fail for cache errors
       }

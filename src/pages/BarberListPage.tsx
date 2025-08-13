@@ -47,13 +47,13 @@ const BarberListPage: React.FC = () => {
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const PROFILES_PER_PAGE = 24;
 
-  // Add claim handler  
+  // Enhanced claim handler with magic link flow
   const handleClaimClick = async (barberProfile: BarberProfile) => {
     if (claimingId) return; // prevent spam while one is in-flight
     setClaimingId(barberProfile.id || barberProfile.slug || null);
     
     try {
-      // Stash payload for claim page prefill fallback
+      // Stash payload for claim page prefill (required for magic link flow)
       const payload = {
         slug: barberProfile.slug,
         business_name: barberProfile.business_name,
@@ -72,30 +72,37 @@ const BarberListPage: React.FC = () => {
       sessionStorage.setItem('claim:payload', JSON.stringify(payload));
 
       const { data, error } = await supabase.functions.invoke('claim-start', { body: payload });
+      console.log('claim-start result:', data, error);
+      
       if (error) throw error;
       if (!data?.success || !data?.claimUrl) throw new Error(data?.error || 'Failed to start claim flow');
 
       // If needs email, show error for now (could enhance with modal)
       if (data.needsEmail) {
-        NotificationManager.error('Email address required to claim this profile. Please contact support.');
+        NotificationManager.error('Email address required to claim this profile. Please add an email and try again.');
         return;
       }
 
-      // If magic link available, open it immediately
+      // If magic link available, open it immediately (creates session and redirects back)
       if (data.action_link) {
-        console.log('Opening magic link for instant authentication...');
-        window.location.href = data.action_link;
+        console.log('Opening magic link for instant authentication and session creation...');
+        NotificationManager.success('Creating your account and opening claim flow...');
+        window.location.replace(data.action_link); // Creates session, redirects to /claim/:token
         return;
       }
 
       // Fallback to direct claim URL
       console.log('Claim flow started, redirecting to:', data.claimUrl);
-      window.location.href = data.claimUrl;
+      window.location.assign(data.claimUrl);
     } catch (e: any) {
       // Show the real server message if present  
       const serverMsg = e?.context?.error || e?.context?.response || e?.message || 'Could not start claim';
       console.error('Claim start error:', serverMsg, e);
-      NotificationManager?.error?.(serverMsg);
+      if (NotificationManager?.error) {
+        NotificationManager.error(serverMsg);
+      } else {
+        alert(`Error: ${serverMsg}`);
+      }
     } finally {
       setClaimingId(null);
     }

@@ -22,7 +22,7 @@ import { NotificationManager } from '../utils/notifications';
 
 const ClaimPage: React.FC = () => {
   const { token } = useParams<{ token: string }>();
-  const { user } = useAuth();
+  const { user } = useAuth(); // For display purposes, but not required
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
@@ -30,7 +30,7 @@ const ClaimPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // Load prefill data without requiring authentication
+  // Load prefill data (no auth gate - session created by magic link)
   useEffect(() => {
     const loadClaimData = async () => {
       if (!token) return;
@@ -132,16 +132,7 @@ const ClaimPage: React.FC = () => {
       // Get current session (should exist from magic link)
       const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session) {
-        // If no session, try to complete with email
-        const email = updates.email || prefill.email;
-        if (!email) {
-          setError('Authentication required. Please try claiming again.');
-          return;
-        }
-      }
-
-      // Complete the claim
+      // Complete the claim - include email for fallback user identification
       const { data, error: claimError } = await supabase.functions.invoke('claim-complete', {
         body: { 
           token, 
@@ -192,7 +183,9 @@ const ClaimPage: React.FC = () => {
     } catch (error: any) {
       console.error('Claim completion failed:', error);
       setError(error.message || 'Claim failed. Please try again.');
-      NotificationManager.error(error.message || 'Failed to claim profile');
+      if (NotificationManager?.error) {
+        NotificationManager.error(error.message || 'Failed to claim profile');
+      }
     } finally {
       setClaiming(false);
     }
