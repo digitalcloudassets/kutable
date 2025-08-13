@@ -171,6 +171,16 @@ const DashboardPage: React.FC = () => {
         return;
       }
 
+     // Check user metadata to determine intended user type
+     const intendedUserType = user.user_metadata?.user_type;
+     
+     // If user is supposed to be a barber but no profile exists yet, don't auto-create client profile
+     if (intendedUserType === 'barber') {
+       setUserType('barber');
+       setActiveTab('profile');
+       setLoading(false);
+       return;
+     }
       // Check if user is a client
       const { data: clientData } = await supabase
         .from('client_profiles')

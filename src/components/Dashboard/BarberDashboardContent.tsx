@@ -10,6 +10,7 @@ import ServicesManagement from './ServicesManagement';
 import MediaUpload from '../Gallery/MediaUpload';
 import MediaGallery from '../Gallery/MediaGallery';
 import MessagingDashboard from '../Messaging/MessagingDashboard';
+import { Crown, Calendar, BarChart3 } from 'lucide-react';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -96,16 +97,44 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
   return (
     <div className="animate-fade-in-up">
       {activeTab === 'profile' && (
+       barber ? (
         <BarberProfile 
           barber={barber} 
           onUpdate={onBarberUpdate}
           triggerEdit={triggerEdit}
           setTriggerEdit={onTriggerEditChange}
         />
+       ) : (
+         <div className="card-premium p-8 text-center">
+           <div className="bg-yellow-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+             <Crown className="h-10 w-10 text-yellow-600" />
+           </div>
+           <h3 className="text-2xl font-display font-bold text-gray-900 mb-4">Complete Your Profile Claim</h3>
+           <p className="text-gray-600 mb-8">
+             It looks like you're in the middle of claiming a barber profile. Please complete the claim process to access your dashboard.
+           </p>
+           <div className="space-y-4">
+             <a href="/barbers" className="btn-primary">
+               Find Profile to Claim
+             </a>
+             <p className="text-sm text-gray-500">
+               Or contact support if you need assistance with your claim.
+             </p>
+           </div>
+         </div>
+       )
       )}
       
       {activeTab === 'bookings' && (
-        <BookingsManagement barberId={barber.id} />
+        barber ? (
+          <BookingsManagement barberId={barber.id} />
+        ) : (
+          <div className="card-premium p-8 text-center">
+            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Complete Profile Setup</h3>
+            <p className="text-gray-600">Claim your barber profile to start managing bookings.</p>
+          </div>
+        )
       )}
       
       {activeTab === 'messages' && (
@@ -121,7 +150,15 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
       )}
       
       {activeTab === 'analytics' && (
-        <Analytics barberId={barber.id} />
+        barber ? (
+          <Analytics barberId={barber.id} />
+        ) : (
+          <div className="card-premium p-8 text-center">
+            <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Analytics Unavailable</h3>
+            <p className="text-gray-600">Complete your profile claim to view analytics.</p>
+          </div>
+        )
       )}
       
       {activeTab === 'services' && (
@@ -132,12 +169,22 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
             </div>
             <h3 className="text-2xl font-display font-bold text-gray-900">Manage Services</h3>
           </div>
-          <ServicesManagement barberId={barber.id} />
+          {barber ? (
+            <ServicesManagement barberId={barber.id} />
+          ) : (
+            <div className="text-center py-12">
+              <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Services Management</h3>
+              <p className="text-gray-600">Complete your profile claim to add services.</p>
+            </div>
+          )}
         </div>
       )}
       
       {activeTab === 'gallery' && (
         <div className="space-y-8 animate-fade-in-up">
+         {barber ? (
+           <>
           <div className="card-premium p-8">
             <div className="flex items-center space-x-3 mb-6">
               <div className="bg-primary-100 p-2 rounded-xl">
@@ -169,6 +216,14 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
               }}
             />
           </div>
+           </>
+         ) : (
+           <div className="card-premium p-8 text-center">
+             <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+             <h3 className="text-lg font-medium text-gray-900 mb-2">Gallery Management</h3>
+             <p className="text-gray-600">Complete your profile claim to upload photos and videos.</p>
+           </div>
+         )}
         </div>
       )}
       
@@ -181,6 +236,7 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
               </div>
               <h3 className="text-2xl font-display font-bold text-gray-900">Business Hours</h3>
             </div>
+           {barber && (
             <button
               onClick={saveAvailability}
               className="btn-primary"
@@ -188,8 +244,10 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
               <Save className="h-4 w-4" />
               <span>Save Changes</span>
             </button>
+           )}
           </div>
 
+         {barber ? (
           <div className="space-y-6">
             {dayNames.map((dayName, dayIndex) => (
               <div key={dayIndex} className="flex items-center space-x-6 p-6 border border-gray-100 rounded-2xl bg-gray-50">
@@ -227,6 +285,13 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
               </div>
             ))}
           </div>
+         ) : (
+           <div className="text-center py-12">
+             <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+             <h3 className="text-lg font-medium text-gray-900 mb-2">Business Hours</h3>
+             <p className="text-gray-600">Complete your profile claim to set your business hours.</p>
+           </div>
+         )}
         </div>
       )}
       
@@ -238,6 +303,7 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
             </div>
             <h3 className="text-2xl font-display font-bold text-gray-900">Privacy & Communication Preferences</h3>
           </div>
+         {barber ? (
           <ConsentManagement 
             userId={user?.id}
             userType="barber"
@@ -248,6 +314,13 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
             }}
             onConsentUpdate={handleConsentUpdate}
           />
+         ) : (
+           <div className="text-center py-12">
+             <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+             <h3 className="text-lg font-medium text-gray-900 mb-2">Privacy Settings</h3>
+             <p className="text-gray-600">Complete your profile claim to manage privacy settings.</p>
+           </div>
+         )}
         </div>
       )}
     </div>

@@ -5,6 +5,11 @@ import { User } from '@supabase/supabase-js';
 export const getOrCreateClientProfile = async (user: User) => {
   if (!user) return null;
 
+  // Check if user is intended to be a barber (don't create client profile)
+  if (user.user_metadata?.user_type === 'barber') {
+    console.log('User is intended to be a barber, not creating client profile');
+    return null;
+  }
   try {
     
     // STEP 1: Try to find by user_id first (most reliable)
