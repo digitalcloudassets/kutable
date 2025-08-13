@@ -172,6 +172,25 @@ const BarberProfilePage: React.FC = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
         
+        {/* Header actions */}
+        <div className="absolute inset-x-4 top-4 flex gap-3 sm:inset-auto sm:top-6 sm:left-6 sm:right-6 sm:flex-row sm:justify-between">
+          <Link
+            to="/barbers"
+            className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium bg-white/90 text-gray-900 shadow hover:bg-white transition sm:bg-white sm:hover:bg-gray-50"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="whitespace-nowrap">Back to Barbers</span>
+          </Link>
+
+          <Link
+            to={`/book/${barber.slug}`}
+            className="ml-auto flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-white bg-accent-600 shadow hover:bg-accent-700 sm:px-4 sm:py-3 sm:text-base"
+          >
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="whitespace-nowrap">Book Appointment</span>
+          </Link>
+        </div>
+
         {/* Barber info overlay */}
         <div className="absolute bottom-8 left-6 right-6 text-white">
           <div className="max-w-4xl">
@@ -194,63 +213,6 @@ const BarberProfilePage: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Top control bar (mobile-safe) */}
-        <div className="absolute top-4 inset-x-4 z-20 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <Link
-            to="/barbers"
-            className="glass-effect text-gray-900 hover:text-white rounded-xl px-3 py-2 hover:bg-white/20 transition-all duration-200 flex items-center gap-2 w-fit"
-          >
-            <ArrowLeft className="h-4 w-4 text-gray-900 sm:h-5 sm:w-5 group-hover:text-white" />
-            <span className="text-sm sm:text-base font-medium">
-              <span className="hidden xs:inline">Back to Barbers</span>
-              <span className="xs:hidden">Back</span>
-            </span>
-          </Link>
-
-          <Link
-            to={`/book/${barber.slug}`}
-            className="bg-gradient-to-r from-accent-500 to-accent-600 text-white rounded-xl px-4 py-2 sm:px-6 sm:py-3 transition-all duration-200 font-semibold flex items-center gap-2 shadow-premium-lg justify-center w-full sm:w-auto"
-          >
-            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="text-sm sm:text-base whitespace-nowrap">
-              <span className="sm:inline">Book Appointment</span>
-              <span className="inline sm:hidden">Book</span>
-            </span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Compact stats row (mobile-first) */}
-      <div className="mx-4 mt-4 sm:hidden">
-        <div className="grid grid-cols-3 gap-3">
-          {/* Avg Rating */}
-          <div className="rounded-xl bg-white/90 backdrop-blur-md border border-white/60 shadow-sm py-3 flex flex-col items-center">
-            <div className="h-8 w-8 rounded-xl flex items-center justify-center bg-gradient-to-br from-yellow-500 to-orange-500 shadow">
-              <Star className="h-5 w-5 text-white" />
-            </div>
-            <div className="mt-1 text-lg font-bold text-gray-900">{barber.average_rating.toFixed(1)}</div>
-            <div className="text-[11px] font-medium text-gray-500">Avg Rating</div>
-          </div>
-
-          {/* Total Reviews */}
-          <div className="rounded-xl bg-white/90 backdrop-blur-md border border-white/60 shadow-sm py-3 flex flex-col items-center">
-            <div className="h-8 w-8 rounded-xl flex items-center justify-center bg-gradient-to-br from-primary-500 to-primary-600 shadow">
-              <Users className="h-5 w-5 text-white" />
-            </div>
-            <div className="mt-1 text-lg font-bold text-gray-900">{barber.total_reviews}</div>
-            <div className="text-[11px] font-medium text-gray-500">Reviews</div>
-          </div>
-
-          {/* Pro / Verified */}
-          <div className="rounded-xl bg-white/90 backdrop-blur-md border border-white/60 shadow-sm py-3 flex flex-col items-center">
-            <div className="h-8 w-8 rounded-xl flex items-center justify-center bg-gradient-to-br from-accent-500 to-accent-600 shadow">
-              <Crown className="h-5 w-5 text-white" />
-            </div>
-            <div className="mt-1 text-lg font-bold text-gray-900">Pro</div>
-            <div className="text-[11px] font-medium text-gray-500">Verified</div>
-          </div>
-        </div>
       </div>
 
       {/* Content */}
@@ -259,7 +221,7 @@ const BarberProfilePage: React.FC = () => {
           {/* Main content */}
           <div className="lg:col-span-2">
             {/* About Section */}
-            <div className="p-0 sm:p-8 sm:card-premium sm:bg-white bg-transparent sm:border sm:border-gray-100 mb-8">
+            <div className="p-0 sm:card-premium sm:p-8 mb-8">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="bg-primary-100 p-2 rounded-xl">
                   <Building className="h-6 w-6 text-primary-600" />
@@ -297,7 +259,7 @@ const BarberProfilePage: React.FC = () => {
             </div>
 
             {/* Barber Profile Image Card */}
-            <div className="p-0 sm:p-8 sm:card-premium sm:bg-white bg-transparent sm:border sm:border-gray-100 mb-8 text-center">
+            <div className="card-premium p-8 mb-4 text-center">
               <div className="relative inline-block">
                 <img
                   src={barber.profile_image_url}
@@ -312,8 +274,11 @@ const BarberProfilePage: React.FC = () => {
               <p className="text-gray-600 font-medium">Master Barber & Stylist</p>
             </div>
 
+            {/* NEW: Compact stats under the card, horizontal on mobile */}
+            <StatsRow rating={barber.average_rating} reviews={barber.total_reviews} />
+
             {/* Services Section */}
-            <div className="p-0 sm:p-8 sm:card-premium sm:bg-white bg-transparent sm:border sm:border-gray-100">
+            <div className="p-0 sm:card-premium sm:p-8">
               <div className="flex items-center space-x-3 mb-8">
                 <div className="bg-primary-100 p-2 rounded-xl">
                   <Scissors className="h-6 w-6 text-primary-600" />
@@ -333,31 +298,37 @@ const BarberProfilePage: React.FC = () => {
                   {services.map((service) => (
                     <div
                       key={service.id}
-                      className="rounded-2xl border border-gray-100 bg-white shadow-sm p-4 sm:p-6 hover:border-primary-300 hover:shadow-md transition"
+                      className="rounded-xl border border-gray-200 bg-white p-4 sm:bg-gray-50 sm:border-gray-100 sm:rounded-2xl sm:p-6 transition"
                     >
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="text-lg font-semibold text-gray-900">{service.name}</h4>
-                          <p className="text-gray-600 text-sm">{service.description}</p>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <h4 className="text-lg sm:text-xl font-display font-bold text-gray-900">
+                            {service.name}
+                          </h4>
+                          {service.description && (
+                            <p className="mt-1 text-gray-600 text-sm sm:text-base line-clamp-3">
+                              {service.description}
+                            </p>
+                          )}
                         </div>
-                        <div className="text-right">
-                          <p className="text-xl font-bold text-gray-900">${service.price}</p>
+                        <div className="shrink-0 rounded-xl bg-white p-3 shadow-sm text-right">
+                          <p className="text-2xl sm:text-3xl font-bold text-gray-900">${service.price}</p>
                           {service.deposit_required && (
-                            <p className="text-sm text-orange-600 font-medium">${service.deposit_amount} deposit</p>
+                            <p className="text-xs sm:text-sm text-accent-600 font-medium">${service.deposit_amount} deposit</p>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-6 text-sm text-gray-500">
-                          <div className="flex items-center space-x-1">
+                      <div className="mt-4 flex items-center justify-between gap-4 border-t border-gray-200 pt-4">
+                        <div className="flex items-center gap-2 text-sm text-gray-700">
+                          <div className="rounded-lg bg-gray-200 p-1.5">
                             <Clock className="h-4 w-4" />
-                            <span>{service.duration_minutes} min</span>
                           </div>
+                          <span className="font-medium">{service.duration_minutes} min</span>
                         </div>
                         <Link
                           to={`/book/${barber.slug}/${service.id}`}
-                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                          className="btn-primary px-4 py-2 text-sm sm:text-base sm:px-6 sm:py-3"
                         >
                           Book Now
                         </Link>
@@ -380,7 +351,7 @@ const BarberProfilePage: React.FC = () => {
           {/* Sidebar */}
           <div className="space-y-8">
             {/* Contact Info */}
-            <div className="p-0 sm:p-8 sm:card-premium sm:bg-white bg-transparent sm:border sm:border-gray-100">
+            <div className="p-0 sm:card-premium sm:p-8">
               <h3 className="text-lg sm:text-xl font-display font-bold text-gray-900 mb-6">Contact</h3>
               <div className="space-y-4">
                 {barber.phone && (
@@ -419,13 +390,13 @@ const BarberProfilePage: React.FC = () => {
             </div>
 
             {/* Business Hours */}
-            <div className="p-0 sm:p-8 sm:card-premium sm:bg-white bg-transparent sm:border sm:border-gray-100">
+            <div className="p-0 sm:card-premium sm:p-8">
               <h3 className="text-lg sm:text-xl font-display font-bold text-gray-900 mb-6">Business Hours</h3>
               <BusinessHours barberId={barber.id} />
             </div>
 
             {/* Book Appointment */}
-            <div className="p-0 sm:p-8 sm:card-premium sm:bg-gradient-to-br sm:from-emerald-50 sm:to-primary-50 sm:border sm:border-emerald-200 bg-transparent">
+            <div className="p-0 sm:card-premium sm:p-8 sm:bg-gradient-to-br sm:from-emerald-50 sm:to-primary-50 sm:border sm:border-emerald-200">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="bg-emerald-500 p-2 rounded-xl">
                   <CheckCircle className="h-5 w-5 text-white" />
@@ -446,7 +417,7 @@ const BarberProfilePage: React.FC = () => {
 
             {/* Location */}
             {barber.address && (
-              <div className="p-0 sm:p-8 sm:card-premium sm:bg-white bg-transparent sm:border sm:border-gray-100">
+              <div className="p-0 sm:card-premium sm:p-8">
                 <GoogleMap
                   address={barber.address}
                   businessName={barber.business_name}
@@ -463,6 +434,35 @@ const BarberProfilePage: React.FC = () => {
     </div>
   );
 };
+
+const StatsRow: React.FC<{
+  rating: number;
+  reviews: number;
+}> = ({ rating, reviews }) => (
+  <div className="mt-4 flex w-full items-stretch divide-x divide-gray-200 overflow-hidden rounded-xl bg-white sm:rounded-2xl sm:bg-gray-50">
+    <div className="flex-1 p-4 text-center">
+      <div className="mx-auto mb-2 h-9 w-9 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 text-white flex items-center justify-center">
+        <Star className="h-5 w-5" />
+      </div>
+      <div className="text-base font-bold">{rating.toFixed(1)}</div>
+      <div className="text-xs text-gray-500">Average Rating</div>
+    </div>
+    <div className="flex-1 p-4 text-center">
+      <div className="mx-auto mb-2 h-9 w-9 rounded-xl bg-blue-600 text-white flex items-center justify-center">
+        <Users className="h-5 w-5" />
+      </div>
+      <div className="text-base font-bold">{reviews}</div>
+      <div className="text-xs text-gray-500">Total Reviews</div>
+    </div>
+    <div className="flex-1 p-4 text-center">
+      <div className="mx-auto mb-2 h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-500 to-accent-600 text-white flex items-center justify-center">
+        <Crown className="h-5 w-5" />
+      </div>
+      <div className="text-base font-bold">Pro</div>
+      <div className="text-xs text-gray-500">Verified Barber</div>
+    </div>
+  </div>
+);
 
 interface BusinessHoursProps {
   barberId: string;
