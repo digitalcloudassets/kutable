@@ -128,8 +128,13 @@ const AdminPage: React.FC = () => {
         return;
       }
 
-      // Use materialized view for fast KPI retrieval
+      // Use materialized view for fast KPI retrieval with debug info
       const kpiData = await fetchAdminKpis();
+      console.log('Admin dashboard KPIs loaded:', {
+        totalBarbers: kpiData.totalBarbers,
+        platformRevenue: kpiData.platformRevenue,
+        debugInfo: kpiData.debugInfo
+      });
       setKpis(kpiData);
 
     } catch (error) {
@@ -235,6 +240,45 @@ const AdminPage: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <SupabaseConnectionBanner isConnected={isConnected} />
         
+          {/* Debug Info (Development) */}
+          {import.meta.env.DEV && kpis?.debugInfo && (
+            <div className="card-premium p-8">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="bg-gray-100 p-3 rounded-2xl">
+                  <Database className="h-6 w-6 text-gray-600" />
+                </div>
+                <h4 className="text-2xl font-display font-bold text-gray-900">Debug Info (Dev Mode)</h4>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">Barber Profiles</h5>
+                  <div className="space-y-1 text-gray-600">
+                    <div>Total in DB: {kpis.debugInfo.totalBarberProfiles}</div>
+                    <div>Showing as Total: {kpis.totalBarbers}</div>
+                    <div>Claimed: {kpis.claimedBarbers}</div>
+                    <div>Active: {kpis.activeBarbers}</div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">Payments</h5>
+                  <div className="space-y-1 text-gray-600">
+                    <div>Total in DB: {kpis.debugInfo.totalPayments}</div>
+                    <div>Succeeded: {kpis.debugInfo.succeededPayments}</div>
+                    <div>Live Mode: {kpis.debugInfo.livePayments}</div>
+                    <div>Test Mode: {kpis.debugInfo.testPayments}</div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h5 className="font-semibold text-gray-900 mb-2">Calculated Values</h5>
+                  <div className="space-y-1 text-gray-600">
+                    <div>Gross Revenue: {formatCurrency(kpis.totalRevenue)}</div>
+                    <div>Platform Revenue: {formatCurrency(kpis.platformRevenue)}</div>
+                    <div>Avg Booking: {formatCurrency(kpis.avgBookingValue)}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         <div className="space-y-8">
           {/* Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -262,7 +306,22 @@ const AdminPage: React.FC = () => {
                 {formatCurrency(kpis?.totalRevenue || 0)}
               </div>
               <p className="text-sm text-gray-500 font-medium">
-                From application fees (live payments only)
+                Total gross revenue (all payments)
+              </p>
+            </div>
+
+            <div className="card-premium p-8">
+              <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <h3 className="text-sm font-medium text-gray-600 uppercase tracking-wide">Platform Revenue</h3>
+                <div className="bg-purple-100 p-2 rounded-xl">
+                  <DollarSign className="h-5 w-5 text-purple-600" />
+                </div>
+              </div>
+              <div className="text-3xl font-display font-bold text-gray-900 mb-2">
+                {formatCurrency(kpis?.platformRevenue || 0)}
+              </div>
+              <p className="text-sm text-gray-500 font-medium">
+                Platform fees earned (1%)
               </p>
             </div>
 
