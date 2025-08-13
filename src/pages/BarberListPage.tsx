@@ -43,7 +43,16 @@ const BarberListPage: React.FC = () => {
   const [availableServiceTypes] = useState([
     'Haircut', 'Beard Trim', 'Shave', 'Hair Wash', 'Styling', 'Fade', 'Buzz Cut', 'Line Up'
   ]);
+  const [claimingId, setClaimingId] = useState<string | null>(null);
   const PROFILES_PER_PAGE = 24;
+
+  const isReservedSlug = (slug: string) => {
+    return false; // Placeholder function
+  };
+
+  const handleClaimClick = (barber: BarberProfile) => {
+    // Placeholder function
+  };
 
   useEffect(() => {
     loadBarberData();
@@ -215,7 +224,7 @@ const BarberListPage: React.FC = () => {
                 <div className="text-center sm:text-left">
                   <h1 className="mobile-headline font-display text-gray-900">Find Your Perfect Barber</h1>
                   <p className="text-gray-600 mobile-body mt-2">
-                  Directory of {barbers.length.toLocaleString()} verified barber professionals
+                Directory of {barbers.length.toLocaleString()} barber shops and businesses
                   </p>
                 </div>
               </div>
@@ -409,8 +418,20 @@ const BarberListPage: React.FC = () => {
                     
                     {/* Status Badges */}
                     <div className="absolute top-3 right-3 flex space-x-2">
-                      {/* TODO: Invite-based onboarding - Show invitation status */}
-                      {barber.is_active && (
+                      {!barber.is_claimed && !isReservedSlug(barber.slug) && (
+                        <Link
+                          to={`/claim/${barber.id}`}
+                          disabled={claimingId === (barber.id || barber.slug)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleClaimClick(barber);
+                          }}
+                          className="bg-accent-500 text-white text-xs px-3 py-2 rounded-full font-semibold hover:bg-accent-600 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {claimingId === (barber.id || barber.slug) ? 'Opening…' : 'Claim'}
+                        </Link>
+                      )}
+                      {barber.is_claimed && (
                         <span className="bg-emerald-500 text-white text-xs px-3 py-2 rounded-full font-semibold shadow-lg">
                           Verified
                         </span>
@@ -441,7 +462,7 @@ const BarberListPage: React.FC = () => {
                         </div>
                         <span className="font-bold text-gray-900">{barber.average_rating}</span>
                         <span className="text-gray-500">({barber.total_reviews})</span>
-                        {barber.is_active && (
+                        {barber.is_claimed && (
                           <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-semibold ml-2">
                             Verified
                           </span>
