@@ -19,6 +19,7 @@ interface BarberProfile {
   zip_code: string | null;
   bio: string;
   profile_image_url: string;
+  banner_image_url?: string;
   is_claimed: boolean;
   is_active: boolean;
   average_rating: number;
@@ -167,41 +168,7 @@ const BarberListPage: React.FC = () => {
   };
 
   const hasMoreProfiles = displayedBarbers.length < filteredBarbers.length;
-    applyFiltersAsync();
-  }, [searchTerm, selectedCity, barbers, filters]);
 
-  const clearAllFilters = () => {
-    setFilters(DEFAULT_FILTERS);
-    setSelectedCity('');
-    setSearchTerm('');
-    NotificationManager.info('All filters cleared');
-  };
-
-  const activeFilterCount = [
-    filters.minRating > 0,
-    filters.availableToday,
-    filters.availableThisWeek,
-    filters.serviceTypes.length > 0,
-    selectedCity !== ''
-  ].filter(Boolean).length;
-
-  const loadMoreProfiles = () => {
-    setLoadingMore(true);
-    
-    // Simulate loading delay for better UX
-    setTimeout(() => {
-      const nextPage = currentPage + 1;
-      const startIndex = currentPage * PROFILES_PER_PAGE;
-      const endIndex = startIndex + PROFILES_PER_PAGE;
-      const newProfiles = filteredBarbers.slice(startIndex, endIndex);
-      
-      setDisplayedBarbers(prev => [...prev, ...newProfiles]);
-      setCurrentPage(nextPage);
-      setLoadingMore(false);
-    }, 500);
-  };
-
-  const hasMoreProfiles = displayedBarbers.length < filteredBarbers.length;
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 pt-20">
