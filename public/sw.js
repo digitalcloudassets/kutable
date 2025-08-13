@@ -49,32 +49,33 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
-  const url = req.url || '';
+  const url = new URL(req.url);
   
   // Only handle http/https GET requests
-  if (!url.startsWith('http')) return;
+  if (!['http:', 'https:'].includes(url.protocol)) return;
   if (req.method !== 'GET') return;
 
-  // Only handle http/https GET requests
-  if (!url.startsWith('http')) return;
-  if (req.method !== 'GET') return;
-
-  // Only cache same-origin requests (prevents CSP noise for 3rd-party like Stripe/Fonts)
-  const sameOrigin = new URL(url).origin === self.location.origin;
-  if (!sameOrigin) return; // let the browser handle it
+  // Only cache same-origin requests - ignore third-party domains like Stripe, Google Fonts, etc.
+  if (url.origin !== self.location.origin) {
+    return; // Let browser handle third-party requests naturally
+  }
 
   event.respondWith((async () => {
     try {
       const net = await fetch(req);
       // Cache a copy (best-effort)
       const cache = await caches.open('app-cache');
-      cache.put(req, net.clone());
+      cache.put(req, net.clone()).catch(() => {}); // Silent fail for cache errors
       return net;
     } catch {
       const cache = await caches.open('app-cache');
       const hit = await cache.match(req);
       if (hit) return hit;
-      throw new Error('Network and cache both unavailable');
+      // Return network error instead of throwing
+      return new Response('Service Unavailable', { 
+        status: 503, 
+        headers: { 'Content-Type': 'text/plain' } 
+      });
     }
   })());
 });
