@@ -503,8 +503,8 @@ const ClaimPage: React.FC = () => {
           </Link>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 };
 
 export default ClaimPage;
