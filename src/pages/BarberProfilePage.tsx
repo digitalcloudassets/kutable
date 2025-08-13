@@ -172,17 +172,6 @@ const BarberProfilePage: React.FC = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
         
-        {/* Back button */}
-        <div className="absolute top-6 left-6 z-20">
-          <Link
-            to="/barbers"
-            className="glass-effect text-gray-900 hover:text-white p-4 rounded-2xl hover:bg-white/20 transition-all duration-200 flex items-center space-x-2 group"
-          >
-            <ArrowLeft className="h-5 w-5 text-gray-900 group-hover:text-white group-hover:-translate-x-1 transition-all duration-200" />
-            <span className="font-medium">Back to Barbers</span>
-          </Link>
-        </div>
-
         {/* Barber info overlay */}
         <div className="absolute bottom-8 left-6 right-6 text-white">
           <div className="max-w-4xl">
