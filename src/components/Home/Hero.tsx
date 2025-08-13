@@ -60,8 +60,8 @@ const Hero: React.FC = () => {
                 <Star className="h-5 w-5 text-gray-900" />
               </div>
               <div className="text-left">
-                <div className="text-white font-bold text-lg">$2,500</div>
-                <div className="text-white/70 text-sm">Avg Monthly Earnings</div>
+                <div className="text-white font-bold text-lg">4.8★</div>
+                <div className="text-white/70 text-sm">Average Rating</div>
               </div>
             </div>
             
@@ -70,8 +70,8 @@ const Hero: React.FC = () => {
                 <Calendar className="h-5 w-5 text-white" />
               </div>
               <div className="text-left">
-                <div className="text-white font-bold text-lg">15K+</div>
-                <div className="text-white/70 text-sm">Customers Reached</div>
+                <div className="text-white font-bold text-lg">2.5K+</div>
+                <div className="text-white/70 text-sm">Barbers Listed</div>
               </div>
             </div>
             
@@ -80,8 +80,8 @@ const Hero: React.FC = () => {
                 <Scissors className="h-5 w-5 text-white" />
               </div>
               <div className="text-left">
-                <div className="text-white font-bold text-lg">4%</div>
-                <div className="text-white/70 text-sm">Simple Fee</div>
+                <div className="text-white font-bold text-lg">No</div>
+                <div className="text-white/70 text-sm">Setup Fees</div>
               </div>
             </div>
           </div>

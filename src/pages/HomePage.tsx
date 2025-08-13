@@ -47,10 +47,10 @@ const HomePage: React.FC = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-center items-center max-w-4xl mx-auto">
             <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-2xl px-8 py-4">
-              <p className="text-emerald-800 font-semibold text-lg">Trusted by thousands of barbers nationwide</p>
+              <p className="text-emerald-800 font-semibold text-lg">Verified professional network</p>
             </div>
             <div className="bg-gradient-to-r from-primary-50 to-primary-100 border border-primary-200 rounded-2xl px-8 py-4">
-              <p className="text-primary-800 font-semibold text-lg">Over $2.5M processed for barbers</p>
+              <p className="text-primary-800 font-semibold text-lg">Secure payment processing</p>
             </div>
           </div>
         </div>

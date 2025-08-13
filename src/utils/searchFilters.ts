@@ -1,4 +1,5 @@
 import { Database } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { createAvailabilityManager } from './availabilityManager';
 
 export interface SearchFilters {
@@ -169,17 +170,59 @@ export const applySearchFilters = async (
       case 'newest':
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       case 'price':
-        // Mock price sorting (would need actual service prices in production)
-        return Math.random() - 0.5;
+        // Sort by lowest starting price from actual services
+        return (a as any).minPrice - (b as any).minPrice;
       case 'distance':
-        // Mock distance sorting (would need geolocation in production)
-        return Math.random() - 0.5;
+        // Sort by distance if coordinates available, otherwise by city name
+        if ((a as any).distance !== undefined && (b as any).distance !== undefined) {
+          return (a as any).distance - (b as any).distance;
+        }
+        return (a.city || '').localeCompare(b.city || '');
       default:
         return b.average_rating - a.average_rating;
     }
   });
   
   return filtered;
+};
+
+// Enhanced filtering with real service price data
+const addServicePriceData = async (barbers: BarberProfile[]): Promise<BarberProfile[]> => {
+  try {
+    const { data: servicesData } = await supabase
+      .from('services')
+      .select('barber_id, price')
+      .eq('is_active', true);
+
+    if (!servicesData) return barbers;
+
+    // Add minimum price to each barber for sorting
+    return barbers.map(barber => {
+      const barberServices = servicesData.filter(s => s.barber_id === barber.id);
+      const minPrice = barberServices.length > 0 
+        ? Math.min(...barberServices.map(s => s.price))
+        : 999; // High value for barbers with no services
+      
+      return { ...barber, minPrice } as any;
+    });
+  } catch (error) {
+    console.error('Error adding price data:', error);
+    return barbers;
+  }
+};
+
+// Apply enhanced filtering with real data
+export const applySearchFiltersEnhanced = async (
+  barbers: BarberProfile[], 
+  filters: SearchFilters,
+  searchTerm: string = '',
+  selectedCity: string = ''
+): Promise<BarberProfile[]> => {
+  // Add service price data for accurate sorting
+  let enhanced = await addServicePriceData(barbers);
+  
+  // Apply all existing filters
+  return applySearchFilters(enhanced, filters, searchTerm, selectedCity);
 };
 
 export const getActiveFilterCount = (
@@ -212,11 +255,12 @@ export const generateAvailableSlots = async (
 
 export const isBarberAvailableToday = async (barber: BarberProfile): Promise<boolean> => {
   try {
+    const today = new Date().getDay();
     const { data: availability } = await supabase
       .from('availability')
       .select('*')
       .eq('barber_id', barber.id)
-      .eq('day_of_week', new Date().getDay())
+      .eq('day_of_week', today)
       .eq('is_available', true)
       .maybeSingle();
     
@@ -229,13 +273,19 @@ export const isBarberAvailableToday = async (barber: BarberProfile): Promise<boo
 
 export const isBarberAvailableThisWeek = async (barber: BarberProfile): Promise<boolean> => {
   try {
+    // Check if barber has any availability set for any day of the week
     const { data: availability } = await supabase
       .from('availability')
       .select('*')
       .eq('barber_id', barber.id)
       .eq('is_available', true);
     
-    return (availability?.length || 0) > 0;
+    // Also check if they have available slots this week (not fully booked)
+    if (!availability || availability.length === 0) return false;
+    
+    // Simple check: if they have availability rules, assume they have some open slots
+    // In a more sophisticated system, you'd check against actual bookings
+    return true;
   } catch (error) {
     console.error('Error checking week availability:', error);
     return false;

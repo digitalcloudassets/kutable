@@ -86,13 +86,6 @@ const RescheduleModal: React.FC<RescheduleModalProps> = ({
     setSelectedDate(date);
     setStep('time');
   };
-
-  const handleTimeSelect = (time: string) => {
-    setSelectedTime(time);
-    setStep('confirm');
-  };
-
-  const handleConfirmReschedule = async () => {
     if (!selectedTime || !selectedDate) return;
 
     setLoading(true);
