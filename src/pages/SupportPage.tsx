@@ -65,7 +65,7 @@ const SupportPage: React.FC = () => {
     },
     {
       question: "How do I claim my barber profile?",
-      answer: "If you're a barber and see your business listed, click 'Claim This Listing' on your profile page. You'll need to verify your identity and provide business information to complete the claiming process.",
+      answer: "Kutable is now an invite-only platform for barbers. We're expanding our network of verified professionals. Contact us to learn about joining the platform.",
       category: "barber"
     },
     {
@@ -221,7 +221,7 @@ const SupportPage: React.FC = () => {
               <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Phone className="h-8 w-8 text-blue-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Contact Your Barber Directly</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Contact Barbers Directly</h3>
               <p className="text-gray-600 mb-4">
                 <strong>For Clients:</strong> Appointment questions, scheduling changes, or service inquiries - contact your barber directly using their phone number on their profile page.
               </p>

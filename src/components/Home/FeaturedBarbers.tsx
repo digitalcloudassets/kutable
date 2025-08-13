@@ -177,7 +177,7 @@ const FeaturedBarbers: React.FC = () => {
             to="/signup?type=barber"
             className="btn-secondary group mx-auto"
           >
-            <span>Join These Success Stories</span>
+            <span>Join Kutable Today</span>
             <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>

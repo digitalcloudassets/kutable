@@ -132,7 +132,7 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
           <div className="card-premium p-8 text-center">
             <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Complete Profile Setup</h3>
-            <p className="text-gray-600">Claim your barber profile to start managing bookings.</p>
+            <p className="text-gray-600">Complete your barber profile to start managing bookings.</p>
           </div>
         )
       )}
@@ -156,7 +156,7 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
           <div className="card-premium p-8 text-center">
             <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Analytics Unavailable</h3>
-            <p className="text-gray-600">Complete your profile claim to view analytics.</p>
+            <p className="text-gray-600">Complete your profile setup to view analytics.</p>
           </div>
         )
       )}
@@ -175,7 +175,7 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
             <div className="text-center py-12">
               <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Services Management</h3>
-              <p className="text-gray-600">Complete your profile claim to add services.</p>
+              <p className="text-gray-600">Complete your profile setup to add services.</p>
             </div>
           )}
         </div>
@@ -221,7 +221,7 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
            <div className="card-premium p-8 text-center">
              <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
              <h3 className="text-lg font-medium text-gray-900 mb-2">Gallery Management</h3>
-             <p className="text-gray-600">Complete your profile claim to upload photos and videos.</p>
+             <p className="text-gray-600">Complete your profile setup to upload photos and videos.</p>
            </div>
          )}
         </div>
@@ -289,7 +289,7 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
            <div className="text-center py-12">
              <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
              <h3 className="text-lg font-medium text-gray-900 mb-2">Business Hours</h3>
-             <p className="text-gray-600">Complete your profile claim to set your business hours.</p>
+             <p className="text-gray-600">Complete your profile setup to set your business hours.</p>
            </div>
          )}
         </div>
@@ -318,7 +318,7 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
            <div className="text-center py-12">
              <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
              <h3 className="text-lg font-medium text-gray-900 mb-2">Privacy Settings</h3>
-             <p className="text-gray-600">Complete your profile claim to manage privacy settings.</p>
+             <p className="text-gray-600">Complete your profile setup to manage privacy settings.</p>
            </div>
          )}
         </div>

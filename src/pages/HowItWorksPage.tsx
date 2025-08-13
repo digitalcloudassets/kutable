@@ -227,10 +227,9 @@ const HowItWorksPage: React.FC = () => {
               <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                 <UserPlus className="h-8 w-8 text-blue-600" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Claim Your Profile</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Join by Invitation</h3>
               <p className="text-gray-600 leading-relaxed">
-                Find your business in our directory and claim it for free. Verify your identity 
-                and gain control of your online presence.
+                Sign up to join our exclusive network of professional barbers by invitation only.
               </p>
             </div>
 

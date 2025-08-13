@@ -95,7 +95,7 @@ const Hero: React.FC = () => {
               className="group bg-white text-gray-900 px-8 py-4 rounded-2xl text-lg font-semibold hover:bg-gray-100 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-premium-lg hover:shadow-2xl flex items-center space-x-3"
             >
               <Scissors className="h-6 w-6 text-primary-600 group-hover:rotate-12 transition-transform" />
-              <span>Start Free Profile</span>
+              <span>Join Kutable</span>
               <ArrowRight className="h-5 w-5 text-primary-600 group-hover:translate-x-1 transition-transform" />
             </Link>
             

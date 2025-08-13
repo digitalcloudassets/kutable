@@ -483,7 +483,7 @@ const PricingPage: React.FC = () => {
               to="/signup?type=barber"
               className="bg-orange-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-orange-600 transition-colors"
             >
-              Create Your Profile Free
+              Join Kutable
             </Link>
             <Link
               to="/support"

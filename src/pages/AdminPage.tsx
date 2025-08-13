@@ -113,11 +113,9 @@ const AdminPage: React.FC = () => {
       setLoading(true);
       
       if (!isConnected) {
-        // When Supabase not connected, show CSV directory stats  
-        const csvBarberCount = await getRealBarberCount();
         setKpis({
-          totalBarbers: csvBarberCount,
-          activeBarbers: csvBarberCount,
+          totalBarbers: 0,
+          activeBarbers: 0,
           claimedBarbers: 0,
           totalBookings: 0,
           bookingsThisMonth: 0,
@@ -542,8 +540,8 @@ const AdminPage: React.FC = () => {
                       <div className="text-4xl font-display font-bold text-gray-900 mb-2">
                         {(kpis?.totalBarbers ?? 0).toLocaleString()}
                       </div>
-                      <p className="text-primary-800 font-semibold mb-2">Total Barber Profiles</p>
-                      <p className="text-sm text-primary-600 font-medium">Includes CSV directory + claimed profiles</p>
+                      <p className="text-primary-800 font-semibold mb-2">Active Barber Profiles</p>
+                      <p className="text-sm text-primary-600 font-medium">Verified and active barbers</p>
                     </div>
 
                     <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 p-8 rounded-2xl shadow-sm">
@@ -558,7 +556,7 @@ const AdminPage: React.FC = () => {
                       </div>
                       <p className="text-emerald-800 font-semibold mb-2">Claimed Profiles</p>
                       <p className="text-sm text-emerald-600 font-medium">
-                        {(((kpis?.claimedBarbers ?? 0) / (kpis?.totalBarbers ?? 1)) * 100).toFixed(1)}% of total directory
+                        {(((kpis?.claimedBarbers ?? 0) / (kpis?.totalBarbers ?? 1)) * 100).toFixed(1)}% of total
                       </p>
                     </div>
 
@@ -572,8 +570,8 @@ const AdminPage: React.FC = () => {
                       <div className="text-4xl font-display font-bold text-gray-900 mb-2">
                         {((kpis?.totalBarbers ?? 0) - (kpis?.claimedBarbers ?? 0)).toLocaleString()}
                       </div>
-                      <p className="text-orange-800 font-semibold mb-2">Unclaimed Profiles</p>
-                      <p className="text-sm text-orange-600 font-medium">Available for claiming</p>
+                      <p className="text-orange-800 font-semibold mb-2">Pending Invitations</p>
+                      <p className="text-sm text-orange-600 font-medium">Barbers to be invited</p>
                     </div>
                   </div>
 
@@ -584,7 +582,7 @@ const AdminPage: React.FC = () => {
                           <AlertCircle className="h-5 w-5 text-white" />
                         </div>
                         <p className="text-yellow-800 font-medium">
-                          Connect Supabase to see detailed barber analytics and claimed profile data
+                          Connect Supabase to see detailed barber analytics and profile data
                         </p>
                       </div>
                     </div>
