@@ -10,9 +10,12 @@ import {
   ArrowLeft,
   CheckCircle,
   Users,
-  Scissors
+  Scissors,
+  Crown,
+  Building
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import GoogleMap from '../components/GoogleMap';
 
 interface BarberProfile {
   id: string;
@@ -27,6 +30,7 @@ interface BarberProfile {
   zip_code: string | null;
   bio: string;
   profile_image_url: string;
+  banner_image_url?: string;
   is_claimed: boolean;
   is_active: boolean;
   average_rating: number;
@@ -50,8 +54,71 @@ const BarberProfilePage: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [claimingId, setClaimingId] = useState<string | null>(null);
 
+  const parseCSV = (csvText: string) => {
+    const lines = csvText.split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
+    return lines.slice(1).map(line => {
+      const values = line.split(',').map(v => v.trim());
+      const obj: any = {};
+      headers.forEach((header, index) => {
+        obj[header] = values[index] || '';
+      });
+      return obj;
+    });
+  };
 
+  const generateSlug = (businessName: string, index: number) => {
+    return businessName.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim() + '-' + (index + 1);
+  };
+
+  const generateCSVSlug = (businessName: string, index: number) => {
+    return businessName.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim() + '-' + (index + 1);
+  };
+
+  const isReservedSlug = (slug: string) => {
+    const reservedSlugs = ['kutable', 'admin', 'api', 'www'];
+    return reservedSlugs.includes(slug);
+  };
+
+  const handleClaimClick = (barber: BarberProfile) => {
+    setClaimingId(barber.id || barber.slug);
+    // Handle claim logic here
+  };
+
+  useEffect(() => {
+    fetchBarberData();
+  }, [slug]);
+
+  const fetchBarberData = async () => {
+    try {
+      setLoading(true);
+      
+      // Try to fetch from Supabase first
+      const { data: supabaseBarber, error } = await supabase
+        .from('barber_profiles')
+        .select('*')
+        .eq('slug', slug)
+        .single();
+
+      if (supabaseBarber && !error) {
+        setBarber(supabaseBarber);
+        return;
+      }
+
+      // If not found in Supabase, try CSV data
+      const response = await fetch('/barber-data.csv');
+      if (!response.ok) {
+        setBarber(null);
         return;
       }
       
@@ -349,6 +416,13 @@ const BarberProfilePage: React.FC = () => {
                     <h4 className="text-xl font-display font-bold text-gray-900 mb-3">Services Not Available</h4>
                     <p className="text-gray-600 mb-6">This barber hasn't set up online booking yet. Contact them directly for appointments.</p>
                     {/* TODO: Invite-based onboarding - Show contact form or invitation request */}
+                  </div>
+                )
+              ) : (
+                <div className="text-center py-12">
+                  <div className="bg-gray-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <Calendar className="h-10 w-10 text-gray-400" />
+                  </div>
                   <h4 className="text-xl font-display font-bold text-gray-900 mb-3">Services Coming Soon</h4>
                   <p className="text-gray-600 mb-6">Services and pricing will be available after this profile is claimed.</p>
                   <Link
@@ -438,7 +512,6 @@ const BarberProfilePage: React.FC = () => {
                 </div>
               </div>
             </div>
-
 
             {barber.is_active && (
               <div className="card-premium p-8 bg-gradient-to-br from-emerald-50 to-primary-50 border border-emerald-200">
