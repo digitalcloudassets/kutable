@@ -335,7 +335,7 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
               )}
 
               {/* Refund Button - Show for confirmed/completed bookings with payment */}
-              {(booking.status === 'confirmed' || booking.status === 'completed') && booking.stripe_payment_intent_id && (
+              {booking.status === 'confirmed' && booking.stripe_payment_intent_id && (
                 <button
                   onClick={() => processRefund(booking)}
                   disabled={refundingBooking === booking.id}
@@ -356,10 +356,10 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
               )}
 
               {/* Refunded Status - Show for cancelled bookings that had payments */}
-              {booking.status === 'cancelled' && booking.stripe_payment_intent_id && (
+              {(booking.status === 'cancelled' || booking.status === 'completed') && booking.stripe_payment_intent_id && (
                 <div className="bg-gray-100 text-gray-600 px-6 py-3 rounded-xl text-sm font-semibold flex items-center space-x-2 border border-gray-200">
                   <CheckCircle className="h-4 w-4" />
-                  <span>Refunded</span>
+                  <span>{booking.status === 'cancelled' ? 'Refunded' : 'Completed'}</span>
                 </div>
               )}
             </div>
