@@ -636,6 +636,16 @@ textarea {
   animation: slide-in-left 0.3s ease-out;
 }
 
+/* Scrollbar utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
   .dark-mode {

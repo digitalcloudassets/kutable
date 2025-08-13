@@ -34,6 +34,22 @@ const DashboardNavigation = React.memo<DashboardNavigationProps>(({
   unreadCount = 0
 }) => {
   const navigate = useNavigate();
+  const [showScrollHint, setShowScrollHint] = React.useState(false);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container || userType === 'client') return;
+
+    const checkScrollable = () => {
+      const isScrollable = container.scrollWidth > container.clientWidth;
+      setShowScrollHint(isScrollable);
+    };
+
+    checkScrollable();
+    window.addEventListener('resize', checkScrollable);
+    return () => window.removeEventListener('resize', checkScrollable);
+  }, [userType]);
 
   const handleTabClick = useCallback((buttonId: string, action?: string, to?: string) => {
     if (action === 'navigate' && to) {
@@ -64,18 +80,27 @@ const DashboardNavigation = React.memo<DashboardNavigationProps>(({
   const navButtons = userType === 'client' ? clientNavButtons : barberNavButtons;
 
   return (
-    <div className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 mb-8 overflow-x-auto">
-      <div className={`${
-        userType === 'client' 
-          ? 'grid grid-cols-3 gap-2' 
-          : 'flex space-x-2 lg:grid lg:grid-cols-7 lg:gap-2 lg:space-x-0'
-      }`}>
+    <div className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 mb-8 relative">
+      {/* Scroll Container */}
+      <div 
+        ref={scrollContainerRef}
+        className={`${
+          userType === 'client' 
+            ? 'grid grid-cols-3 gap-2' 
+            : 'flex space-x-2 lg:grid lg:grid-cols-7 lg:gap-2 lg:space-x-0 overflow-x-auto scrollbar-hide snap-x snap-mandatory lg:overflow-visible'
+        }`}
+        style={userType === 'barber' ? { 
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch'
+        } : {}}
+      >
         {navButtons.map((button) => (
           <button
             key={button.id}
             onClick={() => handleTabClick(button.id, button.action, button.to)}
             className={`${
-              userType === 'barber' ? 'flex-shrink-0 min-w-[120px] lg:flex-1' : 'flex-1'
+              userType === 'barber' ? 'flex-shrink-0 min-w-[120px] lg:flex-1 snap-start' : 'flex-1'
             } py-4 px-3 lg:px-6 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
               activeTab === button.id
                 ? 'bg-primary-500 text-white shadow-lg'
@@ -92,6 +117,30 @@ const DashboardNavigation = React.memo<DashboardNavigationProps>(({
           </button>
         ))}
       </div>
+      
+      {/* Scroll Indicators for Barber Tabs */}
+      {userType === 'barber' && showScrollHint && (
+        <>
+          {/* Left fade gradient */}
+          <div className="lg:hidden absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none z-10 rounded-l-2xl"></div>
+          
+          {/* Right fade gradient with scroll hint */}
+          <div className="lg:hidden absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent pointer-events-none z-10 rounded-r-2xl flex items-center justify-end pr-3">
+            <div className="flex space-x-1">
+              <div className="w-1 h-1 bg-gray-400 rounded-full animate-pulse"></div>
+              <div className="w-1 h-1 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-1 h-1 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+            </div>
+          </div>
+          
+          {/* Subtle scroll instruction */}
+          <div className="lg:hidden absolute -bottom-6 left-1/2 transform -translate-x-1/2 z-10">
+            <div className="bg-gray-600 text-white px-3 py-1 rounded-full text-xs font-medium opacity-75">
+              Swipe to see more →
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 });
