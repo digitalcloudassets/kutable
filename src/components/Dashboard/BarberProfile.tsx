@@ -628,10 +628,32 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                 {barber.bio || 'No description provided. Edit your profile to add information about your services and experience.'}
                 </p>
               </div>
+              
+              {/* Business Stats - horizontal under paragraph */}
+              <div className="grid grid-cols-3 gap-4 mt-6">
+                <div className="text-center group">
+                  <div className="bg-gradient-to-br from-yellow-500 to-orange-500 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-premium group-hover:scale-110 transition-transform duration-300">
+                    <Star className="h-6 w-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 mb-1">{barber.average_rating.toFixed(1)}</p>
+                  <p className="text-gray-600 font-medium text-sm">Average Rating</p>
+                </div>
+                <div className="text-center group">
+                  <div className="bg-gradient-to-br from-primary-500 to-primary-600 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-premium group-hover:scale-110 transition-transform duration-300">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 mb-1">{barber.total_reviews}</p>
+                  <p className="text-gray-600 font-medium text-sm">Total Reviews</p>
+                </div>
+                <div className="text-center group">
+                  <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-premium group-hover:scale-110 transition-transform duration-300">
+                    <CheckCircle className="h-6 w-6 text-white" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 mb-1">{barber.is_claimed ? 'Claimed' : 'Unclaimed'}</p>
+                  <p className="text-gray-600 font-medium text-sm">Profile Status</p>
+                </div>
+              </div>
             </div>
-
-            {/* Business Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 border-t border-gray-100">
               <div className="text-center group">
                 <div className="bg-gradient-to-br from-yellow-500 to-orange-500 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium group-hover:scale-110 transition-transform duration-300">
                   <Star className="h-8 w-8 text-white" />
