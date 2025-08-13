@@ -97,6 +97,7 @@ Deno.serve(async (req) => {
     // Calculate platform fee (1%)
     const totalAmountDollars = amount ? amount / 100 : 0;
     const platformFee = Math.round(totalAmountDollars * 0.01 * 100) / 100;
+    const platformFeeCents = Math.round(totalAmountDollars * 0.01 * 100); // Platform fee in cents
     
     // Create pending booking record
     const { data: booking, error: bookingError } = await supabase
@@ -147,6 +148,12 @@ Deno.serve(async (req) => {
       params['line_items[0][price_data][currency]'] = currency;
       params['line_items[0][price_data][unit_amount]'] = amount; // integer cents
       params['line_items[0][price_data][product_data][name]'] = name;
+    }
+
+    // Add payment intent data for platform fee and barber payout
+    if (connectedAccountId && platformFeeCents > 0) {
+      params['payment_intent_data[application_fee_amount]'] = platformFeeCents;
+      params['payment_intent_data[transfer_data][destination]'] = connectedAccountId;
     }
 
     const resp = await stripePost('checkout/sessions', form(params), STRIPE_SECRET_KEY, connectedAccountId);
