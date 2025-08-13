@@ -16,10 +16,6 @@ node_bundler = "esbuild"
       object-src 'none';
       base-uri 'self';
       form-action 'self'
-      frame-src https://js.stripe.com https://hooks.stripe.com;
-      object-src 'none';
-      base-uri 'self';
-      form-action 'self'
     """
     Permissions-Policy = "camera=(), microphone=(), geolocation=(self), payment=(self)"
     Referrer-Policy = "strict-origin-when-cross-origin"
