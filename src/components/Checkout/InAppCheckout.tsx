@@ -276,6 +276,7 @@ export default function InAppCheckout({
         <p className="text-gray-600 font-medium">Initializing secure payment...</p>
       </div>
     );
+  }
 
   return (
     <Elements 
