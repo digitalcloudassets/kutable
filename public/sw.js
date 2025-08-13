@@ -48,33 +48,41 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  const req = event.request;
   const url = new URL(req.url);
-  
-  // Only handle http/https GET requests
-  if (!['http:', 'https:'].includes(url.protocol)) return;
-  if (req.method !== 'GET') return;
 
-  // Only cache same-origin requests - completely ignore third-party domains
+  // Completely ignore third-party domains (Stripe, Google Fonts, Supabase auth, etc.)
   if (url.origin !== self.location.origin) {
-    // Don't intercept Stripe, Google Fonts, Analytics, Supabase auth redirects, etc.
     return;
   }
 
+  // Only handle GET requests for same-origin
+  if (event.request.method !== 'GET') return;
+
   event.respondWith((async () => {
     try {
-      const net = await fetch(req);
-      // Cache a copy (best-effort) - only cache successful responses
-      if (net.ok && net.status < 400) {
-        const cache = await caches.open('app-cache');
-        cache.put(req, net.clone()).catch(() => {}); // Silent fail for cache errors
+      const response = await fetch(event.request);
+      
+      // Only cache successful responses
+      if (response.ok && response.status < 400) {
+        try {
+          const cache = await caches.open('app-cache');
+          cache.put(event.request, response.clone());
+        } catch (cacheError) {
+          // Silent fail for cache errors
+          console.warn('Cache storage failed:', cacheError);
+        }
       }
-      return net;
+      
+      return response;
     } catch {
-      // Try cache fallback
-      const cache = await caches.open('app-cache');
-      const hit = await cache.match(req);
-      if (hit) return hit;
+      // Network failed, try cache fallback
+      try {
+        const cache = await caches.open('app-cache');
+        const cachedResponse = await cache.match(event.request);
+        if (cachedResponse) return cachedResponse;
+      } catch (cacheError) {
+        console.warn('Cache retrieval failed:', cacheError);
+      }
       
       // Return network error instead of throwing
       return new Response('Service Unavailable', { 

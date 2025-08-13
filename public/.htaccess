@@ -19,7 +19,7 @@
     Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://maps.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://api.stripe.com https://maps.googleapis.com wss://*.supabase.co; frame-src https://js.stripe.com https://hooks.stripe.com;"
     
     # Permissions Policy
-    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=(self)"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(self), payment=*"
 </IfModule>
 
 # Block access to sensitive files

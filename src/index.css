@@ -95,10 +95,12 @@ body {
 /* Typography Utilities */
 .font-display {
   font-family: var(--font-display);
+  font-display: swap;
 }
 
 .font-body {
   font-family: var(--font-body);
+  font-display: swap;
 }
 
 /* Premium Components */

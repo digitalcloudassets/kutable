@@ -135,19 +135,12 @@ export const initializeProductionOptimizations = () => {
   if (import.meta.env.DEV) return;
 
   // Preload critical resources
-  const criticalAssets = [
-    '/Kutable%20Logo.png',
-    '/clean%20barbershop.jpeg',
-    '/clean%20barbers.webp'
-  ];
-
-  criticalAssets.forEach(asset => {
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.href = asset;
-    link.as = 'image';
-    document.head.appendChild(link);
-  });
+  // Only preload the logo which is used immediately in header
+  const link = document.createElement('link');
+  link.rel = 'preload';
+  link.href = '/Kutable%20Logo.png';
+  link.as = 'image';
+  document.head.appendChild(link);
 
   // Enable service worker for caching (if available)
   if ('serviceWorker' in navigator) {

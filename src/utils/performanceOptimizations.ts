@@ -13,22 +13,16 @@ export class PerformanceOptimizer {
 
   // Preload critical images
   preloadCriticalAssets() {
-    const criticalImages = [
-      '/Kutable%20Logo.png',
-      '/clean%20barbershop.jpeg',
-      '/clean%20barbers.webp'
-    ];
-
-    criticalImages.forEach(src => {
-      if (!this.preloadedImages.has(src)) {
-        const link = document.createElement('link');
-        link.rel = 'preload';
-        link.href = src;
-        link.as = 'image';
-        document.head.appendChild(link);
-        this.preloadedImages.add(src);
-      }
-    });
+    // Only preload truly critical images that are used immediately
+    const logoElement = document.querySelector('img[src*="Kutable"]');
+    if (!logoElement && !this.preloadedImages.has('/Kutable%20Logo.png')) {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.href = '/Kutable%20Logo.png';
+      link.as = 'image';
+      document.head.appendChild(link);
+      this.preloadedImages.add('/Kutable%20Logo.png');
+    }
   }
 
   // Lazy load images with intersection observer
@@ -61,25 +55,9 @@ export class PerformanceOptimizer {
 
   // Optimize font loading
   optimizeFontLoading() {
-    // Use font-display: swap for better performance
-    const fontFaces = [
-      new FontFace('Inter', 'url(https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2)', {
-        display: 'swap',
-        weight: '400'
-      }),
-      new FontFace('Manrope', 'url(https://fonts.gstatic.com/s/manrope/v14/xn7_YHE41ni1AdIRqAuZuw1Bx9mbZk59FO_F.woff2)', {
-        display: 'swap',
-        weight: '600'
-      })
-    ];
-
-    fontFaces.forEach(fontFace => {
-      fontFace.load().then(loadedFont => {
-        document.fonts.add(loadedFont);
-      }).catch(error => {
-        console.warn('Font loading failed:', error);
-      });
-    });
+    // Fonts are loaded via Google Fonts stylesheet in index.html
+    // No manual font loading needed - just ensure font-display: swap is set in CSS
+    console.log('Fonts loading via Google Fonts stylesheet');
   }
 
   // Bundle optimization hints
