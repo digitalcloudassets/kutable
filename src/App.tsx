@@ -6,11 +6,8 @@ import {
   useLocation
 } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import {
-  setupGlobalErrorHandling,
-  initializeAnalytics,
-  trackPageView
-} from './utils';
+import { setupGlobalErrorHandling } from './utils/errorHandling';
+import { initializeAnalytics, trackPageView } from './utils/analytics';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import {
