@@ -630,7 +630,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
               </div>
               
               {/* Business Stats - horizontal under paragraph */}
-              <div className="grid grid-cols-3 gap-4 mt-6">
+              <div className="grid grid-cols-2 gap-4 mt-6">
                 <div className="text-center group">
                   <div className="bg-gradient-to-br from-yellow-500 to-orange-500 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-premium group-hover:scale-110 transition-transform duration-300">
                     <Star className="h-6 w-6 text-white" />
@@ -644,13 +644,6 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                   </div>
                   <p className="text-2xl font-bold text-gray-900 mb-1">{barber.total_reviews}</p>
                   <p className="text-gray-600 font-medium text-sm">Total Reviews</p>
-                </div>
-                <div className="text-center group">
-                  <div className="bg-gradient-to-br from-accent-500 to-accent-600 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-premium group-hover:scale-110 transition-transform duration-300">
-                    <CheckCircle className="h-6 w-6 text-white" />
-                  </div>
-                  <p className="text-2xl font-bold text-gray-900 mb-1">{barber.is_claimed ? 'Claimed' : 'Unclaimed'}</p>
-                  <p className="text-gray-600 font-medium text-sm">Profile Status</p>
                 </div>
               </div>
             </div>
