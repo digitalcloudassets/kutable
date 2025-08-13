@@ -11,8 +11,8 @@ import {
   CheckCircle,
   Users,
   Scissors,
-  Crown,
-  Building
+  Building,
+  Crown
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import GoogleMap from '../components/GoogleMap';
@@ -56,33 +56,49 @@ const BarberProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (slug) {
+      fetchBarberData();
+    }
+  }, [slug]);
+
   const parseCSV = (csvText: string) => {
     const lines = csvText.split('\n');
-    const headers = lines[0].split(',').map(h => h.trim());
-    return lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim());
-      const obj: any = {};
-      headers.forEach((header, index) => {
-        obj[header] = values[index] || '';
-      });
-      return obj;
-    });
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    const data = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      if (lines[i].trim()) {
+        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+        const row: any = {};
+        headers.forEach((header, index) => {
+          row[header] = values[index] || '';
+        });
+        data.push(row);
+      }
+    }
+    
+    return data;
   };
 
   const generateSlug = (businessName: string, index: number) => {
-    return businessName.toLowerCase()
+    return businessName
+      .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
-      .trim() + '-' + (index + 1);
+      .trim()
+      + '-' + (index + 1);
   };
 
   const generateCSVSlug = (businessName: string, index: number) => {
-    return businessName.toLowerCase()
+    return businessName
+      .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
-      .trim() + '-' + (index + 1);
+      .trim()
+      + '-' + (index + 1);
   };
 
   const isReservedSlug = (slug: string) => {
@@ -92,18 +108,14 @@ const BarberProfilePage: React.FC = () => {
 
   const handleClaimClick = (barber: BarberProfile) => {
     setClaimingId(barber.id || barber.slug);
-    // Handle claim logic here
+    // Add claim logic here
   };
-
-  useEffect(() => {
-    fetchBarberData();
-  }, [slug]);
 
   const fetchBarberData = async () => {
     try {
       setLoading(true);
       
-      // Try to fetch from Supabase first
+      // First try to fetch from Supabase
       const { data: supabaseBarber, error } = await supabase
         .from('barber_profiles')
         .select('*')
@@ -112,6 +124,9 @@ const BarberProfilePage: React.FC = () => {
 
       if (supabaseBarber && !error) {
         setBarber(supabaseBarber);
+        if (supabaseBarber.is_claimed) {
+          fetchServices(supabaseBarber.id);
+        }
         return;
       }
 
@@ -165,6 +180,26 @@ const BarberProfilePage: React.FC = () => {
       setBarber(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchServices = async (barberId: string) => {
+    try {
+      setLoadingServices(true);
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('barber_id', barberId)
+        .eq('is_active', true)
+        .order('price', { ascending: true });
+
+      if (error) throw error;
+      setServices(data || []);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      setServices([]);
+    } finally {
+      setLoadingServices(false);
     }
   };
 
@@ -362,7 +397,7 @@ const BarberProfilePage: React.FC = () => {
                 </div>
                 <h3 className="text-2xl font-display font-bold text-gray-900">Services & Pricing</h3>
               </div>
-              {barber.is_active ? (
+              {barber.is_claimed ? (
                 loadingServices ? (
                   <div className="text-center py-12">
                     <div className="relative mb-6">
@@ -413,15 +448,14 @@ const BarberProfilePage: React.FC = () => {
                     <div className="bg-gray-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
                       <Calendar className="h-10 w-10 text-gray-400" />
                     </div>
-                    <h4 className="text-xl font-display font-bold text-gray-900 mb-3">Services Not Available</h4>
-                    <p className="text-gray-600 mb-6">This barber hasn't set up online booking yet. Contact them directly for appointments.</p>
-                    {/* TODO: Invite-based onboarding - Show contact form or invitation request */}
+                    <h4 className="text-xl font-display font-bold text-gray-900 mb-2">No services available</h4>
+                    <p className="text-gray-600">Please contact the business directly for service information.</p>
                   </div>
                 )
               ) : (
                 <div className="text-center py-12">
-                  <div className="bg-gray-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                    <Calendar className="h-10 w-10 text-gray-400" />
+                  <div className="bg-yellow-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <Calendar className="h-10 w-10 text-yellow-600" />
                   </div>
                   <h4 className="text-xl font-display font-bold text-gray-900 mb-3">Services Coming Soon</h4>
                   <p className="text-gray-600 mb-6">Services and pricing will be available after this profile is claimed.</p>
@@ -513,7 +547,47 @@ const BarberProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {barber.is_active && (
+            {/* Claim Your Business */}
+            {!barber.is_claimed && !isReservedSlug(barber.slug) && (
+              <div className="card-premium p-8 bg-gradient-to-br from-accent-50 to-primary-50 border border-accent-200">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="bg-accent-500 p-2 rounded-xl">
+                    <Crown className="h-5 w-5 text-white" />
+                  </div>
+                  <h3 className="text-xl font-display font-bold text-gray-900">Is This Your Business?</h3>
+                </div>
+                <p className="text-gray-700 mb-6 leading-relaxed">
+                  Claim this profile to start accepting online bookings, manage your services, and build your reputation on Kutable.
+                </p>
+                <Link
+                  to={`/claim/${barber.id}`}
+                  className="btn-accent w-full justify-center mb-4"
+                >
+                  <Crown className="h-5 w-5" />
+                  <span>Claim This Listing</span>
+                </Link>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-center space-x-2 text-emerald-700">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Free to claim</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-emerald-700">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Start accepting bookings</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-emerald-700">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Manage services & pricing</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-emerald-700">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Build customer reviews</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {barber.is_claimed && (
               <div className="card-premium p-8 bg-gradient-to-br from-emerald-50 to-primary-50 border border-emerald-200">
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="bg-emerald-500 p-2 rounded-xl">
@@ -531,21 +605,6 @@ const BarberProfilePage: React.FC = () => {
                   <Calendar className="h-5 w-5" />
                   <span>Book Appointment</span>
                 </Link>
-              </div>
-            )}
-
-            {/* TODO: Invite-based onboarding - Contact or invitation request form */}
-            {!barber.is_active && (
-              <div className="card-premium p-8 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="bg-gray-400 p-2 rounded-xl">
-                    <Building className="h-5 w-5 text-white" />
-                  </div>
-                  <h3 className="text-xl font-display font-bold text-gray-900">Business Profile</h3>
-                </div>
-                <p className="text-gray-700 mb-6 leading-relaxed">
-                  This business profile is not yet set up for online booking. Contact them directly for appointments.
-                </p>
               </div>
             )}
 
