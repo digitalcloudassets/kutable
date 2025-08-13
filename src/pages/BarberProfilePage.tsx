@@ -474,6 +474,25 @@ const BusinessHours: React.FC<BusinessHoursProps> = ({ barberId }) => {
 
   const fetchAvailability = async () => {
     try {
+      // Check if Supabase is properly connected before making requests
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      const isSupabaseConnected = supabaseUrl && 
+        supabaseKey && 
+        supabaseUrl !== 'https://your-project.supabase.co' &&
+        supabaseKey !== 'your_supabase_anon_key_here' &&
+        !supabaseUrl.includes('placeholder') &&
+        supabaseUrl.startsWith('https://') &&
+        supabaseUrl.includes('.supabase.co');
+
+      if (!isSupabaseConnected) {
+        console.warn('Supabase not connected - using default hours');
+        setAvailability([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('availability')
         .select('*')
@@ -484,6 +503,8 @@ const BusinessHours: React.FC<BusinessHoursProps> = ({ barberId }) => {
       setAvailability(data || []);
     } catch (error) {
       console.error('Error fetching availability:', error);
+      // Gracefully handle fetch errors by showing default hours
+      setAvailability([]);
     } finally {
       setLoading(false);
     }
