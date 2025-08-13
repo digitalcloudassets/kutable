@@ -242,17 +242,37 @@ const BarberListPage: React.FC = () => {
                   
                   {/* City Selector */}
                   <div className="relative basis-[200px] sm:basis-[240px] lg:basis-64 shrink-0">
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 sm:h-6 sm:w-6 text-gray-400 sm:left-4" />
-                    <select
-                      value={selectedCity}
-                      onChange={(e) => setSelectedCity(e.target.value)}
-                      className="w-full pl-10 sm:pl-14 pr-10 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-gray-50 font-medium min-h-[56px] text-gray-900"
+                    {/* input shell that holds icon + select inline */}
+                    <div className="flex items-center gap-2 pl-3 pr-10 py-4 border border-gray-200 rounded-xl bg-gray-50 focus-within:ring-2 focus-within:ring-primary-500 transition-all duration-200 min-h-[56px]">
+                      <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 shrink-0" />
+                      <select
+                        aria-label="Filter by city"
+                        value={selectedCity}
+                        onChange={(e) => setSelectedCity(e.target.value)}
+                        className="w-full bg-transparent outline-none appearance-none text-gray-900 font-medium"
+                      >
+                        <option value="">All Cities</option>
+                        {cities.map((city) => (
+                          <option key={city} value={city}>
+                            {city}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* caret */}
+                    <svg
+                      className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
                     >
-                      <option value="">All Cities</option>
-                      {cities.map(city => (
-                        <option key={city} value={city}>{city}</option>
-                      ))}
-                    </select>
+                      <path
+                        fillRule="evenodd"
+                        d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
                   </div>
                   
                   {/* Filters Button */}
