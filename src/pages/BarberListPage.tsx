@@ -46,6 +46,37 @@ const BarberListPage: React.FC = () => {
   ]);
   const PROFILES_PER_PAGE = 24;
 
+  // Add claim handler  
+  const handleClaimClick = async (barberProfile: BarberProfile) => {
+    try {
+      const payload = {
+        slug: barberProfile.slug,
+        business_name: barberProfile.business_name,
+        owner_name: barberProfile.owner_name,
+        phone: barberProfile.phone,
+        email: barberProfile.email,
+        address: barberProfile.address,
+        city: barberProfile.city,
+        state: barberProfile.state,
+        zip_code: barberProfile.zip_code,
+        import_source: barberProfile.id?.startsWith?.('csv-') ? 'csv' : 'db',
+        import_external_id: barberProfile.id?.startsWith?.('csv-') ? barberProfile.id : null,
+      };
+
+      const { data, error } = await supabase.functions.invoke('claim-start', { body: payload });
+      if (error) throw error;
+      if (!data?.success || !data?.claimUrl) throw new Error(data?.error || 'Failed to start claim flow');
+
+      console.log('Claim flow started, redirecting to:', data.claimUrl);
+      window.location.href = data.claimUrl; // Navigate to /claim/:token
+    } catch (e: any) {
+      // Show the real server message if present  
+      const serverMsg = e?.context?.error || e?.context?.response || e?.message || 'Could not start claim';
+      console.error('Claim start error:', serverMsg, e);
+      alert(`Error: ${serverMsg}`);
+    }
+  };
+
   // Enhanced CSV parsing function
   const parseCSVLine = (line: string): string[] => {
     const values: string[] = [];
@@ -643,7 +674,10 @@ const BarberListPage: React.FC = () => {
                       {!barber.is_claimed && !isReservedSlug(barber.slug) && (
                         <Link
                           to={`/claim/${barber.id}`}
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleClaimClick(barber);
+                          }}
                           className="bg-accent-500 text-white text-xs px-3 py-2 rounded-full font-semibold hover:bg-accent-600 transition-colors shadow-lg"
                         >
                           Claim

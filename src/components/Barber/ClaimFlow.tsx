@@ -351,28 +351,23 @@ const ClaimFlow: React.FC = () => {
         import_external_id: isCSVProfile ? barberId : null,
       };
 
-      const { data, error: claimError } = await supabase.functions.invoke('claim-start', {
+      const { data, error } = await supabase.functions.invoke('claim-start', {
         body: payload
       });
 
-      if (claimError) {
-        const errorMessage = claimError?.context?.error || claimError?.message || 'Failed to start claim process';
-        throw new Error(errorMessage);
-      }
-
-      if (!data?.success || !data?.claimUrl) {
-        throw new Error(data?.error || 'Failed to start claim process');
-      }
+      if (error) throw error;
+      if (!data?.success || !data?.claimUrl) throw new Error(data?.error || 'Failed to start claim process');
 
       NotificationManager.success('Opening claim flow...');
-      
-      // Redirect to the claim token page
+      console.log('Claim flow started, redirecting to:', data.claimUrl);
       window.location.href = data.claimUrl;
       
     } catch (error: any) {
+      // Show the real server message if present
+      const serverMsg = error?.context?.error || error?.context?.response || error?.message || 'Could not start claim';
       console.error('Error starting claim:', error);
-      setError(error.message);
-      NotificationManager.error('Failed to start claim process. Please try again.');
+      setError(serverMsg);
+      NotificationManager.error(serverMsg);
     } finally {
       setClaiming(false);
     }
