@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { 
@@ -13,7 +13,8 @@ import {
   Phone,
   Mail,
   MapPin,
-  Save
+  Save,
+  FileText
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -21,7 +22,7 @@ import { NotificationManager } from '../utils/notifications';
 
 const ClaimPage: React.FC = () => {
   const { token } = useParams<{ token: string }>();
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
@@ -29,99 +30,88 @@ const ClaimPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // 1) Force authentication - redirect to login if not authenticated
+  // Load prefill data without requiring authentication
   useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        // Save where to return to after login
-        sessionStorage.setItem('postLoginRedirect', `/claim/${token}`);
-        navigate('/login', { replace: true });
-        return;
-      }
-      
-      // User is authenticated, proceed with claim setup
-      loadClaimData();
-    }
-  }, [token, user, authLoading, navigate]);
+    const loadClaimData = async () => {
+      if (!token) return;
 
-  // 2) Load prefill data via claim-peek, with sessionStorage fallback
-  const loadClaimData = async () => {
-    if (!token) return;
-
-    try {
-      setLoading(true);
-      
-      // Try to get claim data from server first
-      const { data, error } = await supabase.functions.invoke('claim-peek', {
-        body: { token }
-      });
-
-      if (!error && data?.success && data?.profile) {
-        console.log('Loaded claim data from server:', data.profile);
-        setPrefill({
-          business_name: data.profile.business_name || '',
-          owner_name: data.profile.owner_name || '',
-          phone: data.profile.phone || '',
-          email: data.profile.email || '',
-          address: data.profile.address || '',
-          city: data.profile.city || '',
-          state: data.profile.state || '',
-          zip_code: data.profile.zip_code || '',
-          bio: data.profile.bio || '',
-          slug: data.profile.slug || ''
+      try {
+        setLoading(true);
+        
+        // Try to get claim data from server first
+        const { data, error } = await supabase.functions.invoke('claim-peek', {
+          body: { token }
         });
-      } else {
+
+        if (!error && data?.success && data?.profile) {
+          console.log('Loaded claim data from server:', data.profile);
+          setPrefill({
+            business_name: data.profile.business_name || '',
+            owner_name: data.profile.owner_name || '',
+            phone: data.profile.phone || '',
+            email: data.profile.email || '',
+            address: data.profile.address || '',
+            city: data.profile.city || '',
+            state: data.profile.state || '',
+            zip_code: data.profile.zip_code || '',
+            bio: data.profile.bio || '',
+            slug: data.profile.slug || ''
+          });
+        } else {
+          // Fallback to sessionStorage
+          const localPayload = sessionStorage.getItem('claim:payload');
+          if (localPayload) {
+            console.log('Using claim data from sessionStorage');
+            const parsed = JSON.parse(localPayload);
+            setPrefill({
+              business_name: parsed.business_name || '',
+              owner_name: parsed.owner_name || '',
+              phone: parsed.phone || '',
+              email: parsed.email || '',
+              address: parsed.address || '',
+              city: parsed.city || '',
+              state: parsed.state || '',
+              zip_code: parsed.zip_code || '',
+              bio: parsed.bio || '',
+              slug: parsed.slug || ''
+            });
+          }
+        }
+      } catch (error) {
+        console.warn('Error loading claim data from server, trying sessionStorage:', error);
+        
         // Fallback to sessionStorage
         const localPayload = sessionStorage.getItem('claim:payload');
         if (localPayload) {
-          console.log('Using claim data from sessionStorage');
-          const parsed = JSON.parse(localPayload);
-          setPrefill({
-            business_name: parsed.business_name || '',
-            owner_name: parsed.owner_name || '',
-            phone: parsed.phone || '',
-            email: parsed.email || '',
-            address: parsed.address || '',
-            city: parsed.city || '',
-            state: parsed.state || '',
-            zip_code: parsed.zip_code || '',
-            bio: parsed.bio || '',
-            slug: parsed.slug || ''
-          });
+          try {
+            const parsed = JSON.parse(localPayload);
+            setPrefill({
+              business_name: parsed.business_name || '',
+              owner_name: parsed.owner_name || '',
+              phone: parsed.phone || '',
+              email: parsed.email || '',
+              address: parsed.address || '',
+              city: parsed.city || '',
+              state: parsed.state || '',
+              zip_code: parsed.zip_code || '',
+              bio: parsed.bio || '',
+              slug: parsed.slug || ''
+            });
+          } catch (parseError) {
+            console.error('Error parsing sessionStorage claim data:', parseError);
+          }
         }
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.warn('Error loading claim data from server, trying sessionStorage:', error);
-      
-      // Fallback to sessionStorage
-      const localPayload = sessionStorage.getItem('claim:payload');
-      if (localPayload) {
-        try {
-          const parsed = JSON.parse(localPayload);
-          setPrefill({
-            business_name: parsed.business_name || '',
-            owner_name: parsed.owner_name || '',
-            phone: parsed.phone || '',
-            email: parsed.email || '',
-            address: parsed.address || '',
-            city: parsed.city || '',
-            state: parsed.state || '',
-            zip_code: parsed.zip_code || '',
-            bio: parsed.bio || '',
-            slug: parsed.slug || ''
-          });
-        } catch (parseError) {
-          console.error('Error parsing sessionStorage claim data:', parseError);
-        }
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    loadClaimData();
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user || !token) return;
+    if (!token) return;
 
     setClaiming(true);
     setError(null);
@@ -139,19 +129,24 @@ const ClaimPage: React.FC = () => {
         zip_code: formData.get('zip_code')?.toString() || prefill.zip_code,
       };
 
-      // Double-check authentication before proceeding
+      // Get current session (should exist from magic link)
       const { data: { session } } = await supabase.auth.getSession();
+      
       if (!session) {
-        sessionStorage.setItem('postLoginRedirect', `/claim/${token}`);
-        navigate('/login', { replace: true });
-        return;
+        // If no session, try to complete with email
+        const email = updates.email || prefill.email;
+        if (!email) {
+          setError('Authentication required. Please try claiming again.');
+          return;
+        }
       }
 
       // Complete the claim
       const { data, error: claimError } = await supabase.functions.invoke('claim-complete', {
         body: { 
           token, 
-          user_id: session.user.id 
+          user_id: session?.user?.id || null,
+          email: updates.email || prefill.email
         }
       });
 
@@ -202,23 +197,6 @@ const ClaimPage: React.FC = () => {
       setClaiming(false);
     }
   };
-
-  // Don't render anything if not authenticated (will redirect)
-  if (authLoading || !user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center page-container">
-        <div className="text-center space-y-4">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-100 border-t-primary-500 mx-auto"></div>
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-accent-500 opacity-20 blur-lg"></div>
-          </div>
-          <p className="text-gray-600 font-medium">
-            {authLoading ? 'Checking authentication...' : 'Redirecting to sign in...'}
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
@@ -372,6 +350,7 @@ const ClaimPage: React.FC = () => {
                     type="text"
                     defaultValue={prefill.business_name || ''}
                     required
+                    maxLength={100}
                     className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                     placeholder="Your business name"
                   />
@@ -389,6 +368,7 @@ const ClaimPage: React.FC = () => {
                     type="text"
                     defaultValue={prefill.owner_name || ''}
                     required
+                    maxLength={100}
                     className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                     placeholder="Your full name"
                   />
@@ -405,6 +385,7 @@ const ClaimPage: React.FC = () => {
                     name="phone"
                     type="tel"
                     defaultValue={prefill.phone || ''}
+                    maxLength={20}
                     className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                     placeholder="(555) 123-4567"
                   />
@@ -421,6 +402,7 @@ const ClaimPage: React.FC = () => {
                     name="email"
                     type="email"
                     defaultValue={prefill.email || user?.email || ''}
+                    maxLength={254}
                     className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                     placeholder="email@example.com"
                   />
@@ -438,6 +420,7 @@ const ClaimPage: React.FC = () => {
                   name="address"
                   type="text"
                   defaultValue={prefill.address || ''}
+                  maxLength={200}
                   className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                   placeholder="123 Main Street"
                 />
@@ -451,6 +434,7 @@ const ClaimPage: React.FC = () => {
                   name="city"
                   type="text"
                   defaultValue={prefill.city || ''}
+                  maxLength={50}
                   className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                   placeholder="City"
                 />
@@ -461,6 +445,7 @@ const ClaimPage: React.FC = () => {
                   name="state"
                   type="text"
                   defaultValue={prefill.state || ''}
+                  maxLength={50}
                   className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                   placeholder="State"
                 />
@@ -471,6 +456,7 @@ const ClaimPage: React.FC = () => {
                   name="zip_code"
                   type="text"
                   defaultValue={prefill.zip_code || ''}
+                  maxLength={10}
                   className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                   placeholder="12345"
                 />
@@ -496,6 +482,22 @@ const ClaimPage: React.FC = () => {
                   </>
                 )}
               </button>
+            </div>
+
+            {/* Legal Notice */}
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-2xl p-6">
+              <div className="flex items-start space-x-3">
+                <div className="bg-gray-500 p-2 rounded-xl">
+                  <FileText className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h5 className="font-semibold text-gray-900 mb-2">Verification Notice</h5>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    By claiming this profile, you confirm that you are the owner or authorized representative 
+                    of this business. All claims are subject to verification to maintain platform integrity.
+                  </p>
+                </div>
+              </div>
             </div>
           </form>
         </div>

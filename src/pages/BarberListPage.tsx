@@ -53,7 +53,7 @@ const BarberListPage: React.FC = () => {
     setClaimingId(barberProfile.id || barberProfile.slug || null);
     
     try {
-      // Stash payload for claim page fallback
+      // Stash payload for claim page prefill fallback
       const payload = {
         slug: barberProfile.slug,
         business_name: barberProfile.business_name,
@@ -66,6 +66,7 @@ const BarberListPage: React.FC = () => {
         zip_code: barberProfile.zip_code,
         import_source: barberProfile.id?.startsWith?.('csv-') ? 'csv' : 'db',
         import_external_id: barberProfile.id?.startsWith?.('csv-') ? barberProfile.id : null,
+        barberId: !barberProfile.id?.startsWith?.('csv-') ? barberProfile.id : undefined
       };
 
       sessionStorage.setItem('claim:payload', JSON.stringify(payload));
@@ -74,8 +75,22 @@ const BarberListPage: React.FC = () => {
       if (error) throw error;
       if (!data?.success || !data?.claimUrl) throw new Error(data?.error || 'Failed to start claim flow');
 
+      // If needs email, show error for now (could enhance with modal)
+      if (data.needsEmail) {
+        NotificationManager.error('Email address required to claim this profile. Please contact support.');
+        return;
+      }
+
+      // If magic link available, open it immediately
+      if (data.action_link) {
+        console.log('Opening magic link for instant authentication...');
+        window.location.href = data.action_link;
+        return;
+      }
+
+      // Fallback to direct claim URL
       console.log('Claim flow started, redirecting to:', data.claimUrl);
-      window.location.href = data.claimUrl; // Navigate to /claim/:token
+      window.location.href = data.claimUrl;
     } catch (e: any) {
       // Show the real server message if present  
       const serverMsg = e?.context?.error || e?.context?.response || e?.message || 'Could not start claim';

@@ -55,22 +55,27 @@ self.addEventListener('fetch', (event) => {
   if (!['http:', 'https:'].includes(url.protocol)) return;
   if (req.method !== 'GET') return;
 
-  // Only cache same-origin requests - ignore third-party domains like Stripe, Google Fonts, etc.
+  // Only cache same-origin requests - completely ignore third-party domains
   if (url.origin !== self.location.origin) {
-    return; // Let browser handle third-party requests naturally
+    // Don't intercept Stripe, Google Fonts, Analytics, etc.
+    return;
   }
 
   event.respondWith((async () => {
     try {
       const net = await fetch(req);
       // Cache a copy (best-effort)
-      const cache = await caches.open('app-cache');
-      cache.put(req, net.clone()).catch(() => {}); // Silent fail for cache errors
+      if (net.ok) {
+        const cache = await caches.open('app-cache');
+        cache.put(req, net.clone()).catch(() => {}); // Silent fail for cache errors
+      }
       return net;
     } catch {
+      // Try cache fallback
       const cache = await caches.open('app-cache');
       const hit = await cache.match(req);
       if (hit) return hit;
+      
       // Return network error instead of throwing
       return new Response('Service Unavailable', { 
         status: 503, 

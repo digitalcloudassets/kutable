@@ -338,7 +338,7 @@ const ClaimFlow: React.FC = () => {
     setError('');
 
     try {
-      // Stash payload for potential retry
+      // Stash payload for claim page prefill
       const payload = {
         slug: barber.slug,
         business_name: claimData.businessName || barber.business_name,
@@ -351,6 +351,7 @@ const ClaimFlow: React.FC = () => {
         zip_code: claimData.zipCode || barber.zip_code,
         import_source: isCSVProfile ? 'csv' : 'db',
         import_external_id: isCSVProfile ? barberId : null,
+        barberId: !isCSVProfile ? barber.id : undefined
       };
 
       sessionStorage.setItem('claim:payload', JSON.stringify(payload));
@@ -362,6 +363,21 @@ const ClaimFlow: React.FC = () => {
       if (error) throw error;
       if (!data?.success || !data?.claimUrl) throw new Error(data?.error || 'Failed to start claim process');
 
+      // If needs email, show error (could enhance with modal)
+      if (data.needsEmail) {
+        setError('Email address required to claim this profile. Please add an email address and try again.');
+        return;
+      }
+
+      // If magic link available, open it immediately
+      if (data.action_link) {
+        NotificationManager.success('Creating your account and opening claim flow...');
+        console.log('Opening magic link for instant authentication...');
+        window.location.href = data.action_link;
+        return;
+      }
+
+      // Fallback to direct claim URL
       NotificationManager.success('Opening claim flow...');
       console.log('Claim flow started, redirecting to:', data.claimUrl);
       window.location.href = data.claimUrl;

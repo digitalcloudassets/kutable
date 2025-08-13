@@ -26,10 +26,13 @@ Deno.serve(async (req) => {
       return json(400, { success: false, error: 'Invalid JSON body' }); 
     }
     
-    const { token, user_id } = body || {};
+    const { token, user_id, email } = body || {};
     
     if (!token || !user_id) {
-      return json(400, { success: false, error: 'Missing token or user_id' });
+      // Allow fallback with email if user_id missing
+      if (!token || (!user_id && !email)) {
+        return json(400, { success: false, error: 'Missing token and user identification' });
+      }
     }
 
     // 1) Validate token
@@ -51,6 +54,21 @@ Deno.serve(async (req) => {
       return json(400, { success: false, error: 'Token expired' });
     }
 
+    let finalUserId = user_id;
+    
+    // If no user_id but we have email, try to find the user
+    if (!finalUserId && email) {
+      const { data: usersList } = await db.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      const foundUser = usersList?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+      if (foundUser) {
+        finalUserId = foundUser.id;
+      }
+    }
+
+    if (!finalUserId) {
+      return json(400, { success: false, error: 'Could not identify user for claim' });
+    }
+
     // 2) Check if profile is already claimed by someone else
     const { data: existingProfile } = await db
       .from('barber_profiles')
@@ -62,7 +80,7 @@ Deno.serve(async (req) => {
       return json(404, { success: false, error: 'Profile not found' });
     }
 
-    if (existingProfile.is_claimed && existingProfile.user_id !== user_id) {
+    if (existingProfile.is_claimed && existingProfile.user_id !== finalUserId) {
       return json(409, { success: false, error: 'Profile already claimed by another user' });
     }
 
@@ -71,7 +89,7 @@ Deno.serve(async (req) => {
     const { error: updateErr } = await db
       .from('barber_profiles')
       .update({ 
-        user_id, 
+        user_id: finalUserId, 
         is_claimed: true, 
         updated_at: now 
       })
@@ -100,7 +118,7 @@ Deno.serve(async (req) => {
 
     console.log('Claim completed successfully:', {
       barberId: tokenData.barber_id,
-      userId: user_id,
+      userId: finalUserId,
       businessName: profile?.business_name,
       slug: profile?.slug
     });
