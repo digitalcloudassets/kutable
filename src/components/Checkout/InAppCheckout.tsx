@@ -175,36 +175,7 @@ export default function InAppCheckout({
     });
   }, []);
 
-  // Check if Stripe is properly configured
-  if (!stripePromise && !error) {
-    return (
-      <div className="text-center py-8">
-        <div className="relative mb-6">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-100 border-t-primary-500 mx-auto"></div>
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-accent-500 opacity-20 blur-lg"></div>
-        </div>
-        <p className="text-gray-600 font-medium">Initializing payment system...</p>
-      </div>
-    );
-  }
-
-  if (error || !stripePromise) {
-    return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-        <AlertCircle className="h-8 w-8 text-yellow-600 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-yellow-800 mb-2">Payment System Error</h3>
-        <p className="text-yellow-700 mb-4">
-          {error || 'Please add your Stripe publishable key to the environment variables to enable payments.'}
-        </p>
-        <div className="bg-yellow-100 rounded-lg p-4 text-left">
-          <p className="text-yellow-800 text-sm font-mono">
-            VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_key_here
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+  // Initialize payment intent
   useEffect(() => {
     const initializePayment = async () => {
       try {
@@ -248,6 +219,39 @@ export default function InAppCheckout({
 
     initializePayment();
   }, [barberId, amount, currency, customerEmail, JSON.stringify(metadata)]);
+
+  // Check if Stripe is properly configured
+  if (!stripePromise && !error) {
+    return (
+      <div className="text-center py-8">
+        <div className="relative mb-6">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-100 border-t-primary-500 mx-auto"></div>
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-accent-500 opacity-20 blur-lg"></div>
+        </div>
+        <p className="text-gray-600 font-medium">Initializing payment system...</p>
+      </div>
+    );
+  }
+
+
+
+
+  if (error || !stripePromise) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+        <AlertCircle className="h-8 w-8 text-yellow-600 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-yellow-800 mb-2">Payment System Error</h3>
+        <p className="text-yellow-700 mb-4">
+          {error || 'Please add your Stripe publishable key to the environment variables to enable payments.'}
+        </p>
+        <div className="bg-yellow-100 rounded-lg p-4 text-left">
+          <p className="text-yellow-800 text-sm font-mono">
+            VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_key_here
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (error && !stripePromise) {
     return (
