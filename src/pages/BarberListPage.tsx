@@ -683,14 +683,14 @@ const BarberListPage: React.FC = () => {
                       {!barber.is_claimed && !isReservedSlug(barber.slug) && (
                         <Link
                           to={`/claim/${barber.id}`}
-                          disabled={claiming}
+                          disabled={claimingId === (barber.id || barber.slug)}
                           onClick={(e) => {
                             e.preventDefault();
                             handleClaimClick(barber);
                           }}
-                          className="bg-accent-500 text-white text-xs px-3 py-2 rounded-full font-semibold hover:bg-accent-600 transition-colors shadow-lg disabled:opacity-50"
+                          className="bg-accent-500 text-white text-xs px-3 py-2 rounded-full font-semibold hover:bg-accent-600 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {claiming ? 'Opening…' : 'Claim'}
+                          {claimingId === (barber.id || barber.slug) ? 'Opening…' : 'Claim'}
                         </Link>
                       )}
                       {barber.is_claimed && (

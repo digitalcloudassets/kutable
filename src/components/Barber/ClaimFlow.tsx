@@ -44,6 +44,7 @@ const ClaimFlow: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [claiming, setClaiming] = useState(false);
   const [claimData, setClaimData] = useState({
     businessName: '',
     ownerName: '',
