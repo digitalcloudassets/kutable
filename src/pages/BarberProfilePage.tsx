@@ -56,10 +56,13 @@ const BarberProfilePage: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [claiming, setClaiming] = useState(false);
+  const [claimingId, setClaimingId] = useState<string | null>(null);
 
   // Add claim handler
   const handleClaimClick = async (barberProfile: BarberProfile) => {
+    if (claimingId) return; // prevent spam while one is in-flight
+    setClaimingId(barberProfile.id || barberProfile.slug);
+    
     try {
       const payload = {
         slug: barberProfile.slug,
@@ -75,6 +78,8 @@ const BarberProfilePage: React.FC = () => {
         import_external_id: barberProfile.id?.startsWith?.('csv-') ? barberProfile.id : null,
       };
 
+      sessionStorage.setItem('claim:payload', JSON.stringify(payload));
+
       const { data, error } = await supabase.functions.invoke('claim-start', { body: payload });
       if (error) throw error;
       if (!data?.success || !data?.claimUrl) throw new Error(data?.error || 'Failed to start claim flow');
@@ -86,6 +91,8 @@ const BarberProfilePage: React.FC = () => {
       const serverMsg = e?.context?.error || e?.context?.response || e?.message || 'Could not start claim';
       console.error('Claim start error:', serverMsg, e);
       alert(`Error: ${serverMsg}`);
+    } finally {
+      setClaimingId(null);
     }
   };
 
