@@ -57,6 +57,37 @@ const BarberProfilePage: React.FC = () => {
   const [loadingServices, setLoadingServices] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Add claim handler
+  const handleClaimClick = async (barberProfile: BarberProfile) => {
+    try {
+      const payload = {
+        slug: barberProfile.slug,
+        business_name: barberProfile.business_name,
+        owner_name: barberProfile.owner_name,
+        phone: barberProfile.phone,
+        email: barberProfile.email,
+        address: barberProfile.address,
+        city: barberProfile.city,
+        state: barberProfile.state,
+        zip_code: barberProfile.zip_code,
+        import_source: barberProfile.id?.startsWith?.('csv-') ? 'csv' : 'db',
+        import_external_id: barberProfile.id?.startsWith?.('csv-') ? barberProfile.id : null,
+      };
+
+      const { data, error } = await supabase.functions.invoke('claim-start', { body: payload });
+      if (error) throw error;
+      if (!data?.success || !data?.claimUrl) throw new Error(data?.error || 'Failed to start claim flow');
+
+      console.log('Claim flow started, redirecting to:', data.claimUrl);
+      window.location.href = data.claimUrl; // Navigate to /claim/:token
+    } catch (e: any) {
+      // Show the real server message if present
+      const serverMsg = e?.context?.error || e?.context?.response || e?.message || 'Could not start claim';
+      console.error('Claim start error:', serverMsg, e);
+      alert(`Error: ${serverMsg}`);
+    }
+  };
+
   // Enhanced CSV parsing function
   const parseCSVLine = (line: string): string[] => {
     const values: string[] = [];
@@ -487,13 +518,16 @@ const BarberProfilePage: React.FC = () => {
         {/* Claim Button */}
         {!barber.is_claimed && !isReservedSlug(barber.slug) && (
           <div className="absolute top-6 right-6 z-20">
-            <Link
-              to={`/claim/${barber.id}`}
+            <button
               className="bg-gradient-to-r from-accent-500 to-accent-600 text-white px-6 py-3 rounded-2xl hover:from-accent-600 hover:to-accent-700 transition-all duration-200 font-semibold flex items-center space-x-2 shadow-premium-lg hover:scale-105 whitespace-nowrap"
+              onClick={(e) => {
+                e.preventDefault();
+                handleClaimClick(barber);
+              }}
             >
               <Crown className="h-5 w-5" />
               <span>Claim This Listing</span>
-            </Link>
+            </button>
           </div>
         )}
       </div>
