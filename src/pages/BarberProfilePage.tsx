@@ -392,36 +392,7 @@ const BarberProfilePage: React.FC = () => {
             {/* Business Hours */}
             <div className="card-premium p-8">
               <h3 className="text-xl font-display font-bold text-gray-900 mb-6">Business Hours</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="font-medium text-gray-700">Monday</span>
-                  <span className="text-gray-500 font-medium">Contact for hours</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium text-gray-700">Tuesday</span>
-                  <span className="text-gray-500 font-medium">Contact for hours</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium text-gray-700">Wednesday</span>
-                  <span className="text-gray-500 font-medium">Contact for hours</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium text-gray-700">Thursday</span>
-                  <span className="text-gray-500 font-medium">Contact for hours</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium text-gray-700">Friday</span>
-                  <span className="text-gray-500 font-medium">Contact for hours</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium text-gray-700">Saturday</span>
-                  <span className="text-gray-500 font-medium">Contact for hours</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium text-gray-700">Sunday</span>
-                  <span className="text-gray-500 font-medium">Contact for hours</span>
-                </div>
-              </div>
+              <BusinessHours barberId={barber.id} />
             </div>
 
             {/* Book Appointment */}
@@ -459,6 +430,95 @@ const BarberProfilePage: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+interface BusinessHoursProps {
+  barberId: string;
+}
+
+const BusinessHours: React.FC<BusinessHoursProps> = ({ barberId }) => {
+  const [availability, setAvailability] = useState<Array<{
+    day_of_week: number;
+    start_time: string;
+    end_time: string;
+    is_available: boolean;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAvailability();
+  }, [barberId]);
+
+  const fetchAvailability = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('availability')
+        .select('*')
+        .eq('barber_id', barberId)
+        .order('day_of_week');
+
+      if (error) throw error;
+      setAvailability(data || []);
+    } catch (error) {
+      console.error('Error fetching availability:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatTime = (timeString: string) => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return date.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {dayNames.map((day, index) => (
+          <div key={index} className="flex justify-between animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-20"></div>
+            <div className="h-4 bg-gray-200 rounded w-32"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {dayNames.map((dayName, dayIndex) => {
+        const dayAvailability = availability.find(a => a.day_of_week === dayIndex);
+        
+        return (
+          <div key={dayIndex} className="flex justify-between">
+            <span className="font-medium text-gray-700">{dayName}</span>
+            <span className="text-gray-500 font-medium">
+              {dayAvailability && dayAvailability.is_available
+                ? `${formatTime(dayAvailability.start_time)} - ${formatTime(dayAvailability.end_time)}`
+                : 'Closed'
+              }
+            </span>
+          </div>
+        );
+      })}
+      
+      {availability.length === 0 && (
+        <div className="text-center py-4">
+          <p className="text-gray-500 text-sm">
+            Business hours not yet configured
+          </p>
+        </div>
+      )}
     </div>
   );
 };

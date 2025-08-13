@@ -101,26 +101,39 @@ export const applySearchFilters = async (
   }
   
   // Apply price range filter (would need actual service data)
-  // This is a placeholder - in production, you'd query services table
   if (filters.priceMin > 0 || filters.priceMax < 200) {
-    // Mock implementation - in production, join with services table
-    filtered = filtered.filter(() => Math.random() > 0.1);
+    // Filter barbers based on their service price ranges
+    const { data: servicesData } = await supabase
+      .from('services')
+      .select('barber_id, price')
+      .eq('is_active', true);
+    
+    if (servicesData) {
+      const barberIdsWithPriceRange = servicesData
+        .filter(service => service.price >= filters.priceMin && service.price <= filters.priceMax)
+        .map(service => service.barber_id);
+      
+      filtered = filtered.filter(barber => barberIdsWithPriceRange.includes(barber.id));
+    }
   }
   
   // Apply service type filter 
   if (filters.serviceTypes.length > 0) {
-    // In production, this would query the services table
-    // For now, using a more intelligent mock based on business names
-    filtered = filtered.filter(barber => {
-      const businessName = barber.business_name.toLowerCase();
-      return filters.serviceTypes.some(serviceType => {
-        const type = serviceType.toLowerCase();
-        if (type === 'haircut') return true; // Most barbers do haircuts
-        if (type === 'beard trim' && businessName.includes('beard')) return true;
-        if (type === 'fade' && businessName.includes('fade')) return true;
-        return Math.random() > 0.6; // Some chance for other services
-      });
-    });
+    // Filter barbers based on actual services they offer
+    const { data: servicesData } = await supabase
+      .from('services')
+      .select('barber_id, name')
+      .eq('is_active', true);
+    
+    if (servicesData) {
+      const barberIdsWithServices = servicesData
+        .filter(service => filters.serviceTypes.some(filterType => 
+          service.name.toLowerCase().includes(filterType.toLowerCase())
+        ))
+        .map(service => service.barber_id);
+      
+      filtered = filtered.filter(barber => barberIdsWithServices.includes(barber.id));
+    }
   }
   
   // Apply availability filters
@@ -199,8 +212,15 @@ export const generateAvailableSlots = async (
 
 export const isBarberAvailableToday = async (barber: BarberProfile): Promise<boolean> => {
   try {
-    const availabilityManager = createAvailabilityManager(barber.id);
-    return await availabilityManager.isBarberAvailableOn(new Date());
+    const { data: availability } = await supabase
+      .from('availability')
+      .select('*')
+      .eq('barber_id', barber.id)
+      .eq('day_of_week', new Date().getDay())
+      .eq('is_available', true)
+      .maybeSingle();
+    
+    return !!availability;
   } catch (error) {
     console.error('Error checking today availability:', error);
     return false;
@@ -209,19 +229,13 @@ export const isBarberAvailableToday = async (barber: BarberProfile): Promise<boo
 
 export const isBarberAvailableThisWeek = async (barber: BarberProfile): Promise<boolean> => {
   try {
-    const availabilityManager = createAvailabilityManager(barber.id);
-    const today = new Date();
+    const { data: availability } = await supabase
+      .from('availability')
+      .select('*')
+      .eq('barber_id', barber.id)
+      .eq('is_available', true);
     
-    for (let i = 0; i < 7; i++) {
-      const checkDate = new Date(today);
-      checkDate.setDate(today.getDate() + i);
-      
-      if (await availabilityManager.isBarberAvailableOn(checkDate)) {
-        return true;
-      }
-    }
-    
-    return false;
+    return (availability?.length || 0) > 0;
   } catch (error) {
     console.error('Error checking week availability:', error);
     return false;
