@@ -7,30 +7,42 @@ export interface AdminKPIs {
   totalBookings: number;
   bookingsThisMonth: number;
   bookingsToday: number;
-  totalRevenue: number; // Platform revenue in dollars
+  totalRevenue: number; // Gross revenue in dollars
+  platformRevenue: number; // Platform fee revenue in dollars
   avgBookingValue: number;
-  topPerformingBarbers: Array<{
-    business_name: string;
-    owner_name: string;
-    booking_count: number;
-    total_revenue: number;
-    average_rating: number;
-  }>;
 }
 
 export async function fetchAdminKpis(): Promise<AdminKPIs> {
-  const { data, error } = await supabase.rpc('get_admin_kpis');
+  // Use new materialized view function for faster KPI retrieval
+  const { data, error } = await supabase.rpc('get_admin_kpis_v2');
   
   if (error) throw error;
   
+  // Convert from array to single object (materialized view returns single row)
+  const kpiData = Array.isArray(data) ? data[0] : data;
+  
   return {
-    totalBarbers: data.total_barbers,
-    claimedBarbers: data.claimed_barbers,
-    activeBarbers: data.active_barbers,
-    totalBookings: data.total_bookings,
-    bookingsThisMonth: data.bookings_this_month,
-    bookingsToday: data.bookings_today,
-    totalRevenue: (data.platform_cents ?? 0) / 100,   // platform revenue ($)
-    avgBookingValue: (data.avg_booking_cents ?? 0) / 100
+    totalBarbers: Number(kpiData?.total_barbers || 0),
+    claimedBarbers: Number(kpiData?.claimed_barbers || 0),
+    activeBarbers: Number(kpiData?.active_barbers || 0),
+    totalBookings: Number(kpiData?.total_bookings || 0),
+    bookingsThisMonth: Number(kpiData?.bookings_this_month || 0),
+    bookingsToday: Number(kpiData?.bookings_today || 0),
+    totalRevenue: (Number(kpiData?.gross_cents || 0)) / 100,        // Gross revenue in dollars
+    platformRevenue: (Number(kpiData?.platform_cents || 0)) / 100, // Platform revenue in dollars
+    avgBookingValue: (Number(kpiData?.avg_booking_cents || 0)) / 100
   };
+}
+
+// Helper function to refresh KPIs after data changes
+export async function refreshAdminKpis(): Promise<void> {
+  try {
+    // Refresh materialized view to update KPIs
+    const { error } = await supabase.rpc('refresh_admin_kpis_mv');
+    if (error) {
+      console.warn('Failed to refresh admin KPIs materialized view:', error);
+    }
+  } catch (error) {
+    console.warn('Error refreshing admin KPIs:', error);
+  }
 }
