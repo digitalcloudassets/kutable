@@ -513,10 +513,13 @@ const BusinessHours: React.FC<BusinessHoursProps> = ({ barberId }) => {
       })}
       
       {availability.length === 0 && (
-        <div className="text-center py-4">
-          <p className="text-gray-500 text-sm">
-            Business hours not yet configured
-          </p>
+        <div className="space-y-2">
+          {dayNames.map((dayName, index) => (
+            <div key={index} className="flex justify-between">
+              <span className="font-medium text-gray-700">{dayName}</span>
+              <span className="text-gray-500 font-medium">Call for hours</span>
+            </div>
+          ))}
         </div>
       )}
     </div>
