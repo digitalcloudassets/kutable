@@ -677,6 +677,59 @@ textarea {
   }
 }
 
+/* iPhone Mockup Styles */
+.iphone-mockup {
+  position: relative;
+  width: 200px;
+  height: 400px;
+  background: linear-gradient(145deg, #1a1a1a, #2d2d2d);
+  border-radius: 2.5rem;
+  padding: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+}
+
+.iphone-screen {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  border-radius: 2rem;
+  padding: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.iphone-content {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  border-radius: 1.8rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.iphone-notch {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 20px;
+  background: #000;
+  border-radius: 10px;
+  z-index: 10;
+}
+
+.iphone-home-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 128px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
 /* Accessibility improvements */
 @media (prefers-reduced-motion: reduce) {
   * {

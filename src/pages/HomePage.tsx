@@ -19,7 +19,9 @@ import {
   User,
   TrendingUp,
   Sparkles,
-  Quote
+  Quote,
+  Eye,
+  X
 } from 'lucide-react';
 
 const HomePage: React.FC = () => {
@@ -126,35 +128,114 @@ const HomePage: React.FC = () => {
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 md:p-12 text-center text-white shadow-premium-lg">
             <div className="max-w-4xl mx-auto">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                <div className="text-left">
-                  <h3 className="text-2xl md:text-3xl font-bold mb-4">Experience the Future of Barber Booking</h3>
+                <div className="text-left lg:order-1">
+                  <h3 className="text-2xl md:text-3xl font-bold mb-4">Complete Business Management</h3>
                   <p className="text-gray-300 mb-6 text-lg leading-relaxed">
-                    See how Kutable transforms the booking experience for both barbers and customers with our intuitive, mobile-first platform.
+                    Track earnings, manage bookings, and grow your client base with comprehensive analytics and insights.
                   </p>
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3">
                       <CheckCircle className="h-5 w-5 text-accent-400" />
-                      <span className="text-white/90">Instant booking confirmations</span>
+                      <span className="text-white/90">Revenue tracking and analytics</span>
                     </div>
                     <div className="flex items-center space-x-3">
                       <CheckCircle className="h-5 w-5 text-accent-400" />
-                      <span className="text-white/90">Automatic payment processing</span>
+                      <span className="text-white/90">Customer management tools</span>
                     </div>
                     <div className="flex items-center space-x-3">
                       <CheckCircle className="h-5 w-5 text-accent-400" />
-                      <span className="text-white/90">Professional business dashboard</span>
+                      <span className="text-white/90">Professional reporting dashboard</span>
                     </div>
                   </div>
                 </div>
-                <div className="relative">
-                  <img
-                    src="/MU Laptop.png"
-                    alt="Kutable dashboard demonstration"
-                    className="w-full h-auto rounded-xl shadow-2xl transform hover:scale-105 transition-transform duration-300"
+                <div className="relative lg:order-2">
+                  <DesktopMockup
+                    src="/Screenshot%202025-08-13%20at%2010.30.41%20AM.png"
+                    title="Business Dashboard"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary-500/20 to-transparent rounded-xl"></div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Demo Showcase with iPhone Mockups */}
+      <section className="py-24 bg-gradient-to-br from-gray-50 to-white relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-10 w-64 h-64 bg-primary-500/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-10 w-80 h-80 bg-accent-500/5 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center space-x-2 bg-primary-50 text-primary-700 rounded-full px-6 py-3 mb-6">
+              <Smartphone className="h-5 w-5" />
+              <span className="font-medium">Live Platform Demo</span>
+            </div>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+              See Kutable in Action
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Explore our real platform interface across different screens and features
+            </p>
+          </div>
+
+          {/* iPhone Mockup Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center">
+            {[
+              {
+                src: '/Screenshot%202025-08-13%20at%2010.28.36%20AM.png',
+                title: 'Barber Directory',
+                description: 'Browse verified professionals'
+              },
+              {
+                src: '/Screenshot%202025-08-13%20at%2010.29.10%20AM.png',
+                title: 'Booking Flow',
+                description: 'Seamless appointment booking'
+              },
+              {
+                src: '/Screenshot%202025-08-13%20at%2010.30.52%20AM.png',
+                title: 'Payment Processing',
+                description: 'Secure payment integration'
+              },
+              {
+                src: '/Screenshot%202025-08-13%20at%2010.30.41%20AM.png',
+                title: 'Dashboard Analytics',
+                description: 'Business management tools'
+              }
+            ].map((demo, index) => (
+              <DemoMockup
+                key={index}
+                src={demo.src}
+                title={demo.title}
+                description={demo.description}
+                delay={index * 200}
+              />
+            ))}
+          </div>
+
+          {/* Call to Action */}
+          <div className="text-center mt-16">
+            <p className="text-gray-600 mb-8 text-lg">
+              Ready to transform your barber business?
+            </p>
+            <div className="flex flex-col sm:flex-row gap-6 justify-center">
+              <a
+                href="/signup?type=barber"
+                className="group bg-gradient-to-r from-primary-500 to-primary-600 text-white px-8 py-4 rounded-2xl text-lg font-semibold hover:from-primary-600 hover:to-primary-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-premium-lg hover:shadow-2xl flex items-center justify-center space-x-3"
+              >
+                <Scissors className="h-6 w-6 group-hover:rotate-12 transition-transform" />
+                <span>Join Kutable Today</span>
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </a>
+              <a
+                href="/barbers"
+                className="group bg-white text-gray-900 border-2 border-gray-200 px-8 py-4 rounded-2xl text-lg font-semibold hover:border-primary-300 hover:bg-primary-50 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-premium-lg flex items-center justify-center space-x-3"
+              >
+                <Search className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                <span>Explore Directory</span>
+              </a>
             </div>
           </div>
         </div>
@@ -386,3 +467,174 @@ const HomePage: React.FC = () => {
 };
 
 export default HomePage;
+
+// iPhone Mockup Component with Modal
+const DemoMockup: React.FC<{
+  src: string;
+  title: string;
+  description: string;
+  delay: number;
+}> = ({ src, title, description, delay }) => {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [imageLoaded, setImageLoaded] = React.useState(false);
+
+  return (
+    <>
+      <div 
+        className="group cursor-pointer animate-fade-in-up"
+        style={{ animationDelay: `${delay}ms` }}
+        onClick={() => setIsExpanded(true)}
+      >
+        {/* iPhone Frame */}
+        <div className="relative bg-gray-900 rounded-[2.5rem] p-3 shadow-premium-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105">
+          {/* iPhone Screen */}
+          <div className="bg-black rounded-[2rem] p-1">
+            <div className="bg-white rounded-[1.8rem] overflow-hidden relative aspect-[9/19.5]">
+              {/* Notch */}
+              <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-20 h-5 bg-black rounded-full z-10"></div>
+              
+              {/* Screenshot */}
+              <img
+                src={src}
+                alt={title}
+                className="w-full h-full object-cover"
+                onLoad={() => setImageLoaded(true)}
+              />
+              
+              {/* Loading state */}
+              {!imageLoaded && (
+                <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary-100 border-t-primary-500"></div>
+                </div>
+              )}
+              
+              {/* Hover overlay */}
+              <div className="absolute inset-0 bg-primary-500/0 group-hover:bg-primary-500/10 transition-colors duration-300 flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 backdrop-blur-sm rounded-xl p-3">
+                  <Eye className="h-6 w-6 text-primary-600" />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* iPhone Home Indicator */}
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-white/30 rounded-full"></div>
+        </div>
+        
+        {/* Title and Description */}
+        <div className="text-center mt-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+          <p className="text-gray-600 text-sm">{description}</p>
+        </div>
+      </div>
+
+      {/* Expanded Modal */}
+      {isExpanded && (
+        <div 
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={() => setIsExpanded(false)}
+        >
+          <div className="relative max-w-2xl max-h-full">
+            <img
+              src={src}
+              alt={title}
+              className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="absolute top-4 right-4 bg-black/50 text-white p-3 rounded-full hover:bg-black/70 transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <div className="absolute bottom-4 left-4 right-4 text-center">
+              <div className="bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-xl">
+                <h4 className="font-bold">{title}</h4>
+                <p className="text-sm text-white/80">{description}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+// Desktop Mockup Component
+const DesktopMockup: React.FC<{
+  src: string;
+  title: string;
+}> = ({ src, title }) => {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [imageLoaded, setImageLoaded] = React.useState(false);
+
+  return (
+    <>
+      <div 
+        className="group cursor-pointer"
+        onClick={() => setIsExpanded(true)}
+      >
+        {/* Laptop Frame */}
+        <div className="relative bg-gray-800 rounded-t-2xl p-3 shadow-premium-lg group-hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105">
+          {/* Screen */}
+          <div className="bg-black rounded-t-xl p-1">
+            <div className="bg-white rounded-xl overflow-hidden relative aspect-[16/10]">
+              <img
+                src={src}
+                alt={title}
+                className="w-full h-full object-cover"
+                onLoad={() => setImageLoaded(true)}
+              />
+              
+              {!imageLoaded && (
+                <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-100 border-t-primary-500"></div>
+                </div>
+              )}
+              
+              {/* Hover overlay */}
+              <div className="absolute inset-0 bg-primary-500/0 group-hover:bg-primary-500/10 transition-colors duration-300 flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 backdrop-blur-sm rounded-xl p-4">
+                  <Eye className="h-8 w-8 text-primary-600" />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Laptop Base */}
+          <div className="h-6 bg-gray-700 rounded-b-2xl relative">
+            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-2 bg-gray-600 rounded-b-lg"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Expanded Modal */}
+      {isExpanded && (
+        <div 
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={() => setIsExpanded(false)}
+        >
+          <div className="relative max-w-5xl max-h-full">
+            <img
+              src={src}
+              alt={title}
+              className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="absolute top-4 right-4 bg-black/50 text-white p-3 rounded-full hover:bg-black/70 transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <div className="absolute bottom-4 left-4 right-4 text-center">
+              <div className="bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-xl">
+                <h4 className="font-bold text-lg">{title}</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
