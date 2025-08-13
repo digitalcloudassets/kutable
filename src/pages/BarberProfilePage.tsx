@@ -279,7 +279,7 @@ const BarberProfilePage: React.FC = () => {
             </div>
 
             {/* Services Section */}
-            <div className="card-premium p-8">
+            <div className="sm:card-premium sm:p-8 px-4 sm:px-0">
               <div className="flex items-center space-x-3 mb-8">
                 <div className="bg-primary-100 p-2 rounded-xl">
                   <Scissors className="h-6 w-6 text-primary-600" />
@@ -295,7 +295,7 @@ const BarberProfilePage: React.FC = () => {
                   <p className="text-gray-600 font-medium">Loading services...</p>
                 </div>
               ) : services.length > 0 ? (
-                <div className="space-y-8">
+                <div className="space-y-4 sm:space-y-8">
                   {services.map((service) => (
                     <div
                       key={service.id}
