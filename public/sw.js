@@ -48,7 +48,7 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  const url = new URL(req.url);
+  const url = new URL(event.request.url);
 
   // Completely ignore third-party domains (Stripe, Google Fonts, Supabase auth, etc.)
   if (url.origin !== self.location.origin) {
