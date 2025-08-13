@@ -201,26 +201,27 @@ const BarberProfilePage: React.FC = () => {
                 </div>
                 <span className="font-bold">{barber.average_rating.toFixed(1)}</span>
                 <span className="text-white/70">({barber.total_reviews} reviews)</span>
-              </div>
-              {barber.city && (
-                <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2">
-                  <MapPin className="h-4 w-4 text-white/80" />
-                  <span className="font-medium">{barber.city}, {barber.state}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        {/* Header actions: back + book (responsive, non-overlapping) */}
+        <div className="absolute top-4 left-4 right-4 z-20">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            {/* Back button */}
+            <Link
+              to="/barbers"
+              className="glass-effect text-gray-900 hover:text-white px-3 py-2 md:px-4 md:py-3 rounded-2xl hover:bg-white/20 transition-all duration-200 flex items-center justify-center md:justify-start gap-2"
+            >
+              <ArrowLeft className="h-5 w-5 text-gray-900 md:text-white" />
+              <span className="font-medium text-sm md:text-base">Back to Barbers</span>
+            </Link>
 
-        {/* Book Appointment Button */}
-        <div className="absolute top-6 right-6 z-20">
-          <Link
-            to={`/book/${barber.slug}`}
-            className="bg-gradient-to-r from-accent-500 to-accent-600 text-white px-6 py-3 rounded-2xl hover:from-accent-600 hover:to-accent-700 transition-all duration-200 font-semibold flex items-center space-x-2 shadow-premium-lg hover:scale-105 whitespace-nowrap"
-          >
-            <Calendar className="h-5 w-5" />
-            <span>Book Appointment</span>
-          </Link>
+            {/* Book button */}
+            <Link
+              to={`/book/${barber.slug}`}
+              className="bg-gradient-to-r from-accent-500 to-accent-600 text-white px-4 py-2 md:px-6 md:py-3 rounded-2xl hover:from-accent-600 hover:to-accent-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 shadow-premium-lg whitespace-nowrap"
+            >
+              <Calendar className="h-5 w-5" />
+              <span className="text-sm md:text-base">Book Appointment</span>
+            </Link>
+          </div>
         </div>
       </div>
 
