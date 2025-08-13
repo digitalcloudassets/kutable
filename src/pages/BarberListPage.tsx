@@ -241,15 +241,14 @@ const BarberListPage: React.FC = () => {
                   </div>
                   
                   {/* City Selector */}
-                  <div className="relative basis-[200px] sm:basis-[240px] lg:basis-64 shrink-0">
-                    {/* input shell that holds icon + select inline */}
+                  <div className="relative w-full shrink-0 lg:basis-64">
                     <div className="flex items-center gap-2 pl-3 pr-10 py-4 border border-gray-200 rounded-xl bg-gray-50 focus-within:ring-2 focus-within:ring-primary-500 transition-all duration-200 min-h-[56px]">
                       <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 shrink-0" />
                       <select
                         aria-label="Filter by city"
                         value={selectedCity}
                         onChange={(e) => setSelectedCity(e.target.value)}
-                        className="w-full bg-transparent outline-none appearance-none text-gray-900 font-medium"
+                        className="w-full bg-transparent outline-none appearance-none text-gray-900 font-medium pr-6"
                       >
                         <option value="">All Cities</option>
                         {cities.map((city) => (
@@ -259,8 +258,6 @@ const BarberListPage: React.FC = () => {
                         ))}
                       </select>
                     </div>
-
-                    {/* caret */}
                     <svg
                       className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"
                       viewBox="0 0 20 20"
