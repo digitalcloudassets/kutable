@@ -8,31 +8,30 @@ import {
 import { Toaster } from 'react-hot-toast';
 import { setupGlobalErrorHandling } from './utils/errorHandling';
 import { initializeAnalytics, trackPageView } from './utils/analytics';
+
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
-import {
-  HomePage,
-  BarberListPage,
-  BarberProfilePage,
-  DashboardPage,
-  ProfileSetupPage,
-  OnboardingPage,
-  AdminPage,
-  AdminLoginPage,
-  HowItWorksPage,
-  PricingPage,
-  SupportPage,
-  PrivacyPolicyPage,
-  TermsOfServicePage
-} from './pages';
-import {
-  BookingFlow,
-  LoginForm,
-  SignUpForm,
-  ForgotPassword,
-  ResetPassword
-} from './components/Auth';
 import AIChatWidget from './components/Chat/AIChatWidget';
+
+import HomePage from './pages/HomePage';
+import BarberListPage from './pages/BarberListPage';
+import BarberProfilePage from './pages/BarberProfilePage';
+import DashboardPage from './pages/DashboardPage';
+import ProfileSetupPage from './pages/ProfileSetupPage';
+import OnboardingPage from './pages/OnboardingPage';
+import AdminPage from './pages/AdminPage';
+import AdminLoginPage from './pages/AdminLoginPage';
+import HowItWorksPage from './pages/HowItWorksPage';
+import PricingPage from './pages/PricingPage';
+import SupportPage from './pages/SupportPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+
+import BookingFlow from './components/Auth/BookingFlow';
+import LoginForm from './components/Auth/LoginForm';
+import SignUpForm from './components/Auth/SignUpForm';
+import ForgotPassword from './components/Auth/ForgotPassword';
+import ResetPassword from './components/Auth/ResetPassword';
 
 // Error handler
 setupGlobalErrorHandling();
