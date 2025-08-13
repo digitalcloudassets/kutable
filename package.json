@@ -31,6 +31,7 @@
     "react-hot-toast": "^2.5.2",
     "react-notifications": "^1.7.4",
     "react-router-dom": "^7.7.1",
+    "react-toastify": "^11.0.5",
     "recharts": "^3.1.2",
     "stripe": "^18.4.0",
     "twilio": "^5.8.0",
