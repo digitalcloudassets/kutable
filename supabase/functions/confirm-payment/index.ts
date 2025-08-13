@@ -67,6 +67,14 @@ Deno.serve(async (req) => {
         throw new Error('Failed to confirm booking')
       }
 
+      // Refresh admin KPIs after booking confirmation
+      try {
+        await supabase.rpc('refresh_admin_kpis_mv');
+        console.log('Admin KPIs refreshed after booking confirmation');
+      } catch (refreshError) {
+        console.warn('Failed to refresh admin KPIs:', refreshError);
+      }
+
       // Send comprehensive notifications using the backend processor
       try {
         const { error: notificationError } = await supabase.functions.invoke('process-booking-notifications', {

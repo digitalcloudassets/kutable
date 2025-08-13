@@ -23,6 +23,7 @@ import DatePicker from 'react-datepicker';
 import { format, addDays, isToday, isTomorrow } from 'date-fns';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { refreshAdminKpis } from '../../api/adminKpis';
 import { getOrCreateClientProfile } from '../../utils/profileHelpers';
 import { Database } from '../../lib/supabase';
 import { createAvailabilityManager } from '../../utils/availabilityManager';
@@ -273,6 +274,13 @@ const BookingFlow: React.FC = () => {
 
       console.log('Booking created successfully:', booking);
       setConfirmedBooking(booking);
+
+      // Refresh admin KPIs after successful booking
+      try {
+        await refreshAdminKpis();
+      } catch (error) {
+        console.warn('Failed to refresh admin KPIs after booking:', error);
+      }
 
       // Send booking confirmation notifications
       try {

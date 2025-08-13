@@ -89,6 +89,17 @@ serve(async (req) => {
 
         if (paymentError) {
           console.error('Error inserting payment record:', paymentError);
+        } else {
+          // Refresh admin KPIs after payment record creation
+          try {
+            await supabase.rpc('refresh_admin_kpis_mv');
+            console.log('Admin KPIs refreshed after payment');
+          } catch (refreshError) {
+            console.warn('Failed to refresh admin KPIs:', refreshError);
+          }
+        }
+
+        if (paymentError) {
           console.error('Payment data that failed to insert:', {
             booking_id: bookingId,
             barber_id: barberId,

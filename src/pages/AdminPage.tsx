@@ -115,19 +115,20 @@ const AdminPage: React.FC = () => {
       if (!isConnected) {
         setKpis({
           totalBarbers: 0,
-          activeBarbers: 0,
           claimedBarbers: 0,
+          activeBarbers: 0,
           totalBookings: 0,
           bookingsThisMonth: 0,
           bookingsToday: 0,
           totalRevenue: 0,
+          platformRevenue: 0,
           avgBookingValue: 0
         });
         setLoading(false);
         return;
       }
 
-      // Use single source of truth RPC for all KPIs
+      // Use materialized view for fast KPI retrieval
       const kpiData = await fetchAdminKpis();
       setKpis(kpiData);
 
@@ -687,7 +688,7 @@ const AdminPage: React.FC = () => {
                           <span className="text-xs font-bold text-emerald-700 bg-emerald-200 px-3 py-1.5 rounded-full">EARNED</span>
                         </div>
                         <div className="text-4xl font-display font-bold text-gray-900 mb-2">
-                          {formatCurrency(kpis?.totalRevenue || 0)}
+                          {formatCurrency(kpis?.platformRevenue || 0)}
                         </div>
                         <p className="text-emerald-800 font-semibold mb-2">Platform Fees Collected</p>
                         <p className="text-sm text-emerald-600 font-medium">1% of gross volume</p>
@@ -701,7 +702,7 @@ const AdminPage: React.FC = () => {
                           <span className="text-xs font-bold text-primary-700 bg-primary-200 px-3 py-1.5 rounded-full">VOLUME</span>
                         </div>
                         <div className="text-4xl font-display font-bold text-gray-900 mb-2">
-                          ${((kpis?.totalRevenue || 0) / 0.01).toFixed(0)}
+                          {formatCurrency(kpis?.totalRevenue || 0)}
                         </div>
                         <p className="text-primary-800 font-semibold mb-2">Total Volume Processed</p>
                         <p className="text-sm text-primary-600 font-medium">Gross booking revenue</p>

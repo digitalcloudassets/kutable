@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { refreshAdminKpis } from '../api/adminKpis';
 import { useSupabaseConnection } from '../hooks/useSupabaseConnection';
 import SupabaseConnectionBanner from '../components/Setup/SupabaseConnectionBanner';
 import { generateUniqueSlug } from '../utils/updateBarberSlugs';
@@ -446,6 +447,13 @@ const OnboardingPage: React.FC = () => {
 
           if (availabilityError) throw availabilityError;
         }
+      }
+
+      // Refresh admin KPIs after creating new barber profile
+      try {
+        await refreshAdminKpis();
+      } catch (error) {
+        console.warn('Failed to refresh admin KPIs after profile creation:', error);
       }
 
       // Navigate to dashboard

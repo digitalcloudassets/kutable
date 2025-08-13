@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Phone, Mail, Star, Filter, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '../../lib/supabase';
+import { refreshAdminKpis } from '../../api/adminKpis';
 import { Database } from '../../lib/supabase';
 
 type Booking = {
@@ -154,6 +155,13 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
         }
       } catch (notificationError) {
         console.warn('Notification error (status change still succeeded):', notificationError);
+      }
+
+      // Refresh admin KPIs after booking status change
+      try {
+        await refreshAdminKpis();
+      } catch (error) {
+        console.warn('Failed to refresh admin KPIs after booking update:', error);
       }
     } catch (error) {
       console.error('Error updating booking status:', error);
