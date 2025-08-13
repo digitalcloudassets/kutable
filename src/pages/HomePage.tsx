@@ -122,17 +122,39 @@ const HomePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Demo Preview Placeholder */}
+          {/* Live Demo Preview */}
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 md:p-12 text-center text-white shadow-premium-lg">
-            <div className="max-w-3xl mx-auto">
-              <Play className="h-16 w-16 mx-auto mb-6 text-white/80" />
-              <h3 className="text-2xl font-bold mb-4">See Kutable In Action</h3>
-              <p className="text-gray-300 mb-6">
-                Coming Soon: Watch how top barbers use Kutable to run their business on autopilot.
-              </p>
-              <button className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-8 py-4 rounded-2xl hover:bg-white/20 transition-all duration-200 font-semibold">
-                Watch Demo (Coming Soon)
-              </button>
+            <div className="max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div className="text-left">
+                  <h3 className="text-2xl md:text-3xl font-bold mb-4">Experience the Future of Barber Booking</h3>
+                  <p className="text-gray-300 mb-6 text-lg leading-relaxed">
+                    See how Kutable transforms the booking experience for both barbers and customers with our intuitive, mobile-first platform.
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <CheckCircle className="h-5 w-5 text-accent-400" />
+                      <span className="text-white/90">Instant booking confirmations</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <CheckCircle className="h-5 w-5 text-accent-400" />
+                      <span className="text-white/90">Automatic payment processing</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <CheckCircle className="h-5 w-5 text-accent-400" />
+                      <span className="text-white/90">Professional business dashboard</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="relative">
+                  <img
+                    src="/MU Laptop.png"
+                    alt="Kutable dashboard demonstration"
+                    className="w-full h-auto rounded-xl shadow-2xl transform hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary-500/20 to-transparent rounded-xl"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
