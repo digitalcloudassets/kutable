@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Phone, Mail, Star, Filter, Search } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '../../lib/supabase';
 import { refreshAdminKpis } from '../../api/adminKpis';
 import { Database } from '../../lib/supabase';
+import { NotificationManager } from '../../utils/notifications';
 
 type Booking = {
   id: string;
@@ -14,6 +16,8 @@ type Booking = {
   deposit_amount: number;
   notes: string | null;
   created_at: string;
+  stripe_payment_intent_id: string | null;
+  stripe_charge_id: string | null;
   services: {
     name: string;
     duration_minutes: number;
@@ -35,6 +39,7 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [refundingBooking, setRefundingBooking] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBookings();
@@ -76,6 +81,8 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
           deposit_amount,
           notes,
           created_at,
+          stripe_payment_intent_id,
+          stripe_charge_id,
           services (
             name,
             duration_minutes
@@ -168,6 +175,65 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
     }
   };
 
+  const processRefund = async (booking: Booking) => {
+    if (!booking.stripe_payment_intent_id) {
+      NotificationManager.error('No payment information found for this booking');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to refund $${booking.total_amount} to ${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setRefundingBooking(booking.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('process-refund', {
+        body: {
+          payment_intent_id: booking.stripe_payment_intent_id,
+          booking_id: booking.id
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to process refund');
+      }
+
+      // Update booking status to refunded
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update({ 
+          status: 'cancelled',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', booking.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setBookings(prev => prev.map(b => 
+        b.id === booking.id ? { ...b, status: 'cancelled' as const } : b
+      ));
+
+      NotificationManager.success(`Refund of $${booking.total_amount} processed successfully`);
+      
+      // Refresh admin KPIs after refund
+      try {
+        await refreshAdminKpis();
+      } catch (error) {
+        console.warn('Failed to refresh admin KPIs after refund:', error);
+      }
+
+    } catch (error: any) {
+      console.error('Error processing refund:', error);
+      NotificationManager.error(error.message || 'Failed to process refund. Please try again.');
+    } finally {
+      setRefundingBooking(null);
+    }
+  };
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed': return 'bg-green-100 text-green-800';
@@ -179,6 +245,13 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
     }
   };
 
+  const canRefund = (booking: Booking): boolean => {
+    return !!(
+      booking.stripe_payment_intent_id &&
+      (booking.status === 'confirmed' || booking.status === 'completed') &&
+      booking.status !== 'cancelled'
+    );
+  };
   if (loading) {
     return (
       <div className="space-y-4">
@@ -295,39 +368,59 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
             )}
 
             {/* Status Actions */}
-            {booking.status === 'pending' && (
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => updateBookingStatus(booking.id, 'confirmed')}
-                  className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors"
-                >
-                  Confirm
-                </button>
-                <button
-                  onClick={() => updateBookingStatus(booking.id, 'cancelled')}
-                  className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
+            <div className="flex flex-wrap gap-2">
+              {booking.status === 'pending' && (
+                <>
+                  <button
+                    onClick={() => updateBookingStatus(booking.id, 'confirmed')}
+                    className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors"
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    onClick={() => updateBookingStatus(booking.id, 'cancelled')}
+                    className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
 
-            {booking.status === 'confirmed' && (
-              <div className="flex space-x-2">
+              {booking.status === 'confirmed' && (
+                <>
+                  <button
+                    onClick={() => updateBookingStatus(booking.id, 'completed')}
+                    className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors"
+                  >
+                    Mark Complete
+                  </button>
+                  <button
+                    onClick={() => updateBookingStatus(booking.id, 'cancelled')}
+                    className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+
+              {/* Refund Button */}
+              {canRefund(booking) && (
                 <button
-                  onClick={() => updateBookingStatus(booking.id, 'completed')}
-                  className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors"
+                  onClick={() => processRefund(booking)}
+                  disabled={refundingBooking === booking.id}
+                  className="px-3 py-1 bg-purple-500 text-white rounded text-sm hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
                 >
-                  Mark Complete
+                  {refundingBooking === booking.id ? (
+                    <>
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <span>Refund</span>
+                  )}
                 </button>
-                <button
-                  onClick={() => updateBookingStatus(booking.id, 'cancelled')}
-                  className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         ))}
 
