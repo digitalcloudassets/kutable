@@ -257,7 +257,6 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
                     {dayName}
                   </div>
 
-                  {/* Middle: Open toggle */}
                   <label className="inline-flex items-center gap-2">
                     <input 
                       type="checkbox" 
@@ -268,21 +267,39 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
                     <span className="text-gray-700 font-medium">Open</span>
                   </label>
 
-                  {/* Right: time inputs — take full width on mobile, fixed width on sm+ */}
                   {availability[dayIndex]?.isOpen && (
-                    <div className="ms-auto flex w-full gap-3 sm:w-auto">
-                      <input
-                        type="time"
-                        className="w-full sm:w-40 rounded-xl border border-gray-200 px-3 py-2 text-gray-900"
-                        value={availability[dayIndex].startTime}
-                        onChange={(e) => updateAvailability(dayIndex, 'startTime', e.target.value)}
-                      />
-                      <input
-                        type="time"
-                        className="w-full sm:w-40 rounded-xl border border-gray-200 px-3 py-2 text-gray-900"
-                        value={availability[dayIndex].endTime}
-                        onChange={(e) => updateAvailability(dayIndex, 'endTime', e.target.value)}
-                      />
+                    <div className="ms-auto w-full sm:w-auto min-w-0">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full min-w-0">
+                        {/* Start */}
+                        <div className="min-w-0">
+                          <div className="relative">
+                            <input
+                              type="time"
+                              value={availability[dayIndex].startTime}
+                              onChange={(e) => updateAvailability(dayIndex, 'startTime', e.target.value)}
+                              className="block w-full box-border h-12 rounded-xl border border-gray-200 bg-white px-3 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
+                              <Clock className="h-4 w-4" />
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* End */}
+                        <div className="min-w-0">
+                          <div className="relative">
+                            <input
+                              type="time"
+                              value={availability[dayIndex].endTime}
+                              onChange={(e) => updateAvailability(dayIndex, 'endTime', e.target.value)}
+                              className="block w-full box-border h-12 rounded-xl border border-gray-200 bg-white px-3 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
+                              <Clock className="h-4 w-4" />
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
