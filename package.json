@@ -29,6 +29,7 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.61.1",
     "react-hot-toast": "^2.5.2",
+    "react-notifications": "^1.7.4",
     "react-router-dom": "^7.7.1",
     "recharts": "^3.1.2",
     "stripe": "^18.4.0",
