@@ -48,78 +48,29 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
+  const req = event.request;
+  const url = req.url || '';
 
-  // Handle different types of requests
-  if (request.method === 'GET') {
-    // Static assets
-    if (url.pathname.match(/\.(png|jpg|jpeg|webp|svg|ico|css|js)$/)) {
-      event.respondWith(
-        caches.open(STATIC_CACHE).then(cache => {
-          return cache.match(request).then(response => {
-            if (response) {
-              return response;
-            }
-            return fetch(request).then(fetchResponse => {
-              cache.put(request, fetchResponse.clone());
-              return fetchResponse;
-            });
-          });
-        })
-      );
-      return;
+  // Ignore non-http(s) requests (e.g., chrome-extension://, data:, blob:)
+  if (!url.startsWith('http')) return;
+
+  // Optional: only cache GET
+  if (req.method !== 'GET') return;
+
+  event.respondWith((async () => {
+    try {
+      const network = await fetch(req);
+      // Cache a copy (best-effort)
+      const cache = await caches.open('app-cache');
+      cache.put(req, network.clone());
+      return network;
+    } catch {
+      const cache = await caches.open('app-cache');
+      const cached = await cache.match(req);
+      if (cached) return cached;
+      throw new Error('Network and cache both unavailable');
     }
-
-    // API calls
-    if (url.pathname.startsWith('/api/') || url.hostname.includes('supabase.co')) {
-      event.respondWith(
-        caches.open(API_CACHE).then(cache => {
-          return cache.match(request).then(response => {
-            const fetchPromise = fetch(request).then(fetchResponse => {
-              // Only cache successful responses
-              if (fetchResponse.ok) {
-                cache.put(request, fetchResponse.clone());
-              }
-              return fetchResponse;
-            }).catch(() => {
-              // Return cached version if network fails
-              return response || new Response(
-                JSON.stringify({ error: 'Network unavailable' }),
-                { status: 503, headers: { 'Content-Type': 'application/json' } }
-              );
-            });
-
-            // Return cache first, then update (stale-while-revalidate)
-            return response || fetchPromise;
-          });
-        })
-      );
-      return;
-    }
-
-    // HTML pages - cache with network fallback
-    if (request.mode === 'navigate') {
-      event.respondWith(
-        fetch(request)
-          .then(response => {
-            // Cache successful page loads
-            if (response.ok) {
-              caches.open(CACHE_NAME).then(cache => {
-                cache.put(request, response.clone());
-              });
-            }
-            return response;
-          })
-          .catch(() => {
-            // Fallback to cached version
-            return caches.match(request).then(cachedResponse => {
-              return cachedResponse || caches.match('/');
-            });
-          })
-      );
-    }
-  }
+  })());
 });
 
 // Handle background sync for offline actions

@@ -1,17 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
+import { getStripe } from '../../lib/stripe';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { Loader, CreditCard, Shield, Lock, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { NotificationManager } from '../../utils/notifications';
 
-// Check if Stripe key is configured
-const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = stripeKey && 
-  stripeKey !== 'your_stripe_publishable_key_here' && 
-  stripeKey.startsWith('pk_') 
-    ? loadStripe(stripeKey) 
-    : null;
 
 function CheckoutForm({
   clientSecret,
@@ -166,15 +159,42 @@ export default function InAppCheckout({
 }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
+  const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
+
+  // Initialize Stripe safely
+  useEffect(() => {
+    getStripe().then(stripe => {
+      if (stripe) {
+        setStripePromise(Promise.resolve(stripe));
+      } else {
+        setError('Stripe could not be initialized. Please check your configuration.');
+      }
+    }).catch(error => {
+      console.error('Stripe initialization error:', error);
+      setError('Failed to initialize payment system. Please try again.');
+    });
+  }, []);
 
   // Check if Stripe is properly configured
-  if (!stripePromise) {
+  if (!stripePromise && !error) {
+    return (
+      <div className="text-center py-8">
+        <div className="relative mb-6">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-100 border-t-primary-500 mx-auto"></div>
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-accent-500 opacity-20 blur-lg"></div>
+        </div>
+        <p className="text-gray-600 font-medium">Initializing payment system...</p>
+      </div>
+    );
+  }
+
+  if (error || !stripePromise) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
         <AlertCircle className="h-8 w-8 text-yellow-600 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-yellow-800 mb-2">Stripe Not Configured</h3>
+        <h3 className="text-lg font-semibold text-yellow-800 mb-2">Payment System Error</h3>
         <p className="text-yellow-700 mb-4">
-          Please add your Stripe publishable key to the environment variables to enable payments.
+          {error || 'Please add your Stripe publishable key to the environment variables to enable payments.'}
         </p>
         <div className="bg-yellow-100 rounded-lg p-4 text-left">
           <p className="text-yellow-800 text-sm font-mono">
@@ -229,17 +249,19 @@ export default function InAppCheckout({
     initializePayment();
   }, [barberId, amount, currency, customerEmail, JSON.stringify(metadata)]);
 
-  if (error) {
+  if (error && !stripePromise) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <h3 className="text-lg font-semibold text-red-800 mb-2">Payment Setup Error</h3>
-        <p className="text-red-700 mb-4">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-        >
-          Try Again
-        </button>
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+        <AlertCircle className="h-8 w-8 text-yellow-600 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-yellow-800 mb-2">Payment System Error</h3>
+        <p className="text-yellow-700 mb-4">
+          {error || 'Please add your Stripe publishable key to the environment variables to enable payments.'}
+        </p>
+        <div className="bg-yellow-100 rounded-lg p-4 text-left">
+          <p className="text-yellow-800 text-sm font-mono">
+            VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_key_here
+          </p>
+        </div>
       </div>
     );
   }
