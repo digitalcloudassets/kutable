@@ -35,9 +35,6 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
         <h1 className="text-3xl sm:text-4xl font-display font-bold mb-3">
           Welcome back, Pete.
         </h1>
-        <p className="text-lg sm:text-xl" style={{ color: 'rgba(255, 255, 255, 0.85)' }}>
-          Track your progress and performance.
-        </p>
       </div>
 
       {/* Main Profile Card */}
