@@ -24,7 +24,12 @@ const Header: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      // Check if there's an active session before attempting to sign out
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        await supabase.auth.signOut();
+      }
     } catch (error) {
       // Handle sign out errors gracefully - session may already be invalid
       console.log('Sign out error:', error);
