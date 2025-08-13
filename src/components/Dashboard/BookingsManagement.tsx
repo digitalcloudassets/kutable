@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Phone, Mail, Star, Filter, Search } from 'lucide-react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, CheckCircle, X, Loader, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '../../lib/supabase';
 import { refreshAdminKpis } from '../../api/adminKpis';
@@ -40,6 +40,64 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [refundingBooking, setRefundingBooking] = useState<string | null>(null);
+
+  const processRefund = async (booking: Booking) => {
+    if (!booking.stripe_payment_intent_id) {
+      NotificationManager.error('No payment information found for this booking');
+      return;
+    }
+
+    const customerName = `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim();
+    if (!confirm(`Are you sure you want to refund $${booking.total_amount} to ${customerName}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setRefundingBooking(booking.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('process-refund', {
+        body: {
+          payment_intent_id: booking.stripe_payment_intent_id,
+          booking_id: booking.id
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to process refund');
+      }
+
+      // Update booking status locally
+      setBookings(prev => prev.map(b => 
+        b.id === booking.id ? { ...b, status: 'cancelled' as const } : b
+      ));
+
+      NotificationManager.success(`Refund of $${booking.total_amount} processed successfully`);
+      
+      // Refresh admin KPIs after refund
+      try {
+        await refreshAdminKpis();
+      } catch (error) {
+        console.warn('Failed to refresh admin KPIs after refund:', error);
+      }
+
+    } catch (error: any) {
+      console.error('Error processing refund:', error);
+      NotificationManager.error(error.message || 'Failed to process refund. Please try again.');
+    } finally {
+      setRefundingBooking(null);
+    }
+  };
+
+  const canRefund = (booking: Booking): boolean => {
+    return !!(
+      booking.stripe_payment_intent_id &&
+      (booking.status === 'confirmed' || booking.status === 'completed') &&
+      booking.status !== 'cancelled'
+    );
+  };
 
   useEffect(() => {
     fetchBookings();
@@ -368,20 +426,22 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
             )}
 
             {/* Status Actions */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-gray-200">
               {booking.status === 'pending' && (
                 <>
                   <button
                     onClick={() => updateBookingStatus(booking.id, 'confirmed')}
-                    className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors"
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors flex items-center space-x-2"
                   >
-                    Confirm
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Confirm Booking</span>
                   </button>
                   <button
                     onClick={() => updateBookingStatus(booking.id, 'cancelled')}
-                    className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors flex items-center space-x-2"
                   >
-                    Cancel
+                    <X className="h-4 w-4" />
+                    <span>Cancel Booking</span>
                   </button>
                 </>
               )}
@@ -390,35 +450,40 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
                 <>
                   <button
                     onClick={() => updateBookingStatus(booking.id, 'completed')}
-                    className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors"
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors flex items-center space-x-2"
                   >
-                    Mark Complete
-                  </button>
-                  <button
-                    onClick={() => updateBookingStatus(booking.id, 'cancelled')}
-                    className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
-                  >
-                    Cancel
+                    <CheckCircle className="h-4 w-4" />
+                    <span>Mark Complete</span>
                   </button>
                 </>
               )}
 
               {/* Refund Button */}
-              {canRefund(booking) && (
+              {(booking.status === 'confirmed' || booking.status === 'completed') && booking.stripe_payment_intent_id && (
                 <button
                   onClick={() => processRefund(booking)}
                   disabled={refundingBooking === booking.id}
-                  className="px-3 py-1 bg-purple-500 text-white rounded text-sm hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 >
                   {refundingBooking === booking.id ? (
                     <>
-                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      <Loader className="h-4 w-4 animate-spin" />
                       <span>Processing...</span>
                     </>
                   ) : (
-                    <span>Refund</span>
+                    <>
+                      <CreditCard className="h-4 w-4" />
+                      <span>Process Refund</span>
+                    </>
                   )}
                 </button>
+              )}
+
+              {booking.status === 'cancelled' && booking.stripe_payment_intent_id && (
+                <span className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Refunded</span>
+                </span>
               )}
             </div>
           </div>
