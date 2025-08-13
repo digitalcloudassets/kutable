@@ -331,45 +331,48 @@ const ClaimFlow: React.FC = () => {
   }, [barberId]);
 
   const handleClaim = async () => {
+    if (!barber) return;
+
     setClaiming(true);
     setError('');
 
     try {
-      const res = await supabase.functions.invoke('claim', {
-        body: { barberId, claimData }
+      const payload = {
+        slug: barber.slug,
+        business_name: claimData.businessName || barber.business_name,
+        owner_name: claimData.ownerName || barber.owner_name,
+        phone: claimData.phone || barber.phone,
+        email: claimData.email || barber.email,
+        address: claimData.address || barber.address,
+        city: claimData.city || barber.city,
+        state: claimData.state || barber.state,
+        zip_code: claimData.zipCode || barber.zip_code,
+        import_source: isCSVProfile ? 'csv' : 'db',
+        import_external_id: isCSVProfile ? barberId : null,
+      };
+
+      const { data, error: claimError } = await supabase.functions.invoke('claim-start', {
+        body: payload
       });
 
-      if (res.error) {
-        // Access more specific error message from Edge Function
-        const specificError = res.error.context?.error || res.error.message || 'Claim failed';
-        throw new Error(specificError);
+      if (claimError) {
+        const errorMessage = claimError?.context?.error || claimError?.message || 'Failed to start claim process';
+        throw new Error(errorMessage);
       }
+
+      if (!data?.success || !data?.claimUrl) {
+        throw new Error(data?.error || 'Failed to start claim process');
+      }
+
+      NotificationManager.success('Opening claim flow...');
       
-      const result = res.data;
-      if (!result?.success) throw new Error(result?.error || 'Claim failed');
-
-      NotificationManager.success('Profile claimed successfully!');
-
-      // If a one-click magic link was returned, redirect immediately
-      if (result.actionLink) {
-        window.location.href = result.actionLink;
-        return;
-      }
-
-      // Otherwise, show success and redirect to their profile/dashboard
-      setSuccess(true);
-      setTimeout(() => {
-        if (result.slug) {
-          navigate(`/barber/${result.slug}`);
-        } else {
-          navigate('/dashboard');
-        }
-      }, 1500);
+      // Redirect to the claim token page
+      window.location.href = data.claimUrl;
       
     } catch (error: any) {
-      console.error('Error claiming profile:', error);
+      console.error('Error starting claim:', error);
       setError(error.message);
-      NotificationManager.error('Failed to claim profile. Please try again.');
+      NotificationManager.error('Failed to start claim process. Please try again.');
     } finally {
       setClaiming(false);
     }
@@ -768,7 +771,7 @@ const ClaimFlow: React.FC = () => {
                   ) : (
                     <>
                       <Crown className="h-5 w-5" />
-                      <span>Claim Profile & Get Magic Link</span>
+                      <span>Start Claim Process</span>
                     </>
                   )}
                 </button>
