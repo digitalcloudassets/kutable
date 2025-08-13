@@ -266,6 +266,9 @@ const AdminPage: React.FC = () => {
                     <div>Succeeded: {kpis.debugInfo.succeededPayments}</div>
                     <div>Live Mode: {kpis.debugInfo.livePayments}</div>
                     <div>Test Mode: {kpis.debugInfo.testPayments}</div>
+                    <div>Platform Fees (Succeeded): ${((kpis.debugInfo.platformFeesSucceeded || 0) / 100).toFixed(2)}</div>
+                    <div>Platform Fees (Live): ${((kpis.debugInfo.platformFeesLive || 0) / 100).toFixed(2)}</div>
+                    <div>Platform Fees (Test): ${((kpis.debugInfo.platformFeesTest || 0) / 100).toFixed(2)}</div>
                   </div>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4">

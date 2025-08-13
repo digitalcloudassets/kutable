@@ -17,13 +17,21 @@ export interface AdminKPIs {
     succeededPayments: number;
     livePayments: number;
     testPayments: number;
+    platformFeesSucceeded: number;
+    platformFeesLive: number;
+    platformFeesTest: number;
   };
 }
 
 export async function fetchAdminKpis(): Promise<AdminKPIs> {
   // First try to refresh the materialized view
   try {
-    await supabase.rpc('refresh_admin_kpis_mv');
+    const { error: refreshError } = await supabase.rpc('refresh_admin_kpis_mv');
+    if (refreshError) {
+      console.warn('Failed to refresh materialized view:', refreshError);
+    } else {
+      console.log('✅ Admin KPIs materialized view refreshed successfully');
+    }
   } catch (refreshError) {
     console.warn('Failed to refresh materialized view, using cached data:', refreshError);
   }
@@ -36,7 +44,23 @@ export async function fetchAdminKpis(): Promise<AdminKPIs> {
   // Convert from array to single object (materialized view returns single row)
   const kpiData = Array.isArray(data) ? data[0] : data;
 
-  console.log('Raw KPI data from materialized view:', kpiData);
+  console.log('📊 Raw KPI data from materialized view:', {
+    totalBarbers: kpiData?.total_barbers,
+    claimedBarbers: kpiData?.claimed_barbers,
+    activeBarbers: kpiData?.active_barbers,
+    totalBookings: kpiData?.total_bookings,
+    grossCents: kpiData?.gross_cents,
+    platformCents: kpiData?.platform_cents,
+    platformDollars: (Number(kpiData?.platform_cents || 0)) / 100,
+    debugInfo: {
+      totalBarberProfiles: kpiData?.debug_total_barber_profiles,
+      totalPayments: kpiData?.debug_total_payments,
+      succeededPayments: kpiData?.debug_succeeded_payments,
+      platformFeesSucceeded: kpiData?.debug_platform_fees_succeeded,
+      platformFeesLive: kpiData?.debug_platform_fees_live,
+      platformFeesTest: kpiData?.debug_platform_fees_test
+    }
+  });
   
   return {
     totalBarbers: Number(kpiData?.total_barbers || 0),
@@ -53,7 +77,10 @@ export async function fetchAdminKpis(): Promise<AdminKPIs> {
       totalPayments: Number(kpiData?.debug_total_payments || 0),
       succeededPayments: Number(kpiData?.debug_succeeded_payments || 0),
       livePayments: Number(kpiData?.debug_live_payments || 0),
-      testPayments: Number(kpiData?.debug_test_payments || 0)
+      testPayments: Number(kpiData?.debug_test_payments || 0),
+      platformFeesSucceeded: Number(kpiData?.debug_platform_fees_succeeded || 0),
+      platformFeesLive: Number(kpiData?.debug_platform_fees_live || 0),
+      platformFeesTest: Number(kpiData?.debug_platform_fees_test || 0)
     }
   };
 }
