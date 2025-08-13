@@ -91,14 +91,6 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
     }
   };
 
-  const canRefund = (booking: Booking): boolean => {
-    return !!(
-      booking.stripe_payment_intent_id &&
-      (booking.status === 'confirmed' || booking.status === 'completed') &&
-      booking.status !== 'cancelled'
-    );
-  };
-
   useEffect(() => {
     fetchBookings();
     
@@ -232,12 +224,6 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
       console.error('Error updating booking status:', error);
     }
   };
-
-  const processRefund = async (booking: Booking) => {
-    if (!booking.stripe_payment_intent_id) {
-      NotificationManager.error('No payment information found for this booking');
-      return;
-    }
 
     if (!confirm(`Are you sure you want to refund $${booking.total_amount} to ${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}? This action cannot be undone.`)) {
       return;
