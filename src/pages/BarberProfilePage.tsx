@@ -460,28 +460,6 @@ const BarberProfilePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Sticky mobile CTA */}
-      <div className="sm:hidden sticky bottom-[max(env(safe-area-inset-bottom),16px)] z-30 px-4">
-        <Link
-          to={`/book/${barber.slug}`}
-          className="w-full inline-flex justify-center items-center gap-2 rounded-xl px-4 py-3 font-semibold
-                     bg-gradient-to-r from-accent-500 to-accent-600 text-white shadow-lg"
-        >
-          <Calendar className="h-5 w-5" />
-          Book Appointment
-        </Link>
-      </div>
-      {/* Sticky mobile CTA */}
-      <div className="sm:hidden sticky bottom-[max(env(safe-area-inset-bottom),16px)] z-30 px-4">
-        <Link
-          to={`/book/${barber.slug}`}
-          className="w-full inline-flex justify-center items-center gap-2 rounded-xl px-4 py-3 font-semibold
-                     bg-gradient-to-r from-accent-500 to-accent-600 text-white shadow-lg"
-        >
-          <Calendar className="h-5 w-5" />
-          Book Appointment
-        </Link>
-      </div>
     </div>
   );
 };
