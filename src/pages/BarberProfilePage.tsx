@@ -201,6 +201,11 @@ const BarberProfilePage: React.FC = () => {
                 </div>
                 <span className="font-bold">{barber.average_rating.toFixed(1)}</span>
                 <span className="text-white/70">({barber.total_reviews} reviews)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Header actions: back + book (responsive, non-overlapping) */}
         <div className="absolute top-4 left-4 right-4 z-20">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
