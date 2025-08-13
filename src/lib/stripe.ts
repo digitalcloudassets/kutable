@@ -1,20 +1,20 @@
 import { loadStripe, type Stripe } from '@stripe/stripe-js';
 
-let stripePromise: Promise<Stripe | null> | null = null;
+let _stripePromise: Promise<Stripe | null> | null = null;
 
 export function getStripe() {
-  if (!stripePromise) {
+  if (!_stripePromise) {
     const pk = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
     if (!pk || pk === 'your_stripe_publishable_key_here' || pk === 'pk_test_placeholder_key_for_development') {
       console.error('Missing VITE_STRIPE_PUBLISHABLE_KEY');
       return Promise.resolve(null);
     }
-    stripePromise = loadStripe(pk).catch((e) => {
+    _stripePromise = loadStripe(pk).catch((e) => {
       console.error('Failed to load Stripe.js', e);
       return null;
     });
   }
-  return stripePromise;
+  return _stripePromise;
 }
 
 // Legacy export for backward compatibility
