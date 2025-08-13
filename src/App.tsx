@@ -27,7 +27,7 @@ import SupportPage from './pages/SupportPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 
-import BookingFlow from './components/Auth/BookingFlow';
+import BookingFlow from './components/Booking/BookingFlow';
 import LoginForm from './components/Auth/LoginForm';
 import SignUpForm from './components/Auth/SignUpForm';
 import ForgotPassword from './components/Auth/ForgotPassword';
