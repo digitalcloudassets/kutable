@@ -185,29 +185,29 @@ const HomePage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 justify-items-center">
             {[
               {
-                src: '/Screenshot 2025-08-13 at 10.28.36 AM.png',
+                src: '/Screenshot%202025-08-13%20at%2010.28.36%20AM.png',
                 title: 'Barber Directory',
                 description: 'Browse verified professionals'
               },
               {
-                src: '/Screenshot 2025-08-13 at 10.29.10 AM.png',
+                src: '/Screenshot%202025-08-13%20at%2010.29.10%20AM.png',
                 title: 'Booking Flow',
                 description: 'Seamless appointment booking'
               },
               {
-                src: '/Screenshot 2025-08-13 at 10.30.52 AM.png',
+                src: '/Screenshot%202025-08-13%20at%2010.30.52%20AM.png',
                 title: 'Payment Processing',
                 description: 'Secure payment integration'
               },
               {
-                src: '/Screenshot 2025-08-13 at 10.30.41 AM.png',
+                src: '/Screenshot%202025-08-13%20at%2010.30.41%20AM.png',
                 title: 'Dashboard Analytics',
                 description: 'Business management tools'
               }
             ].map((demo, index) => (
               <DemoMockup
                 key={index}
-                    src="/Screenshot 2025-08-13 at 10.30.41 AM.png"
+                src={demo.src}
                 title={demo.title}
                 description={demo.description}
                 delay={index * 200}
