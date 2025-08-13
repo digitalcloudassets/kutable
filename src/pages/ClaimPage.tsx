@@ -139,11 +139,19 @@ const ClaimPage: React.FC = () => {
         zip_code: formData.get('zip_code')?.toString() || prefill.zip_code,
       };
 
+      // Double-check authentication before proceeding
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        sessionStorage.setItem('postLoginRedirect', `/claim/${token}`);
+        navigate('/login', { replace: true });
+        return;
+      }
+
       // Complete the claim
       const { data, error: claimError } = await supabase.functions.invoke('claim-complete', {
         body: { 
           token, 
-          user_id: user.id 
+          user_id: session.user.id 
         }
       });
 
@@ -412,7 +420,7 @@ const ClaimPage: React.FC = () => {
                   <input
                     name="email"
                     type="email"
-                    defaultValue={prefill.email || user.email || ''}
+                    defaultValue={prefill.email || user?.email || ''}
                     className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                     placeholder="email@example.com"
                   />
