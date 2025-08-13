@@ -50,24 +50,26 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = req.url || '';
-
-  // Ignore non-http(s) requests (e.g., chrome-extension://, data:, blob:)
+  
+  // Only handle http/https GET requests
   if (!url.startsWith('http')) return;
-
-  // Optional: only cache GET
   if (req.method !== 'GET') return;
+
+  // Only cache same-origin requests (prevents CSP noise for 3rd-party like Stripe/Fonts)
+  const sameOrigin = new URL(url).origin === self.location.origin;
+  if (!sameOrigin) return; // let the browser handle it
 
   event.respondWith((async () => {
     try {
-      const network = await fetch(req);
+      const net = await fetch(req);
       // Cache a copy (best-effort)
       const cache = await caches.open('app-cache');
-      cache.put(req, network.clone());
-      return network;
+      cache.put(req, net.clone());
+      return net;
     } catch {
       const cache = await caches.open('app-cache');
-      const cached = await cache.match(req);
-      if (cached) return cached;
+      const hit = await cache.match(req);
+      if (hit) return hit;
       throw new Error('Network and cache both unavailable');
     }
   })());
