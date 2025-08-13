@@ -11,7 +11,6 @@ import { initializeAnalytics, trackPageView } from './utils/analytics';
 
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
-import AIChatWidget from './components/Chat/AIChatWidget';
 
 import HomePage from './pages/HomePage';
 import BarberListPage from './pages/BarberListPage';
@@ -35,13 +34,6 @@ import ResetPassword from './components/Auth/ResetPassword';
 
 // Error handler
 setupGlobalErrorHandling();
-
-// Hide AI widget on certain routes
-const ChatWidgetGate: React.FC = () => {
-  const location = useLocation();
-  const hideOnRoutes = [/^\/admin-login$/, /^\/admin($|\/)/];
-  return hideOnRoutes.some((r) => r.test(location.pathname)) ? null : <AIChatWidget />;
-};
 
 // Analytics tracker
 const AnalyticsRouter: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -153,8 +145,6 @@ function App() {
               }
             }}
           />
-
-          <ChatWidgetGate />
         </div>
       </AnalyticsRouter>
     </Router>
