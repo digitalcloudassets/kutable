@@ -44,13 +44,13 @@ const BarberListPage: React.FC = () => {
   const [availableServiceTypes] = useState([
     'Haircut', 'Beard Trim', 'Shave', 'Hair Wash', 'Styling', 'Fade', 'Buzz Cut', 'Line Up'
   ]);
-  const [claiming, setClaiming] = useState(false);
+  const [claimingId, setClaimingId] = useState<string | null>(null);
   const PROFILES_PER_PAGE = 24;
 
   // Add claim handler  
   const handleClaimClick = async (barberProfile: BarberProfile) => {
-    if (claiming) return;
-    setClaiming(true);
+    if (claimingId) return; // prevent spam while one is in-flight
+    setClaimingId(barberProfile.id || barberProfile.slug || null);
     
     try {
       // Stash payload for claim page fallback
@@ -82,12 +82,9 @@ const BarberListPage: React.FC = () => {
       console.error('Claim start error:', serverMsg, e);
       NotificationManager?.error?.(serverMsg);
     } finally {
-      setClaiming(false);
+      setClaimingId(null);
     }
   };
-  
-  const [claiming, setClaiming] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
 
   // Enhanced CSV parsing function
   const parseCSVLine = (line: string): string[] => {
