@@ -668,7 +668,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
           
           {barber.stripe_onboarding_completed ? (
             <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
                 <div className="flex items-center space-x-3">
                 <div className="bg-emerald-500 p-2 rounded-xl">
                   <CheckCircle className="h-5 w-5 text-white" />
@@ -678,7 +678,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                 <button
                   onClick={handleStripeDisconnect}
                   disabled={disconnectingStripe}
-                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center space-x-2"
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center space-x-2 w-full sm:w-auto justify-center"
                 >
                   {disconnectingStripe ? (
                     <Loader className="h-4 w-4 animate-spin" />
