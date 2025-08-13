@@ -195,49 +195,83 @@ const BarberProfilePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Header actions: back + book (responsive, non-overlapping) */}
-        <div className="absolute top-4 left-4 right-4 z-20">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            {/* Back button */}
-            <Link
-              to="/barbers"
-              className="glass-effect text-gray-900 hover:text-white px-3 py-2 md:px-4 md:py-3 rounded-2xl hover:bg-white/20 transition-all duration-200 flex items-center justify-center md:justify-start gap-2"
-            >
-              <ArrowLeft className="h-5 w-5 text-gray-900 md:text-white" />
-              <span className="font-medium text-sm md:text-base">Back to Barbers</span>
-            </Link>
+        {/* Top control bar (mobile-safe) */}
+        <div className="absolute top-4 inset-x-4 z-20 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <Link
+            to="/barbers"
+            className="glass-effect text-gray-900 hover:text-white rounded-xl px-3 py-2 hover:bg-white/20 transition-all duration-200 flex items-center gap-2 w-fit"
+          >
+            <ArrowLeft className="h-4 w-4 text-gray-900 sm:h-5 sm:w-5 group-hover:text-white" />
+            <span className="text-sm sm:text-base font-medium">
+              <span className="hidden xs:inline">Back to Barbers</span>
+              <span className="xs:hidden">Back</span>
+            </span>
+          </Link>
 
-            {/* Book button */}
-            <Link
-              to={`/book/${barber.slug}`}
-              className="bg-gradient-to-r from-accent-500 to-accent-600 text-white px-4 py-2 md:px-6 md:py-3 rounded-2xl hover:from-accent-600 hover:to-accent-700 transition-all duration-200 font-semibold flex items-center justify-center gap-2 shadow-premium-lg whitespace-nowrap"
-            >
-              <Calendar className="h-5 w-5" />
-              <span className="text-sm md:text-base">Book Appointment</span>
-            </Link>
+          <Link
+            to={`/book/${barber.slug}`}
+            className="bg-gradient-to-r from-accent-500 to-accent-600 text-white rounded-xl px-4 py-2 sm:px-6 sm:py-3 transition-all duration-200 font-semibold flex items-center gap-2 shadow-premium-lg justify-center w-full sm:w-auto"
+          >
+            <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="text-sm sm:text-base whitespace-nowrap">
+              <span className="sm:inline">Book Appointment</span>
+              <span className="inline sm:hidden">Book</span>
+            </span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Compact stats row (mobile-first) */}
+      <div className="mx-4 mt-4 sm:hidden">
+        <div className="grid grid-cols-3 gap-3">
+          {/* Avg Rating */}
+          <div className="rounded-xl bg-white/90 backdrop-blur-md border border-white/60 shadow-sm py-3 flex flex-col items-center">
+            <div className="h-8 w-8 rounded-xl flex items-center justify-center bg-gradient-to-br from-yellow-500 to-orange-500 shadow">
+              <Star className="h-5 w-5 text-white" />
+            </div>
+            <div className="mt-1 text-lg font-bold text-gray-900">{barber.average_rating.toFixed(1)}</div>
+            <div className="text-[11px] font-medium text-gray-500">Avg Rating</div>
+          </div>
+
+          {/* Total Reviews */}
+          <div className="rounded-xl bg-white/90 backdrop-blur-md border border-white/60 shadow-sm py-3 flex flex-col items-center">
+            <div className="h-8 w-8 rounded-xl flex items-center justify-center bg-gradient-to-br from-primary-500 to-primary-600 shadow">
+              <Users className="h-5 w-5 text-white" />
+            </div>
+            <div className="mt-1 text-lg font-bold text-gray-900">{barber.total_reviews}</div>
+            <div className="text-[11px] font-medium text-gray-500">Reviews</div>
+          </div>
+
+          {/* Pro / Verified */}
+          <div className="rounded-xl bg-white/90 backdrop-blur-md border border-white/60 shadow-sm py-3 flex flex-col items-center">
+            <div className="h-8 w-8 rounded-xl flex items-center justify-center bg-gradient-to-br from-accent-500 to-accent-600 shadow">
+              <Crown className="h-5 w-5 text-white" />
+            </div>
+            <div className="mt-1 text-lg font-bold text-gray-900">Pro</div>
+            <div className="text-[11px] font-medium text-gray-500">Verified</div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main content */}
           <div className="lg:col-span-2">
             {/* About Section */}
-            <div className="card-premium p-8 mb-8">
+            <div className="p-0 sm:p-8 sm:card-premium sm:bg-white bg-transparent sm:border sm:border-gray-100 mb-8">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="bg-primary-100 p-2 rounded-xl">
                   <Building className="h-6 w-6 text-primary-600" />
                 </div>
-                <h2 className="text-3xl font-display font-bold text-gray-900">About {barber.business_name}</h2>
+                <h2 className="text-2xl sm:text-3xl font-display font-bold text-gray-900">About {barber.business_name}</h2>
               </div>
               <p className="text-gray-700 leading-relaxed text-lg mb-8">
                 {barber.bio}
               </p>
 
               {/* Business Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8 border-t border-gray-100">
+              <div className="hidden sm:grid grid-cols-1 md:grid-cols-3 gap-8 pt-8 border-t border-gray-100">
                 <div className="text-center group">
                   <div className="bg-gradient-to-br from-yellow-500 to-orange-500 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-premium group-hover:scale-110 transition-transform duration-300">
                     <Star className="h-8 w-8 text-white" />
@@ -263,7 +297,7 @@ const BarberProfilePage: React.FC = () => {
             </div>
 
             {/* Barber Profile Image Card */}
-            <div className="card-premium p-8 mb-8 text-center">
+            <div className="p-0 sm:p-8 sm:card-premium sm:bg-white bg-transparent sm:border sm:border-gray-100 mb-8 text-center">
               <div className="relative inline-block">
                 <img
                   src={barber.profile_image_url}
@@ -274,17 +308,17 @@ const BarberProfilePage: React.FC = () => {
                   <Scissors className="h-4 w-4" />
                 </div>
               </div>
-              <h3 className="text-2xl font-display font-bold text-gray-900 mt-6 mb-2">{barber.owner_name}</h3>
+              <h3 className="text-xl sm:text-2xl font-display font-bold text-gray-900 mt-6 mb-2">{barber.owner_name}</h3>
               <p className="text-gray-600 font-medium">Master Barber & Stylist</p>
             </div>
 
             {/* Services Section */}
-            <div className="sm:card-premium sm:p-8 px-4 sm:px-0">
+            <div className="p-0 sm:p-8 sm:card-premium sm:bg-white bg-transparent sm:border sm:border-gray-100">
               <div className="flex items-center space-x-3 mb-8">
                 <div className="bg-primary-100 p-2 rounded-xl">
                   <Scissors className="h-6 w-6 text-primary-600" />
                 </div>
-                <h3 className="text-2xl font-display font-bold text-gray-900">Services & Pricing</h3>
+                <h3 className="text-2xl sm:text-3xl font-display font-bold text-gray-900">Services & Pricing</h3>
               </div>
               {loadingServices ? (
                 <div className="text-center py-12">
@@ -295,49 +329,35 @@ const BarberProfilePage: React.FC = () => {
                   <p className="text-gray-600 font-medium">Loading services...</p>
                 </div>
               ) : services.length > 0 ? (
-                <div className="space-y-4 sm:space-y-8">
+                <div className="space-y-4 sm:space-y-6">
                   {services.map((service) => (
                     <div
                       key={service.id}
-                      className="rounded-2xl border border-gray-100 bg-white shadow-sm
-                                 p-4 sm:p-6 hover:border-primary-300 hover:shadow-md transition"
+                      className="rounded-2xl border border-gray-100 bg-white shadow-sm p-4 sm:p-6 hover:border-primary-300 hover:shadow-md transition"
                     >
-                      {/* Top row: name + price badge */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h4 className="text-base sm:text-xl font-display font-bold text-gray-900">
-                            {service.name}
-                          </h4>
-                          {service.description && (
-                            <p className="mt-1 text-gray-600 text-sm line-clamp-2 sm:line-clamp-none">
-                              {service.description}
-                            </p>
-                          )}
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-900">{service.name}</h4>
+                          <p className="text-gray-600 text-sm">{service.description}</p>
                         </div>
-
-                        <div className="shrink-0 rounded-xl bg-gray-50 px-3 py-2 sm:px-4 sm:py-3 text-right shadow-inner">
-                          <p className="text-xl sm:text-3xl font-bold text-gray-900">${service.price}</p>
+                        <div className="text-right">
+                          <p className="text-xl font-bold text-gray-900">${service.price}</p>
                           {service.deposit_required && (
-                            <p className="mt-0.5 text-xs sm:text-sm text-accent-600 font-medium">
-                              ${service.deposit_amount} deposit
-                            </p>
+                            <p className="text-sm text-orange-600 font-medium">${service.deposit_amount} deposit</p>
                           )}
                         </div>
                       </div>
 
-                      {/* Meta + CTA */}
-                      <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                          <div className="rounded-lg bg-gray-200 p-1.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-6 text-sm text-gray-500">
+                          <div className="flex items-center space-x-1">
                             <Clock className="h-4 w-4" />
+                            <span>{service.duration_minutes} min</span>
                           </div>
-                          <span className="font-medium">{service.duration_minutes} min</span>
                         </div>
-
                         <Link
                           to={`/book/${barber.slug}/${service.id}`}
-                          className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-xl px-4 py-3
-                                     bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+                          className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
                         >
                           Book Now
                         </Link>
@@ -360,8 +380,8 @@ const BarberProfilePage: React.FC = () => {
           {/* Sidebar */}
           <div className="space-y-8">
             {/* Contact Info */}
-            <div className="card-premium p-8">
-              <h3 className="text-xl font-display font-bold text-gray-900 mb-6">Contact</h3>
+            <div className="p-0 sm:p-8 sm:card-premium sm:bg-white bg-transparent sm:border sm:border-gray-100">
+              <h3 className="text-lg sm:text-xl font-display font-bold text-gray-900 mb-6">Contact</h3>
               <div className="space-y-4">
                 {barber.phone && (
                   <a 
@@ -399,18 +419,18 @@ const BarberProfilePage: React.FC = () => {
             </div>
 
             {/* Business Hours */}
-            <div className="card-premium p-8">
-              <h3 className="text-xl font-display font-bold text-gray-900 mb-6">Business Hours</h3>
+            <div className="p-0 sm:p-8 sm:card-premium sm:bg-white bg-transparent sm:border sm:border-gray-100">
+              <h3 className="text-lg sm:text-xl font-display font-bold text-gray-900 mb-6">Business Hours</h3>
               <BusinessHours barberId={barber.id} />
             </div>
 
             {/* Book Appointment */}
-            <div className="card-premium p-8 bg-gradient-to-br from-emerald-50 to-primary-50 border border-emerald-200">
+            <div className="p-0 sm:p-8 sm:card-premium sm:bg-gradient-to-br sm:from-emerald-50 sm:to-primary-50 sm:border sm:border-emerald-200 bg-transparent">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="bg-emerald-500 p-2 rounded-xl">
                   <CheckCircle className="h-5 w-5 text-white" />
                 </div>
-                <h3 className="text-xl font-display font-bold text-gray-900">Verified Business</h3>
+                <h3 className="text-lg sm:text-xl font-display font-bold text-gray-900">Verified Business</h3>
               </div>
               <p className="text-gray-700 mb-6 leading-relaxed">
                 This is a verified barber profile. Book appointments and contact them directly with confidence.
@@ -426,7 +446,7 @@ const BarberProfilePage: React.FC = () => {
 
             {/* Location */}
             {barber.address && (
-              <div className="card-premium p-8">
+              <div className="p-0 sm:p-8 sm:card-premium sm:bg-white bg-transparent sm:border sm:border-gray-100">
                 <GoogleMap
                   address={barber.address}
                   businessName={barber.business_name}
@@ -440,6 +460,17 @@ const BarberProfilePage: React.FC = () => {
         </div>
       </div>
 
+      {/* Sticky mobile CTA */}
+      <div className="sm:hidden sticky bottom-[max(env(safe-area-inset-bottom),16px)] z-30 px-4">
+        <Link
+          to={`/book/${barber.slug}`}
+          className="w-full inline-flex justify-center items-center gap-2 rounded-xl px-4 py-3 font-semibold
+                     bg-gradient-to-r from-accent-500 to-accent-600 text-white shadow-lg"
+        >
+          <Calendar className="h-5 w-5" />
+          Book Appointment
+        </Link>
+      </div>
       {/* Sticky mobile CTA */}
       <div className="sm:hidden sticky bottom-[max(env(safe-area-inset-bottom),16px)] z-30 px-4">
         <Link
