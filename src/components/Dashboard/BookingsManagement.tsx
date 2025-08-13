@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { Calendar, Clock, User, Phone, Mail, Filter, Search, CheckCircle, X, Loader, CreditCard } from 'lucide-react';
-import { NotificationManager } from 'react-notifications';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { supabase } from '@/lib/supabase';
 import { Booking } from '@/types';
 
