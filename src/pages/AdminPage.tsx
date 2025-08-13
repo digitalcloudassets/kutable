@@ -240,48 +240,6 @@ const AdminPage: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <SupabaseConnectionBanner isConnected={isConnected} />
         
-          {/* Debug Info (Development) */}
-          {import.meta.env.DEV && kpis?.debugInfo && (
-            <div className="card-premium p-8">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="bg-gray-100 p-3 rounded-2xl">
-                  <Database className="h-6 w-6 text-gray-600" />
-                </div>
-                <h4 className="text-2xl font-display font-bold text-gray-900">Debug Info (Dev Mode)</h4>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <h5 className="font-semibold text-gray-900 mb-2">Barber Profiles</h5>
-                  <div className="space-y-1 text-gray-600">
-                    <div>Total in DB: {kpis.debugInfo.totalBarberProfiles}</div>
-                    <div>Showing as Total: {kpis.totalBarbers}</div>
-                    <div>Claimed: {kpis.claimedBarbers}</div>
-                    <div>Active: {kpis.activeBarbers}</div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <h5 className="font-semibold text-gray-900 mb-2">Payments</h5>
-                  <div className="space-y-1 text-gray-600">
-                    <div>Total in DB: {kpis.debugInfo.totalPayments}</div>
-                    <div>Succeeded: {kpis.debugInfo.succeededPayments}</div>
-                    <div>Live Mode: {kpis.debugInfo.livePayments}</div>
-                    <div>Test Mode: {kpis.debugInfo.testPayments}</div>
-                    <div>Platform Fees (Succeeded): ${((kpis.debugInfo.platformFeesSucceeded || 0) / 100).toFixed(2)}</div>
-                    <div>Platform Fees (Live): ${((kpis.debugInfo.platformFeesLive || 0) / 100).toFixed(2)}</div>
-                    <div>Platform Fees (Test): ${((kpis.debugInfo.platformFeesTest || 0) / 100).toFixed(2)}</div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <h5 className="font-semibold text-gray-900 mb-2">Calculated Values</h5>
-                  <div className="space-y-1 text-gray-600">
-                    <div>Gross Revenue: {formatCurrency(kpis.totalRevenue)}</div>
-                    <div>Platform Revenue: {formatCurrency(kpis.platformRevenue)}</div>
-                    <div>Avg Booking: {formatCurrency(kpis.avgBookingValue)}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         <div className="space-y-8">
           {/* Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

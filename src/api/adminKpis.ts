@@ -10,17 +10,6 @@ export interface AdminKPIs {
   totalRevenue: number; // Gross revenue in dollars
   platformRevenue: number; // Platform fee revenue in dollars
   avgBookingValue: number;
-  // Debug info
-  debugInfo?: {
-    totalBarberProfiles: number;
-    totalPayments: number;
-    succeededPayments: number;
-    livePayments: number;
-    testPayments: number;
-    platformFeesSucceeded: number;
-    platformFeesLive: number;
-    platformFeesTest: number;
-  };
 }
 
 export async function fetchAdminKpis(): Promise<AdminKPIs> {
@@ -44,24 +33,6 @@ export async function fetchAdminKpis(): Promise<AdminKPIs> {
   // Convert from array to single object (materialized view returns single row)
   const kpiData = Array.isArray(data) ? data[0] : data;
 
-  console.log('📊 Raw KPI data from materialized view:', {
-    totalBarbers: kpiData?.total_barbers,
-    claimedBarbers: kpiData?.claimed_barbers,
-    activeBarbers: kpiData?.active_barbers,
-    totalBookings: kpiData?.total_bookings,
-    grossCents: kpiData?.gross_cents,
-    platformCents: kpiData?.platform_cents,
-    platformDollars: (Number(kpiData?.platform_cents || 0)) / 100,
-    debugInfo: {
-      totalBarberProfiles: kpiData?.debug_total_barber_profiles,
-      totalPayments: kpiData?.debug_total_payments,
-      succeededPayments: kpiData?.debug_succeeded_payments,
-      platformFeesSucceeded: kpiData?.debug_platform_fees_succeeded,
-      platformFeesLive: kpiData?.debug_platform_fees_live,
-      platformFeesTest: kpiData?.debug_platform_fees_test
-    }
-  });
-  
   return {
     totalBarbers: Number(kpiData?.total_barbers || 0),
     claimedBarbers: Number(kpiData?.claimed_barbers || 0),
@@ -71,17 +42,7 @@ export async function fetchAdminKpis(): Promise<AdminKPIs> {
     bookingsToday: Number(kpiData?.bookings_today || 0),
     totalRevenue: (Number(kpiData?.gross_cents || 0)) / 100,        // Gross revenue in dollars
     platformRevenue: (Number(kpiData?.platform_cents || 0)) / 100, // Platform revenue in dollars
-    avgBookingValue: (Number(kpiData?.avg_booking_cents || 0)) / 100,
-    debugInfo: {
-      totalBarberProfiles: Number(kpiData?.debug_total_barber_profiles || 0),
-      totalPayments: Number(kpiData?.debug_total_payments || 0),
-      succeededPayments: Number(kpiData?.debug_succeeded_payments || 0),
-      livePayments: Number(kpiData?.debug_live_payments || 0),
-      testPayments: Number(kpiData?.debug_test_payments || 0),
-      platformFeesSucceeded: Number(kpiData?.debug_platform_fees_succeeded || 0),
-      platformFeesLive: Number(kpiData?.debug_platform_fees_live || 0),
-      platformFeesTest: Number(kpiData?.debug_platform_fees_test || 0)
-    }
+    avgBookingValue: (Number(kpiData?.avg_booking_cents || 0)) / 100
   };
 }
 
