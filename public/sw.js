@@ -55,6 +55,10 @@ self.addEventListener('fetch', (event) => {
   if (!url.startsWith('http')) return;
   if (req.method !== 'GET') return;
 
+  // Only handle http/https GET requests
+  if (!url.startsWith('http')) return;
+  if (req.method !== 'GET') return;
+
   // Only cache same-origin requests (prevents CSP noise for 3rd-party like Stripe/Fonts)
   const sameOrigin = new URL(url).origin === self.location.origin;
   if (!sameOrigin) return; // let the browser handle it

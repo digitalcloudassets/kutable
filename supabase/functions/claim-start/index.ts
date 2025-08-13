@@ -118,19 +118,38 @@ Deno.serve(async (req) => {
     }
 
     // 3) Issue one-time token (24h)
-    const token = randomToken(32);
-    const expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    
-    const { error: tokErr } = await db
+    // 3) Reuse an active token if it exists (unconsumed + not expired)
+    const { data: existingTok } = await db
       .from('claim_tokens')
-      .insert({ 
-        barber_id: barberId, 
-        token, 
-        expires_at 
-      });
-      
-    if (tokErr) {
-      return json(400, { success: false, error: tokErr.message });
+      .select('token, expires_at')
+      .eq('barber_id', barberId)
+      .is('consumed_at', null)
+      .gt('expires_at', new Date().toISOString())
+      .order('expires_at', { ascending: false })
+      .maybeSingle();
+
+    let token: string;
+    let expires_at: string;
+
+    if (existingTok) {
+      token = existingTok.token;
+      expires_at = existingTok.expires_at;
+    } else {
+      // Create fresh token (24h)
+      token = randomToken(32);
+      expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+      const { error: tokErr } = await db
+        .from('claim_tokens')
+        .insert({ 
+          barber_id: barberId, 
+          token, 
+          expires_at 
+        });
+        
+      if (tokErr) {
+        return json(400, { success: false, error: tokErr.message });
+      }
     }
 
     const claimUrl = `${SITE_URL}/claim/${token}`;
@@ -146,7 +165,8 @@ Deno.serve(async (req) => {
       success: true, 
       barberId, 
       slug: finalSlug, 
-      claimUrl 
+      claimUrl,
+      expires_at
     });
     
   } catch (e: any) {

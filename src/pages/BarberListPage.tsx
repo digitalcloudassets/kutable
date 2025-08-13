@@ -44,11 +44,16 @@ const BarberListPage: React.FC = () => {
   const [availableServiceTypes] = useState([
     'Haircut', 'Beard Trim', 'Shave', 'Hair Wash', 'Styling', 'Fade', 'Buzz Cut', 'Line Up'
   ]);
+  const [claiming, setClaiming] = useState(false);
   const PROFILES_PER_PAGE = 24;
 
   // Add claim handler  
   const handleClaimClick = async (barberProfile: BarberProfile) => {
+    if (claiming) return;
+    setClaiming(true);
+    
     try {
+      // Stash payload for claim page fallback
       const payload = {
         slug: barberProfile.slug,
         business_name: barberProfile.business_name,
@@ -63,6 +68,8 @@ const BarberListPage: React.FC = () => {
         import_external_id: barberProfile.id?.startsWith?.('csv-') ? barberProfile.id : null,
       };
 
+      sessionStorage.setItem('claim:payload', JSON.stringify(payload));
+
       const { data, error } = await supabase.functions.invoke('claim-start', { body: payload });
       if (error) throw error;
       if (!data?.success || !data?.claimUrl) throw new Error(data?.error || 'Failed to start claim flow');
@@ -73,9 +80,14 @@ const BarberListPage: React.FC = () => {
       // Show the real server message if present  
       const serverMsg = e?.context?.error || e?.context?.response || e?.message || 'Could not start claim';
       console.error('Claim start error:', serverMsg, e);
-      alert(`Error: ${serverMsg}`);
+      NotificationManager?.error?.(serverMsg);
+    } finally {
+      setClaiming(false);
     }
   };
+  
+  const [claiming, setClaiming] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Enhanced CSV parsing function
   const parseCSVLine = (line: string): string[] => {
@@ -674,13 +686,14 @@ const BarberListPage: React.FC = () => {
                       {!barber.is_claimed && !isReservedSlug(barber.slug) && (
                         <Link
                           to={`/claim/${barber.id}`}
+                          disabled={claiming}
                           onClick={(e) => {
                             e.preventDefault();
                             handleClaimClick(barber);
                           }}
-                          className="bg-accent-500 text-white text-xs px-3 py-2 rounded-full font-semibold hover:bg-accent-600 transition-colors shadow-lg"
+                          className="bg-accent-500 text-white text-xs px-3 py-2 rounded-full font-semibold hover:bg-accent-600 transition-colors shadow-lg disabled:opacity-50"
                         >
-                          Claim
+                          {claiming ? 'Opening…' : 'Claim'}
                         </Link>
                       )}
                       {barber.is_claimed && (

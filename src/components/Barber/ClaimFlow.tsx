@@ -333,10 +333,12 @@ const ClaimFlow: React.FC = () => {
   const handleClaim = async () => {
     if (!barber) return;
 
+    if (claiming) return;
     setClaiming(true);
     setError('');
 
     try {
+      // Stash payload for potential retry
       const payload = {
         slug: barber.slug,
         business_name: claimData.businessName || barber.business_name,
@@ -350,6 +352,8 @@ const ClaimFlow: React.FC = () => {
         import_source: isCSVProfile ? 'csv' : 'db',
         import_external_id: isCSVProfile ? barberId : null,
       };
+
+      sessionStorage.setItem('claim:payload', JSON.stringify(payload));
 
       const { data, error } = await supabase.functions.invoke('claim-start', {
         body: payload
@@ -367,7 +371,7 @@ const ClaimFlow: React.FC = () => {
       const serverMsg = error?.context?.error || error?.context?.response || error?.message || 'Could not start claim';
       console.error('Error starting claim:', error);
       setError(serverMsg);
-      NotificationManager.error(serverMsg);
+      NotificationManager?.error?.(serverMsg);
     } finally {
       setClaiming(false);
     }

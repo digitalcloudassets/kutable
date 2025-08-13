@@ -29,6 +29,18 @@ const ClaimPage: React.FC = () => {
       return;
     }
 
+    // Try to prefill data from sessionStorage fallback
+    const claimPayload = sessionStorage.getItem('claim:payload');
+    if (claimPayload) {
+      try {
+        const payload = JSON.parse(claimPayload);
+        console.log('Using claim payload from sessionStorage:', payload);
+        // Could set some prefill state here if needed
+      } catch (error) {
+        console.warn('Failed to parse claim payload from sessionStorage:', error);
+      }
+    }
+
     if (!authLoading) {
       if (!user) {
         // Save where to return to after login
@@ -74,6 +86,9 @@ const ClaimPage: React.FC = () => {
       setSuccess(true);
       setMessage('Profile claimed successfully!');
       NotificationManager.success('Profile claimed successfully! Welcome to Kutable.');
+
+      // Clear the payload since claim was successful
+      sessionStorage.removeItem('claim:payload');
 
       // Redirect after short delay
       setTimeout(() => {

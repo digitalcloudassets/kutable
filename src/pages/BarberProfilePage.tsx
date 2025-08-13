@@ -56,6 +56,7 @@ const BarberProfilePage: React.FC = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [claiming, setClaiming] = useState(false);
 
   // Add claim handler
   const handleClaimClick = async (barberProfile: BarberProfile) => {
@@ -519,6 +520,7 @@ const BarberProfilePage: React.FC = () => {
         {!barber.is_claimed && !isReservedSlug(barber.slug) && (
           <div className="absolute top-6 right-6 z-20">
             <button
+              disabled={claiming}
               className="bg-gradient-to-r from-accent-500 to-accent-600 text-white px-6 py-3 rounded-2xl hover:from-accent-600 hover:to-accent-700 transition-all duration-200 font-semibold flex items-center space-x-2 shadow-premium-lg hover:scale-105 whitespace-nowrap"
               onClick={(e) => {
                 e.preventDefault();
@@ -526,7 +528,7 @@ const BarberProfilePage: React.FC = () => {
               }}
             >
               <Crown className="h-5 w-5" />
-              <span>Claim This Listing</span>
+              <span>{claiming ? 'Opening…' : 'Claim This Listing'}</span>
             </button>
           </div>
         )}
