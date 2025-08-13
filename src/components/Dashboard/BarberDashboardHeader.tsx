@@ -30,13 +30,6 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
 
   return (
     <div className="space-y-8 mb-8">
-      {/* Welcome Banner */}
-      <div className="bg-blue-600 text-white py-8 px-6 sm:py-12 sm:px-8 rounded-2xl shadow-lg text-center">
-        <h1 className="text-3xl sm:text-4xl font-display font-bold mb-3">
-          Welcome back, Pete.
-        </h1>
-      </div>
-
       {/* Main Profile Card */}
       <div className="card-premium p-8 text-center">
         <div className="space-y-6">
