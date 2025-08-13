@@ -46,26 +46,19 @@ const BarberListPage: React.FC = () => {
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const PROFILES_PER_PAGE = 24;
 
-  const isReservedSlug = (slug: string) => {
-    return false; // Placeholder function
-  };
-
-  const handleClaimClick = (barber: BarberProfile) => {
-    // Placeholder function
-  };
-
   useEffect(() => {
     loadBarberData();
   }, []);
 
   const loadBarberData = async () => {
     try {
-      console.log('📁 Loading barber profiles from database...');
+      console.log('📁 Loading verified barber profiles from database...');
       
       const { data: dbProfiles, error } = await supabase
         .from('barber_profiles')
         .select('*')
         .eq('is_active', true)
+        .eq('is_claimed', true)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -83,7 +76,7 @@ const BarberListPage: React.FC = () => {
         profile_image_url: profile.profile_image_url || 'https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=400'
       }));
 
-      console.log(`✅ Found ${profiles.length} barber profiles`);
+      console.log(`✅ Found ${profiles.length} verified barber profiles`);
       
       setBarbers(profiles);
       setFilteredBarbers(profiles);
@@ -224,7 +217,7 @@ const BarberListPage: React.FC = () => {
                 <div className="text-center sm:text-left">
                   <h1 className="mobile-headline font-display text-gray-900">Find Your Perfect Barber</h1>
                   <p className="text-gray-600 mobile-body mt-2">
-                Directory of {barbers.length.toLocaleString()} barber shops and businesses
+                Directory of {barbers.length.toLocaleString()} verified barber professionals
                   </p>
                 </div>
               </div>
@@ -321,7 +314,7 @@ const BarberListPage: React.FC = () => {
                   </span>
                 ) : (
                   <>
-                    Showing {displayedBarbers.length.toLocaleString()} of {filteredBarbers.length.toLocaleString()} barber{filteredBarbers.length !== 1 ? 's' : ''} 
+                    Showing {displayedBarbers.length.toLocaleString()} of {filteredBarbers.length.toLocaleString()} verified barber{filteredBarbers.length !== 1 ? 's' : ''} 
                   </>
                 )}
                 {selectedCity && ` in ${selectedCity}`}
