@@ -227,7 +227,7 @@ const BarberListPage: React.FC = () => {
             <div className="space-y-6">
               {/* Search Row - Horizontal Layout */}
               <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex flex-col lg:flex-row gap-2 sm:gap-4">
                   {/* Search Input */}
                   <div className="flex-1 relative">
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
