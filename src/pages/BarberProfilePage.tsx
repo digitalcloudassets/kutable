@@ -297,33 +297,47 @@ const BarberProfilePage: React.FC = () => {
               ) : services.length > 0 ? (
                 <div className="space-y-8">
                   {services.map((service) => (
-                    <div key={service.id} className="bg-gray-50 border border-gray-100 rounded-2xl p-6 hover:border-primary-300 hover:shadow-md transition-all duration-200 group">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h4 className="text-xl font-display font-bold text-gray-900 group-hover:text-primary-600 transition-colors">{service.name}</h4>
+                    <div
+                      key={service.id}
+                      className="rounded-2xl border border-gray-100 bg-white shadow-sm
+                                 p-4 sm:p-6 hover:border-primary-300 hover:shadow-md transition"
+                    >
+                      {/* Top row: name + price badge */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h4 className="text-base sm:text-xl font-display font-bold text-gray-900">
+                            {service.name}
+                          </h4>
                           {service.description && (
-                            <p className="text-gray-600 mt-2">{service.description}</p>
+                            <p className="mt-1 text-gray-600 text-sm line-clamp-2 sm:line-clamp-none">
+                              {service.description}
+                            </p>
                           )}
                         </div>
-                        <div className="text-right bg-white rounded-xl p-4 shadow-sm">
-                          <p className="text-3xl font-bold text-gray-900">${service.price}</p>
+
+                        <div className="shrink-0 rounded-xl bg-gray-50 px-3 py-2 sm:px-4 sm:py-3 text-right shadow-inner">
+                          <p className="text-xl sm:text-3xl font-bold text-gray-900">${service.price}</p>
                           {service.deposit_required && (
-                            <p className="text-sm text-accent-600 font-medium">${service.deposit_amount} deposit</p>
+                            <p className="mt-0.5 text-xs sm:text-sm text-accent-600 font-medium">
+                              ${service.deposit_amount} deposit
+                            </p>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-                        <div className="flex items-center space-x-6">
-                          <div className="flex items-center space-x-2">
-                            <div className="bg-gray-200 p-1.5 rounded-lg">
-                              <Clock className="h-4 w-4" />
-                            </div>
-                            <span className="font-medium text-gray-700">{service.duration_minutes} min</span>
+
+                      {/* Meta + CTA */}
+                      <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex items-center gap-2 text-sm text-gray-700">
+                          <div className="rounded-lg bg-gray-200 p-1.5">
+                            <Clock className="h-4 w-4" />
                           </div>
+                          <span className="font-medium">{service.duration_minutes} min</span>
                         </div>
+
                         <Link
                           to={`/book/${barber.slug}/${service.id}`}
-                          className="btn-primary hover:scale-105 transition-all duration-200"
+                          className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-xl px-4 py-3
+                                     bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
                         >
                           Book Now
                         </Link>
@@ -424,6 +438,18 @@ const BarberProfilePage: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Sticky mobile CTA */}
+      <div className="sm:hidden sticky bottom-[max(env(safe-area-inset-bottom),16px)] z-30 px-4">
+        <Link
+          to={`/book/${barber.slug}`}
+          className="w-full inline-flex justify-center items-center gap-2 rounded-xl px-4 py-3 font-semibold
+                     bg-gradient-to-r from-accent-500 to-accent-600 text-white shadow-lg"
+        >
+          <Calendar className="h-5 w-5" />
+          Book Appointment
+        </Link>
       </div>
     </div>
   );
