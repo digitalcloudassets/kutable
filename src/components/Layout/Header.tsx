@@ -32,13 +32,10 @@ const Header: React.FC = () => {
   useEffect(() => {
     if (adminError && import.meta.env.DEV) {
       // Only log as error if it's not a development mode issue
-      if (adminError.includes('fallback mode') || adminError.includes('Development environment detected')) {
+      if (adminError.includes('fallback mode') || adminError.includes('Development environment detected') || adminError.includes('WebContainer')) {
         console.log('ℹ️  Admin Guard:', adminError);
       } else {
-        // Don't spam console with WebContainer restriction messages
-        if (!adminError.includes('WebContainer')) {
-          console.error('🔐 Admin Guard Error:', adminError);
-        }
+        console.error('🔐 Admin Guard Error:', adminError);
       }
     }
   }, [adminError]);
