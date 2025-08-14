@@ -19,6 +19,87 @@ import { NotificationManager } from '../utils/notifications';
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
 
+// Temporary debug component for admin testing
+const AdminDebugPanel: React.FC = () => {
+  const [testing, setTesting] = useState(false);
+  const [result, setResult] = useState<any>(null);
+
+  const testAdminGuard = async () => {
+    setTesting(true);
+    setResult(null);
+    
+    try {
+      console.log('🔍 Testing admin-guard function...');
+      const { data, error } = await supabase.functions.invoke('admin-guard', { body: {} });
+      
+      const testResult = {
+        success: !error,
+        data: data,
+        error: error?.message || null,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log('🔍 Admin guard test result:', testResult);
+      setResult(testResult);
+      
+      if (data?.ok) {
+        NotificationManager.success('✅ Admin access confirmed!');
+      } else {
+        NotificationManager.error('❌ Admin access denied');
+      }
+    } catch (error: any) {
+      console.error('🔍 Admin guard test error:', error);
+      setResult({ 
+        success: false, 
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+      NotificationManager.error('Function test failed');
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold text-blue-900">Admin Access Debug</h3>
+        <button
+          onClick={testAdminGuard}
+          disabled={testing}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
+        >
+          {testing ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+          ) : (
+            <span>🔍</span>
+          )}
+          <span>{testing ? 'Testing...' : 'Test Admin Function'}</span>
+        </button>
+      </div>
+      
+      {result && (
+        <div className={`rounded-lg p-3 text-sm ${
+          result.success && result.data?.ok 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-red-100 text-red-800'
+        }`}>
+          <p className="font-medium mb-2">
+            {result.success && result.data?.ok ? '✅ Admin Access Granted' : '❌ Admin Access Denied'}
+          </p>
+          <pre className="text-xs bg-white/50 p-2 rounded overflow-auto">
+            {JSON.stringify(result, null, 2)}
+          </pre>
+        </div>
+      )}
+      
+      <p className="text-blue-700 text-sm mt-3">
+        Your User ID: <code className="bg-blue-100 px-2 py-1 rounded">8620af49-2906-43ee-977d-8df37c49fce3</code>
+      </p>
+    </div>
+  );
+};
+
 const DashboardPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const { unreadCount } = useMessaging();
@@ -280,6 +361,8 @@ const DashboardPage: React.FC = () => {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-28">
           <SupabaseConnectionBanner isConnected={isConnected} />
+          
+          <AdminDebugPanel />
           
           <ClientDashboardHeader user={user} clientProfile={clientProfile} />
 
