@@ -1,10 +1,13 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAdminGuard } from "../hooks/useAdminGuard";
+import { devPreviewEnabled } from "../lib/devFlags";
 
 type Props = { children: React.ReactNode };
 
 export default function ProtectedAdminRoute({ children }: Props) {
+  if (devPreviewEnabled()) return <>{children}</>; // bypass in Bolt preview only
+  
   const { loading, allowed, errorMsg } = useAdminGuard();
 
   if (loading) {
