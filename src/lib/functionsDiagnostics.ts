@@ -30,7 +30,12 @@ export function getFunctionsBaseUrl(): string {
   return deriveFromProjectUrl(projectUrl);
 }
 
-// Plain fetch probe without auth - tests basic connectivity
+export async function plainFetchProbe(url: string): Promise<{
+  ok: boolean;
+  status?: number;
+  detail: string;
+  headers?: Record<string, string>;
+}> {
   // Skip external network calls in WebContainer environments
   if (isWebContainerEnvironment()) {
     return {
@@ -40,12 +45,6 @@ export function getFunctionsBaseUrl(): string {
     };
   }
 
-export async function plainFetchProbe(url: string): Promise<{
-  ok: boolean;
-  status?: number;
-  detail: string;
-  headers?: Record<string, string>;
-}> {
   try {
     const response = await fetch(url, {
       method: 'GET',
