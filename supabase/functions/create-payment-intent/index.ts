@@ -3,6 +3,7 @@
 // Uses REST via fetch (Stripe Node SDK is not used on Supabase Edge).
 
 import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
+import { consumeRateLimit } from '../_shared/rateLimit.ts';
 
 const headers = corsHeaders(['POST', 'OPTIONS']);
 
@@ -49,6 +50,19 @@ Deno.serve(async (req) => {
 
   const cors = withCors(req, headers);
   if (!cors.ok) return cors.res;
+
+  // RATE LIMIT: 10 requests per 60 seconds per IP for payment intent creation
+  const rl = await consumeRateLimit(req, "create-payment-intent", { limit: 10, windowSeconds: 60 });
+  if (!rl.allowed) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: "Too many requests. Please try again shortly.",
+      retryAfter: 60
+    }), {
+      status: 429,
+      headers: { ...cors.headers, "Content-Type": "application/json" },
+    });
+  }
 
   const resJson = (status: number, data: any) =>
     new Response(JSON.stringify(data), { status, headers: { ...cors.headers, 'Content-Type': 'application/json' } });

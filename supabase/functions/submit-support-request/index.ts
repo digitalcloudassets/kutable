@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts'
+import { consumeRateLimit } from '../_shared/rateLimit.ts'
 
 const headers = corsHeaders(['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
@@ -11,34 +12,6 @@ interface SupportRequest {
   message: string;
   userId?: string;
 }
-
-// Rate limiting for support requests
-const supportAttempts = new Map<string, { count: number; lastAttempt: number }>();
-
-const isRateLimited = (identifier: string, maxAttempts: number = 3, windowMs: number = 60 * 60 * 1000): boolean => {
-  const now = Date.now();
-  const attempts = supportAttempts.get(identifier);
-  
-  if (!attempts) {
-    supportAttempts.set(identifier, { count: 1, lastAttempt: now });
-    return false;
-  }
-  
-  if (now - attempts.lastAttempt > windowMs) {
-    supportAttempts.set(identifier, { count: 1, lastAttempt: now });
-    return false;
-  }
-  
-  if (attempts.count >= maxAttempts) {
-    return true;
-  }
-  
-  attempts.count++;
-  attempts.lastAttempt = now;
-  supportAttempts.set(identifier, attempts);
-  
-  return false;
-};
 
 const sanitizeInput = (input: string, maxLength: number = 255): string => {
   if (typeof input !== 'string') return '';
@@ -58,26 +31,23 @@ Deno.serve(async (req) => {
   const cors = withCors(req, headers);
   if (!cors.ok) return cors.res;
 
+  // RATE LIMIT: 3 support requests per hour per IP
+  const rl = await consumeRateLimit(req, "submit-support-request", { limit: 3, windowSeconds: 3600 });
+  if (!rl.allowed) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Too many support requests. Please wait an hour before submitting another request.',
+        retryAfter: 3600
+      }),
+      {
+        headers: { ...cors.headers, 'Content-Type': 'application/json' },
+        status: 429,
+      },
+    )
+  }
+
   try {
-    // Get client IP for rate limiting
-    const clientIP = req.headers.get('x-forwarded-for') || 
-                    req.headers.get('x-real-ip') || 
-                    'unknown';
-
-    // Rate limiting by IP
-    if (isRateLimited(`support_${clientIP}`, 3, 60 * 60 * 1000)) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Too many support requests. Please wait an hour before submitting another request.'
-        }),
-        {
-          headers: { ...cors.headers, 'Content-Type': 'application/json' },
-          status: 429,
-        },
-      )
-    }
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -208,12 +178,18 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Rate limiting per email
-    if (isRateLimited(`email_${email}`, 2, 60 * 60 * 1000)) {
+    // Additional rate limit per email address
+    const emailRl = await consumeRateLimit(req, "submit-support-request-email", { 
+      limit: 2, 
+      windowSeconds: 3600,
+      identifier: email 
+    });
+    if (!emailRl.allowed) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: 'Too many requests from this email. Please wait an hour before submitting another request.'
+          error: 'Too many requests from this email. Please wait an hour before submitting another request.',
+          retryAfter: 3600
         }),
         {
           headers: { ...cors.headers, 'Content-Type': 'application/json' },
@@ -221,6 +197,7 @@ Deno.serve(async (req) => {
         },
       )
     }
+    
     const sanitizedData = {
       name: sanitizeInput(name),
       email: sanitizeInput(email),

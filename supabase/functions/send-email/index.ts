@@ -2,6 +2,7 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { serverEnv } from '../_shared/env.ts';
 import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
+import { consumeRateLimit } from '../_shared/rateLimit.ts';
 
 const headers = corsHeaders(['POST', 'OPTIONS']);
 
@@ -11,6 +12,19 @@ serve(async (req) => {
 
   const cors = withCors(req, headers);
   if (!cors.ok) return cors.res;
+
+  // RATE LIMIT: 5 emails per 60 seconds per IP
+  const rl = await consumeRateLimit(req, "send-email", { limit: 5, windowSeconds: 60 });
+  if (!rl.allowed) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: "Too many email attempts. Try again shortly.",
+      retryAfter: 60
+    }), {
+      status: 429,
+      headers: cors.headers
+    });
+  }
 
   // Hard fail if email service environment variables are missing
   if (!serverEnv.emailProviderKey) {

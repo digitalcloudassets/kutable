@@ -3,6 +3,7 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { serverEnv } from '../_shared/env.ts';
 import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
+import { consumeRateLimit } from '../_shared/rateLimit.ts';
 
 const headers = corsHeaders(['POST', 'OPTIONS']);
 
@@ -12,6 +13,19 @@ serve(async (req) => {
 
   const cors = withCors(req, headers);
   if (!cors.ok) return cors.res;
+
+  // RATE LIMIT: 3 SMS per 60 seconds per IP to prevent abuse
+  const rl = await consumeRateLimit(req, "send-sms", { limit: 3, windowSeconds: 60 });
+  if (!rl.allowed) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: "Too many SMS attempts. Try again in a minute.",
+      retryAfter: 60
+    }), {
+      status: 429,
+      headers: cors.headers
+    });
+  }
 
   // Hard fail if SMS service environment variables are missing
   if (!serverEnv.twilio.sid || !serverEnv.twilio.token || !serverEnv.twilio.from) {

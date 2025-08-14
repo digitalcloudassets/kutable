@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts'
+import { consumeRateLimit } from '../_shared/rateLimit.ts'
 
 const headers = corsHeaders(['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
@@ -15,34 +16,6 @@ interface TwilioWebhookData {
   SmsSid?: string;
   AccountSid: string;
 }
-
-// Rate limiting for webhook processing
-const webhookAttempts = new Map<string, { count: number; lastAttempt: number }>();
-
-const isRateLimited = (identifier: string, maxAttempts: number = 50, windowMs: number = 60 * 1000): boolean => {
-  const now = Date.now();
-  const attempts = webhookAttempts.get(identifier);
-  
-  if (!attempts) {
-    webhookAttempts.set(identifier, { count: 1, lastAttempt: now });
-    return false;
-  }
-  
-  if (now - attempts.lastAttempt > windowMs) {
-    webhookAttempts.set(identifier, { count: 1, lastAttempt: now });
-    return false;
-  }
-  
-  if (attempts.count >= maxAttempts) {
-    return true;
-  }
-  
-  attempts.count++;
-  attempts.lastAttempt = now;
-  webhookAttempts.set(identifier, attempts);
-  
-  return false;
-};
 
 const sanitizeInput = (input: string, maxLength: number = 1000): string => {
   if (typeof input !== 'string') return '';
@@ -63,26 +36,23 @@ Deno.serve(async (req) => {
   const cors = withCors(req, headers, { requireBrowserOrigin: false });
   if (!cors.ok) return cors.res;
 
+  // RATE LIMIT: Higher limit for legitimate webhooks, 100 per minute
+  const rl = await consumeRateLimit(req, "twilio-webhook", { limit: 100, windowSeconds: 60 });
+  if (!rl.allowed) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Webhook rate limit exceeded',
+        retryAfter: 60
+      }),
+      {
+        headers: { ...cors.headers, 'Content-Type': 'application/json' },
+        status: 429,
+      },
+    )
+  }
+
   try {
-    // Get client IP for rate limiting
-    const clientIP = req.headers.get('x-forwarded-for') || 
-                    req.headers.get('x-real-ip') || 
-                    'unknown';
-
-    // Rate limiting by IP (higher limit for webhooks)
-    if (isRateLimited(`webhook_${clientIP}`, 100, 60 * 1000)) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Webhook rate limit exceeded'
-        }),
-        {
-          headers: { ...cors.headers, 'Content-Type': 'application/json' },
-          status: 429,
-        },
-      )
-    }
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');

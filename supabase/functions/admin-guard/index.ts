@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { handlePreflight, buildCorsHeaders } from "../_shared/cors.ts";
+import { consumeRateLimit } from "../_shared/rateLimit.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -21,6 +22,19 @@ Deno.serve(async (req) => {
 
   const origin = req.headers.get("Origin");
   const cors = buildCorsHeaders(origin, ["POST", "OPTIONS"]);
+
+  // RATE LIMIT: 30 admin guard checks per 60 seconds per IP
+  const rl = await consumeRateLimit(req, "admin-guard", { limit: 30, windowSeconds: 60 });
+  if (!rl.allowed) {
+    return new Response(JSON.stringify({ 
+      ok: false, 
+      reason: "Rate limited",
+      retryAfter: 60
+    }), {
+      status: 429,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
 
   // Hard fail if required environment variables are missing
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
