@@ -100,18 +100,36 @@ export function useAdminGuard() {
         
         // Step 4: Test admin access
         console.log('🔐 Testing admin access for user:', session.user.id);
-        const { data, error } = await supabase.functions.invoke("admin-guard", { body: {} });
-        if (!cancelled) {
-          if (error) {
-            console.error('🚨 Admin guard error:', error);
-            setErrorMsg(`Auth Error: ${error.message ?? "Admin access check failed"}`);
-            setAllowed(false);
-          } else {
-            console.log('🔐 Admin guard response:', data);
+        
+        // Call Netlify function instead of Supabase function
+        try {
+          const response = await fetch('/.netlify/functions/admin-guard', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+          });
+          
+          const data = await response.json();
+          
+          if (!response.ok) {
+            throw new Error(data.message || `HTTP ${response.status}`);
+          }
+          
+          console.log('🔐 Admin guard response:', data);
+          if (!cancelled) {
             setAllowed(Boolean(data?.ok));
             if (!data?.ok) {
               setErrorMsg(`Access Denied: ${data?.reason || 'Not authorized as admin'}`);
             }
+          }
+        } catch (error: any) {
+          console.error('🚨 Admin guard error:', error);
+          if (!cancelled) {
+            setErrorMsg(`Auth Error: ${error.message ?? "Admin access check failed"}`);
+            setAllowed(false);
           }
         }
       } catch (e: any) {
