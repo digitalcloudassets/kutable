@@ -217,14 +217,15 @@ const LoginForm: React.FC = () => {
 
           {/* Connection Warning - Non-blocking */}
           {isSupabaseConnected === false && (
-            <div className="mt-6 bg-amber-50 border border-amber-200 rounded-2xl p-4">
-              <div className="flex items-center space-x-2">
-                <AlertCircle className="h-4 w-4 text-amber-600" />
-                <div className="text-amber-800 font-medium text-sm">
-                  <p>Database connection issue detected. You can still try signing in.</p>
-                  <p className="text-xs text-amber-700 mt-1">Some features may be limited until connection is restored.</p>
+            <div className="mt-6 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              <div className="flex items-start gap-2">
+                <div className="mt-1 h-2.5 w-2.5 rounded-full bg-amber-400" aria-hidden />
+                <div>
+                  <p className="font-medium">Having trouble reaching the database ({reason ?? 'unknown'}).</p>
+                  <p className="text-xs text-amber-700 mt-1">
+                    You can still try signing in. Some features may be limited until connection is restored.
+                  </p>
                 </div>
-                </span>
               </div>
             </div>
           )}
