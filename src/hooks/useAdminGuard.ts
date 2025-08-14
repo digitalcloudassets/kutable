@@ -42,7 +42,21 @@ export function useAdminGuard() {
             setAllowed(false);
           } else {
             console.log('🔐 Admin Guard Hook: Setting allowed to:', Boolean(data?.ok));
-            setAllowed(Boolean(data?.ok));
+            // Handle case where data might be a JSON string
+            let parsedData = data;
+            if (typeof data === 'string') {
+              try {
+                parsedData = JSON.parse(data);
+              } catch (parseError) {
+                console.error('🔐 Admin Guard Hook: Failed to parse response:', parseError);
+                setAllowed(false);
+                return;
+              }
+            }
+            
+            const isAllowed = Boolean(parsedData?.ok);
+            console.log('🔐 Admin Guard Hook: Setting allowed to:', isAllowed, 'from parsed data:', parsedData);
+            setAllowed(isAllowed);
           }
         }
       } catch (err) {
