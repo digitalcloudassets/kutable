@@ -27,6 +27,15 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    // Debug: Log environment variables (without exposing them fully)
+    console.log('Admin guard check:', {
+      hasAdminUids: !!Deno.env.get("ADMIN_UIDS"),
+      hasAdminEmails: !!Deno.env.get("ADMIN_EMAILS"),
+      adminUidsLength: ADMIN_UIDS.length,
+      adminEmailsLength: ADMIN_EMAILS.length,
+      timestamp: new Date().toISOString()
+    });
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ ok: false, reason: "Missing Authorization" }), {
@@ -42,6 +51,7 @@ serve(async (req) => {
 
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) {
+      console.log('Auth error in admin guard:', { error: error?.message, hasUser: !!user });
       return new Response(JSON.stringify({ ok: false, reason: "Unauthenticated" }), {
         status: 401,
         headers: corsHeaders,
@@ -51,12 +61,24 @@ serve(async (req) => {
     const isUidAllowed = ADMIN_UIDS.includes(user.id);
     const isEmailAllowed = user.email ? ADMIN_EMAILS.includes(user.email.toLowerCase()) : false;
 
+    // Debug: Log authorization check
+    console.log('Authorization check:', {
+      userId: user.id,
+      userEmail: user.email,
+      isUidAllowed,
+      isEmailAllowed,
+      configuredUids: ADMIN_UIDS.length > 0 ? '[CONFIGURED]' : '[EMPTY]',
+      configuredEmails: ADMIN_EMAILS.length > 0 ? '[CONFIGURED]' : '[EMPTY]'
+    });
+
     if (!isUidAllowed && !isEmailAllowed) {
       return new Response(JSON.stringify({ ok: false, reason: "Forbidden" }), {
         status: 403,
         headers: corsHeaders,
       });
     }
+
+    console.log('Admin access granted:', { userId: user.id, email: user.email });
 
     return new Response(JSON.stringify({ ok: true, user: { id: user.id, email: user.email } }), {
       status: 200,
