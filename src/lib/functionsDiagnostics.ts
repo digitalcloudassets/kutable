@@ -12,6 +12,17 @@ function deriveFromProjectUrl(projectUrl: string): string {
   }
 }
 
+function isWebContainerEnvironment(): boolean {
+  // Detect StackBlitz WebContainer environment that blocks external calls
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    return hostname.includes('webcontainer-api.io') || 
+           hostname.includes('stackblitz.io') ||
+           hostname.includes('local-credentialless');
+  }
+  return false;
+}
+
 export function getFunctionsBaseUrl(): string {
   const explicit = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL as string | undefined;
   if (explicit) return explicit;
@@ -20,6 +31,15 @@ export function getFunctionsBaseUrl(): string {
 }
 
 // Plain fetch probe without auth - tests basic connectivity
+  // Skip external network calls in WebContainer environments
+  if (isWebContainerEnvironment()) {
+    return {
+      ok: false,
+      detail: "WebContainer environment - external calls restricted",
+      errorType: "WebContainerRestriction"
+    };
+  }
+
 export async function plainFetchProbe(url: string): Promise<{
   ok: boolean;
   status?: number;
@@ -90,6 +110,15 @@ export async function checkFunctionDeployment(): Promise<{
     };
   }
   
+  // Skip deployment check in WebContainer environments
+  if (isWebContainerEnvironment()) {
+    return {
+      deployed: false,
+      detail: "WebContainer environment - cannot verify deployment status",
+      url: base
+    };
+  }
+
   const pingUrl = `${base}/ping`;
   
   // Test plain connectivity first
