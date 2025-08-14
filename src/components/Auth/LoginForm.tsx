@@ -96,8 +96,8 @@ const LoginForm: React.FC = () => {
         setError(`Invalid email or password. ${attemptCount >= 2 ? 'Account will be temporarily locked after multiple failed attempts.' : ''}`);
       } else if (error.message?.includes('Too many requests')) {
         setError('Too many login attempts. Please wait a few minutes before trying again.');
-      } else if (error.message?.includes('Supabase not configured')) {
-        setError('Service temporarily unavailable. Please try again later.');
+      } else if (error.message?.includes('Connect to Supabase to enable user accounts') || error.message?.includes('Supabase not configured')) {
+        setError('Database not connected. Please connect to Supabase to sign in.');
       } else if (error.message?.includes('Email not confirmed')) {
         setError('Please check your email and confirm your account before signing in.');
       } else {
