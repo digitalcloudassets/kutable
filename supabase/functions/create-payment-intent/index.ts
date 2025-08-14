@@ -13,6 +13,7 @@ type ReqBody = {
   currency: string;           // e.g. 'usd'
   customerEmail?: string;
   metadata?: Record<string, string>; // bookingId, userId, etc
+  captchaToken?: string;      // Turnstile token
 };
 
 function form(params: Record<string, any>) {
@@ -42,6 +43,16 @@ async function stripePost(path: string, body: URLSearchParams, key: string) {
     return { ok: false, status: r.status, message: msg, requestId: reqId };
   }
   return { ok: true, status: r.status, data: j };
+}
+
+function getClientIp(req: Request): string {
+  const xfwd = req.headers.get("x-forwarded-for");
+  if (xfwd) return xfwd.split(",")[0].trim();
+  const cf = req.headers.get("cf-connecting-ip");
+  if (cf) return cf.trim();
+  const real = req.headers.get("x-real-ip");
+  if (real) return real.trim();
+  return "";
 }
 
 Deno.serve(async (req) => {
@@ -92,9 +103,69 @@ Deno.serve(async (req) => {
     const body: ReqBody = await req.json().catch(() => null as any);
     if (!body) return resJson(400, { error: 'Invalid JSON body' });
 
-    const { barberId, amount, currency, customerEmail, metadata } = body;
+    const { barberId, amount, currency, customerEmail, metadata, captchaToken } = body;
     if (!barberId || !Number.isInteger(amount) || amount <= 0 || !currency) {
       return resJson(400, { error: 'Missing or invalid fields: barberId, amount (cents), currency' });
+    }
+
+    // Verify Turnstile CAPTCHA token
+    if (captchaToken && captchaToken !== 'no-captcha-configured') {
+      try {
+        const turnstileSecret = Deno.env.get('TURNSTILE_SECRET_KEY');
+        if (!turnstileSecret) {
+          console.warn('Turnstile secret not configured - skipping CAPTCHA verification');
+        } else {
+          const form = new FormData();
+          form.append('secret', turnstileSecret);
+          form.append('response', captchaToken);
+          const clientIp = getClientIp(req);
+          if (clientIp) {
+            form.append('remoteip', clientIp);
+          }
+
+          const verifyResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            body: form,
+          });
+          
+          const verifyResult = await verifyResponse.json();
+          
+          if (!verifyResult?.success) {
+            console.warn('Turnstile verification failed:', verifyResult);
+            return resJson(403, { 
+              success: false, 
+              error: 'captcha_failed',
+              detail: 'Security verification failed' 
+            });
+          }
+          
+          // Optionally verify the action matches
+          if (verifyResult.action && verifyResult.action !== 'create_payment_intent') {
+            console.warn('Turnstile action mismatch:', verifyResult.action);
+            return resJson(403, { 
+              success: false, 
+              error: 'captcha_failed',
+              detail: 'Security verification action mismatch' 
+            });
+          }
+          
+          console.log('Turnstile verification passed for payment intent creation');
+        }
+      } catch (captchaError) {
+        console.error('CAPTCHA verification error:', captchaError);
+        return resJson(502, { 
+          success: false, 
+          error: 'captcha_verify_error',
+          detail: 'Security verification temporarily unavailable' 
+        });
+      }
+    } else if (!captchaToken) {
+      // CAPTCHA token is required
+      return resJson(400, { 
+        success: false, 
+        error: 'captcha_required',
+        detail: 'Security verification required' 
+      });
     }
 
      console.log('Creating payment intent for:', { barberId, amount, currency, metadata });
