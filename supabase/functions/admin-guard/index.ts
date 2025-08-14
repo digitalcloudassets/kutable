@@ -1,9 +1,8 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.3";
+import { createClient } from "npm:@supabase/supabase-js@2";
 import { handlePreflight, buildCorsHeaders } from "../_shared/cors.ts";
 
-
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 // Allowed admins (configure via Supabase Function env, NOT client)
 const ADMIN_UIDS = (Deno.env.get("ADMIN_UIDS") ?? "")
@@ -24,9 +23,9 @@ Deno.serve(async (req) => {
   const cors = buildCorsHeaders(origin, ["POST", "OPTIONS"]);
 
   // Hard fail if required environment variables are missing
-  if (!SUPABASE_URL || !ANON_KEY) {
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     console.error("🚨 CRITICAL: Missing required environment variables for admin-guard");
-    console.error("Required: SUPABASE_URL, SUPABASE_ANON_KEY");
+    console.error("Required: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY");
     return new Response(JSON.stringify({ 
       ok: false, 
       reason: "Server configuration error",
@@ -60,12 +59,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create client with anon key and use the provided auth header
-    const supabase = createClient(SUPABASE_URL, ANON_KEY, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    // Create client with service role key - bypass RLS for admin operations
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    
+    // Manually verify the JWT from the auth header
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error } = await supabase.auth.getUser(token);
 
-    const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) {
       return new Response(JSON.stringify({ ok: false, reason: "Unauthenticated" }), {
         status: 401,
