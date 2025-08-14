@@ -3,6 +3,16 @@ import { supabase } from "../lib/supabase";
 import { env } from "../lib/env";
 import { pingFunctions, getFunctionsBaseUrl } from "../lib/functionsDiagnostics";
 
+function isWebContainerEnvironment(): boolean {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    return hostname.includes('webcontainer-api.io') || 
+           hostname.includes('stackblitz.io') ||
+           hostname.includes('local-credentialless');
+  }
+  return false;
+}
+
 export function useAdminGuard() {
   const [loading, setLoading] = useState(true);
   const [allowed, setAllowed] = useState<boolean | null>(null);
@@ -13,6 +23,18 @@ export function useAdminGuard() {
     (async () => {
       setLoading(true);
       setErrorMsg(null);
+      
+      // Short-circuit admin calls in WebContainer environments
+      if (isWebContainerEnvironment()) {
+        console.log('ℹ️  WebContainer detected - admin features disabled');
+        if (!cancelled) {
+          setErrorMsg('Admin features are disabled in WebContainer preview environments. Deploy to production or run locally for full admin functionality.');
+          setAllowed(false);
+          setLoading(false);
+        }
+        return;
+      }
+      
       try {
         // Step 1: Verify Supabase URL configuration
         console.log('🔍 Verifying Supabase configuration...');

@@ -5,13 +5,14 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useMessaging } from '../../hooks/useMessaging';
 import { useAdminGuard } from '../../hooks/useAdminGuard';
+import AdminGuardBanner from '../Debug/AdminGuardBanner';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useAuth();
   const { unreadCount } = useMessaging();
-  const { allowed: isAdmin, loading: adminLoading, errorMsg: adminError } = useAdminGuard();
+  const { allowed: isAdmin, loading: adminLoading, errorMsg } = useAdminGuard();
   
   // Enhanced debug logging
   useEffect(() => {
@@ -23,44 +24,22 @@ const Header: React.FC = () => {
         adminLoading,
         userLoading: loading,
         hasAdminGuard: !!isAdmin || adminLoading,
-        adminErrorMsg: adminError
+        adminErrorMsg: errorMsg
       });
     }
-  }, [user, isAdmin, adminLoading, loading, adminError]);
+  }, [user, isAdmin, adminLoading, loading, errorMsg]);
 
   // Show admin error in development for debugging
   useEffect(() => {
-    if (adminError && import.meta.env.DEV) {
+    if (errorMsg && import.meta.env.DEV) {
       // Only log as error if it's not a development mode issue
-      if (adminError.includes('fallback mode') || adminError.includes('Development environment detected') || adminError.includes('WebContainer')) {
-        console.log('ℹ️  Admin Guard:', adminError);
+      if (errorMsg.includes('fallback mode') || errorMsg.includes('Development environment detected') || errorMsg.includes('WebContainer')) {
+        console.log('ℹ️  Admin Guard:', errorMsg);
       } else {
-        console.error('🔐 Admin Guard Error:', adminError);
+        console.error('🔐 Admin Guard Error:', errorMsg);
       }
     }
-  }, [adminError]);
-  
-  // Enhanced debug logging
-  useEffect(() => {
-    if (user) {
-      console.log('🔐 Header Debug - Admin Check:', {
-        userId: user.id,
-        userEmail: user.email,
-        isAdmin,
-        adminLoading,
-        userLoading: loading,
-        hasAdminGuard: !!isAdmin || adminLoading,
-        adminErrorMsg: adminError
-      });
-    }
-  }, [user, isAdmin, adminLoading, loading, adminError]);
-
-  // Show admin error in development for debugging
-  useEffect(() => {
-    if (adminError && import.meta.env.DEV) {
-      console.error('🔐 Admin Guard Error:', adminError);
-    }
-  }, [adminError]);
+  }, [errorMsg]);
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -100,13 +79,15 @@ const Header: React.FC = () => {
   const isHomePage = location.pathname === '/';
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-20 ${
-      scrolled || !isHomePage 
-        ? 'glass-effect border-b border-white/10 shadow-premium-lg' 
-        : 'bg-transparent'
-    }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+    <>
+      {errorMsg && <AdminGuardBanner message={errorMsg} />}
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-20 ${
+        scrolled || !isHomePage 
+          ? 'glass-effect border-b border-white/10 shadow-premium-lg' 
+          : 'bg-transparent'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="relative">
@@ -207,8 +188,9 @@ const Header: React.FC = () => {
             </button>
           </div>
         </div>
-      </div>
-    </header>
+        </div>
+      </header>
+    </>
   );
 };
 
