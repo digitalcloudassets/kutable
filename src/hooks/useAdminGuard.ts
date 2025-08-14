@@ -52,6 +52,21 @@ export function useAdminGuard() {
 
         // Step 2: Test Edge Function connectivity with direct ping
         console.log('🏓 Testing Edge Function connectivity...');
+        
+        // First check deployment status
+        const { checkFunctionDeployment } = await import('../lib/functionsDiagnostics');
+        const deployCheck = await checkFunctionDeployment();
+        console.log('📋 Deployment check:', deployCheck);
+        
+        if (!deployCheck.deployed) {
+          if (!cancelled) {
+            setErrorMsg(`Functions not deployed: ${deployCheck.detail}`);
+            setAllowed(false);
+            setLoading(false);
+          }
+          return;
+        }
+        
         const pingResult = await pingFunctions();
         console.log('🏓 Ping result:', pingResult);
         

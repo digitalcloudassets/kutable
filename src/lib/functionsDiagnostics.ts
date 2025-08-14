@@ -19,6 +19,100 @@ export function getFunctionsBaseUrl(): string {
   return deriveFromProjectUrl(projectUrl);
 }
 
+// Plain fetch probe without auth - tests basic connectivity
+export async function plainFetchProbe(url: string): Promise<{
+  ok: boolean;
+  status?: number;
+  detail: string;
+  headers?: Record<string, string>;
+}> {
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      signal: AbortSignal.timeout(8000), // 8 second timeout
+    });
+    
+    const responseHeaders: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
+    });
+    
+    let body: any = null;
+    try { 
+      body = await response.clone().json(); 
+    } catch { 
+      body = await response.text(); 
+    }
+    
+    return {
+      ok: response.ok,
+      status: response.status,
+      detail: response.ok ? 'Connected' : `HTTP ${response.status}`,
+      headers: responseHeaders
+    };
+  } catch (e: any) {
+    let detail = "Network failure";
+    
+    if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
+      detail = "Network blocked or CORS issue";
+    } else if (e.name === 'TimeoutError') {
+      detail = "Request timeout";
+    } else if (e.name === 'AbortError') {
+      detail = "Request aborted";
+    } else {
+      detail = `Error: ${e?.message ?? String(e)}`;
+    }
+    
+    return {
+      ok: false,
+      detail,
+    };
+  }
+}
+
+// Check if functions are deployed by testing ping endpoint
+export async function checkFunctionDeployment(): Promise<{
+  deployed: boolean;
+  reachable: boolean;
+  detail: string;
+  url: string;
+}> {
+  const base = getFunctionsBaseUrl();
+  if (!base) {
+    return {
+      deployed: false,
+      reachable: false,
+      detail: "Functions URL not configured",
+      url: ""
+    };
+  }
+  
+  const pingUrl = `${base}/ping`;
+  
+  // Test plain connectivity first
+  const probe = await plainFetchProbe(pingUrl);
+  
+  if (!probe.ok) {
+    return {
+      deployed: false,
+      reachable: false,
+      detail: `Not reachable: ${probe.detail}`,
+      url: pingUrl
+    };
+  }
+  
+  // If we get a response, functions are likely deployed
+  return {
+    deployed: true,
+    reachable: true,
+    detail: `Functions accessible (HTTP ${probe.status})`,
+    url: pingUrl
+  };
+}
+
 export async function pingFunctions() {
   const base = getFunctionsBaseUrl();
   if (!base) return { ok: false, detail: "Invalid FUNCTIONS URL" };
@@ -39,7 +133,7 @@ export async function pingFunctions() {
       developmentMode: true
     };
   }
-  const { data: { session }, error: sessErr } = await supabase.auth.getSession();
+
   // In development with credentialless preview, external requests may be blocked
   if (isDev && window.location.hostname.includes('webcontainer-api.io')) {
     return {
@@ -50,6 +144,21 @@ export async function pingFunctions() {
       skipNetworkTest: true
     };
   }
+
+  // First check deployment status with plain fetch
+  const deployCheck = await checkFunctionDeployment();
+  if (!deployCheck.deployed || !deployCheck.reachable) {
+    return {
+      ok: false,
+      detail: deployCheck.detail,
+      url: deployCheck.url,
+      deployed: deployCheck.deployed,
+      reachable: deployCheck.reachable
+    };
+  }
+
+  // If basic connectivity works, try authenticated ping
+  const { data: { session }, error: sessErr } = await supabase.auth.getSession();
   if (sessErr) return { ok: false, detail: `Auth session error: ${sessErr.message}` };
 
   const url = `${base}/ping`;
@@ -78,6 +187,6 @@ export async function pingFunctions() {
       detail = `Network failure: ${e?.message ?? String(e)}`;
     }
     
-    return { ok: false, detail: `Network failure: ${e?.message ?? String(e)}`, url };
+    return { ok: false, detail, url, errorType: e.name };
   }
 }

@@ -2,20 +2,27 @@ import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAdminGuard } from '../../hooks/useAdminGuard';
 import { NotificationManager } from '../../utils/notifications';
-import { pingFunctions, getFunctionsBaseUrl } from '../../lib/functionsDiagnostics';
+import { pingFunctions, getFunctionsBaseUrl, checkFunctionDeployment, plainFetchProbe } from '../../lib/functionsDiagnostics';
 
 const AdminDebugPanel: React.FC = () => {
   const { allowed: isAdmin, loading: adminLoading, errorMsg: adminError } = useAdminGuard();
   const [testing, setTesting] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [pingResult, setPingResult] = useState<any>(null);
+  const [deployResult, setDeployResult] = useState<any>(null);
 
   const testPing = async () => {
     setTesting(true);
     setPingResult(null);
+    setDeployResult(null);
     
     console.log('🏓 Testing Edge Functions connectivity...');
     console.log('🔗 Functions URL:', getFunctionsBaseUrl());
+    
+    // First test deployment
+    const deployCheck = await checkFunctionDeployment();
+    console.log('📋 Deployment check:', deployCheck);
+    setDeployResult(deployCheck);
     
     const result = await pingFunctions();
     console.log('🏓 Direct ping result:', result);
