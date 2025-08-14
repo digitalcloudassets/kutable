@@ -159,6 +159,22 @@ const AdminDebugPanel: React.FC = () => {
         </div>
       )}
       
+      {/* Deployment Test Result */}
+      {deployResult && (
+        <div className={`rounded-lg p-3 text-sm mb-4 ${
+          deployResult.deployed && deployResult.reachable 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-yellow-100 text-yellow-800'
+        }`}>
+          <p className="font-medium mb-2">
+            📋 Deployment Status: {deployResult.deployed ? 'Functions Deployed' : 'Not Deployed'}
+          </p>
+          <pre className="text-xs bg-white/50 p-2 rounded overflow-auto">
+            {JSON.stringify(deployResult, null, 2)}
+          </pre>
+        </div>
+      )}
+      
       {/* Admin Test Result */}
       {result && (
         <div className={`rounded-lg p-3 text-sm ${
@@ -176,7 +192,7 @@ const AdminDebugPanel: React.FC = () => {
       )}
       
       <p className="text-blue-700 text-sm mt-3">
-        <strong>Debug Info:</strong> Use the Network test to check Edge Function connectivity and CORS, then Admin test to verify permissions.
+        <strong>Debug Info:</strong> Tests deployment status, network connectivity, and admin permissions. Use explicit VITE_SUPABASE_FUNCTIONS_URL to force URL if auto-detection fails.
       </p>
     </div>
   );
