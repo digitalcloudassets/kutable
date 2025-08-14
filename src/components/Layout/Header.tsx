@@ -35,7 +35,10 @@ const Header: React.FC = () => {
       if (adminError.includes('fallback mode') || adminError.includes('Development environment detected')) {
         console.log('ℹ️  Admin Guard:', adminError);
       } else {
-        console.error('🔐 Admin Guard Error:', adminError);
+        // Don't spam console with WebContainer restriction messages
+        if (!adminError.includes('WebContainer')) {
+          console.error('🔐 Admin Guard Error:', adminError);
+        }
       }
     }
   }, [adminError]);

@@ -59,6 +59,18 @@ export function useAdminGuard() {
         console.log('📋 Deployment check:', deployCheck);
         
         if (!deployCheck.deployed) {
+          // Handle WebContainer restrictions gracefully
+          if (deployCheck.detail.includes('WebContainer environment')) {
+            console.log('ℹ️ WebContainer detected - admin features disabled in this environment');
+            if (!cancelled) {
+              setErrorMsg('Admin features are disabled in WebContainer environments. Deploy or run locally for full functionality.');
+              setAllowed(false);
+              setLoading(false);
+            }
+            return;
+          }
+          
+          console.warn('🚨 Functions not deployed:', deployCheck);
           if (!cancelled) {
             setErrorMsg(`Functions not deployed: ${deployCheck.detail}`);
             setAllowed(false);
