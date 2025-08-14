@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { env } from './env';
+import { isWebContainer } from './runtimeEnv';
 
 const supabaseUrl = env.supabaseUrl;
 const supabaseAnonKey = env.supabaseAnonKey;
@@ -16,10 +17,16 @@ const hasValidCredentials = supabaseUrl &&
   supabaseUrl.startsWith('https://') &&
   supabaseUrl.includes('.supabase.co');
 
+// Use fallback if no valid credentials OR in webcontainer environment
+const shouldUseFallback = !hasValidCredentials || isWebContainer();
+
 let supabase: any;
 
-if (!hasValidCredentials) {
-  console.info('📁 Supabase not connected - using fallback mode');
+if (shouldUseFallback) {
+  const reason = !hasValidCredentials 
+    ? 'Supabase not connected - using fallback mode'
+    : 'WebContainer environment detected - using fallback mode';
+  console.info(`📁 ${reason}`);
   
   // Create fallback client
   supabase = {
@@ -65,7 +72,14 @@ if (!hasValidCredentials) {
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
     },
     functions: {
-      invoke: () => Promise.resolve({ data: { success: false }, error: { message: 'Connect to Supabase to enable functions' } })
+      invoke: () => Promise.resolve({ 
+        data: { success: false }, 
+        error: { 
+          message: isWebContainer() 
+            ? 'Edge functions unavailable in WebContainer environment' 
+            : 'Connect to Supabase to enable functions' 
+        } 
+      })
     },
     storage: {
       from: () => ({
