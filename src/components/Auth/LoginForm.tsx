@@ -24,11 +24,6 @@ const LoginForm: React.FC = () => {
     const cleanEmail = sanitizeInput(email.trim().toLowerCase(), 254);
     const cleanPassword = password.trim();
 
-    if (!isSupabaseConnected) {
-      setError('Database not connected. Please connect to Supabase to sign in.');
-      setLoading(false);
-      return;
-    }
 
     // Basic validation
     if (!cleanEmail || !cleanPassword) {
@@ -92,7 +87,9 @@ const LoginForm: React.FC = () => {
       // Don't expose internal error details
       console.error('Login error:', error);
       
-      if (error.message?.includes('Connect to Supabase to enable user accounts') || error.message?.includes('Supabase not configured')) {
+      if (error.message?.includes('Connect to Supabase to enable user accounts') || 
+          error.message?.includes('Supabase not configured') ||
+          error.message?.includes('using fallback mode')) {
         setError('Database not connected. Please connect to Supabase to sign in.');
       } else if (error.message?.includes('Invalid login credentials')) {
         setError(`Invalid email or password. ${attemptCount >= 2 ? 'Account will be temporarily locked after multiple failed attempts.' : ''}`);
@@ -212,6 +209,18 @@ const LoginForm: React.FC = () => {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+
+          {/* Connection Warning - Non-blocking */}
+          {!isSupabaseConnected && (
+            <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-2xl p-4">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <span className="text-yellow-800 font-medium text-sm">
+                  Supabase not connected - some features may be limited
+                </span>
+              </div>
+            </div>
+          )}
 
           <div className="mt-8 text-center">
             <p className="text-gray-600">

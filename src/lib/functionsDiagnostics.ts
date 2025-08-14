@@ -24,9 +24,18 @@ function isWebContainerEnvironment(): boolean {
 }
 
 export function getFunctionsBaseUrl(): string {
+  // Always use explicit URL if provided
   const explicit = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL as string | undefined;
-  if (explicit) return explicit;
+  if (explicit && explicit !== 'your_functions_url_here') {
+    return explicit;
+  }
+  
+  // Fallback to derived URL from project URL
   const projectUrl = import.meta.env.VITE_SUPABASE_URL as string;
+  if (!projectUrl || projectUrl.includes('placeholder') || projectUrl === 'https://your-project.supabase.co') {
+    return ''; // Return empty string if no valid Supabase URL
+  }
+  
   return deriveFromProjectUrl(projectUrl);
 }
 
