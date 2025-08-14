@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+import { stripePromise } from '../../lib/stripe';
 import { Lock, CreditCard, Shield, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
-
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 interface PaymentProcessorProps {
   booking: {

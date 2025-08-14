@@ -1,24 +1,8 @@
 import { loadStripe, type Stripe } from '@stripe/stripe-js';
 import { env } from './env';
 
-let _stripePromise: Promise<Stripe | null> | null = null;
-
-export function getStripe() {
-  if (!_stripePromise) {
-    const pk = env.stripePublishableKey;
-    if (!pk || pk === 'your_stripe_publishable_key_here' || pk === 'pk_test_placeholder_key_for_development') {
-      console.error('Missing VITE_STRIPE_PUBLISHABLE_KEY');
-      return Promise.resolve(null);
-    }
-    _stripePromise = loadStripe(pk).catch((e) => {
-      console.error('Failed to load Stripe.js', e);
-      return null;
-    });
-  }
-  return _stripePromise;
-}
-
-// Ensure ALL components import stripePromise from here
+// Single source of truth for Stripe.js initialization
+// All components must import { stripePromise } from here
 export const stripePromise = loadStripe(env.stripePublishableKey);
 
 export const PLATFORM_FEE_PERCENTAGE = 0.01; // 1%

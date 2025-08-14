@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { getStripe } from '../../lib/stripe';
+import { stripePromise } from '../../lib/stripe';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { Loader, CreditCard, Shield, Lock, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -159,21 +159,6 @@ export default function InAppCheckout({
 }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
-  const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
-
-  // Initialize Stripe safely
-  useEffect(() => {
-    getStripe().then(stripe => {
-      if (stripe) {
-        setStripePromise(Promise.resolve(stripe));
-      } else {
-        setError('Stripe could not be initialized. Please check your configuration.');
-      }
-    }).catch(error => {
-      console.error('Stripe initialization error:', error);
-      setError('Failed to initialize payment system. Please try again.');
-    });
-  }, []);
 
   // Initialize payment intent
   useEffect(() => {
@@ -221,7 +206,7 @@ export default function InAppCheckout({
   }, [barberId, amount, currency, customerEmail, JSON.stringify(metadata)]);
 
   // Check if Stripe is properly configured
-  if (!stripePromise && !error) {
+  if (!stripePromise) {
     return (
       <div className="text-center py-8">
         <div className="relative mb-6">
@@ -233,27 +218,7 @@ export default function InAppCheckout({
     );
   }
 
-
-
-
-  if (error || !stripePromise) {
-    return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-        <AlertCircle className="h-8 w-8 text-yellow-600 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-yellow-800 mb-2">Payment System Error</h3>
-        <p className="text-yellow-700 mb-4">
-          {error || 'Please add your Stripe publishable key to the environment variables to enable payments.'}
-        </p>
-        <div className="bg-yellow-100 rounded-lg p-4 text-left">
-          <p className="text-yellow-800 text-sm font-mono">
-            VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your_key_here
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error && !stripePromise) {
+  if (error) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
         <AlertCircle className="h-8 w-8 text-yellow-600 mx-auto mb-4" />
