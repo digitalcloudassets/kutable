@@ -18,11 +18,18 @@ const devOrigins = [
   "http://127.0.0.1:3000"
 ];
 
+// Production domains that should always be allowed
+const productionOrigins = [
+  "https://kutable.com",
+  "https://www.kutable.com",
+  "https://comfy-centaur-130de9.netlify.app" // Netlify default domain
+];
+
 // In development, auto-include localhost origins. In production, use strict allowlist.
 const isDev = !Deno.env.get("DENO_DEPLOYMENT_ID"); // Supabase sets this in production
 const allowedOrigins = isDev 
-  ? [...configuredOrigins, ...devOrigins]
-  : configuredOrigins;
+  ? [...configuredOrigins, ...devOrigins, ...productionOrigins]
+  : [...configuredOrigins, ...productionOrigins];
 
 const ALLOWED = new Set(allowedOrigins);
 
@@ -110,6 +117,34 @@ export function withCors(
     "Access-Control-Allow-Origin": origin,
   };
   return { ok: true, headers };
+}
+
+// Alternative: Build CORS headers directly for consistent usage
+export function buildCorsHeaders(
+  origin: string | null,
+  methods: Method[] = [...DEFAULT_METHODS]
+): Record<string, string> {
+  const headers = {
+    "Access-Control-Allow-Methods": methods.join(", "),
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
+    "Vary": "Origin",
+  };
+
+  // If no origin provided (server-to-server calls), don't add Access-Control-Allow-Origin
+  if (!origin) {
+    return headers;
+  }
+
+  // Check if origin is allowed
+  if (ALLOWED.has(origin)) {
+    return {
+      ...headers,
+      "Access-Control-Allow-Origin": origin
+    };
+  }
+
+  // Origin not allowed - don't add CORS headers (will result in CORS error)
+  return headers;
 }
 
 // Standard preflight handler (use in every function that serves browsers).

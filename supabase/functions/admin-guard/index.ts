@@ -1,7 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.3";
-import { corsHeaders, withCors, handlePreflight } from "../_shared/cors.ts";
+import { handlePreflight, buildCorsHeaders } from "../_shared/cors.ts";
 
-const headers = corsHeaders(["POST", "OPTIONS"]);
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -18,11 +17,11 @@ const ADMIN_EMAILS = (Deno.env.get("ADMIN_EMAILS") ?? "")
   .filter(Boolean);
 
 Deno.serve(async (req) => {
-  const preflight = handlePreflight(req, headers);
+  const preflight = handlePreflight(req, ["POST", "OPTIONS"]);
   if (preflight) return preflight;
 
-  const cors = withCors(req, headers);
-  if (!cors.ok) return cors.res;
+  const origin = req.headers.get("Origin");
+  const cors = buildCorsHeaders(origin, ["POST", "OPTIONS"]);
 
   // Hard fail if required environment variables are missing
   if (!SUPABASE_URL || !ANON_KEY) {
@@ -34,7 +33,7 @@ Deno.serve(async (req) => {
       error: "Missing required environment variables" 
     }), {
       status: 500,
-      headers: cors.headers,
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
@@ -48,7 +47,7 @@ Deno.serve(async (req) => {
       error: "Admin access not configured" 
     }), {
       status: 500,
-      headers: cors.headers,
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
@@ -57,7 +56,7 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response(JSON.stringify({ ok: false, reason: "Missing Authorization" }), {
         status: 401,
-        headers: cors.headers,
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -70,7 +69,7 @@ Deno.serve(async (req) => {
     if (error || !user) {
       return new Response(JSON.stringify({ ok: false, reason: "Unauthenticated" }), {
         status: 401,
-        headers: cors.headers,
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -80,19 +79,19 @@ Deno.serve(async (req) => {
     if (!isUidAllowed && !isEmailAllowed) {
       return new Response(JSON.stringify({ ok: false, reason: "Forbidden" }), {
         status: 403,
-        headers: cors.headers,
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
     return new Response(JSON.stringify({ ok: true, user: { id: user.id, email: user.email } }), {
       status: 200,
-      headers: cors.headers,
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error('Admin guard error:', e);
     return new Response(JSON.stringify({ ok: false, reason: "Error", detail: String(e) }), {
       status: 500,
-      headers: cors.headers,
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 });
