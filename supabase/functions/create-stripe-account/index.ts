@@ -57,17 +57,28 @@ Deno.serve(async (req) => {
   const json = (status: number, data: any) =>
     new Response(JSON.stringify(data), { status, headers: { ...cors.headers, 'Content-Type': 'application/json' } });
 
-  try {
-    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://kutable.com';
-
-    const missing: string[] = [];
+  // Hard fail if critical Stripe environment variables are missing
+  const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://kutable.com';
+  
+  if (!STRIPE_SECRET_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.error("🚨 CRITICAL: Missing required environment variables for Stripe Connect");
+    const missing = [];
     if (!STRIPE_SECRET_KEY) missing.push('STRIPE_SECRET_KEY');
     if (!SUPABASE_URL) missing.push('SUPABASE_URL');
     if (!SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY');
-    if (missing.length) return json(500, { success: false, error: 'Server not configured' });
+    console.error("Missing:", missing.join(', '));
+    
+    return json(500, { 
+      success: false, 
+      error: 'Stripe Connect not configured',
+      details: `Missing environment variables: ${missing.join(', ')}`
+    });
+  }
+
+  try {
 
     const { createClient } = await import('npm:@supabase/supabase-js@2');
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);

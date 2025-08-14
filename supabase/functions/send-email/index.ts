@@ -12,6 +12,16 @@ serve(async (req) => {
   const cors = withCors(req, headers);
   if (!cors.ok) return cors.res;
 
+  // Hard fail if email service environment variables are missing
+  if (!serverEnv.emailProviderKey) {
+    console.error("🚨 CRITICAL: Missing email service configuration");
+    console.error("Required: EMAIL_PROVIDER_API_KEY");
+    return new Response(JSON.stringify({ 
+      error: 'Email service not configured',
+      details: 'Missing EMAIL_PROVIDER_API_KEY environment variable'
+    }), { status: 500, headers: cors.headers });
+  }
+
   try {
     const { to, subject, html } = await req.json();
     if (!to || !subject || !html) {

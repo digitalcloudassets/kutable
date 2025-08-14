@@ -9,9 +9,35 @@ const parseCsv = (v: string | undefined | null) =>
     .map(s => s.trim())
     .filter(Boolean);
 
-// Configure allowed origins via Function env:
-// ALLOWED_ORIGINS=https://kutable.com,https://www.kutable.com,https://staging.kutable.com,http://localhost:5173
-const ALLOWED = new Set(parseCsv(Deno.env.get("ALLOWED_ORIGINS")));
+// Dev-safe CORS: Auto-allow localhost in development, strict allowlist in production
+const configuredOrigins = parseCsv(Deno.env.get("ALLOWED_ORIGINS"));
+const devOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000", 
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:3000"
+];
+
+// In development, auto-include localhost origins. In production, use strict allowlist.
+const isDev = !Deno.env.get("DENO_DEPLOYMENT_ID"); // Supabase sets this in production
+const allowedOrigins = isDev 
+  ? [...configuredOrigins, ...devOrigins]
+  : configuredOrigins;
+
+const ALLOWED = new Set(allowedOrigins);
+
+// Hard fail if no origins configured in production
+if (!isDev && configuredOrigins.length === 0) {
+  console.error("🚨 CRITICAL: ALLOWED_ORIGINS not configured for production deployment!");
+  console.error("Set ALLOWED_ORIGINS in Supabase Functions environment to your production domains");
+}
+
+// Log CORS configuration on startup
+console.log(`🔒 CORS Configuration (${isDev ? 'DEV' : 'PROD'}):`, {
+  allowedOrigins: Array.from(ALLOWED),
+  totalAllowed: ALLOWED.size,
+  isDevelopment: isDev
+});
 
 // Some internal calls (cron, server-to-server) won't send an Origin.
 // If you want to allow those, set ALLOW_NO_ORIGIN=true
@@ -37,6 +63,7 @@ export function withCors(
   }: { requireBrowserOrigin?: boolean } = {},
 ): { ok: true; headers: Record<string, string> } | { ok: false; res: Response } {
   const origin = req.headers.get("Origin");
+  const isDev = !Deno.env.get("DENO_DEPLOYMENT_ID");
 
   // Machine-to-machine or local server calls might not send Origin
   if (!origin) {
@@ -48,6 +75,7 @@ export function withCors(
       return { ok: true, headers };
     }
     // If we require a browser origin but didn't get one, deny.
+    console.warn(`🚨 CORS: Origin required but not provided. Request from: ${req.url}`);
     const res = new Response(JSON.stringify({ error: "Origin required" }), {
       status: 403,
       headers: { "Content-Type": "application/json" },
@@ -57,11 +85,23 @@ export function withCors(
 
   // Explicit allowlist check
   if (!ALLOWED.has(origin)) {
+    console.warn(`🚨 CORS: Origin "${origin}" not in allowlist. Allowed origins:`, Array.from(ALLOWED));
+    
+    // In development, provide helpful error message
+    const errorMessage = isDev 
+      ? `Origin "${origin}" not allowed. Add it to ALLOWED_ORIGINS or use: ${Array.from(ALLOWED).join(', ')}`
+      : "Origin not allowed";
+      
     const res = new Response(JSON.stringify({ error: "Origin not allowed" }), {
       status: 403,
       headers: { "Content-Type": "application/json" },
     });
     return { ok: false, res };
+  }
+
+  // Log successful CORS validation in development
+  if (isDev) {
+    console.log(`✅ CORS: Origin "${origin}" allowed`);
   }
 
   // Reflect the allowed origin (never use '*')

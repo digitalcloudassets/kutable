@@ -13,6 +13,16 @@ serve(async (req) => {
   const cors = withCors(req, headers);
   if (!cors.ok) return cors.res;
 
+  // Hard fail if SMS service environment variables are missing
+  if (!serverEnv.twilio.sid || !serverEnv.twilio.token || !serverEnv.twilio.from) {
+    console.error("🚨 CRITICAL: Missing Twilio configuration for SMS service");
+    console.error("Required: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER");
+    return new Response(JSON.stringify({ 
+      error: 'SMS service not configured',
+      details: 'Missing Twilio environment variables'
+    }), { status: 500, headers: cors.headers });
+  }
+
   try {
     const { to, body } = await req.json();
 

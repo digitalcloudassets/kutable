@@ -53,13 +53,27 @@ Deno.serve(async (req) => {
   const resJson = (status: number, data: any) =>
     new Response(JSON.stringify(data), { status, headers: { ...cors.headers, 'Content-Type': 'application/json' } });
 
+  // Hard fail if critical environment variables are missing
+  const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  
+  if (!STRIPE_SECRET_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.error("🚨 CRITICAL: Missing required environment variables for payment processing");
+    const missing = [];
+    if (!STRIPE_SECRET_KEY) missing.push('STRIPE_SECRET_KEY');
+    if (!SUPABASE_URL) missing.push('SUPABASE_URL'); 
+    if (!SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY');
+    console.error("Missing:", missing.join(', '));
+    
+    return resJson(500, { 
+      success: false, 
+      error: 'Payment processing not configured',
+      details: `Missing environment variables: ${missing.join(', ')}`
+    });
+  }
+
   try {
-    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!STRIPE_SECRET_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      return resJson(500, { error: 'Server not configured' });
-    }
 
     const body: ReqBody = await req.json().catch(() => null as any);
     if (!body) return resJson(400, { error: 'Invalid JSON body' });

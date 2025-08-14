@@ -24,6 +24,34 @@ Deno.serve(async (req) => {
   const cors = withCors(req, headers);
   if (!cors.ok) return cors.res;
 
+  // Hard fail if required environment variables are missing
+  if (!SUPABASE_URL || !ANON_KEY) {
+    console.error("🚨 CRITICAL: Missing required environment variables for admin-guard");
+    console.error("Required: SUPABASE_URL, SUPABASE_ANON_KEY");
+    return new Response(JSON.stringify({ 
+      ok: false, 
+      reason: "Server configuration error",
+      error: "Missing required environment variables" 
+    }), {
+      status: 500,
+      headers: cors.headers,
+    });
+  }
+
+  // Hard fail if no admin users configured
+  if (ADMIN_UIDS.length === 0 && ADMIN_EMAILS.length === 0) {
+    console.error("🚨 CRITICAL: No admin users configured");
+    console.error("Set ADMIN_UIDS and/or ADMIN_EMAILS in Supabase Functions environment");
+    return new Response(JSON.stringify({ 
+      ok: false, 
+      reason: "No admin users configured",
+      error: "Admin access not configured" 
+    }), {
+      status: 500,
+      headers: cors.headers,
+    });
+  }
+
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
