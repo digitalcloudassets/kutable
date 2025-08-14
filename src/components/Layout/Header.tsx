@@ -4,12 +4,14 @@ import { User, LogOut, Menu, X, Scissors, Crown, MessageSquare } from 'lucide-re
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useMessaging } from '../../hooks/useMessaging';
+import { useAdminGuard } from '../../hooks/useAdminGuard';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useAuth();
   const { unreadCount } = useMessaging();
+  const { allowed: isAdmin, loading: adminLoading } = useAdminGuard();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -94,6 +96,20 @@ const Header: React.FC = () => {
                     </span>
                   )}
                 </Link>
+                {/* Admin Link - Only show for admin users */}
+                {isAdmin && !adminLoading && (
+                  <Link
+                    to="/admin"
+                    className={`flex items-center space-x-2 font-medium transition-all duration-200 hover:scale-105 px-4 py-2 rounded-xl ${
+                      isHomePage && !scrolled 
+                        ? 'text-white hover:bg-white/10' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Crown className="h-5 w-5" />
+                    <span>Admin</span>
+                  </Link>
+                )}
                 <button
                   onClick={handleSignOut}
                   className={`flex items-center space-x-2 font-medium transition-all duration-200 hover:scale-105 px-4 py-2 rounded-xl ${
@@ -161,6 +177,17 @@ const Header: React.FC = () => {
                       <User className="h-5 w-5" />
                       <span>Dashboard</span>
                     </Link>
+                    {/* Admin Link for Mobile - Only show for admin users */}
+                    {isAdmin && !adminLoading && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center space-x-3 py-4 px-6 font-medium text-gray-700 hover:text-primary-600 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px]"
+                      >
+                        <Crown className="h-5 w-5" />
+                        <span>Admin</span>
+                      </Link>
+                    )}
                     <button
                       onClick={handleSignOut}
                       className="flex items-center space-x-3 py-4 px-6 font-medium text-gray-600 hover:text-gray-800 transition-colors rounded-xl hover:bg-gray-100 w-full text-left min-h-[48px]"
