@@ -6,7 +6,7 @@ import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { rateLimiter, bruteForceProtection, sanitizeInput, validateEmail } from '../../utils/security';
 
 const LoginForm: React.FC = () => {
-  const { isConnected: isSupabaseConnected } = useSupabaseConnection();
+  const { isConnected: isSupabaseConnected, reason } = useSupabaseConnection();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,10 +20,8 @@ const LoginForm: React.FC = () => {
     setLoading(true);
     setError('');
 
-    // Enhanced input validation and sanitization
     const cleanEmail = sanitizeInput(email.trim().toLowerCase(), 254);
     const cleanPassword = password.trim();
-
 
     // Basic validation
     if (!cleanEmail || !cleanPassword) {
@@ -54,6 +52,11 @@ const LoginForm: React.FC = () => {
       return;
     }
 
+    // Log connection status but don't block
+    if (!isSupabaseConnected) {
+      console.warn('[Login] Connection check failed. Proceeding with auth attempt anyway.');
+    }
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
@@ -64,15 +67,6 @@ const LoginForm: React.FC = () => {
         // Record failed attempt
         bruteForceProtection.recordAttempt(identifier, false);
         setAttemptCount(prev => prev + 1);
-        
-        // Handle Supabase connection errors gracefully without throwing
-        if (error.message?.includes('Connect to Supabase to enable user accounts') || 
-            error.message?.includes('Supabase not configured') ||
-            error.message?.includes('using fallback mode')) {
-          setError('Database not connected. Please connect to Supabase to sign in.');
-          setLoading(false);
-          return;
-        }
         
         throw error;
       }
@@ -97,10 +91,11 @@ const LoginForm: React.FC = () => {
       // Don't expose internal error details
       console.error('Login error:', error);
       
-      if (error.message?.includes('Connect to Supabase to enable user accounts') || 
-          error.message?.includes('Supabase not configured') ||
-          error.message?.includes('using fallback mode')) {
-        setError('Database not connected. Please connect to Supabase to sign in.');
+      // Handle fallback mode errors gracefully
+      if (error.message?.includes('Connect to Supabase') || 
+          error.message?.includes('fallback mode') ||
+          error.message?.includes('using fallback')) {
+        setError('Unable to sign in - database connection required. Please ensure Supabase is properly configured.');
       } else if (error.message?.includes('Invalid login credentials')) {
         setError(`Invalid email or password. ${attemptCount >= 2 ? 'Account will be temporarily locked after multiple failed attempts.' : ''}`);
       } else if (error.message?.includes('Too many requests')) {
@@ -221,12 +216,14 @@ const LoginForm: React.FC = () => {
           </form>
 
           {/* Connection Warning - Non-blocking */}
-          {!isSupabaseConnected && (
-            <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-2xl p-4">
+          {isSupabaseConnected === false && (
+            <div className="mt-6 bg-amber-50 border border-amber-200 rounded-2xl p-4">
               <div className="flex items-center space-x-2">
-                <AlertCircle className="h-4 w-4 text-yellow-600" />
-                <span className="text-yellow-800 font-medium text-sm">
-                  Supabase not connected - some features may be limited
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <div className="text-amber-800 font-medium text-sm">
+                  <p>Database connection issue detected. You can still try signing in.</p>
+                  <p className="text-xs text-amber-700 mt-1">Some features may be limited until connection is restored.</p>
+                </div>
                 </span>
               </div>
             </div>

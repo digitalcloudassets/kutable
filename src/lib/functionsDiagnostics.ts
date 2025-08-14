@@ -16,9 +16,10 @@ function isWebContainerEnvironment(): boolean {
   // Detect StackBlitz WebContainer environment that blocks external calls
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    return hostname.includes('webcontainer-api.io') || 
+    return hostname.includes('webcontainer-api.io') ||
+           hostname.includes('local-credentialless') ||
            hostname.includes('stackblitz.io') ||
-           hostname.includes('local-credentialless');
+           hostname.includes('codesandbox.io');
   }
   return false;
 }
@@ -26,13 +27,17 @@ function isWebContainerEnvironment(): boolean {
 export function getFunctionsBaseUrl(): string {
   // Always use explicit URL if provided
   const explicit = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL as string | undefined;
-  if (explicit && explicit !== 'your_functions_url_here') {
+  if (explicit && explicit !== 'your_functions_url_here' && explicit.startsWith('https://')) {
     return explicit;
   }
   
   // Fallback to derived URL from project URL
   const projectUrl = import.meta.env.VITE_SUPABASE_URL as string;
-  if (!projectUrl || projectUrl.includes('placeholder') || projectUrl === 'https://your-project.supabase.co') {
+  if (!projectUrl || 
+      projectUrl.includes('placeholder') || 
+      projectUrl === 'https://your-project.supabase.co' ||
+      projectUrl === 'your_supabase_url_here' ||
+      !projectUrl.startsWith('https://')) {
     return ''; // Return empty string if no valid Supabase URL
   }
   
@@ -172,7 +177,7 @@ export async function pingFunctions() {
   }
 
   // In development with credentialless preview, external requests may be blocked
-  if (isDev && window.location.hostname.includes('webcontainer-api.io')) {
+  if (isDev && isWebContainerEnvironment()) {
     return {
       ok: false,
       detail: "Development environment detected - external Edge Functions calls disabled",
