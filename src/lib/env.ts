@@ -6,6 +6,7 @@ export const env = {
   // Google Maps can be public but should be referrer-restricted in Google Cloud
   googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string,
   turnstileSiteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY as string,
+  turnstileSiteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY as string,
 };
 
 Object.entries(env).forEach(([key, value]) => {

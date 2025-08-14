@@ -5,6 +5,7 @@ import { Loader, CreditCard, Shield, Lock, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { NotificationManager } from '../../utils/notifications';
 import { getCaptchaToken } from '../../lib/turnstile';
+import { getCaptchaToken } from '../../lib/turnstile';
 
 
 function CheckoutForm({
@@ -171,6 +172,9 @@ export default function InAppCheckout({
         // Get CAPTCHA token before creating payment intent
         const captchaToken = await getCaptchaToken('create_payment_intent');
         
+        // Get CAPTCHA token before creating payment intent
+        const captchaToken = await getCaptchaToken('create_payment_intent');
+        
         const { data, error } = await supabase.functions.invoke('create-payment-intent', {
           body: { 
             barberId, 
@@ -179,12 +183,20 @@ export default function InAppCheckout({
             customerEmail, 
             metadata: metadata || {},
             captchaToken
+            captchaToken
           },
         });
         
         if (error) {
           console.error('Payment intent error:', error);
           let errorMessage = error?.context?.error || error?.message || 'Unable to initialize payment';
+          
+          // Handle CAPTCHA-specific errors
+          if (errorMessage.includes('captcha_required')) {
+            errorMessage = 'Security verification required. Please try again.';
+          } else if (errorMessage.includes('captcha_failed')) {
+            errorMessage = 'Security verification failed. Please refresh and try again.';
+          }
           
           // Handle CAPTCHA-specific errors
           if (errorMessage.includes('captcha_required')) {
@@ -209,6 +221,15 @@ export default function InAppCheckout({
 
         setClientSecret(data.clientSecret);
       } catch (error: any) {
+        let errorMessage = error.message || 'Payment initialization failed';
+        
+        // Handle CAPTCHA errors gracefully
+        if (error.message?.includes('Turnstile')) {
+          errorMessage = 'Security verification failed. Please refresh and try again.';
+        }
+        
+        setError(errorMessage);
+        NotificationManager.error(errorMessage);
         let errorMessage = error.message || 'Payment initialization failed';
         
         // Handle CAPTCHA errors gracefully
