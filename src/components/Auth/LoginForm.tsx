@@ -59,6 +59,11 @@ const LoginForm: React.FC = () => {
       });
 
       if (authError) {
+        // Handle fallback mode gracefully
+        if (authError.message?.includes('Connect to Supabase to enable user accounts')) {
+          setError('Database not connected. Please connect to Supabase to enable authentication.');
+          return;
+        }
         throw authError;
       }
 
