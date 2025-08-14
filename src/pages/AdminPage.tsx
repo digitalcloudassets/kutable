@@ -21,7 +21,8 @@ import {
   Edit,
   Loader,
   Crown,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useSupabaseConnection } from '../hooks/useSupabaseConnection';
