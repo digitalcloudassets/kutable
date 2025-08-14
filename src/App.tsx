@@ -8,6 +8,7 @@ import {
 import { Toaster } from 'react-hot-toast';
 import { setupGlobalErrorHandling } from './utils/errorHandling';
 import { initializeAnalytics, trackPageView } from './utils/analytics';
+import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
 
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
@@ -19,7 +20,6 @@ import DashboardPage from './pages/DashboardPage';
 import ProfileSetupPage from './pages/ProfileSetupPage';
 import OnboardingPage from './pages/OnboardingPage';
 import AdminPage from './pages/AdminPage';
-import AdminLoginPage from './pages/AdminLoginPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import PricingPage from './pages/PricingPage';
 import SupportPage from './pages/SupportPage';
@@ -42,44 +42,6 @@ const AnalyticsRouter: React.FC<{ children: React.ReactNode }> = ({ children }) 
     trackPageView(location.pathname);
   }, [location]);
   return <>{children}</>;
-};
-
-// Admin route guard
-const ProtectedAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    const checkAuth = () => {
-      const auth = localStorage.getItem('admin_authenticated') === 'true';
-      const session = localStorage.getItem('admin_session');
-      if (!auth || !session) return setIsAuthenticated(false);
-
-      try {
-        const decoded = JSON.parse(atob(session));
-        const valid = decoded?.expires && new Date() <= new Date(decoded.expires);
-        const complete = decoded?.username && decoded?.role && decoded?.loginTime;
-        if (valid && complete) return setIsAuthenticated(true);
-      } catch {}
-
-      localStorage.removeItem('admin_authenticated');
-      localStorage.removeItem('admin_session');
-      setIsAuthenticated(false);
-    };
-
-    checkAuth();
-    const interval = setInterval(checkAuth, 300000); // every 5 min
-    return () => clearInterval(interval);
-  }, []);
-
-  if (isAuthenticated === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="h-8 w-8 rounded-full animate-spin border-b-2 border-orange-500" />
-      </div>
-    );
-  }
-
-  return isAuthenticated ? <>{children}</> : <AdminLoginPage />;
 };
 
 function App() {
@@ -113,7 +75,6 @@ function App() {
                   </ProtectedAdminRoute>
                 }
               />
-              <Route path="/admin-login" element={<AdminLoginPage />} />
               <Route
                 path="/booking-success/:bookingId"
                 element={<div className="p-8">Booking success page coming soon...</div>}
