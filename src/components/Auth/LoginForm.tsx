@@ -61,6 +61,12 @@ const LoginForm: React.FC = () => {
       if (authError) {
         // Handle fallback mode gracefully
         if (authError.message?.includes('Connect to Supabase to enable user accounts')) {
+          // In dev preview mode, simulate successful login
+          if (typeof devPreviewEnabled === 'function' && devPreviewEnabled()) {
+            console.log('[Login] Dev preview mode - simulating successful login');
+            nav('/dashboard?dev=1', { replace: true });
+            return;
+          }
           setError('Database not connected. Please connect to Supabase to enable authentication.');
           return;
         }
