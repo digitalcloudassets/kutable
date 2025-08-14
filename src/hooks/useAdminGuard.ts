@@ -59,7 +59,7 @@ export function useAdminGuard() {
           console.warn('🚨 Edge Functions unreachable:', pingResult);
           
           // In development with placeholder config, this is expected
-          if (pingResult.developmentMode) {
+          if (pingResult.developmentMode || pingResult.skipNetworkTest) {
             console.log('ℹ️  Running in fallback mode - connect to Supabase for full functionality');
             if (!cancelled) {
               setAllowed(false);

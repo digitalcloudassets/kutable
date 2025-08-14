@@ -40,6 +40,16 @@ export async function pingFunctions() {
     };
   }
   const { data: { session }, error: sessErr } = await supabase.auth.getSession();
+  // In development with credentialless preview, external requests may be blocked
+  if (isDev && window.location.hostname.includes('webcontainer-api.io')) {
+    return {
+      ok: false,
+      detail: "Development environment detected - external Edge Functions calls disabled",
+      url: base,
+      developmentMode: true,
+      skipNetworkTest: true
+    };
+  }
   if (sessErr) return { ok: false, detail: `Auth session error: ${sessErr.message}` };
 
   const url = `${base}/ping`;
