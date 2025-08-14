@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { env } from "../lib/env";
+import { pingFunctions, getFunctionsBaseUrl } from "../lib/functionsDiagnostics";
 
 export function useAdminGuard() {
   const [loading, setLoading] = useState(true);
@@ -17,6 +18,7 @@ export function useAdminGuard() {
         console.log('🔍 Verifying Supabase configuration...');
         const supabaseUrl = env.supabaseUrl;
         const supabaseKey = env.supabaseAnonKey;
+        const functionsUrl = getFunctionsBaseUrl();
         
         if (!supabaseUrl || !supabaseKey) {
           if (!cancelled) {
@@ -46,91 +48,50 @@ export function useAdminGuard() {
         }
         
         console.log('✅ Supabase URL verified:', supabaseUrl.split('//')[1]);
+        console.log('🔗 Functions URL:', functionsUrl);
 
-        // Step 2: Test basic connectivity with ping function
+        // Step 2: Test Edge Function connectivity with direct ping
         console.log('🏓 Testing Edge Function connectivity...');
-        try {
-          const { data: pingData, error: pingError } = await supabase.functions.invoke("ping", { body: {} });
-          if (pingError) {
-            console.error('🚨 Ping function failed:', pingError);
-            if (!cancelled) {
-              setErrorMsg(`Network/CORS Error: ${pingError.message || 'Cannot reach Edge Functions'}`);
-              setAllowed(false);
-              setLoading(false);
-            }
-            return;
-          }
-          console.log('✅ Ping successful:', pingData);
-        } catch (pingErr: any) {
-          console.error('🚨 Ping function network error:', pingErr);
+        const pingResult = await pingFunctions();
+        console.log('🏓 Ping result:', pingResult);
+        
+        if (!pingResult.ok) {
+          console.error('🚨 Edge Functions unreachable:', pingResult);
           if (!cancelled) {
-            setErrorMsg(`Network Error: ${pingErr.message || 'Edge Functions unreachable'}`);
+            setErrorMsg(`Network/CORS Error: ${pingResult.detail} (URL: ${pingResult.url || functionsUrl})`);
             setAllowed(false);
             setLoading(false);
           }
           return;
         }
+        console.log('✅ Edge Functions reachable:', pingResult.body);
 
         // Step 3: Check authentication
-        // Step 1: Test basic connectivity with ping function
-        console.log('🏓 Testing Edge Function connectivity...');
-        try {
-          const { data: pingData, error: pingError } = await supabase.functions.invoke("ping", { body: {} });
-          if (pingError) {
-            console.error('🚨 Ping function failed:', pingError);
-            if (!cancelled) {
-              setErrorMsg(`Network/CORS Error: ${pingError.message || 'Cannot reach Edge Functions'}`);
-              setAllowed(false);
-              setLoading(false);
-            }
-            return;
-          }
-          console.log('✅ Ping successful:', pingData);
-        } catch (pingErr: any) {
-          console.error('🚨 Ping function network error:', pingErr);
-          if (!cancelled) {
-            setErrorMsg(`Network Error: ${pingErr.message || 'Edge Functions unreachable'}`);
-            setAllowed(false);
-            setLoading(false);
-          }
-          return;
-        }
-
-        // Step 2: Check authentication
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-          console.log('👤 No user session found');
           console.log('👤 No user session found');
           if (!cancelled) { setAllowed(false); setLoading(false); }
           return;
         }
         
-        // Step 4: Test admin access
-        console.log('🔐 Testing admin access for user:', session.user.id);
         
-        // Step 3: Test admin access
+        // Step 4: Test admin access
         console.log('🔐 Testing admin access for user:', session.user.id);
         const { data, error } = await supabase.functions.invoke("admin-guard", { body: {} });
         if (!cancelled) {
           if (error) {
             console.error('🚨 Admin guard error:', error);
             setErrorMsg(`Auth Error: ${error.message ?? "Admin access check failed"}`);
-            setErrorMsg(`Auth Error: ${error.message ?? "Admin access check failed"}`);
             setAllowed(false);
           } else {
             console.log('🔐 Admin guard response:', data);
-            console.log('🔐 Admin guard response:', data);
             setAllowed(Boolean(data?.ok));
-            if (!data?.ok) {
-              setErrorMsg(`Access Denied: ${data?.reason || 'Not authorized as admin'}`);
-            }
             if (!data?.ok) {
               setErrorMsg(`Access Denied: ${data?.reason || 'Not authorized as admin'}`);
             }
           }
         }
       } catch (e: any) {
-        console.error('🚨 Admin guard hook error:', e);
         console.error('🚨 Admin guard hook error:', e);
         if (!cancelled) {
           setErrorMsg(`Unexpected Error: ${e?.message ?? "Admin check failed"}`);

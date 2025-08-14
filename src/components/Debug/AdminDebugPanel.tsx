@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAdminGuard } from '../../hooks/useAdminGuard';
 import { NotificationManager } from '../../utils/notifications';
+import { pingFunctions, getFunctionsBaseUrl } from '../../lib/functionsDiagnostics';
 
 const AdminDebugPanel: React.FC = () => {
   const { allowed: isAdmin, loading: adminLoading, errorMsg: adminError } = useAdminGuard();
@@ -13,36 +14,30 @@ const AdminDebugPanel: React.FC = () => {
     setTesting(true);
     setPingResult(null);
     
-    try {
-      console.log('🏓 Testing ping function...');
-      const { data, error } = await supabase.functions.invoke('ping', { body: {} });
-      
-      const testResult = {
-        success: !error,
-        data: data,
-        error: error?.message || null,
-        timestamp: new Date().toISOString()
-      };
-      
-      console.log('🏓 Ping test result:', testResult);
-      setPingResult(testResult);
-      
-      if (data?.ok) {
-        NotificationManager.success('✅ Edge Functions reachable!');
-      } else {
-        NotificationManager.error('❌ Edge Functions unreachable');
-      }
-    } catch (error: any) {
-      console.error('🏓 Ping test error:', error);
-      setPingResult({ 
-        success: false, 
-        error: error.message,
-        timestamp: new Date().toISOString()
-      });
-      NotificationManager.error('Network test failed');
-    } finally {
-      setTesting(false);
+    console.log('🏓 Testing Edge Functions connectivity...');
+    console.log('🔗 Functions URL:', getFunctionsBaseUrl());
+    
+    const result = await pingFunctions();
+    console.log('🏓 Direct ping result:', result);
+    
+    const testResult = {
+      success: result.ok,
+      data: result.body,
+      error: result.ok ? null : result.detail,
+      url: result.url || getFunctionsBaseUrl(),
+      status: result.status,
+      timestamp: new Date().toISOString()
+    };
+    
+    setPingResult(testResult);
+    
+    if (result.ok) {
+      NotificationManager.success('✅ Edge Functions reachable!');
+    } else {
+      NotificationManager.error(`❌ Edge Functions unreachable: ${result.detail}`);
     }
+    
+    setTesting(false);
   };
 
   const testAdminGuard = async () => {
