@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Loader, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
-import { rateLimiter, bruteForceProtection, sanitizeInput, validateEmail } from '../../utils/security';
+import { validateEmail, sanitizeInput } from '../../utils/security';
 import { devPreviewEnabled, shouldBypassConnectionChecks } from '../../lib/devFlags';
 
 const LoginForm: React.FC = () => {
@@ -13,7 +13,6 @@ const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [attemptCount, setAttemptCount] = useState(0);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,22 +37,6 @@ const LoginForm: React.FC = () => {
       return;
     }
 
-    // Rate limiting and brute force protection (bypass in dev preview mode)
-    if (!devPreviewEnabled()) {
-      const identifier = cleanEmail;
-      if (rateLimiter.isRateLimited(identifier, 5, 15 * 60 * 1000)) { // 5 attempts per 15 minutes
-        setError('Too many login attempts. Please wait 15 minutes before trying again.');
-        setLoading(false);
-        return;
-      }
-
-      if (bruteForceProtection.isBlocked(identifier)) {
-        setError('Account temporarily locked due to multiple failed attempts. Please try again later.');
-        setLoading(false);
-        return;
-      }
-    }
-
     // Log connection status but don't block (unless in dev preview mode)
     if (!isSupabaseConnected && !shouldBypassConnectionChecks()) {
       console.warn('[Login] Connection check failed. Proceeding with auth attempt anyway.');
@@ -70,24 +53,17 @@ const LoginForm: React.FC = () => {
         return;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password: cleanPassword,
       });
 
-      if (error) {
-        // Record failed attempt (only in production)
-        if (!devPreviewEnabled()) {
-          bruteForceProtection.recordAttempt(identifier, false);
-          setAttemptCount(prev => prev + 1);
-        }
-        
-        throw error;
+      if (authError) {
+        throw authError;
       }
 
-      // Record successful attempt (only in production)
-      if (!devPreviewEnabled()) {
-        bruteForceProtection.recordAttempt(identifier, true);
+      if (!data?.session) {
+        throw new Error('No session returned from Supabase');
       }
 
       // Check user type and handle claim URL accordingly
@@ -113,7 +89,7 @@ const LoginForm: React.FC = () => {
           error.message?.includes('using fallback')) {
         setError('Unable to sign in - database connection required. Please ensure Supabase is properly configured.');
       } else if (error.message?.includes('Invalid login credentials')) {
-        setError(`Invalid email or password. ${attemptCount >= 2 ? 'Account will be temporarily locked after multiple failed attempts.' : ''}`);
+        setError('Invalid email or password. Please check your credentials and try again.');
       } else if (error.message?.includes('Too many requests')) {
         setError('Too many login attempts. Please wait a few minutes before trying again.');
       } else if (error.message?.includes('Email not confirmed')) {
@@ -215,7 +191,7 @@ const LoginForm: React.FC = () => {
             <div className="flex items-center justify-between">
               <Link
                 to="/forgot-password"
-               className="text-sm text-primary-600 hover:text-primary-500 font-medium transition-colors block w-full text-center"
+                className="text-sm text-primary-600 hover:text-primary-500 font-medium transition-colors block w-full text-center"
               >
                 Forgot your password?
               </Link>
