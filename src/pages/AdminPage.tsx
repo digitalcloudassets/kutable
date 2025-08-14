@@ -23,7 +23,7 @@ import {
   Edit,
   Loader
 } from 'lucide-react';
-import { supabase, getRealBarberCount } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { useSupabaseConnection } from '../hooks/useSupabaseConnection';
 import SupabaseConnectionBanner from '../components/Setup/SupabaseConnectionBanner';
 import AdminDataExport from '../components/Admin/AdminDataExport';
