@@ -13,23 +13,58 @@ export function useAdminGuard() {
       setLoading(true);
       setErrorMsg(null);
       try {
+        // Step 1: Test basic connectivity with ping function
+        console.log('🏓 Testing Edge Function connectivity...');
+        try {
+          const { data: pingData, error: pingError } = await supabase.functions.invoke("ping", { body: {} });
+          if (pingError) {
+            console.error('🚨 Ping function failed:', pingError);
+            if (!cancelled) {
+              setErrorMsg(`Network/CORS Error: ${pingError.message || 'Cannot reach Edge Functions'}`);
+              setAllowed(false);
+              setLoading(false);
+            }
+            return;
+          }
+          console.log('✅ Ping successful:', pingData);
+        } catch (pingErr: any) {
+          console.error('🚨 Ping function network error:', pingErr);
+          if (!cancelled) {
+            setErrorMsg(`Network Error: ${pingErr.message || 'Edge Functions unreachable'}`);
+            setAllowed(false);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Step 2: Check authentication
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
+          console.log('👤 No user session found');
           if (!cancelled) { setAllowed(false); setLoading(false); }
           return;
         }
+        
+        // Step 3: Test admin access
+        console.log('🔐 Testing admin access for user:', session.user.id);
         const { data, error } = await supabase.functions.invoke("admin-guard", { body: {} });
         if (!cancelled) {
           if (error) {
-            setErrorMsg(error.message ?? "Edge Function call failed");
+            console.error('🚨 Admin guard error:', error);
+            setErrorMsg(`Auth Error: ${error.message ?? "Admin access check failed"}`);
             setAllowed(false);
           } else {
+            console.log('🔐 Admin guard response:', data);
             setAllowed(Boolean(data?.ok));
+            if (!data?.ok) {
+              setErrorMsg(`Access Denied: ${data?.reason || 'Not authorized as admin'}`);
+            }
           }
         }
       } catch (e: any) {
+        console.error('🚨 Admin guard hook error:', e);
         if (!cancelled) {
-          setErrorMsg(e?.message ?? "Failed to reach admin-guard");
+          setErrorMsg(`Unexpected Error: ${e?.message ?? "Admin check failed"}`);
           setAllowed(false);
         }
       } finally {
@@ -39,6 +74,6 @@ export function useAdminGuard() {
     return () => { cancelled = true; };
   }, []);
 
-  // optional: you can return errorMsg to show a toast
+  // Return errorMsg to show helpful debugging info
   return { loading, allowed, errorMsg };
 }

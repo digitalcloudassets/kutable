@@ -11,7 +11,7 @@ const Header: React.FC = () => {
   const location = useLocation();
   const { user, loading } = useAuth();
   const { unreadCount } = useMessaging();
-  const { allowed: isAdmin, loading: adminLoading } = useAdminGuard();
+  const { allowed: isAdmin, loading: adminLoading, errorMsg: adminError } = useAdminGuard();
   
   // Enhanced debug logging
   useEffect(() => {
@@ -22,10 +22,18 @@ const Header: React.FC = () => {
         isAdmin,
         adminLoading,
         userLoading: loading,
-        hasAdminGuard: !!isAdmin || adminLoading
+        hasAdminGuard: !!isAdmin || adminLoading,
+        adminErrorMsg: adminError
       });
     }
-  }, [user, isAdmin, adminLoading, loading]);
+  }, [user, isAdmin, adminLoading, loading, adminError]);
+
+  // Show admin error in development for debugging
+  useEffect(() => {
+    if (adminError && import.meta.env.DEV) {
+      console.error('🔐 Admin Guard Error:', adminError);
+    }
+  }, [adminError]);
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
