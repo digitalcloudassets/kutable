@@ -191,7 +191,7 @@ export const initializeWebVitals = () => {
           vitalsData.FID = entry.processingStart - entry.startTime;
           reportVital('FID', entry.processingStart - entry.startTime);
         });
-      }).observe({ entryTypes: ['first-input'], buffered: true });
+      }).observe({ type: 'first-input', buffered: true });
 
       // Cumulative Layout Shift
       let clsValue = 0;
@@ -203,7 +203,7 @@ export const initializeWebVitals = () => {
           }
         }
         reportVital('CLS', clsValue);
-      }).observe({ entryTypes: ['layout-shift'], buffered: true });
+      }).observe({ type: 'layout-shift', buffered: true });
 
     } catch (error) {
       console.warn('Web Vitals tracking not available:', error);
