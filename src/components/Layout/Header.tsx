@@ -201,3 +201,15 @@ const Header: React.FC = () => {
                 isHomePage && !scrolled 
                   ? 'text-white hover:bg-white/10' 
                   : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
