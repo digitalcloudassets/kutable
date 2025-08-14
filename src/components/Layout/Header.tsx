@@ -31,7 +31,12 @@ const Header: React.FC = () => {
   // Show admin error in development for debugging
   useEffect(() => {
     if (adminError && import.meta.env.DEV) {
-      console.error('🔐 Admin Guard Error:', adminError);
+      // Only log as error if it's not a development mode issue
+      if (adminError.includes('fallback mode') || adminError.includes('Development environment detected')) {
+        console.log('ℹ️  Admin Guard:', adminError);
+      } else {
+        console.error('🔐 Admin Guard Error:', adminError);
+      }
     }
   }, [adminError]);
   
@@ -195,77 +200,4 @@ const Header: React.FC = () => {
               className={`md:hidden p-2 rounded-xl transition-all duration-200 ${
                 isHomePage && !scrolled 
                   ? 'text-white hover:bg-white/10' 
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              {mobileMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden glass-effect border-t border-white/10 mt-4 p-4 rounded-2xl mb-4 animate-scale-in">
-            <nav className="space-y-2">
-              <div className="space-y-2">
-                {user ? (
-                  <>
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center space-x-3 py-4 px-6 font-medium text-gray-700 hover:text-primary-600 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px]"
-                    >
-                      <User className="h-5 w-5" />
-                      <span>Dashboard</span>
-                    </Link>
-                    {/* Admin Link for Mobile - Only show for admin users */}
-                    {isAdmin && !adminLoading && (
-                      <Link
-                        to="/admin"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center space-x-3 py-4 px-6 font-medium text-gray-700 hover:text-primary-600 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px]"
-                      >
-                        <Crown className="h-5 w-5" />
-                        <span>Admin</span>
-                      </Link>
-                    )}
-                    <button
-                      onClick={handleSignOut}
-                      className="flex items-center space-x-3 py-4 px-6 font-medium text-gray-600 hover:text-gray-800 transition-colors rounded-xl hover:bg-gray-100 w-full text-left min-h-[48px]"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      <span>Sign Out</span>
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      to="/login"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block py-4 px-6 font-medium text-gray-700 hover:text-primary-600 transition-colors rounded-xl hover:bg-gray-100 min-h-[48px] flex items-center"
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      to="/signup"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="btn-primary w-full justify-center mt-4 min-h-[48px]"
-                    >
-                      Get Started
-                    </Link>
-                  </>
-                )}
-              </div>
-            </nav>
-          </div>
-        )}
-      </div>
-    </header>
-  );
-};
-
-export default Header;
+                  : 'text-gray-700 
