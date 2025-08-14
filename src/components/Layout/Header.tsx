@@ -200,4 +200,4 @@ const Header: React.FC = () => {
               className={`md:hidden p-2 rounded-xl transition-all duration-200 ${
                 isHomePage && !scrolled 
                   ? 'text-white hover:bg-white/10' 
-                  : 'text-gray-700 
+                  : 'text-gray-700 hover:bg-gray-100'
