@@ -35,6 +35,28 @@ const Header: React.FC = () => {
     }
   }, [adminError]);
   
+  // Enhanced debug logging
+  useEffect(() => {
+    if (user) {
+      console.log('🔐 Header Debug - Admin Check:', {
+        userId: user.id,
+        userEmail: user.email,
+        isAdmin,
+        adminLoading,
+        userLoading: loading,
+        hasAdminGuard: !!isAdmin || adminLoading,
+        adminErrorMsg: adminError
+      });
+    }
+  }, [user, isAdmin, adminLoading, loading, adminError]);
+
+  // Show admin error in development for debugging
+  useEffect(() => {
+    if (adminError && import.meta.env.DEV) {
+      console.error('🔐 Admin Guard Error:', adminError);
+    }
+  }, [adminError]);
+  
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
