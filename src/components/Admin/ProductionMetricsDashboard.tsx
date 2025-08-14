@@ -213,7 +213,7 @@ const ProductionMetricsDashboard: React.FC = () => {
             </div>
           </div>
           <div className="text-3xl font-bold text-gray-900 mb-2">
-            {formatCurrency(metrics.revenueToday)}
+            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.revenueToday)}
           </div>
           <p className="text-sm text-gray-500">
             {metrics.bookingsToday} bookings
@@ -294,7 +294,7 @@ const ProductionMetricsDashboard: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Revenue Today:</span>
-                <span className="font-medium text-green-600">{formatCurrency(metrics.revenueToday)}</span>
+                <span className="font-medium text-green-600">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(metrics.revenueToday)}</span>
               </div>
             </div>
           </div>

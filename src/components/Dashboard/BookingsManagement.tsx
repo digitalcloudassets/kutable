@@ -109,7 +109,7 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
     }
 
     const customerName = `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`;
-    if (!confirm(`Are you sure you want to refund $${booking.total_amount} to ${customerName}? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to refund ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(booking.total_amount)} to ${customerName}? This action cannot be undone.`)) {
       return;
     }
 
@@ -134,7 +134,7 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
       // Update booking status to cancelled
       await updateBookingStatus(booking.id, 'cancelled');
       
-      NotificationManager.success(`Refund of $${booking.total_amount} processed successfully. The customer will receive their money within 5-10 business days.`);
+      NotificationManager.success(`Refund of ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(booking.total_amount)} processed successfully. The customer will receive their money within 5-10 business days.`);
 
     } catch (error: any) {
       console.error('Error processing refund:', error);
@@ -251,9 +251,9 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
                 <p className="text-gray-600 font-medium">{booking.services?.name}</p>
               </div>
               <div className="text-right">
-                <p className="text-xl font-bold text-gray-900">${booking.total_amount}</p>
+                <p className="text-xl font-bold text-gray-900">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(booking.total_amount)}</p>
                 {booking.deposit_amount > 0 && (
-                  <p className="text-sm text-orange-600 font-medium">${booking.deposit_amount} deposit</p>
+                  <p className="text-sm text-orange-600 font-medium">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(booking.deposit_amount)} deposit</p>
                 )}
               </div>
             </div>

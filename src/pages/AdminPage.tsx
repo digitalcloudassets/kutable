@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { formatUSD } from '../lib/currency';
 import { 
   Users, 
   DollarSign, 
@@ -106,10 +107,6 @@ const AdminPage: React.FC = () => {
     } finally {
       setUpdatingSlugs(false);
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toFixed(2)}`;
   };
 
   const exportData = async (type: string) => {
@@ -275,7 +272,7 @@ const AdminPage: React.FC = () => {
                 </div>
               </div>
               <div className="text-3xl font-display font-bold text-gray-900 mb-2">
-                {formatCurrency(kpis?.totalRevenue || 0)}
+                {formatUSD(kpis?.totalRevenue || 0)}
               </div>
               <p className="text-sm text-gray-500 font-medium">
                 Total gross revenue (all payments)
@@ -290,7 +287,7 @@ const AdminPage: React.FC = () => {
                 </div>
               </div>
               <div className="text-3xl font-display font-bold text-gray-900 mb-2">
-                {formatCurrency(kpis?.platformRevenue || 0)}
+                {formatUSD(kpis?.platformRevenue || 0)}
               </div>
               <p className="text-sm text-gray-500 font-medium">
                 Platform fees earned (1%)
@@ -435,7 +432,7 @@ const AdminPage: React.FC = () => {
                         <div className="bg-purple-100 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3">
                           <DollarSign className="h-6 w-6 text-purple-600" />
                         </div>
-                        <p className="text-2xl font-bold text-gray-900 mb-1">{formatCurrency(kpis?.avgBookingValue || 0)}</p>
+                        <p className="text-2xl font-bold text-gray-900 mb-1">{formatUSD(kpis?.avgBookingValue || 0)}</p>
                         <p className="text-sm text-gray-600">Avg Booking Value</p>
                       </div>
                     </div>
@@ -548,7 +545,7 @@ const AdminPage: React.FC = () => {
                     </div>
                     <div className="card-premium p-6">
                       <p className="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">Average Value</p>
-                      <p className="text-3xl font-display font-bold text-accent-600">{formatCurrency(kpis?.avgBookingValue ?? 0)}</p>
+                      <p className="text-3xl font-display font-bold text-accent-600">{formatUSD(kpis?.avgBookingValue || 0)}</p>
                     </div>
                   </div>
                 </div>
@@ -567,7 +564,7 @@ const AdminPage: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 p-8 rounded-2xl shadow-sm">
                       <div className="text-4xl font-display font-bold text-gray-900 mb-2">
-                        {formatCurrency(kpis?.platformRevenue || 0)}
+                        {formatUSD(kpis?.platformRevenue || 0)}
                       </div>
                       <p className="text-emerald-800 font-semibold mb-2">Platform Fees Collected</p>
                       <p className="text-sm text-emerald-600 font-medium">1% of gross volume</p>
@@ -575,7 +572,7 @@ const AdminPage: React.FC = () => {
 
                     <div className="bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 p-8 rounded-2xl shadow-sm">
                       <div className="text-4xl font-display font-bold text-gray-900 mb-2">
-                        {formatCurrency(kpis?.totalRevenue || 0)}
+                        {formatUSD(kpis?.totalRevenue || 0)}
                       </div>
                       <p className="text-primary-800 font-semibold mb-2">Total Volume Processed</p>
                       <p className="text-sm text-primary-600 font-medium">Gross booking revenue</p>
