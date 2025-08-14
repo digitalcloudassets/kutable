@@ -64,6 +64,16 @@ const LoginForm: React.FC = () => {
         // Record failed attempt
         bruteForceProtection.recordAttempt(identifier, false);
         setAttemptCount(prev => prev + 1);
+        
+        // Handle Supabase connection errors gracefully without throwing
+        if (error.message?.includes('Connect to Supabase to enable user accounts') || 
+            error.message?.includes('Supabase not configured') ||
+            error.message?.includes('using fallback mode')) {
+          setError('Database not connected. Please connect to Supabase to sign in.');
+          setLoading(false);
+          return;
+        }
+        
         throw error;
       }
 
