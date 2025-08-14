@@ -13,13 +13,19 @@ const Header: React.FC = () => {
   const { unreadCount } = useMessaging();
   const { allowed: isAdmin, loading: adminLoading } = useAdminGuard();
   
-  // Debug logging to help identify the issue
-  console.log('Header Debug:', {
-    user: user ? { id: user.id, email: user.email } : null,
-    isAdmin,
-    adminLoading,
-    userLoading: loading
-  });
+  // Enhanced debug logging
+  useEffect(() => {
+    if (user) {
+      console.log('🔐 Header Debug - Admin Check:', {
+        userId: user.id,
+        userEmail: user.email,
+        isAdmin,
+        adminLoading,
+        userLoading: loading,
+        hasAdminGuard: !!isAdmin || adminLoading
+      });
+    }
+  }, [user, isAdmin, adminLoading, loading]);
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
