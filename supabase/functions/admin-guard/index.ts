@@ -2,12 +2,9 @@
 // Deploy: supabase functions deploy admin-guard
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.3";
+import { corsHeaders, withCors, handlePreflight } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*", // (Tighten to your domain in your CORS hardening task)
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const headers = corsHeaders(["POST", "OPTIONS"]);
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -24,7 +21,11 @@ const ADMIN_EMAILS = (Deno.env.get("ADMIN_EMAILS") ?? "")
   .filter(Boolean);
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const preflight = handlePreflight(req, headers);
+  if (preflight) return preflight;
+
+  const cors = withCors(req, headers);
+  if (!cors.ok) return cors.res;
 
   try {
     // Debug: Log environment variables (without exposing them fully)
@@ -40,7 +41,7 @@ serve(async (req) => {
     if (!authHeader) {
       return new Response(JSON.stringify({ ok: false, reason: "Missing Authorization" }), {
         status: 401,
-        headers: corsHeaders,
+        headers: cors.headers,
       });
     }
 
@@ -54,7 +55,7 @@ serve(async (req) => {
       console.log('Auth error in admin guard:', { error: error?.message, hasUser: !!user });
       return new Response(JSON.stringify({ ok: false, reason: "Unauthenticated" }), {
         status: 401,
-        headers: corsHeaders,
+        headers: cors.headers,
       });
     }
 
@@ -74,7 +75,7 @@ serve(async (req) => {
     if (!isUidAllowed && !isEmailAllowed) {
       return new Response(JSON.stringify({ ok: false, reason: "Forbidden" }), {
         status: 403,
-        headers: corsHeaders,
+        headers: cors.headers,
       });
     }
 
@@ -82,12 +83,12 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ ok: true, user: { id: user.id, email: user.email } }), {
       status: 200,
-      headers: corsHeaders,
+      headers: cors.headers,
     });
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, reason: "Error", detail: String(e) }), {
       status: 500,
-      headers: corsHeaders,
+      headers: cors.headers,
     });
   }
 });

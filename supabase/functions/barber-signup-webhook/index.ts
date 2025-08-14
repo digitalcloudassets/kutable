@@ -1,16 +1,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-}
+const headers = corsHeaders(['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 const json = (status: number, data: any) => 
-  new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-  })
+  new Response(JSON.stringify(data), { status, headers: {} }) // Will be filled by caller
 
 interface BarberProfile {
   id: string;
@@ -177,9 +171,18 @@ function generateSignupEmailHTML(barber: BarberProfile): string {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  const preflight = handlePreflight(req, headers, { requireBrowserOrigin: false });
+  if (preflight) return preflight;
+
+  // This is a webhook endpoint, so it might not have browser origin
+  const cors = withCors(req, headers, { requireBrowserOrigin: false });
+  if (!cors.ok) return cors.res;
+
+  const json = (status: number, data: any) => 
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { ...cors.headers, 'Content-Type': 'application/json' }
+    })
 
   if (req.method !== 'POST') {
     return json(405, { success: false, error: 'Method not allowed' })

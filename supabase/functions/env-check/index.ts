@@ -1,12 +1,15 @@
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-};
-const json = (s:number,d:any)=>new Response(JSON.stringify(d),{status:s,headers:{...CORS,'Content-Type':'application/json'}});
+import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
+
+const headers = corsHeaders(['GET', 'OPTIONS']);
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+  const preflight = handlePreflight(req, headers);
+  if (preflight) return preflight;
+
+  const cors = withCors(req, headers);
+  if (!cors.ok) return cors.res;
+
+  const json = (s:number,d:any)=>new Response(JSON.stringify(d),{status:s,headers:{...cors.headers,'Content-Type':'application/json'}});
 
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
   const RESEND_FROM = Deno.env.get('RESEND_FROM');

@@ -1,10 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-}
+const headers = corsHeaders(['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 interface ConfirmBookingRequest {
   bookingId: string;
@@ -12,9 +9,11 @@ interface ConfirmBookingRequest {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  const preflight = handlePreflight(req, headers);
+  if (preflight) return preflight;
+
+  const cors = withCors(req, headers);
+  if (!cors.ok) return cors.res;
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -27,7 +26,7 @@ Deno.serve(async (req) => {
           error: 'Database configuration missing'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 500,
         },
       )
@@ -43,7 +42,7 @@ Deno.serve(async (req) => {
           error: 'Missing required fields: bookingId and paymentIntentId'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 400,
         },
       )
@@ -73,7 +72,7 @@ Deno.serve(async (req) => {
           error: 'Failed to confirm booking'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 400,
         },
       )
@@ -85,7 +84,7 @@ Deno.serve(async (req) => {
         booking: booking
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...cors.headers, 'Content-Type': 'application/json' },
         status: 200,
       },
     )
@@ -99,7 +98,7 @@ Deno.serve(async (req) => {
         error: error instanceof Error ? error.message : 'Booking confirmation failed'
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...cors.headers, 'Content-Type': 'application/json' },
         status: 500,
       },
     )

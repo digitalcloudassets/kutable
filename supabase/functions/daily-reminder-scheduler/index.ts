@@ -1,16 +1,16 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-}
+const headers = corsHeaders(['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 // This function should be called daily via cron job to send appointment reminders
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  // This is typically called by cron/scheduler, not browsers
+  const preflight = handlePreflight(req, headers, { requireBrowserOrigin: false });
+  if (preflight) return preflight;
+
+  const cors = withCors(req, headers, { requireBrowserOrigin: false });
+  if (!cors.ok) return cors.res;
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
           error: 'Missing database configuration'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 500,
         },
       )
@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
         }
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...cors.headers, 'Content-Type': 'application/json' },
         status: 200,
       },
     )
@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
         error: error instanceof Error ? error.message : 'Reminder scheduling failed'
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...cors.headers, 'Content-Type': 'application/json' },
         status: 500,
       },
     )

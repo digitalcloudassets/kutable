@@ -2,19 +2,13 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@14.21.0'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-const ok = (data: any, status = 200) => new Response(JSON.stringify(data), {
-  status,
-  headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-});
+// NOTE: Stripe webhooks are server-to-server and do NOT use CORS.
+// Only signature verification matters for security.
 
 serve(async (req) => {
+  // Stripe webhooks don't send preflight requests, but handle just in case
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { status: 200 })
   }
 
   try {
@@ -356,7 +350,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ received: true }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         status: 200,
       },
     )
@@ -366,7 +360,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ error: error.message }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         status: 400,
       },
     )

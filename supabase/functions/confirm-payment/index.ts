@@ -1,11 +1,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import Stripe from 'npm:stripe@14.21.0'
+import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-}
+const headers = corsHeaders(['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 interface ConfirmPaymentRequest {
   paymentIntentId: string;
@@ -13,9 +10,11 @@ interface ConfirmPaymentRequest {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  const preflight = handlePreflight(req, headers);
+  if (preflight) return preflight;
+
+  const cors = withCors(req, headers);
+  if (!cors.ok) return cors.res;
 
   try {
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
@@ -29,7 +28,7 @@ Deno.serve(async (req) => {
           error: 'Payment processing configuration error'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 500,
         },
       )
@@ -98,7 +97,7 @@ Deno.serve(async (req) => {
           paymentStatus: 'succeeded'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 200,
         },
       )
@@ -134,7 +133,7 @@ Deno.serve(async (req) => {
         error: error instanceof Error ? error.message : 'Payment confirmation failed'
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...cors.headers, 'Content-Type': 'application/json' },
         status: 500,
       },
     )

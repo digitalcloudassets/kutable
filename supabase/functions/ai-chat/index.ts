@@ -1,20 +1,22 @@
 // Only if you plan to keep AI chat. Runs fully server-side; OPENAI key never touches the client.
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { serverEnv } from '../_shared/env.ts';
+import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*', // tighten in task #3
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+const headers = corsHeaders(['POST', 'OPTIONS']);
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  const preflight = handlePreflight(req, headers);
+  if (preflight) return preflight;
+
+  const cors = withCors(req, headers);
+  if (!cors.ok) return cors.res;
 
   try {
     const { prompt } = await req.json();
     if (!prompt || typeof prompt !== 'string') {
       return new Response(JSON.stringify({ error: 'Invalid prompt' }), { status: 400, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'Invalid prompt' }), { status: 400, headers: cors.headers });
     }
 
     // Simple example using OpenAI Responses API
@@ -41,8 +43,8 @@ serve(async (req) => {
 
     const data = await resp.json();
     const answer = data.choices?.[0]?.message?.content ?? '';
-    return new Response(JSON.stringify({ answer }), { status: 200, headers: corsHeaders });
+    return new Response(JSON.stringify({ answer }), { status: 200, headers: cors.headers });
   } catch (e) {
-    return new Response(JSON.stringify({ error: 'Unexpected error', detail: String(e) }), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: 'Unexpected error', detail: String(e) }), { status: 500, headers: cors.headers });
   }
 });

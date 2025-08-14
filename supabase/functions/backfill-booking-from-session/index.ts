@@ -1,9 +1,19 @@
-const ok = (d: any, s = 200) => new Response(JSON.stringify(d), {
-  status: s,
-  headers: { 'Content-Type': 'application/json' }
-});
+import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
+
+const headers = corsHeaders(['POST', 'OPTIONS']);
 
 Deno.serve(async (req) => {
+  const preflight = handlePreflight(req, headers);
+  if (preflight) return preflight;
+
+  const cors = withCors(req, headers);
+  if (!cors.ok) return cors.res;
+
+  const ok = (d: any, s = 200) => new Response(JSON.stringify(d), {
+    status: s,
+    headers: { ...cors.headers, 'Content-Type': 'application/json' }
+  });
+
   if (req.method !== 'POST') return ok({ error: 'POST only' }, 405);
   
   try {

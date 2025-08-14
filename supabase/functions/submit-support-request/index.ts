@@ -1,10 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-}
+const headers = corsHeaders(['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 interface SupportRequest {
   name: string;
@@ -55,9 +52,11 @@ const sanitizeInput = (input: string, maxLength: number = 255): string => {
     .replace(/[<>&"']/g, '');
 };
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  const preflight = handlePreflight(req, headers);
+  if (preflight) return preflight;
+
+  const cors = withCors(req, headers);
+  if (!cors.ok) return cors.res;
 
   try {
     // Get client IP for rate limiting
@@ -73,7 +72,7 @@ Deno.serve(async (req) => {
           error: 'Too many support requests. Please wait an hour before submitting another request.'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 429,
         },
       )
@@ -89,7 +88,7 @@ Deno.serve(async (req) => {
           error: 'Missing required environment variables for database connection'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 500,
         },
       )
@@ -108,7 +107,7 @@ Deno.serve(async (req) => {
           error: 'All fields are required: name, email, category, subject, message'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 400,
         },
       )
@@ -124,7 +123,7 @@ Deno.serve(async (req) => {
           error: 'Invalid input format'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 400,
         },
       )
@@ -137,7 +136,7 @@ Deno.serve(async (req) => {
           error: 'Input too long. Name: 100 chars, Subject: 200 chars, Message: 5000 chars max.'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 400,
         },
       )
@@ -151,7 +150,7 @@ Deno.serve(async (req) => {
           error: 'Input too short. Please provide meaningful content.'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 400,
         },
       )
@@ -165,7 +164,7 @@ Deno.serve(async (req) => {
           error: 'Invalid email format'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 400,
         },
       )
@@ -180,7 +179,7 @@ Deno.serve(async (req) => {
           error: 'Invalid category selected'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 400,
         },
       )
@@ -203,7 +202,7 @@ Deno.serve(async (req) => {
           error: 'Request contains prohibited content'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 400,
         },
       )
@@ -217,7 +216,7 @@ Deno.serve(async (req) => {
           error: 'Too many requests from this email. Please wait an hour before submitting another request.'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 429,
         },
       )
@@ -246,7 +245,7 @@ Deno.serve(async (req) => {
           error: 'Failed to save support request. Please try again.'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 500,
         },
       )
@@ -307,7 +306,7 @@ User ID: ${userId || 'Anonymous'}
         message: 'Support request submitted successfully. We will respond within 24 hours.'
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...cors.headers, 'Content-Type': 'application/json' },
         status: 200,
       },
     )
@@ -321,7 +320,7 @@ User ID: ${userId || 'Anonymous'}
         error: error instanceof Error ? error.message : 'Support request submission failed'
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...cors.headers, 'Content-Type': 'application/json' },
         status: 500,
       },
     )

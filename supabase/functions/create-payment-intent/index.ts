@@ -2,13 +2,9 @@
 // so you can take your fee and auto-transfer to the barber connected account.
 // Uses REST via fetch (Stripe Node SDK is not used on Supabase Edge).
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-const resJson = (status: number, data: any) =>
-  new Response(JSON.stringify(data), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
+import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
+
+const headers = corsHeaders(['POST', 'OPTIONS']);
 
 type ReqBody = {
   barberId: string;
@@ -48,7 +44,14 @@ async function stripePost(path: string, body: URLSearchParams, key: string) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+  const preflight = handlePreflight(req, headers);
+  if (preflight) return preflight;
+
+  const cors = withCors(req, headers);
+  if (!cors.ok) return cors.res;
+
+  const resJson = (status: number, data: any) =>
+    new Response(JSON.stringify(data), { status, headers: { ...cors.headers, 'Content-Type': 'application/json' } });
 
   try {
     const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');

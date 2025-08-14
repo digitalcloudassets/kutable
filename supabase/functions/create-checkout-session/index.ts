@@ -1,10 +1,6 @@
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-const resJson = (status: number, data: unknown) =>
-  new Response(JSON.stringify(data), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
+import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
+
+const headers = corsHeaders(['POST', 'OPTIONS']);
 
 type Body = {
   priceId?: string;              // preferred
@@ -44,7 +40,14 @@ async function stripePost(path: string, body: URLSearchParams, key: string, stri
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  const preflight = handlePreflight(req, headers);
+  if (preflight) return preflight;
+
+  const cors = withCors(req, headers);
+  if (!cors.ok) return cors.res;
+
+  const resJson = (status: number, data: unknown) =>
+    new Response(JSON.stringify(data), { status, headers: { ...cors.headers, 'Content-Type': 'application/json' } });
 
   try {
     const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');

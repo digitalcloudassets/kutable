@@ -1,14 +1,20 @@
 // Deno Edge Function: test-sms
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-const resJSON = (status: number, data: any) =>
+import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
+
+const headers = corsHeaders(['POST', 'OPTIONS']);
   new Response(JSON.stringify(data), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+  const preflight = handlePreflight(req, headers);
+  if (preflight) return preflight;
+
+  const cors = withCors(req, headers);
+  if (!cors.ok) return cors.res;
+
+  const resJSON = (status: number, data: any) => new Response(JSON.stringify(data), { 
+    status, 
+    headers: { ...cors.headers, 'Content-Type': 'application/json' } 
+  });
 
   try {
     const sid = Deno.env.get('TWILIO_ACCOUNT_SID');

@@ -1,17 +1,11 @@
 import Stripe from 'npm:stripe@14.21.0'
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-}
+const headers = corsHeaders(['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 const json = (status: number, body: unknown) => 
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-  })
+  new Response(JSON.stringify(body), { status, headers: {} }) // Will be filled by caller
 
 interface RefundRequest {
   payment_intent_id?: string;
@@ -21,9 +15,17 @@ interface RefundRequest {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  const preflight = handlePreflight(req, headers);
+  if (preflight) return preflight;
+
+  const cors = withCors(req, headers);
+  if (!cors.ok) return cors.res;
+
+  const json = (status: number, body: unknown) => 
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...cors.headers, 'Content-Type': 'application/json' }
+    })
 
   try {
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')

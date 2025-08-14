@@ -1,10 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-}
+const headers = corsHeaders(['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 interface TwilioWebhookData {
   MessageSid: string;
@@ -59,9 +56,12 @@ const sanitizeInput = (input: string, maxLength: number = 1000): string => {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  // Twilio webhooks are server-to-server, not browser requests
+  const preflight = handlePreflight(req, headers, { requireBrowserOrigin: false });
+  if (preflight) return preflight;
+
+  const cors = withCors(req, headers, { requireBrowserOrigin: false });
+  if (!cors.ok) return cors.res;
 
   try {
     // Get client IP for rate limiting
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
           error: 'Webhook rate limit exceeded'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 429,
         },
       )
@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
           error: 'Missing database configuration'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 500,
         },
       )
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
           error: 'Invalid webhook data - missing required fields'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 400,
         },
       )
@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
           error: 'Unauthorized webhook source'
         }),
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...cors.headers, 'Content-Type': 'application/json' },
           status: 403,
         },
       )
@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
            <Message>You have been unsubscribed from Kutable SMS notifications. Text START to re-subscribe.</Message>
          </Response>`,
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/xml' },
+          headers: { ...cors.headers, 'Content-Type': 'application/xml' },
           status: 200,
         },
       )
@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
            <Message>Welcome back to Kutable SMS notifications! You'll now receive booking confirmations and reminders.</Message>
          </Response>`,
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/xml' },
+          headers: { ...cors.headers, 'Content-Type': 'application/xml' },
           status: 200,
         },
       )
@@ -196,7 +196,7 @@ Deno.serve(async (req) => {
            <Message>Kutable - Professional Barber Booking. Visit kutable.com for help. Text STOP to unsubscribe, START to resubscribe.</Message>
          </Response>`,
         {
-          headers: { ...corsHeaders, 'Content-Type': 'application/xml' },
+          headers: { ...cors.headers, 'Content-Type': 'application/xml' },
           status: 200,
         },
       )
@@ -229,7 +229,7 @@ Deno.serve(async (req) => {
       `<?xml version="1.0" encoding="UTF-8"?>
        <Response></Response>`,
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/xml' },
+        headers: { ...cors.headers, 'Content-Type': 'application/xml' },
         status: 200,
       },
     )
@@ -243,7 +243,7 @@ Deno.serve(async (req) => {
         error: error instanceof Error ? error.message : 'Webhook processing failed'
       }),
       {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...cors.headers, 'Content-Type': 'application/json' },
         status: 500,
       },
     )

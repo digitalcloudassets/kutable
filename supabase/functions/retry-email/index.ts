@@ -1,9 +1,6 @@
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-const ok = (data: any, status = 200) => new Response(JSON.stringify(data), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
+import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
+
+const headers = corsHeaders(['POST', 'OPTIONS']);
 
 function backoff(attempt: number) {
   // 1m, 5m, 15m
@@ -22,7 +19,17 @@ async function resendSend(apiKey: string, from: string, to: string, subject: str
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  // This is typically called by cron/scheduler, not browsers
+  const preflight = handlePreflight(req, headers, { requireBrowserOrigin: false });
+  if (preflight) return preflight;
+
+  const cors = withCors(req, headers, { requireBrowserOrigin: false });
+  if (!cors.ok) return cors.res;
+
+  const ok = (data: any, status = 200) => new Response(JSON.stringify(data), { 
+    status, 
+    headers: { ...cors.headers, 'Content-Type': 'application/json' } 
+  });
 
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
   const RESEND_FROM = Deno.env.get('RESEND_FROM');

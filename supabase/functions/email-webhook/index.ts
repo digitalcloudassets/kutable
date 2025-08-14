@@ -1,10 +1,8 @@
 // Deno Edge Function: email-webhook (Resend)
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-const json = (s:number,d:any)=>new Response(JSON.stringify(d),{status:s,headers:{...CORS,'Content-Type':'application/json'}});
+// NOTE: Webhook endpoints are server-to-server and do NOT use CORS.
+// Only signature verification matters for security.
+
+const json = (s:number,d:any)=>new Response(JSON.stringify(d),{status:s,headers:{'Content-Type':'application/json'}});
 
 async function hmacSha256Hex(secret: string, body: Uint8Array) {
   const key = await crypto.subtle.importKey(
@@ -23,7 +21,7 @@ function constantTimeEq(a: string, b: string) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+  if (req.method === 'OPTIONS') return new Response('ok', { status: 200 });
 
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
