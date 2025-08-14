@@ -26,6 +26,8 @@ const AdminDebugPanel: React.FC = () => {
       error: result.ok ? null : result.detail,
       url: result.url || getFunctionsBaseUrl(),
       status: result.status,
+      developmentMode: result.developmentMode || false,
+      errorType: result.errorType || null,
       timestamp: new Date().toISOString()
     };
     
@@ -33,6 +35,8 @@ const AdminDebugPanel: React.FC = () => {
     
     if (result.ok) {
       NotificationManager.success('✅ Edge Functions reachable!');
+    } else if (result.developmentMode) {
+      NotificationManager.info('ℹ️ Running in fallback mode - connect to Supabase for full functionality');
     } else {
       NotificationManager.error(`❌ Edge Functions unreachable: ${result.detail}`);
     }
@@ -80,6 +84,9 @@ const AdminDebugPanel: React.FC = () => {
     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-blue-900">Admin Access Debug</h3>
+        <div className="text-xs text-blue-700">
+          Functions URL: {getFunctionsBaseUrl() || 'Not configured'}
+        </div>
         <div className="flex gap-2">
           <button
             onClick={testPing}

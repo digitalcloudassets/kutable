@@ -56,9 +56,32 @@ export function useAdminGuard() {
         console.log('🏓 Ping result:', pingResult);
         
         if (!pingResult.ok) {
-          console.error('🚨 Edge Functions unreachable:', pingResult);
+          console.warn('🚨 Edge Functions unreachable:', pingResult);
+          
+          // In development with placeholder config, this is expected
+          if (pingResult.developmentMode) {
+            console.log('ℹ️  Running in fallback mode - connect to Supabase for full functionality');
+            if (!cancelled) {
+              setAllowed(false);
+              setLoading(false);
+            }
+            return;
+          }
+          
+          // Provide helpful error message based on error type
+          let errorMessage = `Network/CORS Error: ${pingResult.detail}`;
+          if (pingResult.url) {
+            errorMessage += ` (URL: ${pingResult.url})`;
+          }
+          
+          if (pingResult.detail.includes('CORS not configured')) {
+            errorMessage += '\n\nTo fix: Deploy functions and set ALLOWED_ORIGINS=http://localhost:5173 in Supabase Functions environment';
+          } else if (pingResult.detail.includes('not deployed')) {
+            errorMessage += '\n\nTo fix: Run `supabase functions deploy` to deploy Edge Functions';
+          }
+          
           if (!cancelled) {
-            setErrorMsg(`Network/CORS Error: ${pingResult.detail} (URL: ${pingResult.url || functionsUrl})`);
+            setErrorMsg(errorMessage);
             setAllowed(false);
             setLoading(false);
           }

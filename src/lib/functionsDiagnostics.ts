@@ -23,6 +23,22 @@ export async function pingFunctions() {
   const base = getFunctionsBaseUrl();
   if (!base) return { ok: false, detail: "Invalid FUNCTIONS URL" };
 
+  // In development, check if we're likely using a real Supabase project or fallback mode
+  const isDev = import.meta.env.DEV;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const isPlaceholder = !supabaseUrl || 
+    supabaseUrl.includes('placeholder') || 
+    supabaseUrl === 'https://your-project.supabase.co' ||
+    supabaseUrl === 'your_supabase_url_here';
+
+  if (isDev && isPlaceholder) {
+    return { 
+      ok: false, 
+      detail: "Supabase not connected - using fallback mode",
+      url: base,
+      developmentMode: true
+    };
+  }
   const { data: { session }, error: sessErr } = await supabase.auth.getSession();
   if (sessErr) return { ok: false, detail: `Auth session error: ${sessErr.message}` };
 
@@ -34,12 +50,24 @@ export async function pingFunctions() {
         ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         "Content-Type": "application/json",
       },
+      // Add timeout for faster failure detection
+      signal: AbortSignal.timeout(10000) // 10 second timeout
     });
     let body: any = null;
     try { body = await resp.clone().json(); } catch { body = await resp.text(); }
     if (!resp.ok) return { ok: false, detail: "HTTP error", status: resp.status, body, url };
     return { ok: true, detail: "Reachable", status: resp.status, body, url };
   } catch (e: any) {
+    // Provide more specific error details for different failure types
+    let detail = "Network failure";
+    if (e.name === 'TypeError' && e.message === 'Failed to fetch') {
+      detail = isDev ? "Edge Functions not deployed or CORS not configured for localhost:5173" : "Network connectivity issue";
+    } else if (e.name === 'TimeoutError') {
+      detail = "Request timeout - functions may be unavailable";
+    } else {
+      detail = `Network failure: ${e?.message ?? String(e)}`;
+    }
+    
     return { ok: false, detail: `Network failure: ${e?.message ?? String(e)}`, url };
   }
 }
