@@ -1,5 +1,6 @@
 import React from 'react';
 import { MapPin, ExternalLink, Navigation } from 'lucide-react';
+import { env } from '../../lib/env';
 
 interface GoogleMapProps {
   address: string;
@@ -20,7 +21,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   const fullAddress = `${address}${city ? `, ${city}` : ''}${state ? `, ${state}` : ''}${zipCode ? ` ${zipCode}` : ''}`;
   
   // Get API key from environment
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const apiKey = env.googleMapsApiKey;
   
   const openInGoogleMaps = () => {
     const encodedAddress = encodeURIComponent(fullAddress);

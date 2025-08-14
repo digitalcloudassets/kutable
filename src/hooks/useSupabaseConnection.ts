@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { env } from '../lib/env';
 
 export const useSupabaseConnection = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -9,8 +10,8 @@ export const useSupabaseConnection = () => {
   }, []);
 
   const checkConnection = () => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const supabaseUrl = env.supabaseUrl;
+    const supabaseAnonKey = env.supabaseAnonKey;
 
     const hasValidCredentials = supabaseUrl && 
       supabaseAnonKey && 

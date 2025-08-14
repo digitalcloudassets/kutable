@@ -1,105 +1,59 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+// Replace any direct Deno.env.get(...) usage with the centralized helper.
+// Remove any reliance on VITE_* keys here.
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import { serverEnv } from '../_shared/env.ts';
 
-const ALLOWED_ORIGIN = "https://kutable.com";
-
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "content-type, authorization",
-    "Access-Control-Max-Age": "86400",
-    "Vary": "Origin",
-  };
-}
-
-function badRequest(msg: string) {
-  return new Response(JSON.stringify({ success: false, error: msg }), {
-    status: 400,
-    headers: { "content-type": "application/json", ...corsHeaders() },
-  });
-}
-
-function serverError(msg: string, status = 502) {
-  return new Response(JSON.stringify({ success: false, error: msg }), {
-    status,
-    headers: { "content-type": "application/json", ...corsHeaders() },
-  });
-}
-
-function isLikelyUS(phone: string) {
-  const digits = phone.replace(/\D/g, "");
-  return digits.length === 10;
-}
-
-function toE164(phone: string) {
-  let p = phone.trim();
-  if (isLikelyUS(p)) return `+1${p.replace(/\D/g, "")}`;
-  if (/^\+/.test(p)) return p;
-  return null;
-}
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*', // tighten in your CORS pass (task #3)
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
 
 serve(async (req) => {
-  // CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders() });
-  }
-
-  if (req.method !== "POST") {
-    return new Response("Method Not Allowed", {
-      status: 405,
-      headers: corsHeaders(),
-    });
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const { to, message, type } = await req.json();
+    const { to, body } = await req.json();
 
-    if (!to || !message) return badRequest("Missing 'to' or 'message'");
-
-    const normalized = toE164(String(to));
-    if (!normalized) return badRequest("Invalid phone number");
-
-    const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const token = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const msgSvc = Deno.env.get("TWILIO_MESSAGING_SERVICE_SID");
-    if (!sid || !token || !msgSvc) {
-      return serverError("Twilio environment not configured", 500);
+    if (!to || !body) {
+      return new Response(JSON.stringify({ error: 'Missing to or body' }), { status: 400, headers: corsHeaders });
     }
 
-    const body = new URLSearchParams({
-      To: normalized,
-      MessagingServiceSid: msgSvc,
-      Body: String(message),
+    const auth = btoa(`${serverEnv.twilio.sid}:${serverEnv.twilio.token}`);
+    const params = new URLSearchParams({
+      To: to,
+      From: serverEnv.twilio.from,
+      Body: body,
     });
 
     const twilioResp = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
+      `https://api.twilio.com/2010-04-01/Accounts/${serverEnv.twilio.sid}/Messages.json`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          Authorization: "Basic " + btoa(`${sid}:${token}`),
-          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body,
-      }
+        body: params,
+      },
     );
 
-    const twilioJson = await twilioResp.json().catch(() => ({}));
-
     if (!twilioResp.ok) {
-      console.error("Twilio error", twilioResp.status, twilioJson);
-      // Common case: unverified sender/number
-      const msg =
-        twilioJson?.message || "Twilio rejected the request (verification pending?)";
-      return serverError(msg);
+      const errText = await twilioResp.text();
+      return new Response(JSON.stringify({ error: 'Twilio send failed', detail: errText }), {
+        status: 502,
+        headers: corsHeaders,
+      });
     }
 
-    return new Response(JSON.stringify({ success: true, sid: twilioJson.sid }), {
-      status: 200,
-      headers: { "content-type": "application/json", ...corsHeaders() },
+    const data = await twilioResp.json();
+    return new Response(JSON.stringify({ ok: true, sid: data.sid }), { status: 200, headers: corsHeaders });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: 'Unexpected error', detail: String(e) }), {
+      status: 500,
+      headers: corsHeaders,
     });
-  } catch (err) {
-    console.error("send-sms error", err);
-    return serverError("Internal error sending SMS");
   }
 });

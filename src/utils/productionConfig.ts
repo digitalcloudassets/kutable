@@ -1,3 +1,5 @@
+import { env } from '../lib/env';
+
 // Production configuration management
 export interface ProductionConfig {
   environment: 'development' | 'staging' | 'production';
@@ -38,12 +40,12 @@ export const getProductionConfig = (): ProductionConfig => {
                  import.meta.env.VITE_GA_MEASUREMENT_ID !== 'G-XXXXXXXXXX'
     },
     features: {
-      payments: !!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY && 
-                import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY !== 'your_stripe_publishable_key_here',
-      messaging: !!import.meta.env.VITE_SUPABASE_URL && 
-                 import.meta.env.VITE_SUPABASE_URL !== 'your_supabase_url_here',
+      payments: !!env.stripePublishableKey && 
+                env.stripePublishableKey !== 'your_stripe_publishable_key_here',
+      messaging: !!env.supabaseUrl && 
+                 env.supabaseUrl !== 'your_supabase_url_here',
       notifications: true, // Always enabled for core functionality
-      fileUploads: !!import.meta.env.VITE_SUPABASE_URL
+      fileUploads: !!env.supabaseUrl
     },
     security: {
       csp: !isDev,
@@ -65,8 +67,8 @@ export const validateProductionEnvironment = (): {
   const recommendations: string[] = [];
 
   // Critical: Supabase Configuration
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const supabaseUrl = env.supabaseUrl;
+  const supabaseKey = env.supabaseAnonKey;
   
   if (!supabaseUrl || supabaseUrl.includes('placeholder') || supabaseUrl === 'your_supabase_url_here') {
     criticalIssues.push('Supabase URL not configured - Database functionality disabled');
@@ -77,7 +79,7 @@ export const validateProductionEnvironment = (): {
   }
 
   // Critical: Payment Configuration
-  const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+  const stripeKey = env.stripePublishableKey;
   if (!stripeKey || stripeKey.includes('placeholder') || stripeKey === 'your_stripe_publishable_key_here') {
     criticalIssues.push('Stripe publishable key not configured - Payment processing disabled');
   } else if (stripeKey.startsWith('pk_test_')) {
