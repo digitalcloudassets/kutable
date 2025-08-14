@@ -4,6 +4,7 @@ import { Mail, Lock, Eye, EyeOff, Loader, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { rateLimiter, bruteForceProtection, sanitizeInput, validateEmail } from '../../utils/security';
+import { devPreviewEnabled, shouldBypassConnectionChecks } from '../../lib/devFlags';
 
 const LoginForm: React.FC = () => {
   const { isConnected: isSupabaseConnected, reason } = useSupabaseConnection();
@@ -37,42 +38,57 @@ const LoginForm: React.FC = () => {
       return;
     }
 
-    // Rate limiting protection
-    const identifier = cleanEmail;
-    if (rateLimiter.isRateLimited(identifier, 5, 15 * 60 * 1000)) { // 5 attempts per 15 minutes
-      setError('Too many login attempts. Please wait 15 minutes before trying again.');
-      setLoading(false);
-      return;
+    // Rate limiting and brute force protection (bypass in dev preview mode)
+    if (!devPreviewEnabled()) {
+      const identifier = cleanEmail;
+      if (rateLimiter.isRateLimited(identifier, 5, 15 * 60 * 1000)) { // 5 attempts per 15 minutes
+        setError('Too many login attempts. Please wait 15 minutes before trying again.');
+        setLoading(false);
+        return;
+      }
+
+      if (bruteForceProtection.isBlocked(identifier)) {
+        setError('Account temporarily locked due to multiple failed attempts. Please try again later.');
+        setLoading(false);
+        return;
+      }
     }
 
-    // Brute force protection
-    if (bruteForceProtection.isBlocked(identifier)) {
-      setError('Account temporarily locked due to multiple failed attempts. Please try again later.');
-      setLoading(false);
-      return;
-    }
-
-    // Log connection status but don't block
-    if (!isSupabaseConnected) {
+    // Log connection status but don't block (unless in dev preview mode)
+    if (!isSupabaseConnected && !shouldBypassConnectionChecks()) {
       console.warn('[Login] Connection check failed. Proceeding with auth attempt anyway.');
     }
 
     try {
+      // In dev preview mode, show a helpful message instead of attempting real auth
+      if (devPreviewEnabled()) {
+        // Simulate successful login for dev preview
+        setTimeout(() => {
+          setLoading(false);
+          navigate('/dashboard');
+        }, 1000);
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password: cleanPassword,
       });
 
       if (error) {
-        // Record failed attempt
-        bruteForceProtection.recordAttempt(identifier, false);
-        setAttemptCount(prev => prev + 1);
+        // Record failed attempt (only in production)
+        if (!devPreviewEnabled()) {
+          bruteForceProtection.recordAttempt(identifier, false);
+          setAttemptCount(prev => prev + 1);
+        }
         
         throw error;
       }
 
-      // Record successful attempt
-      bruteForceProtection.recordAttempt(identifier, true);
+      // Record successful attempt (only in production)
+      if (!devPreviewEnabled()) {
+        bruteForceProtection.recordAttempt(identifier, true);
+      }
 
       // Check user type and handle claim URL accordingly
       const { data: { user: authenticatedUser } } = await supabase.auth.getUser();
@@ -216,7 +232,7 @@ const LoginForm: React.FC = () => {
           </form>
 
           {/* Connection Warning - Non-blocking */}
-          {isSupabaseConnected === false && (
+          {isSupabaseConnected === false && !devPreviewEnabled() && (
             <div className="mt-6 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
               <div className="flex items-start gap-2">
                 <div className="mt-1 h-2.5 w-2.5 rounded-full bg-amber-400" aria-hidden />
@@ -224,6 +240,21 @@ const LoginForm: React.FC = () => {
                   <p className="font-medium">Having trouble reaching the database ({reason ?? 'unknown'}).</p>
                   <p className="text-xs text-amber-700 mt-1">
                     You can still try signing in. Some features may be limited until connection is restored.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Dev Preview Mode Banner */}
+          {devPreviewEnabled() && (
+            <div className="mt-6 rounded-md border border-blue-300 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+              <div className="flex items-start gap-2">
+                <div className="mt-1 h-2.5 w-2.5 rounded-full bg-blue-400" aria-hidden />
+                <div>
+                  <p className="font-medium">Development Preview Mode Active</p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Authentication and database calls are simulated for preview. Connect to Supabase for full functionality.
                   </p>
                 </div>
               </div>

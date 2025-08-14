@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { devPreviewEnabled } from "../lib/devFlags";
 
 function isWebContainerHost() {
   const h = typeof window !== "undefined" ? window.location.hostname : "";
@@ -15,8 +16,9 @@ export function useSupabaseConnection() {
 
     // In preview sandboxes, don't hard-fail — network/CORS can be weird.
     if (isWebContainerHost()) {
-      setIsConnected(true);
-      setReason("preview-env");
+      // In dev preview mode, always show as connected
+      setIsConnected(devPreviewEnabled() ? true : true);
+      setReason(devPreviewEnabled() ? "dev-preview-mode" : "preview-env");
       return;
     }
 
