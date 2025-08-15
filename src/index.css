@@ -510,31 +510,6 @@ body {
   .mobile-small {
     @apply text-sm;
   }
-}
-  /* Ensure full width layouts */
-  .w-full {
-    width: 100% !important;
-  }
-  
-  /* Stack elements vertically */
-  .sm\:flex-row {
-    @apply flex-col;
-  }
-  
-  /* Improve modal sizing */
-  .modal-content {
-    @apply mx-4 max-w-none w-auto;
-  }
-  
-  /* Better image sizing */
-  img {
-    @apply max-w-full h-auto;
-  }
-  
-  /* Prevent text overflow */
-  .truncate-mobile {
-    @apply truncate;
-  }
   
   /* Safe area adjustments for iOS */
   .safe-top {
@@ -544,6 +519,7 @@ body {
   .safe-bottom {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
+}
 
 /* Mobile tab bar safe area support */
 .pb-safe {
@@ -569,6 +545,13 @@ body {
   .admin-quick-actions,
   .admin-pills { display: none !important; }
   .dashboard-top-nav { display: none !important; }
+}
+
+/* Properly scoped mobile utilities */
+@layer utilities {
+  @media (max-width: 640px) {
+    .mobile-stack { @apply flex-col space-y-4 space-x-0; }
+  }
 }
 
 /* Medium screens (tablets) */
@@ -711,6 +694,7 @@ textarea {
     transition-duration: 0.01ms !important;
   }
 }
+
 /* Print Styles */
 @media print {
   .no-print {

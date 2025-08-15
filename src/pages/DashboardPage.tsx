@@ -180,118 +180,16 @@ const DashboardPage: React.FC = () => {
      if (intendedUserType === 'barber') {
        setUserType('barber');
        setActiveTab('profile');
-        // Remember barber dashboard preference
-        try { localStorage.setItem('lastDashboard', 'barber'); } catch {}
-       setLoading(false);
-       return;
      }
-      // Check if user is a client
-      const { data: clientData } = await supabase
-        .from('client_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (clientData) {
-        setUserType('client');
-        setClientProfile(clientData);
-        setActiveTab('bookings');
-      } else {
-        // Use centralized profile creation to prevent duplicates
-        const clientProfile = await getOrCreateClientProfile(user);
-        if (clientProfile) {
-          // Fetch the full profile data
-          const { data: fullProfile, error: fetchError } = await supabase
-            .from('client_profiles')
-            .select('*')
-            .eq('id', clientProfile.id)
-            .single();
-
-          if (!fetchError && fullProfile) {
-            setClientProfile(fullProfile);
-          }
-        }
-        setUserType('client');
-        setActiveTab('bookings');
-        // Remember client dashboard preference
-        try { localStorage.setItem('lastDashboard', 'client'); } catch {}
-      }
-    } catch (error) {
-      console.warn('Database query failed, defaulting to client mode:', error);
-      setUserType('client');
-      setActiveTab('bookings');
-      // Remember client dashboard preference
-      try { localStorage.setItem('lastDashboard', 'client'); } catch {}
-    } finally {
-      setLoading(false);
     }
-  }, [user]);
-
-  const handleEditProfile = useCallback(() => {
-    setActiveTab('profile');
-    setActiveSubTab('info');
-    setTriggerEdit(true);
-    // Also trigger a slug update check when editing
-    checkAndUpdateSlug();
-  }, []);
-
-  const checkAndUpdateSlug = useCallback(async () => {
-    if (!user || userType !== 'barber' || !barber || !isConnected) return;
-
-    // Check if barber has UUID slug and update it
-    const isUuidSlug = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(barber.slug || '');
-    
-    if (isUuidSlug && barber.business_name) {
-      try {
-        const { updateSingleBarberSlug } = await import('../utils/updateBarberSlugs');
-        const result = await updateSingleBarberSlug(barber.id);
-        
-        if (result.success && result.newSlug) {
-          // Update the current URL if the slug changed
-          if (window.location.pathname.includes(barber.slug)) {
-            window.history.replaceState({}, '', `/barber/${result.newSlug}`);
-          }
-          
-          // Refresh barber data to get the new slug
-          await refreshBarberData();
-          NotificationManager.success(`Profile URL updated to: /barber/${result.newSlug}`);
-        }
-      } catch (error) {
-        console.error('Error updating slug:', error);
-      }
-    }
-  }, [user, userType, barber, isConnected, refreshBarberData]);
-
-  const handleTabChange = useCallback((tab: string) => {
-    setActiveTab(tab);
-  }, []);
-
-  const handleSubTabChange = useCallback((tab: string) => {
-    setActiveSubTab(tab);
-  }, []);
-
-  const handleTriggerEditChange = useCallback((trigger: boolean) => {
-    setTriggerEdit(trigger);
-  }, []);
-
-  if (authLoading || loading) {
-    return <LoadingDashboard />;
-  }
-
-  if (!user) {
-    return null; // Will redirect to login
-  }
-
-  // Client Dashboard
-  if (userType === 'client') {
-    return (
-      <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
+      <div className="w-full min-w-0">
         <div className="container app-stack py-8 pt-28">
           <SupabaseConnectionBanner isConnected={isConnected} />
           
           {import.meta.env.DEV && <AdminDebugPanel />}
           
-          <section className="rounded-3xl border bg-white app-bleed app-pad">
+          <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
             <ClientDashboardHeader user={user} clientProfile={clientProfile} />
           </section>
 
@@ -302,24 +200,27 @@ const DashboardPage: React.FC = () => {
             unreadCount={unreadCount}
           />
 
-          <section className="rounded-3xl border bg-white app-bleed app-pad">
+          <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
             <ClientDashboardContent activeTab={activeTab} />
           </section>
         </div>
       </div>
-    );
+    </div>
   }
-
-  // Barber Dashboard
-  if (userType === 'barber' && barber) {
-    return (
-      <div className="min-h-screen bg-gray-50">
+  );
+}
+      </div>
+// Barber Dashboard
+if (userType === 'barber' && barber) {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="w-full min-w-0">
         <div className="container app-stack py-8 pt-28">
           <SupabaseConnectionBanner isConnected={isConnected} />
           
           {import.meta.env.DEV && <AdminDebugPanel />}
           
-          <section className="rounded-3xl border bg-white app-bleed app-pad">
+          <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
             <BarberDashboardHeader 
               barber={barber}
               onEditProfile={handleEditProfile}
@@ -333,7 +234,7 @@ const DashboardPage: React.FC = () => {
             unreadCount={unreadCount}
           />
 
-          <section className="rounded-3xl border bg-white app-bleed app-pad">
+          <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
             <BarberDashboardContent 
               activeTab={activeTab}
               barber={barber}
@@ -345,15 +246,17 @@ const DashboardPage: React.FC = () => {
           </section>
         </div>
       </div>
-    );
-  }
-
-  // Fallback: User type not determined yet
-  return (
-    <div className="min-h-screen bg-gray-50">
+    </div>
+  );
+}
+    </div>
+// Fallback: User type not determined yet
+return (
+  <div className="min-h-screen bg-gray-50">
+    <div className="w-full min-w-0">
       <div className="container app-stack py-8 pt-28">
         <SupabaseConnectionBanner isConnected={isConnected} />
-        <section className="rounded-3xl border bg-white app-bleed app-pad">
+        <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
           <FallbackDashboard />
         </section>
         {import.meta.env.DEV && <AdminDebugPanel />}
@@ -363,3 +266,4 @@ const DashboardPage: React.FC = () => {
 };
 
 export default DashboardPage;
+)
