@@ -40,6 +40,7 @@ import { generateUniqueSlug } from '../../utils/updateBarberSlugs';
 import { updateSingleBarberSlug } from '../../utils/updateBarberSlugs';
 import EditProfileLinkButton from '../Profile/EditProfileLinkButton';
 import ShareProfileLink from '../Profile/ShareProfileLink';
+import Surface from '../Layout/Surface';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -470,65 +471,85 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
         ) : (
           /* View Mode */
           <div className="space-y-8">
-            {/* Profile Header */}
-            <div className="relative flex flex-col sm:flex-row sm:items-start space-y-6 sm:space-y-0 sm:space-x-8 pb-8 border-b border-gray-100">
+            {/* Profile Header - Full-bleed on mobile */}
+            <Surface flatOnMobile className="relative p-4 md:p-8">
               {/* Desktop Edit Button - top-right, hidden on mobile */}
               <div className="absolute right-4 top-4 hidden md:block">
-                <button
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="btn-primary"
-                >
-                  <Edit className="h-4 w-4" />
-                  <span>Edit Profile</span>
-                </button>
+                <EditProfileLinkButton />
               </div>
               
-              <div className="relative mx-auto sm:mx-0">
-                <img
-                  src={barber.profile_image_url || 'https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=200'}
-                  alt={barber.business_name}
-                  className="w-32 h-32 rounded-3xl object-cover border-4 border-white shadow-premium"
-                />
-                <label
-                  htmlFor="profile-image-upload"
-                  className="absolute -bottom-2 -right-2 bg-primary-500 text-white p-3 rounded-xl cursor-pointer hover:bg-primary-600 transition-all duration-200 shadow-lg hover:scale-110"
-                >
-                  {uploadingImage ? (
-                    <Loader className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Camera className="h-4 w-4" />
-                  )}
-                </label>
-                <input
-                  id="profile-image-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </div>
+              <div className="flex flex-col sm:flex-row sm:items-start space-y-6 sm:space-y-0 sm:space-x-8 pb-8 border-b border-gray-100">
+                <div className="relative mx-auto sm:mx-0">
+                  <img
+                    src={barber.profile_image_url || 'https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=200'}
+                    alt={barber.business_name}
+                    className="w-32 h-32 rounded-3xl object-cover border-4 border-white shadow-premium"
+                  />
+                  <label
+                    htmlFor="profile-image-upload"
+                    className="absolute -bottom-2 -right-2 bg-primary-500 text-white p-3 rounded-xl cursor-pointer hover:bg-primary-600 transition-all duration-200 shadow-lg hover:scale-110"
+                  >
+                    {uploadingImage ? (
+                      <Loader className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4" />
+                    )}
+                  </label>
+                  <input
+                    id="profile-image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </div>
 
-              <div className="flex-1 text-center sm:text-left">
-                <h3 className="text-2xl font-display font-bold text-gray-900 mb-2">{barber.business_name}</h3>
-                <p className="text-gray-600 text-lg font-medium mb-4">{barber.owner_name}</p>
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="bg-yellow-100 p-1.5 rounded-lg">
-                      <Star className="h-4 w-4 text-yellow-600" />
+                <div className="flex-1 text-center sm:text-left">
+                  <h3 className="text-2xl font-display font-bold text-gray-900 mb-2">{barber.business_name}</h3>
+                  <p className="text-gray-600 text-lg font-medium mb-4">{barber.owner_name}</p>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="bg-yellow-100 p-1.5 rounded-lg">
+                        <Star className="h-4 w-4 text-yellow-600" />
+                      </div>
+                      <span className="font-bold text-gray-900">{barber.average_rating.toFixed(1)}</span>
+                      <span className="text-gray-500">({barber.total_reviews} reviews)</span>
                     </div>
-                    <span className="font-bold text-gray-900">{barber.average_rating.toFixed(1)}</span>
-                    <span className="text-gray-500">({barber.total_reviews} reviews)</span>
+                    <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                      barber.is_active 
+                        ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+                        : 'bg-gray-100 text-gray-700 border border-gray-200'
+                    }`}>
+                      {barber.is_active ? 'Active' : 'Inactive'}
+                    </span>
                   </div>
-                  <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                    barber.is_active 
-                      ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
-                      : 'bg-gray-100 text-gray-700 border border-gray-200'
-                  }`}>
-                    {barber.is_active ? 'Active' : 'Inactive'}
-                  </span>
                 </div>
               </div>
-            </div>
+
+              {/* Mobile Edit Button - centered under reviews, hidden on desktop */}
+              <div className="mt-4 md:hidden flex justify-center">
+                <EditProfileLinkButton />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  to={profileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary justify-center"
+                >
+                  <Eye className="h-4 w-4" />
+                  <span>View Public Profile</span>
+                </Link>
+              </div>
+              
+              <ShareProfileLink 
+                slug={barber.slug} 
+                id={barber.id} 
+                className="mt-4 flex items-center gap-2 text-sm justify-center"
+              />
+            </Surface>
 
             {/* Banner Image Section */}
             <div>
@@ -595,17 +616,6 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                     </div>
                   )}
                 </div>
-              </div>
-              
-              {/* Mobile Edit Button - centered under reviews, hidden on desktop */}
-              <div className="mt-4 md:hidden flex justify-center">
-                <button
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="btn-primary"
-                >
-                  <Edit className="h-4 w-4" />
-                  <span>Edit Profile</span>
-                </button>
               </div>
 
               <div>
