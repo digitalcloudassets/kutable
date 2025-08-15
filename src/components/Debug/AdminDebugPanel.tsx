@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { useAdminGuard } from '../../hooks/useAdminGuard';
 import { NotificationManager } from '../../utils/notifications';
 import { pingFunctions, getFunctionsBaseUrl, checkFunctionDeployment, plainFetchProbe } from '../../lib/functionsDiagnostics';
+import { generateDataIntegrityReport, repairUserIdLinkage, findProfilesByEmail } from '../../utils/dataRepair';
 
 const AdminDebugPanel: React.FC = () => {
   const { allowed: isAdmin, loading: adminLoading, errorMsg: adminError } = useAdminGuard();
@@ -10,6 +11,9 @@ const AdminDebugPanel: React.FC = () => {
   const [result, setResult] = useState<any>(null);
   const [pingResult, setPingResult] = useState<any>(null);
   const [deployResult, setDeployResult] = useState<any>(null);
+  const [dataReport, setDataReport] = useState<any>(null);
+  const [repairEmail, setRepairEmail] = useState('');
+  const [repairResult, setRepairResult] = useState<any>(null);
 
   const testPing = async () => {
     setTesting(true);
@@ -46,6 +50,49 @@ const AdminDebugPanel: React.FC = () => {
       NotificationManager.info('ℹ️ Running in fallback mode - connect to Supabase for full functionality');
     } else {
       NotificationManager.error(`❌ Edge Functions unreachable: ${result.detail}`);
+    }
+    
+    setTesting(false);
+  };
+
+  const testDataIntegrity = async () => {
+    setTesting(true);
+    setDataReport(null);
+    
+    console.log('🔍 Running data integrity check...');
+    const report = await generateDataIntegrityReport();
+    console.log('📊 Data integrity report:', report);
+    
+    setDataReport(report);
+    
+    if (report.repairsSuggested.length === 0) {
+      NotificationManager.success('✅ No data integrity issues found');
+    } else {
+      NotificationManager.info(`ℹ️ Found ${report.repairsSuggested.length} potential issues`);
+    }
+    
+    setTesting(false);
+  };
+
+  const runRepair = async () => {
+    if (!repairEmail.trim()) {
+      NotificationManager.error('Please enter an email address to repair');
+      return;
+    }
+
+    setTesting(true);
+    setRepairResult(null);
+
+    console.log(`🔧 Running repair for email: ${repairEmail}`);
+    const result = await repairUserIdLinkage(repairEmail.trim());
+    console.log('🔧 Repair result:', result);
+    
+    setRepairResult(result);
+    
+    if (result.success) {
+      NotificationManager.success(result.message);
+    } else {
+      NotificationManager.error(result.message);
     }
     
     setTesting(false);
@@ -119,6 +166,18 @@ const AdminDebugPanel: React.FC = () => {
             )}
             <span>{testing ? 'Testing...' : 'Test Admin'}</span>
           </button>
+          <button
+            onClick={testDataIntegrity}
+            disabled={testing}
+            className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center space-x-2 text-sm"
+          >
+            {testing ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+            ) : (
+              <span>🔍</span>
+            )}
+            <span>{testing ? 'Checking...' : 'Check Data'}</span>
+          </button>
         </div>
       </div>
       
@@ -191,8 +250,79 @@ const AdminDebugPanel: React.FC = () => {
         </div>
       )}
       
+      {/* Data Repair Section */}
+      <div className="mb-4 bg-white/50 rounded-lg p-3">
+        <h4 className="font-medium text-blue-900 mb-2">Data Repair Tool:</h4>
+        <div className="flex gap-2 mb-2">
+          <input
+            type="email"
+            value={repairEmail}
+            onChange={(e) => setRepairEmail(e.target.value)}
+            placeholder="Enter email to repair user_id linkage"
+            className="flex-1 px-2 py-1 border border-blue-300 rounded text-sm"
+          />
+          <button
+            onClick={runRepair}
+            disabled={testing || !repairEmail.trim()}
+            className="bg-orange-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
+          >
+            {testing ? 'Repairing...' : 'Repair'}
+          </button>
+        </div>
+        <p className="text-xs text-blue-700">
+          This will link profiles with the given email to their correct auth user_id
+        </p>
+      </div>
+      
+      {/* Data Integrity Report */}
+      {dataReport && (
+        <div className={`rounded-lg p-3 text-sm mb-4 ${
+          dataReport.repairsSuggested.length === 0
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-yellow-100 text-yellow-800'
+        }`}>
+          <p className="font-medium mb-2">
+            📊 Data Integrity Report
+          </p>
+          <div className="text-xs space-y-1">
+            <div>Client profiles without user_id: {dataReport.clientProfilesWithoutUserId}</div>
+            <div>Barber profiles without user_id: {dataReport.barberProfilesWithoutUserId}</div>
+            <div>Duplicate profiles: {dataReport.duplicateProfiles}</div>
+            {dataReport.repairsSuggested.length > 0 && (
+              <div className="mt-2">
+                <strong>Suggestions:</strong>
+                <ul className="ml-2">
+                  {dataReport.repairsSuggested.map((suggestion, i) => (
+                    <li key={i}>• {suggestion}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {/* Repair Result */}
+      {repairResult && (
+        <div className={`rounded-lg p-3 text-sm mb-4 ${
+          repairResult.success 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-red-100 text-red-800'
+        }`}>
+          <p className="font-medium mb-2">
+            {repairResult.success ? '✅ Repair Completed' : '❌ Repair Failed'}
+          </p>
+          <p className="text-xs">{repairResult.message}</p>
+          {repairResult.details && (
+            <pre className="text-xs bg-white/50 p-2 rounded overflow-auto mt-2">
+              {JSON.stringify(repairResult.details, null, 2)}
+            </pre>
+          )}
+        </div>
+      )}
+      
       <p className="text-blue-700 text-sm mt-3">
-        <strong>Debug Info:</strong> Tests deployment status, network connectivity, and admin permissions. Use explicit VITE_SUPABASE_FUNCTIONS_URL to force URL if auto-detection fails.
+        <strong>Debug Info:</strong> Tests deployment status, network connectivity, admin permissions, and data integrity. Use data repair tool to fix user_id linkage issues.
       </p>
     </div>
   );

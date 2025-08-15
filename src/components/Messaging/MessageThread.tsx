@@ -380,6 +380,13 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
           </>
           )}
         </form>
+        
+        {/* Debug info for missing participant ID */}
+        {!conversation.participant.id && import.meta.env.DEV && (
+          <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded">
+            Debug: Missing participant.id - Participant type: {conversation.participant.type}, Name: {conversation.participant.name}
+          </div>
+        )}
       </div>
     </div>
   );

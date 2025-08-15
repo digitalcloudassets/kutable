@@ -125,12 +125,21 @@ export class MessagingService {
           if (booking.client_id) {
             const { data: clientProfile, error: clientFetchError } = await supabase
               .from('client_profiles')
-              .select('id, user_id, first_name, last_name, profile_image_url')
+              .select('id, user_id, first_name, last_name, profile_image_url, email')
               .eq('id', booking.client_id)
               .maybeSingle();
               
             if (clientFetchError) {
-              console.error('Client profile fetch error:', clientFetchError, 'for client_id:', booking.client_id);
+              console.error('[MessagingService] Client profile fetch error:', clientFetchError, 'for client_id:', booking.client_id);
+            } else if (!clientProfile) {
+              console.warn('[MessagingService] No client profile found for client_id:', booking.client_id);
+            } else if (!clientProfile.user_id) {
+              console.error('[MessagingService] Client profile missing user_id:', {
+                clientId: booking.client_id,
+                profileId: clientProfile.id,
+                email: clientProfile.email,
+                name: `${clientProfile.first_name} ${clientProfile.last_name}`
+              });
             } else {
               clientData = clientProfile;
             }
@@ -186,12 +195,26 @@ export class MessagingService {
           
           // Fetch barber profile separately  
           if (booking.barber_id) {
-            const { data: barberProfile } = await supabase
+            const { data: barberProfile, error: barberFetchError } = await supabase
               .from('barber_profiles')
-              .select('id, user_id, business_name, owner_name, profile_image_url')
+              .select('id, user_id, business_name, owner_name, profile_image_url, email')
               .eq('id', booking.barber_id)
               .maybeSingle();
-            barberData = barberProfile;
+            
+            if (barberFetchError) {
+              console.error('[MessagingService] Barber profile fetch error:', barberFetchError, 'for barber_id:', booking.barber_id);
+            } else if (!barberProfile) {
+              console.warn('[MessagingService] No barber profile found for barber_id:', booking.barber_id);
+            } else if (!barberProfile.user_id) {
+              console.error('[MessagingService] Barber profile missing user_id:', {
+                barberId: booking.barber_id,
+                profileId: barberProfile.id,
+                businessName: barberProfile.business_name,
+                email: barberProfile.email
+              });
+            } else {
+              barberData = barberProfile;
+            }
           }
           
           // Fetch service data
@@ -241,7 +264,13 @@ export class MessagingService {
         if (isBarber && booking.client_profiles) {
           const clientUserId = booking.client_profiles.user_id;
           const clientName = `${booking.client_profiles.first_name || ''} ${booking.client_profiles.last_name || ''}`.trim();
-          console.log('Setting client participant:', { clientUserId, clientName, avatar: booking.client_profiles.profile_image_url });
+          console.log('[MessagingService] Setting client participant:', { 
+            clientUserId, 
+            clientName, 
+            avatar: booking.client_profiles.profile_image_url,
+            hasUserId: !!clientUserId,
+            clientId: booking.client_profiles.id
+          });
           participant = {
             id: clientUserId, // Will be null if we couldn't fetch the profile
             name: clientName || 'Client',
@@ -250,7 +279,13 @@ export class MessagingService {
           };
         } else if (!isBarber && booking.barber_profiles) {
           const barberUserId = booking.barber_profiles.user_id;
-          console.log('Setting barber participant:', { barberUserId, name: booking.barber_profiles.business_name, avatar: booking.barber_profiles.profile_image_url });
+          console.log('[MessagingService] Setting barber participant:', { 
+            barberUserId, 
+            name: booking.barber_profiles.business_name, 
+            avatar: booking.barber_profiles.profile_image_url,
+            hasUserId: !!barberUserId,
+            barberId: booking.barber_profiles.id
+          });
           participant = {
             id: barberUserId, // Will be null if we couldn't fetch the profile
             name: booking.barber_profiles.business_name || 'Barber',
@@ -259,6 +294,12 @@ export class MessagingService {
           };
         } else {
           // Fallback participant
+          console.warn('[MessagingService] Creating fallback participant for booking:', {
+            bookingId: booking.id,
+            isBarber,
+            hasClientProfiles: !!booking.client_profiles,
+            hasBarberProfiles: !!booking.barber_profiles
+          });
           participant = {
             id: null,
             name: 'Unknown',
@@ -267,7 +308,7 @@ export class MessagingService {
           };
         }
 
-        console.log('Final participant for booking:', {
+        console.log('[MessagingService] Final participant for booking:', {
           bookingId: booking.id,
           participantId: participant.id,
           participantName: participant.name,
@@ -307,7 +348,11 @@ export class MessagingService {
           }
         });
       }
-      console.log('Final conversations:', conversations.length);
+      console.log('[MessagingService] Final conversations loaded:', {
+        totalConversations: conversations.length,
+        conversationsWithParticipantId: conversations.filter(c => c.participant.id).length,
+        conversationsWithoutParticipantId: conversations.filter(c => !c.participant.id).length
+      });
       return conversations.sort((a, b) => {
         if (a.lastMessage && b.lastMessage) {
           return new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime();
