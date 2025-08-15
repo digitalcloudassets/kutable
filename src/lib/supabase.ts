@@ -1,122 +1,276 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { env } from '../utils/env';
+import { isWebContainer } from './runtimeEnv';
+import { logger } from '../utils/logger';
 
-// Environment variable helpers
-const getEnvVar = (key: string): string => {
-  if (typeof window !== 'undefined') {
-    // Client-side: use Vite environment variables
-    return (import.meta.env as any)[key] || '';
-  } else {
-    // Server-side: use process.env
-    return process.env[key] || '';
+function hasWorkingLocalStorage(): boolean {
+  try {
+    if (typeof localStorage === 'undefined') return false;
+    const k = '__ktbl_probe__';
+    localStorage.setItem(k, '1');
+    localStorage.removeItem(k);
+    return true;
+  } catch {
+    return false;
   }
-};
+}
 
-// Get Supabase configuration
-const supabaseUrl = getEnvVar('VITE_SUPABASE_URL');
-const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY');
+// Minimal in-memory storage adapter for Supabase (Bolt-safe)
+const memoryStore = (() => {
+  const m = new Map<string, string>();
+  return {
+    getItem: (k: string) => m.get(k) ?? null,
+    setItem: (k: string, v: string) => { m.set(k, v); },
+    removeItem: (k: string) => { m.delete(k); },
+  };
+})();
 
-// Check if we have valid credentials
-const hasValidCredentials = Boolean(
-  supabaseUrl && 
+const supabaseUrl = env.supabaseUrl;
+const supabaseAnonKey = env.supabaseAnonKey;
+
+// Check if we have valid Supabase credentials (not placeholders)
+const hasValidCredentials = supabaseUrl && 
   supabaseAnonKey && 
-  supabaseUrl.includes('.supabase.co') &&
-  supabaseAnonKey.length > 20
-);
+  supabaseUrl !== 'https://your-project.supabase.co' &&
+  supabaseAnonKey !== 'your_supabase_anon_key_here' &&
+  supabaseUrl !== 'your_supabase_url_here' &&
+  supabaseAnonKey !== 'your_supabase_anon_key_here' &&
+  !supabaseUrl.includes('placeholder') &&
+  !supabaseAnonKey.includes('placeholder') &&
+  supabaseUrl.startsWith('https://') &&
+  supabaseUrl.includes('.supabase.co');
 
-// Determine if we should use fallback client
-const shouldUseFallback = !hasValidCredentials;
+// Use fallback if no valid credentials OR in webcontainer environment
+const shouldUseFallback = !hasValidCredentials || isWebContainer();
 
-// Create mock client for development/fallback
-const createMockClient = () => ({
-  auth: {
-    signUp: async () => ({ 
-      data: { user: null, session: null }, 
-      error: { message: 'Connect to Supabase to enable user accounts' } 
-    }),
-    signInWithPassword: async () => ({ 
-      data: { user: null, session: null }, 
-      error: { message: 'Connect to Supabase to enable user accounts' } 
-    }),
-    signOut: async () => ({ error: null }),
-    getSession: async () => ({ data: { session: null }, error: null }),
-    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-    getUser: async () => ({ data: { user: null }, error: null }),
-    resetPasswordForEmail: async () => ({ 
-      data: {}, 
-      error: { message: 'Connect to Supabase to enable user accounts' } 
-    }),
-    updateUser: async () => ({ 
-      data: { user: null }, 
-      error: { message: 'Connect to Supabase to enable user accounts' } 
-    })
-  },
-  from: () => ({
-    select: () => ({
-      eq: () => ({
-        single: async () => ({ data: null, error: { message: 'Connect to Supabase to enable user accounts' } }),
-        maybeSingle: async () => ({ data: null, error: null }),
-        limit: () => ({
-          single: async () => ({ data: null, error: { message: 'Connect to Supabase to enable user accounts' } })
-        })
-      }),
-      order: () => ({
-        limit: async () => ({ data: [], error: null })
-      }),
-      limit: async () => ({ data: [], error: null }),
-      single: async () => ({ data: null, error: { message: 'Connect to Supabase to enable user accounts' } })
-    }),
-    insert: async () => ({ 
-      data: null, 
-      error: { message: 'Connect to Supabase to enable user accounts' } 
-    }),
-    update: () => ({
-      eq: async () => ({ 
-        data: null, 
-        error: { message: 'Connect to Supabase to enable user accounts' } 
+let supabase: any;
+
+if (shouldUseFallback) {
+  const reason = !hasValidCredentials 
+    ? 'Supabase not connected - using fallback mode'
+    : 'WebContainer environment detected - using fallback mode';
+  logger.info(`📁 ${reason}`);
+  
+  // Create fallback client
+  // Helper to create chainable query builder
+  const createChainableQuery = (tableName: string) => {
+    const chainable: any = {
+      then: (resolve: any) => resolve({ data: [], error: null }),
+      single: () => Promise.resolve({ data: null, error: { message: `Connect to Supabase for ${tableName}` } }),
+      maybeSingle: () => Promise.resolve({ data: null, error: null }),
+      eq: () => chainable,
+      order: () => chainable,
+      limit: () => chainable,
+      range: () => chainable,
+      lt: () => chainable,
+      gt: () => chainable,
+      lte: () => chainable,
+      gte: () => chainable,
+      like: () => chainable,
+      ilike: () => chainable,
+      is: () => chainable,
+      in: () => chainable,
+      contains: () => chainable,
+      containedBy: () => chainable,
+      overlaps: () => chainable,
+    };
+    return chainable;
+  };
+
+  supabase = {
+    from: (table: string) => {
+      return {
+        select: () => createChainableQuery(table),
+        insert: () => ({ 
+          select: () => ({ single: () => Promise.resolve({ data: null, error: { message: 'Connect to Supabase to enable database operations' } }) })
+        }),
+        update: () => ({ eq: () => Promise.resolve({ data: null, error: { message: 'Connect to Supabase to enable database operations' } }) }),
+        delete: () => ({ eq: () => Promise.resolve({ data: null, error: { message: 'Connect to Supabase to enable database operations' } }) })
+      };
+    },
+    
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null } }),
+      signInWithPassword: () => Promise.resolve({ error: { message: 'Connect to Supabase to enable user accounts' } }),
+      signUp: () => Promise.resolve({ error: { message: 'Connect to Supabase to enable user accounts' } }),
+      signOut: () => Promise.resolve({ error: null }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
+    },
+    functions: {
+      invoke: () => Promise.resolve({ 
+        data: { success: false }, 
+        error: { 
+          message: isWebContainer() 
+            ? 'Edge functions unavailable in WebContainer environment' 
+            : 'Connect to Supabase to enable functions' 
+        } 
       })
-    }),
-    delete: () => ({
-      eq: async () => ({ 
-        data: null, 
-        error: { message: 'Connect to Supabase to enable user accounts' } 
+    },
+    storage: {
+      from: () => ({
+        upload: () => Promise.resolve({ data: null, error: { message: 'Connect to Supabase to enable file uploads' } }),
+        getPublicUrl: () => ({ data: { publicUrl: '' } })
       })
-    }),
-    upsert: async () => ({ 
-      data: null, 
-      error: { message: 'Connect to Supabase to enable user accounts' } 
-    })
-  }),
-  storage: {
-    from: () => ({
-      upload: async () => ({ 
-        data: null, 
-        error: { message: 'Connect to Supabase to enable user accounts' } 
-      }),
-      remove: async () => ({ 
-        data: null, 
-        error: { message: 'Connect to Supabase to enable user accounts' } 
-      }),
-      getPublicUrl: () => ({ 
-        data: { publicUrl: '' } 
-      })
-    })
-  },
-  functions: {
-    invoke: async () => ({ 
-      data: null, 
-      error: { message: 'Connect to Supabase to enable user accounts' } 
-    })
-  }
-});
+    }
+  };
+} else {
+  const storageAdapter: any = hasWorkingLocalStorage() ? localStorage : memoryStore;
 
-// Export the appropriate client
-export const supabase = shouldUseFallback 
-  ? createMockClient() as any
-  : createClient(supabaseUrl, supabaseAnonKey);
+  supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: storageAdapter,             // Bolt-safe storage
+    },
+    functions: env.supabaseFunctionsUrl
+      ? { url: env.supabaseFunctionsUrl }  // explicit base if provided
+      : undefined,
+  });
+}
 
-// Export configuration for debugging
-export const supabaseConfig = {
-  url: supabaseUrl,
-  hasValidCredentials,
-  usingFallback: shouldUseFallback
+export { supabase };
+
+export type Database = {
+  public: {
+    Tables: {
+      barber_profiles: {
+        Row: {
+          id: string;
+          slug: string;
+          user_id: string | null;
+          business_name: string;
+          owner_name: string;
+          phone: string | null;
+          email: string | null;
+          address: string | null;
+          city: string | null;
+          state: string | null;
+          zip_code: string | null;
+          bio: string | null;
+          profile_image_url: string | null;
+          banner_image_url: string | null;
+          is_claimed: boolean;
+          is_active: boolean;
+          stripe_account_id: string | null;
+          stripe_onboarding_completed: boolean;
+          average_rating: number;
+          total_reviews: number;
+          created_at: string;
+          updated_at: string;
+          communication_consent: boolean;
+          sms_consent: boolean;
+          email_consent: boolean;
+          consent_date: string | null;
+          consent_updated_at: string | null;
+          communication_consent: boolean;
+          sms_consent: boolean;
+          email_consent: boolean;
+          consent_date: string | null;
+          consent_updated_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['barber_profiles']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['barber_profiles']['Insert']>;
+      };
+      services: {
+        Row: {
+          id: string;
+          barber_id: string;
+          name: string;
+          description: string | null;
+          price: number;
+          duration_minutes: number;
+          deposit_required: boolean;
+          deposit_amount: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['services']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['services']['Insert']>;
+      };
+      bookings: {
+        Row: {
+          id: string;
+          barber_id: string;
+          client_id: string;
+          service_id: string;
+          appointment_date: string;
+          appointment_time: string;
+          status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'refund_requested';
+          total_amount: number;
+          deposit_amount: number;
+          stripe_payment_intent_id: string | null;
+          stripe_charge_id: string | null;
+          platform_fee: number;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['bookings']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['bookings']['Insert']>;
+      };
+      client_profiles: {
+        Row: {
+          id: string;
+          user_id: string;
+          first_name: string;
+          last_name: string;
+          phone: string | null;
+          email: string | null;
+          preferred_contact: string;
+          created_at: string;
+          updated_at: string;
+          communication_consent: boolean;
+          sms_consent: boolean;
+          email_consent: boolean;
+          consent_date: string | null;
+          consent_updated_at: string | null;
+          communication_consent: boolean;
+          sms_consent: boolean;
+          email_consent: boolean;
+          consent_date: string | null;
+          consent_updated_at: string | null;
+        };
+        Insert: Omit<Database['public']['Tables']['client_profiles']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['client_profiles']['Insert']>;
+      };
+      knowledge_base: {
+        Row: {
+          id: string;
+          title: string;
+          content: string;
+          embedding: number[];
+          category: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['knowledge_base']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['knowledge_base']['Insert']>;
+      };
+      chat_conversations: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          session_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['chat_conversations']['Row'], 'id' | 'created_at' | 'updated_at'>;
+        Update: Partial<Database['public']['Tables']['chat_conversations']['Insert']>;
+      };
+      chat_messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          role: 'user' | 'assistant';
+          content: string;
+          context_used: any;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['chat_messages']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['chat_messages']['Insert']>;
+      };
+    };
+  };
 };

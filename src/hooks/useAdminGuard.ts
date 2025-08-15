@@ -1,46 +1,65 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from './useAuth';
+// Admin guard hook: session-aware, only calls Edge Function when logged in
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
-export function useAdminGuard() {
-  const { user, session } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+type State = { loading: boolean; allowed: boolean | null; error: string | null };
+
+export function useAdminGuard(): State {
+  const [state, set] = useState<State>({ loading: true, allowed: null, error: null });
 
   useEffect(() => {
-    async function checkAdminStatus() {
-      if (!user || !session) {
-        setIsAdmin(false);
-        setLoading(false);
-        return;
-      }
+    let cancelled = false;
 
+    const run = async () => {
       try {
-        const response = await fetch('/.netlify/functions/admin-guard', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ userId: user.id }),
-        });
+        // 1) Check session first
+        const { data: { session } } = await supabase.auth.getSession();
 
-        if (response.ok) {
-          const data = await response.json();
-          setIsAdmin(data.isAdmin || false);
-        } else {
-          setIsAdmin(false);
+        // No session is NOT an error; just say not allowed (quietly)
+        if (!session) {
+          if (!cancelled) set({ loading: false, allowed: false, error: null });
+          return;
         }
-      } catch (error) {
-        console.error('Failed to check admin status:', error);
-        setIsAdmin(false);
-      } finally {
-        setLoading(false);
+
+        // 2) We have a session — call the guard
+        const { data, error } = await supabase.functions.invoke("admin-guard", { body: {} });
+
+        if (cancelled) return;
+
+        if (error) {
+          // Real failure (CORS/401/403/5xx)
+          set({ loading: false, allowed: false, error: error.message ?? "Edge call failed" });
+          return;
+        }
+
+        if (!data?.ok) {
+          // Not an admin (403) or unauth (401) — still not an exception
+          set({ loading: false, allowed: false, error: data?.reason ?? null });
+          return;
+        }
+
+        set({ loading: false, allowed: true, error: null });
+      } catch (e: any) {
+        if (!cancelled) {
+          set({ loading: false, allowed: false, error: String(e?.message ?? e) });
+        }
       }
-    }
+    };
 
-    checkAdminStatus();
-  }, [user, session]);
+    run();
 
-  return { isAdmin, loading };
+    // Also react to login/logout so the guard re-evaluates
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, _session) => {
+      // Re-run on auth events
+      set({ loading: true, allowed: null, error: null });
+      run();
+    });
+
+    return () => {
+      cancelled = true;
+      sub?.subscription?.unsubscribe?.();
+    };
+  }, []);
+
+  return state;
 }
