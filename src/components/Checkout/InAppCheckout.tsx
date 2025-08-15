@@ -5,7 +5,6 @@ import { Loader, CreditCard, Shield, Lock, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { NotificationManager } from '../../utils/notifications';
 import { getCaptchaToken } from '../../lib/turnstile';
-import { getCaptchaToken } from '../../lib/turnstile';
 
 
 function CheckoutForm({
