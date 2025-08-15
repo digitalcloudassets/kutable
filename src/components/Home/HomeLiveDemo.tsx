@@ -3,8 +3,8 @@ import { Smartphone, Monitor, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 // NOTE: images live in /public. Spaces must be URL-encoded.
-const laptopImg = '/MU%20Laptop.png'; // laptop booking page
-const phoneImgs = ['/MU%20Phone%201.png']; // phone screens
+const laptopImg = '/Kut%205.png'; // laptop booking page
+const phoneImgs = ['/Kut%202.png', '/Kut%203.png', '/Kut%204.png']; // phone screens
 
 export default function HomeLiveDemo() {
   const [idx, setIdx] = useState(0);
