@@ -56,7 +56,6 @@ export const getOrCreateClientProfile = async (user: User) => {
         if (session?.user) {
           await supabase.auth.updateUser({ data: { avatar_url: url } });
         }
-        }
       }
     }
 
