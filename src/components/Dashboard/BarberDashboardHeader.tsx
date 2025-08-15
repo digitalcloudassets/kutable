@@ -103,16 +103,14 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
           {/* Show note when slug isn't branded */}
           {(!barber.slug || /^barber-[0-9a-f]{8}$/i.test(barber.slug) || /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(barber.slug)) && (
             <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <div className="flex items-start space-x-3">
-                <div className="bg-blue-500 p-1.5 rounded-lg">
-                  <LinkIcon className="h-4 w-4 text-white" />
+              <div className="text-center">
+                <div className="bg-blue-500 p-2 rounded-xl inline-block mb-3">
+                  <LinkIcon className="h-5 w-5 text-white" />
                 </div>
-                <div>
-                  <h4 className="font-semibold text-blue-800 mb-1">Get Your Branded Link</h4>
-                  <p className="text-blue-700 text-sm leading-relaxed">
-                    Update your business name to get a clean, shareable profile link like <code>kutable.com/barber/your-business-name</code>
-                  </p>
-                </div>
+                <h4 className="font-semibold text-blue-800 mb-2">Get Your Branded Link</h4>
+                <p className="text-blue-700 text-sm leading-relaxed">
+                  Update your business name to get a clean, shareable profile link like <code>kutable.com/barber/kutable</code>
+                </p>
               </div>
             </div>
           )}
