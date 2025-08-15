@@ -23,7 +23,7 @@ import { NotificationManager } from '../../utils/notifications';
 import { getOrCreateClientProfile } from '../../utils/profileHelpers';
 import { validateEmail, validatePhone, validateFileUpload } from '../../utils/security';
 
-type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
+type ClientProfileRow = Database['public']['Tables']['client_profiles']['Row'];
 
 function isUniqueViolation(err: any) {
   // Postgres unique_violation - Supabase wraps it as code '23505'
@@ -36,7 +36,7 @@ function isUniqueViolation(err: any) {
 // 2) If none, attempt insert with minimal defaults
 // 3) If insert fails with unique race, re-select
 // 4) If RLS blocks insert, return null and let UI show a soft message
-async function ensureOrFetchClientProfile(userId: string): Promise<ClientProfile | null> {
+async function ensureOrFetchClientProfile(userId: string): Promise<ClientProfileRow | null> {
   // 1) Try existing
   {
     const { data, error } = await supabase
@@ -45,7 +45,7 @@ async function ensureOrFetchClientProfile(userId: string): Promise<ClientProfile
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (!error && data) return data as ClientProfile;
+    if (!error && data) return data as ClientProfileRow;
     if (error && error.code && error.code !== 'PGRST116') {
       console.warn('[ClientProfile] initial fetch error (continuing):', error);
     }
@@ -69,7 +69,7 @@ async function ensureOrFetchClientProfile(userId: string): Promise<ClientProfile
       .single();
 
     if (!insertErr && created) {
-      return created as ClientProfile;
+      return created as ClientProfileRow;
     }
     if (insertErr) {
       // 3) Handle race: someone else inserted first
@@ -79,7 +79,7 @@ async function ensureOrFetchClientProfile(userId: string): Promise<ClientProfile
           .select('*')
           .eq('user_id', userId)
           .maybeSingle();
-        if (!againErr && again) return again as ClientProfile;
+        if (!againErr && again) return again as ClientProfileRow;
       }
 
       // RLS or other error: log and fail open
@@ -94,12 +94,10 @@ async function ensureOrFetchClientProfile(userId: string): Promise<ClientProfile
   return null;
 }
 
-type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
-
 const ClientProfileSettings: React.FC = () => {
   const { user } = useAuth();
   const userId = user?.id ?? null;
-  const [clientProfile, setClientProfile] = useState<ClientProfile | null>(null);
+  const [clientProfile, setClientProfile] = useState<ClientProfileRow | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -107,7 +105,7 @@ const ClientProfileSettings: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [softError, setSoftError] = useState<string | null>(null);
-  const [profile, setProfile] = useState<ClientProfile | null>(null);
+  const [profile, setProfile] = useState<ClientProfileRow | null>(null);
   
   const [editData, setEditData] = useState({
     first_name: '',
