@@ -351,9 +351,9 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
                         <>
                           <CreditCard className="h-4 w-4" />
                           <span>Refund</span>
-                  <p className="text-xl font-bold text-gray-900">{formatUSD(booking.total_amount)}</p>
+                        </>
                       )}
-                    <p className="text-sm text-orange-600 font-medium">{formatUSD(booking.deposit_amount)} deposit</p>
+                    </button>
                   )}
                 </>
               )}
