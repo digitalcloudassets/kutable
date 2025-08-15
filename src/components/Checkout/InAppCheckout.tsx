@@ -171,9 +171,6 @@ export default function InAppCheckout({
         // Get CAPTCHA token before creating payment intent
         const captchaToken = await getCaptchaToken('create_payment_intent');
         
-        // Get CAPTCHA token before creating payment intent
-        const captchaToken = await getCaptchaToken('create_payment_intent');
-        
         const { data, error } = await supabase.functions.invoke('create-payment-intent', {
           body: { 
             barberId, 
@@ -181,7 +178,6 @@ export default function InAppCheckout({
             currency, 
             customerEmail, 
             metadata: metadata || {},
-            captchaToken
             captchaToken
           },
         });
