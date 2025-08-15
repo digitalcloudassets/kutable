@@ -7,7 +7,8 @@ import {
   Eye, 
   Users, 
   Phone,
-  Scissors
+  Scissors,
+  Link as LinkIcon
 } from 'lucide-react';
 import { Database } from '../../lib/supabase';
 import EditProfileLinkButton from '../Profile/EditProfileLinkButton';
