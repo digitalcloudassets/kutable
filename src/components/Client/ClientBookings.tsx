@@ -602,8 +602,6 @@ const ClientBookings: React.FC = () => {
                     <div className="pt-3 border-t border-gray-100">
                       <div className="section-inner pt-0">
                         <div className="booking-actions">
-                      <div className="section-inner pt-0">
-                        <div className="booking-actions">
                         {/* Contact Barber */}
                         {booking.barber_profiles?.phone && (
                           <a
@@ -653,8 +651,6 @@ const ClientBookings: React.FC = () => {
                             )}
                           </button>
                         )}
-                        </div>
-                      </div>
                         </div>
                       </div>
                     </div>
