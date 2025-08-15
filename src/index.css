@@ -530,11 +530,6 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
-
-/* Admin mobile nav utilities */
-.no-scrollbar::-webkit-scrollbar{ display:none; }
-.no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
-
 /* Hide desktop admin pills on mobile if they overlap */
 @media (max-width: 767px){
   .admin-quick-actions,
@@ -694,5 +689,11 @@ textarea {
 @media print {
   .no-print {
     display: none !important;
+  }
+}
+
+@layer utilities {
+  @media (max-width: 640px) {
+    .mobile-stack { @apply flex-col space-y-4 space-x-0; }
   }
 }

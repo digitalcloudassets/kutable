@@ -187,6 +187,9 @@ const DashboardPage: React.FC = () => {
     
     // For other users, create client profile
     const clientProfile = await getOrCreateClientProfile(user);
+    
+    // For other users, create client profile
+    const clientProfile = await getOrCreateClientProfile(user);
     if (clientProfile) {
       setUserType('client');
       setClientProfile(clientProfile);
@@ -194,10 +197,14 @@ const DashboardPage: React.FC = () => {
     } else {
       setUserType('client');
       setActiveTab('bookings');
+    }
   } catch (error) {
     console.error('DashboardPage load error:', error);
     setUserType('client');
     setActiveTab('bookings');
+  } finally {
+    setLoading(false);
+  }
   } finally {
     setLoading(false);
   }
