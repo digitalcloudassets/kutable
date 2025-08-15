@@ -56,13 +56,16 @@ export const getOrCreateClientProfile = async (user: User) => {
     
     const { data: newProfile, error: createError } = await supabase
       .from('client_profiles')
-      .insert({
+      .upsert({
         user_id: user.id,
         first_name: user.user_metadata?.first_name || '',
         last_name: user.user_metadata?.last_name || '',
         email: user.email || '',
         phone: '',
-        preferred_contact: 'sms'
+        preferred_contact: 'sms',
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
       })
       .select('id')
       .single();
