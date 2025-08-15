@@ -68,7 +68,7 @@ function App() {
               <Header />
 
               <main className="flex-1">
-                <OnboardingGate>
+                <OnboardingGuard>
                   <Routes>
                     <Route path="/" element={<HomeGate />} />
                     <Route path="/login" element={<LoginForm />} />
@@ -101,7 +101,7 @@ function App() {
                     <Route path="/privacy" element={<PrivacyPolicyPage />} />
                     <Route path="/terms" element={<TermsOfServicePage />} />
                   </Routes>
-                </OnboardingGate>
+                </OnboardingGuard>
               </main>
 
               <Footer />

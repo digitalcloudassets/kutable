@@ -705,7 +705,16 @@ const ClientProfileSettings: React.FC = () => {
                    sms: clientProfile?.sms_consent ?? false,
                    email: clientProfile?.email_consent ?? false
                 }}
-                onConsentUpdate={fetchClientProfile}
+                onConsentUpdate={() => {
+                  if (userId) {
+                    ensureOrFetchClientProfile(userId).then(result => {
+                      if (result) {
+                        setProfile(result);
+                        setClientProfile(result);
+                      }
+                    }).catch(console.warn);
+                  }
+                }}
               />
             </div>
           </div>

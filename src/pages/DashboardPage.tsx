@@ -52,6 +52,11 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     handleUserTypeCheck();
     
+    // Mark user as returning once they reach dashboard
+    if (user) {
+      localStorage.setItem('kutable:returning', '1');
+    }
+    
     // Handle Stripe onboarding return
     resumeOnReturn();
   }, [handleUserTypeCheck]);

@@ -115,8 +115,8 @@ const ClientBookings: React.FC = () => {
   }, [bookings, statusFilter, searchTerm]);
 
   const fetchBookings = async () => {
-    if (!user) {
-      // No user → nothing to fetch; return empty without throwing
+    const uid = user?.id ?? null;
+    if (!uid) {
       setBookings([]);
       setLoading(false);
       return;
@@ -133,7 +133,7 @@ const ClientBookings: React.FC = () => {
       // Try to get client profile, but don't hard-fail if missing/slow
       let clientProfileId: string | null = null;
       try {
-        const clientProfile = await ensureOrFetchClientProfile(user.id);
+        const clientProfile = await ensureOrFetchClientProfile(uid);
         clientProfileId = clientProfile?.id ?? null;
       } catch (profileError) {
         console.warn('[ClientBookings] profile fetch error (continuing):', profileError);
@@ -180,7 +180,7 @@ const ClientBookings: React.FC = () => {
         const { data: profileByUser } = await supabase
           .from('client_profiles')
           .select('id')
-          .eq('user_id', user.id)
+          .eq('user_id', uid)
           .maybeSingle();
         
         if (profileByUser?.id) {
