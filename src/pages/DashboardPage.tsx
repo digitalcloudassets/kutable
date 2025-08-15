@@ -42,15 +42,6 @@ const DashboardPage: React.FC = () => {
       if (!user) {
         navigate('/login');
       } else {
-        // Clear any inappropriate claim URLs for existing users
-        const claimReturnUrl = localStorage.getItem('claim_return_url');
-        if (claimReturnUrl) {
-          const userType = user.user_metadata?.user_type;
-          // Only barbers should have claim URLs
-          if (userType !== 'barber') {
-            localStorage.removeItem('claim_return_url');
-          }
-        }
         determineUserType();
       }
     }

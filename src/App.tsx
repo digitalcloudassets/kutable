@@ -78,7 +78,6 @@ function App() {
               <Route path="/dashboard/barber/*" element={<BarberDashboard />} />
               <Route path="/book/:barberSlug/:serviceId?" element={<BookingFlow />} />
               <Route path="/onboarding" element={<OnboardingPage />} />
-              <Route path="/onboarding/barber" element={<BarberOnboarding />} />
               <Route path="/onboarding/barber" element={<BarberOnboardingEngine />} />
               <Route
                 path="/admin"
