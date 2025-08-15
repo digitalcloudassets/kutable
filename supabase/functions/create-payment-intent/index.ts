@@ -5,7 +5,7 @@
 import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
 import { consumeRateLimit } from '../_shared/rateLimit.ts';
 import { withSecurityHeaders } from '../_shared/security_headers.ts';
-import { verifyTurnstile } from '../_shared/turnstile.ts';
+import { verifyTurnstile, TURNSTILE_ENABLED } from '../_shared/turnstile.ts';
 import { slog } from '../_shared/logger.ts';
 
 const base = withSecurityHeaders(corsHeaders(['POST', 'OPTIONS']));
@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
   slog.info('Creating payment intent for:', { barberId, amount, currency, metadata });
 
   // Verify Turnstile CAPTCHA token
-  if (captchaToken && captchaToken !== 'no-captcha-configured') {
+  if (TURNSTILE_ENABLED && captchaToken && captchaToken !== 'no-captcha-configured') {
     const clientIp = getClientIp(req);
     const verification = await verifyTurnstile(captchaToken, clientIp);
     
@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
     if (!verification.bypassed) {
       slog.debug('Turnstile verification passed for payment intent creation');
     }
-  } else if (!captchaToken && TURNSTILE_ENABLED) {
+  } else if (TURNSTILE_ENABLED && !captchaToken) {
     // CAPTCHA token is required
     return resJson(400, { 
       success: false, 
