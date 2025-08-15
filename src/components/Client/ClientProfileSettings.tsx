@@ -25,8 +25,80 @@ import { validateEmail, validatePhone, validateFileUpload } from '../../utils/se
 
 type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
 
+function isUniqueViolation(err: any) {
+  // Postgres unique_violation - Supabase wraps it as code '23505'
+  return err && (err.code === '23505' || String(err.message || '').includes('duplicate key'));
+}
+
+// Ensures a profile row exists for the authenticated user.
+// Strategy:
+// 1) Try select by user_id
+// 2) If none, attempt insert with minimal defaults
+// 3) If insert fails with unique race, re-select
+// 4) If RLS blocks insert, return null and let UI show a soft message
+async function ensureOrFetchClientProfile(userId: string): Promise<ClientProfile | null> {
+  // 1) Try existing
+  {
+    const { data, error } = await supabase
+      .from('client_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (!error && data) return data as ClientProfile;
+    if (error && error.code && error.code !== 'PGRST116') {
+      console.warn('[ClientProfile] initial fetch error (continuing):', error);
+    }
+  }
+
+  // 2) Attempt insert minimal row
+  try {
+    const minimal = {
+      user_id: userId,
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: null,
+      preferred_contact: 'sms' as const,
+      profile_image_url: null,
+    };
+    const { data: created, error: insertErr } = await supabase
+      .from('client_profiles')
+      .insert(minimal)
+      .select('*')
+      .single();
+
+    if (!insertErr && created) {
+      return created as ClientProfile;
+    }
+    if (insertErr) {
+      // 3) Handle race: someone else inserted first
+      if (isUniqueViolation(insertErr)) {
+        const { data: again, error: againErr } = await supabase
+          .from('client_profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (!againErr && again) return again as ClientProfile;
+      }
+
+      // RLS or other error: log and fail open
+      console.warn('[ClientProfile] insert blocked or failed (continuing):', insertErr);
+      return null;
+    }
+  } catch (e) {
+    console.warn('[ClientProfile] insert exception (continuing):', e);
+    return null;
+  }
+
+  return null;
+}
+
+type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
+
 const ClientProfileSettings: React.FC = () => {
   const { user } = useAuth();
+  const userId = user?.id ?? null;
   const [clientProfile, setClientProfile] = useState<ClientProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -47,58 +119,65 @@ const ClientProfileSettings: React.FC = () => {
   });
 
   useEffect(() => {
-    if (user) {
-      fetchClientProfile();
-    }
-  }, [user]);
+    let alive = true;
 
-  const fetchClientProfile = async () => {
-    if (!user) return;
+    (async () => {
+      // 🚫 Never hit Supabase with undefined user_id
+      if (!userId) {
+        setLoading(false);          // clear any spinners
+        setSoftError(null);         // don't show scary messages
+        setProfile(null);           // nothing yet
+        return;                     // wait until userId exists
+      }
 
-    try {
       setLoading(true);
-      setError('');
-      
-      // Use centralized profile lookup to prevent duplicates
-      const profile = await getOrCreateClientProfile(user);
-      
-      if (profile) {
-        // Fetch the full profile data
-        const { data: fullProfile, error: fetchError } = await supabase
-          .from('client_profiles')
-          .select('*')
-          .eq('id', profile.id)
-          .single();
+      setSoftError(null);
 
-        if (fetchError) throw fetchError;
-        
-        setClientProfile(fullProfile);
-        setProfile(fullProfile);
+      // Cap the whole operation so UI never hangs
+      const result = await Promise.race([
+        ensureOrFetchClientProfile(userId),
+        new Promise<null>(res => setTimeout(() => res(null), 4000)),
+      ]);
+
+      if (!alive) return;
+
+      if (result) {
+        setProfile(result);
+        setClientProfile(result);
         setEditData({
-          first_name: fullProfile.first_name || '',
-          last_name: fullProfile.last_name || '',
-          phone: fullProfile.phone || '',
-          email: fullProfile.email || '',
-          preferred_contact: fullProfile.preferred_contact as 'sms' | 'email' | 'phone' || 'sms',
-          profile_image_url: fullProfile.profile_image_url || ''
+          first_name: result.first_name || '',
+          last_name: result.last_name || '',
+          phone: result.phone || '',
+          email: result.email || '',
+          preferred_contact: result.preferred_contact as 'sms' | 'email' | 'phone' || 'sms',
+          profile_image_url: result.profile_image_url || ''
         });
       } else {
-        throw new Error('Could not create or find client profile');
+        // Could not fetch or create due to RLS or timeout. Do not throw.
+        setSoftError('We could not load your profile yet. You can still edit and save to create it.');
+        setProfile(null);
+        setClientProfile(null);
+        // Initialize with user data if available
+        setEditData({
+          first_name: user?.user_metadata?.first_name || '',
+          last_name: user?.user_metadata?.last_name || '',
+          phone: '',
+          email: user?.email || '',
+          preferred_contact: 'sms',
+          profile_image_url: ''
+        });
       }
-    } catch (error: any) {
-      console.error('Error fetching client profile:', error);
-      if (error.message?.includes('Connect to Supabase')) {
-        setError('Please connect to Supabase to manage your profile');
-      } else {
-        setError('Failed to load profile information');
-      }
-    } finally {
+
       setLoading(false);
-    }
-  };
+    })();
+
+    return () => { alive = false; };
+  }, [userId]); // 🔁 Only run when userId is available</parameter>
+
+  // Removed - now handled in useEffect above</parameter>
 
   const handleSave = async () => {
-    if (!user) return;
+    if (!userId) return;
 
     // Validation
     if (!editData.first_name.trim() || !editData.last_name.trim()) {
