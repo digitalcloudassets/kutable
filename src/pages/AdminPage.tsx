@@ -199,11 +199,12 @@ const AdminPage: React.FC = () => {
       <header className="bg-gradient-to-r from-white via-gray-50 to-white border-b border-gray-100 shadow-premium page-header-bg md:-mt-24 md:pt-24 mt-0 pt-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
+            {/* Brand */}
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <img 
-                  src="/Kutable Logo.png" 
-                  alt="Kutable Logo" 
+                <img
+                  src="/Kutable Logo.png"
+                  alt="Kutable Logo"
                   className="h-10 w-auto"
                 />
               </div>
@@ -212,9 +213,10 @@ const AdminPage: React.FC = () => {
                 <p className="text-sm text-gray-600 font-medium">Platform Management Dashboard</p>
               </div>
             </div>
-            
+
+            {/* Right actions */}
             <div className="flex items-center gap-2">
-              {/* Desktop / Tablet pills (unchanged UI) */}
+              {/* Desktop / tablet pills (unchanged) */}
               <div className="hidden md:flex items-center space-x-4">
                 <button
                   onClick={handleRefresh}
@@ -228,6 +230,7 @@ const AdminPage: React.FC = () => {
                   )}
                   <span>{refreshing ? 'Refreshing...' : 'Refresh Data'}</span>
                 </button>
+
                 <div className="text-right bg-gray-50 rounded-xl p-4 border border-gray-100">
                   <p className="text-sm font-semibold text-gray-900 flex items-center space-x-2">
                     <Crown className="h-4 w-4 text-orange-500" />
@@ -235,6 +238,7 @@ const AdminPage: React.FC = () => {
                   </p>
                   <p className="text-xs text-gray-600 font-medium">Platform Administrator</p>
                 </div>
+
                 <button
                   onClick={() => navigate('/')}
                   className="btn-secondary"
@@ -263,33 +267,6 @@ const AdminPage: React.FC = () => {
                   <LogOut className="h-5 w-5" />
                 </button>
               </div>
-            </div>
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="btn-secondary"
-              >
-                {refreshing ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                <span>{refreshing ? 'Refreshing...' : 'Refresh Data'}</span>
-              </button>
-              <div className="text-right bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <p className="text-sm font-semibold text-gray-900 flex items-center space-x-2">
-                  <Crown className="h-4 w-4 text-orange-500" />
-                  <span>Admin User</span>
-                </p>
-                <p className="text-xs text-gray-600 font-medium">Platform Administrator</p>
-              </div>
-              <button
-                onClick={() => navigate('/')}
-                className="btn-secondary"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Exit Admin</span>
-              </button>
             </div>
           </div>
         </div>

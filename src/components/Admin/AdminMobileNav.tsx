@@ -51,7 +51,6 @@ export default function AdminMobileNav({
       ref={barRef}
       className="md:hidden sticky top-0 z-50 bg-white border-b border-gray-200"
       role="navigation"
-      aria-label="Admin navigation"
     >
       <div className="flex items-center justify-between gap-2 px-3 py-2">
         <div className="text-sm font-semibold text-gray-900">Admin Dashboard</div>
