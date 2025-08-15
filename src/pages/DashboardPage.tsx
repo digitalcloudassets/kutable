@@ -152,6 +152,7 @@ const DashboardPage: React.FC = () => {
       }
     }
   }, [searchParams, user, isConnected, userType, setSearchParams, refreshBarberData]);
+
   const determineUserType = useCallback(async () => {
     if (!user) return;
 
@@ -173,42 +174,53 @@ const DashboardPage: React.FC = () => {
         return;
       }
 
-     // Check user metadata to determine intended user type
-     const intendedUserType = user.user_metadata?.user_type;
-     
-     // If user is supposed to be a barber but no profile exists yet, don't auto-create client profile
-     if (intendedUserType === 'barber') {
-       setUserType('barber');
-       setActiveTab('profile');
+      // Check user metadata to determine intended user type
+      const intendedUserType = user.user_metadata?.user_type;
+      
+      // If user is supposed to be a barber but no profile exists yet, don't auto-create client profile
+      if (intendedUserType === 'barber') {
+        setUserType('barber');
+        setActiveTab('profile');
+        setLoading(false);
+        return;
+      }
+      
+      // For other users, create client profile
+      const clientProfile = await getOrCreateClientProfile(user);
+      
+      if (clientProfile) {
+        setUserType('client');
+        setClientProfile(clientProfile);
+        setActiveTab('bookings');
+      } else {
+        setUserType('client');
+        setActiveTab('bookings');
+      }
+    } catch (error) {
+      console.error('DashboardPage load error:', error);
+      setUserType('client');
+      setActiveTab('bookings');
+    } finally {
       setLoading(false);
-      return;
-     }
     }
-    
-    // For other users, create client profile
-    const clientProfile = await getOrCreateClientProfile(user);
-    
-    // For other users, create client profile
-    const clientProfile = await getOrCreateClientProfile(user);
-    if (clientProfile) {
-      setUserType('client');
-      setClientProfile(clientProfile);
-      setActiveTab('bookings');
-    } else {
-      setUserType('client');
-      setActiveTab('bookings');
-    }
-  } catch (error) {
-    console.error('DashboardPage load error:', error);
-    setUserType('client');
-    setActiveTab('bookings');
-  } finally {
-    setLoading(false);
+  }, [user, isConnected]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+  };
+
+  const handleEditProfile = () => {
+    setTriggerEdit(true);
+  };
+
+  const handleTriggerEditChange = (value: boolean) => {
+    setTriggerEdit(value);
+  };
+
+  // Loading state
+  if (loading || authLoading) {
+    return <LoadingDashboard />;
   }
-  } finally {
-    setLoading(false);
-  }
-}, [user, isConnected]);
 
   // Client Dashboard
   if (userType === 'client') {
