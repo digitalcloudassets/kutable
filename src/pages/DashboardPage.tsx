@@ -27,7 +27,7 @@ const DashboardPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const { unreadCount } = useMessaging();
   const { isConnected } = useSupabaseConnection();
-  const { resumeOnReturn } = useStripeConnect();
+  const { resumeOnReturn } = useStripeConnect(null, user?.id);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   

@@ -37,6 +37,9 @@ const DashboardNavigation = React.memo<DashboardNavigationProps>(({
   const navigate = useNavigate();
   const [showScrollHint, setShowScrollHint] = React.useState(false);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  
+  // Only show payments/Connect features for barbers
+  const isBarber = userType === 'barber';
 
   React.useEffect(() => {
     const container = scrollContainerRef.current;
@@ -71,8 +74,8 @@ const DashboardNavigation = React.memo<DashboardNavigationProps>(({
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'bookings', label: 'Bookings', icon: Calendar },
     { id: 'messages', label: 'Messages', icon: MessageSquare },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'services', label: 'Services', icon: Scissors },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'gallery', label: 'Gallery', icon: Camera },
     { id: 'hours', label: 'Hours', icon: Clock },
     { id: 'privacy', label: 'Privacy', icon: Settings }

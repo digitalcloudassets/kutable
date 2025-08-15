@@ -55,6 +55,9 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
   const handleConsentUpdate = useCallback(() => {
     onBarberUpdate();
   }, [onBarberUpdate]);
+  
+  // Import supabase and other necessary items for saving availability
+  const { supabase } = await import('../../lib/supabase');
 
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 

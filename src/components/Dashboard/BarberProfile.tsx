@@ -36,10 +36,9 @@ import ServicesManagement from './ServicesManagement';
 import { useAuth } from '../../hooks/useAuth';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { NotificationManager } from '../../utils/notifications';
-import { generateUniqueSlug } from '../../utils/updateBarberSlugs';
-import { updateSingleBarberSlug } from '../../utils/updateBarberSlugs';
 import { uploadBarberAvatar, uploadBarberBanner } from '../../lib/uploadAvatar';
 import { useStripeConnect } from '../../hooks/useStripeConnect';
+import { isConnectStateForUser } from '../../lib/connectState';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -71,7 +70,16 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [disconnectingStripe, setDisconnectingStripe] = useState(false);
   const [settingUpStripe, setSettingUpStripe] = useState(false);
-  const { status: stripeStatus, loading: stripeLoading, isFullyConnected, needsAction, refresh: refreshStripeStatus } = useStripeConnect(barber.stripe_account_id);
+  
+  // Only use Stripe Connect hook for this user's account
+  const { 
+    status: stripeStatus, 
+    loading: stripeLoading, 
+    isFullyConnected, 
+    needsAction, 
+    refresh: refreshStripeStatus 
+  } = useStripeConnect(barber.stripe_account_id, user?.id);
+  
   const { user } = useAuth();
   const { isConnected } = useSupabaseConnection();
   
@@ -97,21 +105,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Generate a proper slug if the current one is a UUID
-      const isUuidSlug = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(barber.slug || '');
       let updateData: any = { ...editData, updated_at: new Date().toISOString() };
-      
-      if (isUuidSlug && editData.business_name) {
-        // Use the centralized slug update function
-        const result = await updateSingleBarberSlug(barber.id);
-        if (result.success && result.newSlug) {
-          // Update the current URL if we're on the barber profile page
-          if (window.location.pathname.includes(barber.slug)) {
-            window.history.replaceState({}, '', `/barber/${result.newSlug}`);
-          }
-          NotificationManager.success(`Profile URL updated to: /barber/${result.newSlug}`);
-        }
-      }
       
       // Update barber profile
       const { error: profileError } = await supabase
@@ -236,72 +230,51 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
 
 
   const handleStripeConnect = async () => {
-    if (!user || !isConnected) {
+    if (!user || !isConnected || !barber) {
       NotificationManager.error('Please ensure you are signed in and connected to Supabase');
       return;
     }
 
-    // Check if user already has a Stripe account that needs completion
-    if (barber.stripe_account_id && !barber.stripe_onboarding_completed) {
-      try {
-        // Check current status of existing Stripe account
-        const { data: statusData, error: statusError } = await supabase.functions.invoke('check-stripe-status', {
-          body: { accountId: barber.stripe_account_id }
-        });
-
-        if (statusError) {
-          console.error('Error checking existing Stripe status:', statusError);
-          // Continue with new account creation as fallback
-        } else if (statusData?.success) {
-          if (statusData.onboardingComplete) {
-            // Account is actually complete, update local state
-            onUpdate();
-            NotificationManager.success('Your payment setup is already complete!');
-            return;
-          } else if (statusData.detailsSubmitted) {
-            NotificationManager.info('Your Stripe account is pending verification. Check your email for updates from Stripe.');
-            return;
-          }
-          // If not complete, continue to create new onboarding link
-        }
-      } catch (error) {
-        console.warn('Error checking existing Stripe account, proceeding with setup:', error);
-      }
+    // Verify this is the current user's barber profile
+    if (!isConnectStateForUser(user.id)) {
+      console.warn('Connect payment setup attempted for different user, clearing state');
+      return;
     }
+
+    console.log('Starting Stripe Connect setup for user:', user.id, 'barber:', barber.id);
+    
     setSettingUpStripe(true);
     try {
       const payload = {
         barberId: barber.id,
+        userEmail: user.email,
+        userName: `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`.trim(),
         businessName: barber.business_name,
-        ownerName: barber.owner_name,
-        email: barber.email || user.email,
-        phone: barber.phone || undefined,
-        address: barber.address
-          ? { line1: barber.address, city: barber.city || '', state: (barber.state || '').toUpperCase(), postal_code: barber.zip_code || '' }
-          : undefined,
       };
 
-      const { data, error } = await supabase.functions.invoke('create-stripe-account', { body: payload });
+      const { data, error } = await supabase.functions.invoke('stripe-onboard', { body: payload });
 
       if (error) {
-        // Supabase wraps non-2xx here; include context if present
-        console.warn('Edge error:', error?.context || error);
-        const msg = error?.context?.error || error?.message || 'Payment setup failed';
-        NotificationManager.error(msg);
+        console.error('Stripe onboarding error:', error);
+        NotificationManager.error(error.message || 'Payment setup failed');
         return;
       }
 
-      if (!data?.success || !data?.onboardingUrl) {
-        const msg = data?.error || 'Payment setup failed';
-        NotificationManager.error(msg);
+      if (!data?.success || !data?.url) {
+        NotificationManager.error(data?.error || 'Payment setup failed');
         return;
       }
 
-      // Success path unchanged
-      await supabase.from('barber_profiles').update({ stripe_account_id: data.accountId, updated_at: new Date().toISOString() }).eq('id', barber.id);
-      NotificationManager.success('Redirecting to Stripe to complete payment setup…');
-      window.open(data.onboardingUrl, '_blank', 'noopener,noreferrer');
-      setTimeout(() => onUpdate(), 1000);
+      // Update Connect state for this user
+      setConnectState({
+        userId: user.id,
+        accountId: data.accountId,
+        inProgress: true
+      });
+
+      NotificationManager.success('Redirecting to Stripe to complete payment setup...');
+      // Redirect to Stripe onboarding (same window for better return handling)
+      window.location.href = data.url;
     } catch (e: any) {
       console.error('Stripe Connect unexpected error:', e);
       NotificationManager.error('Something went wrong. Please try again.');
