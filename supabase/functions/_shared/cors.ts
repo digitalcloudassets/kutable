@@ -11,30 +11,37 @@ const csv = (v?: string | null) =>
 // Exact origins (scheme+host)
 const EXACT = new Set(csv(Deno.env.get("ALLOWED_ORIGINS")));
 
-// Suffixes (match any subdomain), e.g. .netlify.app
+// Suffix match (e.g., .netlify.app)
 const SUFFIXES = csv(Deno.env.get("ALLOWED_ORIGIN_SUFFIXES"));
 
+// Allow calls that have no/"null" Origin? (useful for Bolt/webcontainer/dev tools)
 const ALLOW_NO_ORIGIN = (Deno.env.get("ALLOW_NO_ORIGIN") ?? "true").toLowerCase() === "true";
+const ALLOW_NULL_ORIGIN = (Deno.env.get("ALLOW_NULL_ORIGIN") ?? "true").toLowerCase() === "true";
 
 function isAllowedOrigin(origin: string | null): string | null {
   if (!origin) return null;
+  if (origin === "null") return ALLOW_NULL_ORIGIN ? "null" : null;
+
   if (EXACT.has(origin)) return origin;
+
   try {
     const u = new URL(origin);
     for (const suf of SUFFIXES) {
       const clean = suf.replace(/^\./, "");
-      if (u.hostname.endsWith(clean)) return `${u.protocol}//${u.host}`;
+      if (u.host.endsWith(clean)) return `${u.protocol}//${u.host}`;
     }
-  } catch { /* ignore */ }
+  } catch {
+    // ignore
+  }
   return null;
 }
 
 export function corsHeaders(methods: Method[] = [...DEFAULT_METHODS]) {
   return {
-    "Access-Control-Allow-Origin": "*", // replaced dynamically
+    "Access-Control-Allow-Origin": "*", // will be swapped/removed
     "Access-Control-Allow-Methods": methods.join(", "),
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
-    "Vary": "Origin",
+    Vary: "Origin",
   } as Record<string, string>;
 }
 
@@ -47,8 +54,11 @@ export function withCors(
   | { ok: false; res: Response } {
   const origin = req.headers.get("Origin");
 
-  if (!origin) {
-    if (!requireBrowserOrigin && ALLOW_NO_ORIGIN) {
+  // Handle no/"null" origin first
+  if (!origin || origin === "null") {
+    if ((!requireBrowserOrigin && ALLOW_NO_ORIGIN) || (origin === "null" && ALLOW_NULL_ORIGIN)) {
+      // For non-browser/server calls or credentialless frames:
+      // omit A-C-A-Origin to avoid wildcard leakage
       const headers = { ...baseHeaders };
       delete headers["Access-Control-Allow-Origin"];
       return { ok: true, headers };
@@ -73,7 +83,7 @@ export function withCors(
     };
   }
 
-  const headers = { ...baseHeaders, "Access-Control-Allow-Origin": allowed };
+  const headers = { ...baseHeaders, "Access-Control-Allow-Origin": allowed === "null" ? "*" : allowed };
   return { ok: true, headers };
 }
 
