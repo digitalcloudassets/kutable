@@ -28,7 +28,7 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
     onEditProfile();
   }, [onEditProfile]);
 
-  const profileUrl = `/barber/${barber.slug || barber.id}`;
+  const profileUrl = `/barber/${barber.slug && barber.slug !== barber.id ? barber.slug : barber.id}`;
 
   return (
     <div className="space-y-8 mb-8">

@@ -557,7 +557,7 @@ const ClientBookings: React.FC = () => {
                     <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 min-w-0">
                       {/* Barber Image */}
                       <Link 
-                        to={`/barber/${booking.barber_profiles?.slug}`}
+                        to={`/barber/${booking.barber_profiles?.slug && booking.barber_profiles.slug !== booking.barber_profiles.id ? booking.barber_profiles.slug : booking.barber_profiles?.id || ''}`}
                         className="flex-shrink-0 mx-auto sm:mx-0"
                       >
                         <img
@@ -572,7 +572,7 @@ const ClientBookings: React.FC = () => {
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 space-y-2 sm:space-y-0 gap-3 min-w-0">
                           <div className="space-y-1">
                             <Link 
-                              to={`/barber/${booking.barber_profiles?.slug}`}
+                              to={`/barber/${booking.barber_profiles?.slug && booking.barber_profiles.slug !== booking.barber_profiles.id ? booking.barber_profiles.slug : booking.barber_profiles?.id || ''}`}
                               className="text-base sm:text-lg font-display font-bold text-gray-900 hover:text-primary-600 transition-colors block text-ellipsis-1"
                             >
                               {booking.barber_profiles?.business_name}

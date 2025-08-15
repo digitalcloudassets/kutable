@@ -71,16 +71,28 @@ const BarberProfilePage: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch verified barber from database
-      const { data: supabaseBarber, error } = await supabase
+      // First try to fetch by slug
+      let { data: supabaseBarber, error } = await supabase
         .from('barber_profiles')
         .select('*')
-        .eq('is_claimed', true)
         .eq('is_active', true)
         .eq('slug', slug)
-        .single();
+        .maybeSingle();
 
-      if (supabaseBarber && !error) {
+      // If not found by slug, try by ID as fallback
+      if (!supabaseBarber && !error) {
+        const { data: barberById, error: idError } = await supabase
+          .from('barber_profiles')
+          .select('*')
+          .eq('is_active', true)
+          .eq('id', slug)
+          .maybeSingle();
+        
+        supabaseBarber = barberById;
+        error = idError;
+      }
+
+      if (supabaseBarber) {
         setBarber(supabaseBarber);
         fetchServices(supabaseBarber.id);
         return;

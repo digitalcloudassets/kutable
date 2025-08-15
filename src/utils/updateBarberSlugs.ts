@@ -3,10 +3,13 @@ import { supabase } from '../lib/supabase';
 const generateSlugFromBusinessName = (businessName: string): string => {
   return businessName
     .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/'/g, '')
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '')
+    .substring(0, 50)
     .trim();
 };
 

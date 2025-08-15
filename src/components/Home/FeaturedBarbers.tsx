@@ -159,7 +159,7 @@ const FeaturedBarbers: React.FC = () => {
                     <span className="text-emerald-600 font-semibold text-sm">Accepting Bookings</span>
                   </div>
                   <Link
-                    to={`/barber/${barber.slug || barber.id}`}
+                    to={`/barber/${barber.slug && barber.slug !== barber.id ? barber.slug : barber.id}`}
                     className="btn-primary group-hover:scale-110 transition-all duration-200"
                   >
                     View Profile
