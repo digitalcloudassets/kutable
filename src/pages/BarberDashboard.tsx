@@ -46,6 +46,10 @@ const BarberDashboard: React.FC = () => {
     setSearchParams(next, { replace: true });
   };
 
+  const handleTriggerEditChange = (flag: boolean) => {
+    onTriggerEditChange(flag);
+  };
+
   const handleUserTypeCheck = useCallback(() => {
     if (!authLoading) {
       if (!user) {
