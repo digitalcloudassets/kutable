@@ -444,14 +444,27 @@ const BookingFlow: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h3 className="font-display font-bold text-gray-900 mb-4 text-lg">Choose Date</h3>
-                  <DatePicker
-                    selected={selectedDate}
-                    onChange={(date) => date && setSelectedDate(date)}
-                    minDate={new Date()}
-                    maxDate={addDays(new Date(), 30)}
-                    inline
-                    className="w-full border border-gray-200 rounded-2xl shadow-sm mx-auto"
-                  />
+                  {/* Center the calendar on mobile and cap its width for a bigger, comfy feel */}
+                  <div
+                    className="
+                      mx-auto w-full
+                      max-w-[22rem]        /* ~352px: comfortable on phones */
+                      sm:max-w-none        /* let larger screens use their normal width */
+                      text-center
+                    "
+                  >
+                    {/* IMPORTANT: add the 'kutable-rdp' class to scope our CSS overrides */}
+                    <div className="kutable-rdp">
+                      <DatePicker
+                        selected={selectedDate}
+                        onChange={(date) => date && setSelectedDate(date)}
+                        minDate={new Date()}
+                        maxDate={addDays(new Date(), 30)}
+                        inline
+                        className="w-full border border-gray-200 rounded-2xl shadow-sm mx-auto"
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <h3 className="font-display font-bold text-gray-900 mb-4 text-lg">
@@ -712,27 +725,18 @@ const BookingFlow: React.FC = () => {
                   clientId: currentClientId,
                   barberId: barber.id,
                   serviceId: selectedService.id,
-              {/* Center the calendar on mobile and cap its width for a bigger, comfy feel */}
-              <div
-                className="
-                  mx-auto w-full
-                  max-w-[22rem]        /* ~352px: comfortable on phones */
-                  sm:max-w-none        /* let larger screens use their normal width */
-                  text-center
-                "
-              >
-                {/* IMPORTANT: add the 'kutable-rdp' class to scope our CSS overrides */}
-                <div className="kutable-rdp">
-                  <DatePicker
-                    selected={selectedDate}
-                    onChange={(date) => date && setSelectedDate(date)}
-                    minDate={new Date()}
-                    maxDate={addDays(new Date(), 30)}
-                    inline
-                    className="w-full border border-gray-200 rounded-2xl shadow-sm mx-auto"
-                  />
-                </div>
-              </div>
+                  appointmentDate: format(selectedDate, 'yyyy-MM-dd'),
+                  appointmentTime: selectedTime,
+                  serviceName: selectedService.name,
+                  customerName: `${customerInfo.firstName} ${customerInfo.lastName}`,
+                  customerPhone: customerInfo.phone
+                }}
+                onSuccess={handlePaymentSuccess}
+                onError={(error) => {
+                  console.error('Payment error:', error);
+                  setPaymentError(error);
+                }}
+              />
 
               <div className="mt-8 flex justify-center">
                 <button
