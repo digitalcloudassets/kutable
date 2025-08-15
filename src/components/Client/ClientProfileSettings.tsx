@@ -216,9 +216,10 @@ const ClientProfileSettings: React.FC = () => {
         }
       } catch (error) {
         console.warn('Error refreshing profile after consent update:', error);
-     };
+      }
+    };
     
-     void run();
+    void run();
     
     return () => {
       cancelled = true;
