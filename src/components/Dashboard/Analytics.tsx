@@ -14,6 +14,7 @@ import { supabase } from '../../lib/supabase';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { RevenueChart, ServicePerformanceChart, BookingTrendsChart, HourlyBookingsChart } from '../Analytics/Charts';
 import { NotificationManager } from '../../utils/notifications';
+import { formatUSD } from '../../utils/money';
 
 interface AnalyticsData {
   totalRevenue: number;
@@ -430,7 +431,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ barberId }) => {
               <DollarSign className="h-6 w-6 text-green-600" />
             </div>
             <p className="text-2xl font-bold text-gray-900">
-              ${data.totalBookings > 0 ? (data.totalRevenue / data.totalBookings).toFixed(2) : '0.00'}
+              {data.totalBookings > 0 ? formatUSD(data.totalRevenue / data.totalBookings) : formatUSD(0)}
             </p>
             <p className="text-sm text-gray-600">Average Booking Value</p>
           </div>
@@ -440,10 +441,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ barberId }) => {
               <Calendar className="h-6 w-6 text-blue-600" />
             </div>
             <p className="text-2xl font-bold text-gray-900">
-              {data.monthlyRevenue.length > 0 
-                ? (data.totalBookings / data.monthlyRevenue.length).toFixed(1)
-                : '0'
-              }
+              {data.monthlyRevenue.length > 0 ? (data.totalBookings / data.monthlyRevenue.length).toFixed(1) : '0'}
             </p>
             <p className="text-sm text-gray-600">Bookings per Month</p>
           </div>

@@ -25,6 +25,8 @@ interface PaymentProcessorProps {
   onBack: () => void;
 }
 
+import { formatUSD } from '../../utils/money';
+
 const PaymentForm: React.FC<PaymentProcessorProps> = ({ booking, onSuccess, onBack }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -221,15 +223,15 @@ const PaymentForm: React.FC<PaymentProcessorProps> = ({ booking, onSuccess, onBa
           <div className="space-y-2">
             <div className="flex justify-between">
               <span className="text-gray-600">Service Total</span>
-              <span className="font-medium">${booking.totalAmount.toFixed(2)}</span>
+              <span className="font-medium">{formatUSD(booking.totalAmount)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Processing Fee</span>
-              <span className="font-medium">${(booking.totalAmount * 0.029 + 0.30).toFixed(2)}</span>
+              <span className="font-medium">{formatUSD(booking.totalAmount * 0.029 + 0.30)}</span>
             </div>
             <div className="border-t pt-2 flex justify-between">
               <span className="font-semibold">Total</span>
-              <span className="font-semibold">${(booking.totalAmount + booking.totalAmount * 0.029 + 0.30).toFixed(2)}</span>
+              <span className="font-semibold">{formatUSD(booking.totalAmount + booking.totalAmount * 0.029 + 0.30)}</span>
             </div>
           </div>
         </div>
@@ -276,7 +278,7 @@ const PaymentForm: React.FC<PaymentProcessorProps> = ({ booking, onSuccess, onBa
               ) : (
                 <>
                   <Lock className="h-4 w-4 mr-2" />
-                  Pay ${booking.totalAmount.toLocaleString()}
+                  Pay {formatUSD(booking.totalAmount)}
                 </>
               )}
             </button>

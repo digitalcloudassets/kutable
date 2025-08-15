@@ -30,6 +30,7 @@ import { createAvailabilityManager } from '../../utils/availabilityManager';
 import { NotificationManager } from '../../utils/notifications';
 import 'react-datepicker/dist/react-datepicker.css';
 import InAppCheckout from '../Checkout/InAppCheckout';
+import { formatUSD } from '../../utils/money';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 type Service = Database['public']['Tables']['services']['Row'];
@@ -420,7 +421,7 @@ const BookingFlow: React.FC = () => {
                       <div className="text-center sm:text-right bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 shadow-sm">
                         <div className="flex items-center justify-center space-x-1 text-3xl sm:text-4xl font-display font-bold text-gray-900 mb-1">
                           <DollarSign className="h-6 w-6" />
-                          <span>{service.price.toLocaleString()}</span>
+                          <span>{formatUSD(service.price)}</span>
                         </div>
                         <p className="text-gray-500 text-sm font-medium">Service Price</p>
                       </div>
@@ -683,19 +684,19 @@ const BookingFlow: React.FC = () => {
                   <div className="border-t border-gray-200 pt-3 mt-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Service Price:</span>
-                      <span className="font-medium text-gray-900">${selectedService.price.toLocaleString()}</span>
+                      <span className="font-medium text-gray-900">{formatUSD(selectedService.price)}</span>
                     </div>
                     <div className="flex justify-between text-sm text-gray-500">
                       <span>Platform Fee (1%):</span>
-                      <span>${(selectedService.price * 0.01).toLocaleString()}</span>
+                      <span>{formatUSD(selectedService.price * 0.01)}</span>
                     </div>
                     <div className="flex justify-between text-sm text-gray-500">
                       <span>Processing Fee (~2.9%):</span>
-                      <span>${(selectedService.price * 0.029 + 0.30).toLocaleString()}</span>
+                      <span>{formatUSD(selectedService.price * 0.029 + 0.30)}</span>
                     </div>
                     <div className="flex justify-between font-semibold text-lg border-t border-gray-300 pt-3 mt-3">
                       <span>Total:</span>
-                      <span className="text-emerald-600">${selectedService.price.toLocaleString()}</span>
+                      <span className="text-emerald-600">{formatUSD(selectedService.price)}</span>
                     </div>
                   </div>
                 </div>
@@ -777,7 +778,7 @@ const BookingFlow: React.FC = () => {
                   <div className="border-t border-gray-300 pt-4 mt-4">
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total Paid:</span>
-                      <span className="text-emerald-600">${confirmedBooking.total_amount.toLocaleString()}</span>
+                      <span className="text-emerald-600">{formatUSD(confirmedBooking.total_amount)}</span>
                     </div>
                   </div>
                 </div>

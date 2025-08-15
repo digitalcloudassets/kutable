@@ -28,6 +28,7 @@ import RescheduleModal from '../Booking/RescheduleModal';
 import { NotificationManager, BookingNotifications } from '../../utils/notifications';
 import { getOrCreateClientProfile } from '../../utils/profileHelpers';
 import 'react-datepicker/dist/react-datepicker.css';
+import { formatUSD } from '../../utils/money';
 
 interface Booking {
   id: string;
