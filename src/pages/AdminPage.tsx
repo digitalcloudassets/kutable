@@ -213,7 +213,57 @@ const AdminPage: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-2">
+              {/* Desktop / Tablet pills (unchanged UI) */}
+              <div className="hidden md:flex items-center space-x-4">
+                <button
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  className="btn-secondary"
+                >
+                  {refreshing ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  <span>{refreshing ? 'Refreshing...' : 'Refresh Data'}</span>
+                </button>
+                <div className="text-right bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <p className="text-sm font-semibold text-gray-900 flex items-center space-x-2">
+                    <Crown className="h-4 w-4 text-orange-500" />
+                    <span>Admin User</span>
+                  </p>
+                  <p className="text-xs text-gray-600 font-medium">Platform Administrator</p>
+                </div>
+                <button
+                  onClick={() => navigate('/')}
+                  className="btn-secondary"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Exit Admin</span>
+                </button>
+              </div>
+
+              {/* Mobile: compact icon buttons */}
+              <div className="md:hidden flex items-center gap-2">
+                <button
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  aria-label="Refresh data"
+                  className="p-2.5 rounded-xl border border-gray-200 bg-white active:scale-95 disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
+                </button>
+
+                <button
+                  onClick={() => navigate('/')}
+                  aria-label="Exit admin"
+                  className="p-2.5 rounded-xl border border-gray-200 bg-white active:scale-95"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
