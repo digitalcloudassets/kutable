@@ -632,17 +632,20 @@ const OnboardingPage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email Address
                   </label>
-                  <span>Platform Fee (min $0.25):</span>
-                  <span>1%</span>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-5 h-5">
                       <Mail className="h-5 w-5 text-gray-400" />
                     </div>
                     <input
                       type="email"
-                      value={data.businessInfo.email}
-                      onChange={(e) => updateData('businessInfo.email', e.target.value)}
-                      className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
+                      value={editData.email}
+                      onChange={(e) => setEditData(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full pl-12 pr-16 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400"
                       placeholder="email@example.com"
-                    <span>~4% + fees</span>
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-500 bg-white px-2">
+                      1% platform fee (min $0.25)
+                    </span>
                   </div>
                 </div>
               </div>
