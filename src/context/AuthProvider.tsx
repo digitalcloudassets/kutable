@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, getSession, getUser } from '../lib/supabaseClient';
+import { repairAuthIfNeeded } from '../utils/authRepair';
 import { uploadAvatar } from '../lib/uploadAvatar';
 
 type AuthCtx = {
@@ -18,16 +19,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Initial session fetch (critical for Bolt; don't render guards before this)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      setSession(session ?? null);
-      setLoading(false);
-    });
+    // Initial session fetch with error handling
+    (async () => {
+      try {
+        const session = await getSession();
+        if (mounted) {
+          setSession(session);
+          setLoading(false);
+        }
+      } catch (error) {
+        const repaired = await repairAuthIfNeeded(error);
+        if (mounted) {
+          setSession(null);
+          setLoading(false);
+        }
+      }
+    })();
 
-    // Subscribe to changes (login/logout/token refresh)
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession ?? null);
+    // Subscribe to changes with error handling
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (!mounted) return;
+      
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+        return;
+      }
+      
+      try {
+        // Verify session is valid before setting it
+        const verifiedSession = await getSession();
+        setSession(verifiedSession);
+      } catch (error) {
+        const repaired = await repairAuthIfNeeded(error);
+        setSession(null);
+      }
     });
 
     return () => {
@@ -39,9 +64,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Process any deferred avatar immediately after first login (one-time)
   useEffect(() => {
     let cancelled = false;
+    
     async function run() {
+      if (!session?.user) return;
+      
       const j = localStorage.getItem('kutable:pendingAvatar');
-      if (!session || !j) return;
+      if (!j) return;
+      
       try {
         const pending = JSON.parse(j) as { role: 'clients'|'barbers'; userId: string; name: string; b64: string };
         if (!pending?.userId || pending.userId !== session.user.id) return;
@@ -65,9 +94,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         localStorage.removeItem('kutable:pendingAvatar');
       } catch {
-        // ignore; user can retry avatar later
+        console.warn('Avatar upload failed during auth restore, user can retry later');
       }
     }
+    
     run();
     return () => { cancelled = true; };
   }, [session]);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, Scissors, Loader, AlertTriangle, Camera } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabaseClient';
 import { uploadAvatar } from '../../lib/uploadAvatar';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { 
@@ -141,27 +141,12 @@ const SignUpForm: React.FC = () => {
       const userId = data.user?.id;
       const hasSession = !!data.session;
 
-      // Ensure a client profile row exists (safe upsert)
-      if (userId && hasSession) {
-        await supabase.from('client_profiles').upsert(
-          { 
-            user_id: userId, 
-            first_name: cleanFirstName,
-            last_name: cleanLastName,
-            email: cleanEmail,
-            profile_image_url: null, // No default avatar for new clients
-            communication_consent: formData.communicationConsent,
-            sms_consent: formData.communicationConsent,
-            email_consent: formData.communicationConsent,
-            consent_date: new Date().toISOString()
-          },
-          { onConflict: 'user_id' }
-        );
-      }
+      // The AuthGate will handle profile creation via ensure-profile
+      // No need to create profiles here anymore
 
       if (formData.userType === 'client') {
         if (hasSession) {
-          navigate('/dashboard', { replace: true }); // Go straight to dashboard
+          navigate('/dashboard', { replace: true });
         } else {
           navigate(`/login?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/dashboard')}`, { replace: true });
         }
@@ -170,7 +155,7 @@ const SignUpForm: React.FC = () => {
 
       // Barber: send to Stripe onboarding
       if (hasSession) {
-        navigate('/onboarding/barber?step=account', { replace: true }); // Barber engine
+        navigate('/onboarding/barber?step=account', { replace: true });
       } else {
         navigate(`/login?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/onboarding/barber?step=account')}`, { replace: true });
       }

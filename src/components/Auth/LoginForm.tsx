@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, Loader, AlertTriangle } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabaseClient';
+import { repairAuthIfNeeded } from '../../utils/authRepair';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { 
   validateEmail, 
@@ -80,6 +81,25 @@ const LoginForm: React.FC = () => {
       });
 
       if (signInError) {
+        // Try to repair auth if it's a session error
+        if (signInError.message.includes('session') || signInError.message.includes('JWT')) {
+          const repaired = await repairAuthIfNeeded(signInError);
+          if (repaired) {
+            // Retry the sign in after repair
+            const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+              email: cleanEmail,
+              password: cleanPassword,
+            });
+            
+            if (!retryError && retryData.user) {
+              bruteForceProtection.recordAttempt(identifier, true);
+              const next = searchParams.get('next') || '/dashboard';
+              navigate(next);
+              return;
+            }
+          }
+        }
+        
         // Record failed attempt for brute force protection
         bruteForceProtection.recordAttempt(identifier, false);
         
@@ -108,15 +128,18 @@ const LoginForm: React.FC = () => {
         let redirectUrl = '/dashboard';
         if (next) {
           redirectUrl = next;
-        } else if (userType === 'barber') {
-          redirectUrl = '/dashboard/barber';
-        } else {
-          redirectUrl = '/dashboard';
         }
         
-        navigate(next);
+        navigate(redirectUrl);
       }
     } catch (error: any) {
+      const repaired = await repairAuthIfNeeded(error);
+      if (!repaired) {
+        setError('Authentication system error. Please try signing in again.');
+        setLoading(false);
+        return;
+      }
+      
       console.error('Login error:', error);
       bruteForceProtection.recordAttempt(identifier, false);
       

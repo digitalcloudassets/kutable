@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { supabase, getSessionSafe, getUserSafe } from '../lib/auth'
+import { supabase, getSession, getUser } from '../lib/supabaseClient'
+import { repairAuthIfNeeded } from '../utils/authRepair'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
@@ -10,126 +11,159 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
 
   // 1) Hydrate session FIRST
   useEffect(() => {
-    let unsub = supabase.auth.onAuthStateChange((_e, _s) => {
-      // no-op; we always read fresh on mount
-    })
+    let mounted = true
+    
+    const handleAuthChange = async (event: string, session: any) => {
+      if (!mounted) return
+      
+      // Handle sign out event specifically
+      if (event === 'SIGNED_OUT') {
+        setAuthed(false)
+        setReady(true)
+        return
+      }
+      
+      // For other events, verify the session is actually valid
+      try {
+        const currentSession = await getSession()
+        setAuthed(!!currentSession)
+        setReady(true)
+      } catch (error) {
+        const repaired = await repairAuthIfNeeded(error)
+        if (mounted) {
+          setAuthed(false)
+          setReady(true)
+        }
+      }
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange)
+    
+    // Initial session check
     ;(async () => {
-      const session = await getSessionSafe()
-      setAuthed(!!session)
-      setReady(true)
+      try {
+        const session = await getSession()
+        if (mounted) {
+          setAuthed(!!session)
+          setReady(true)
+        }
+      } catch (error) {
+        const repaired = await repairAuthIfNeeded(error)
+        if (mounted) {
+          setAuthed(false)
+          setReady(true)
+        }
+      }
     })()
-    return () => unsub.data.subscription.unsubscribe()
+    
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   // 2) If logged in, ensure profile exactly once (server idempotent)
   useEffect(() => {
-    if (!ready) return
+    if (!ready || !authed) return
+    
+    let mounted = true
+    
     ;(async () => {
-      const user = await getUserSafe()
-      if (!user) {
-        // Allow only auth pages unauthenticated
-        if (!loc.pathname.startsWith('/login') && 
-            !loc.pathname.startsWith('/signup') && 
-            !loc.pathname.startsWith('/forgot-password') &&
-            !loc.pathname.startsWith('/reset-password') &&
-            !loc.pathname.startsWith('/barbers') &&
-            !loc.pathname.startsWith('/how-it-works') &&
-            !loc.pathname.startsWith('/pricing') &&
-            !loc.pathname.startsWith('/support') &&
-            !loc.pathname.startsWith('/privacy') &&
-            !loc.pathname.startsWith('/terms') &&
-            !loc.pathname.startsWith('/barber/') &&
-            loc.pathname !== '/') {
-          nav('/login', { replace: true })
-        }
-        return
-      }
-
-      // LINK IDENTITIES safeguard: prefer primary email lowercase
-      const email = (user.email || user.user_metadata?.email || '').toLowerCase()
-      const userType = user.user_metadata?.user_type as 'client' | 'barber' | undefined
-
-      // Ensure profile (idempotent server call)
       try {
-        const response = await supabase.functions.invoke('ensure-profile', {
-          body: { 
-            userId: user.id, 
-            email,
-            userType,
-            defaults: {
-              first_name: user.user_metadata?.first_name || '',
-              last_name: user.user_metadata?.last_name || '',
-              business_name: user.user_metadata?.business_name,
-              communication_consent: user.user_metadata?.communication_consent ?? false,
-              sms_consent: user.user_metadata?.sms_consent ?? false,
-              email_consent: user.user_metadata?.email_consent ?? false
-            }
-          }
-        });
-
-        if (response.error) {
-          console.warn('Profile ensure failed (continuing anyway):', response.error);
-        }
-      } catch (error) {
-        console.warn('Profile ensure error (continuing anyway):', error);
-      }
-
-      // Route only if you're on auth/onboarding pages or root
-      if (loc.pathname === '/' || 
-          loc.pathname.startsWith('/login') || 
-          loc.pathname.startsWith('/signup') || 
-          loc.pathname.startsWith('/onboarding')) {
+        const user = await getUser()
+        if (!mounted) return
         
-        // Check if user needs onboarding (barbers only)
-        if (userType === 'barber') {
-          try {
-            const { data: barberProfile } = await supabase
-              .from('barber_profiles')
-              .select('id, business_name, city, state, phone, stripe_onboarding_completed')
-              .eq('user_id', user.id)
-              .maybeSingle();
+        if (!user) {
+          // User should be authed but no user found - repair auth
+          const repaired = await repairAuthIfNeeded({ message: 'User not found but authed=true' })
+          if (!repaired && mounted) {
+            nav('/login', { replace: true })
+          }
+          return
+        }
 
-            if (barberProfile) {
-              // Check if onboarding is needed
-              const needsAccount = !barberProfile.business_name || !barberProfile.city || !barberProfile.state || !barberProfile.phone;
-              
-              const { count: hoursCount } = await supabase
-                .from('availability')
-                .select('id', { count: 'exact', head: true })
-                .eq('barber_id', barberProfile.id)
-                .eq('is_available', true);
-                
-              const { count: servicesCount } = await supabase
-                .from('services')
-                .select('id', { count: 'exact', head: true })
-                .eq('barber_id', barberProfile.id)
-                .eq('is_active', true);
-                
-              const needsHours = (hoursCount || 0) === 0;
-              const needsServices = (servicesCount || 0) === 0;
-              const needsStripe = !barberProfile.stripe_onboarding_completed;
+        // LINK IDENTITIES safeguard: prefer primary email lowercase
+        const email = (user.email || user.user_metadata?.email || '').toLowerCase()
 
-              if (needsAccount || needsHours || needsServices || needsStripe) {
-                // Still needs onboarding
-                let step = 'account';
-                if (!needsAccount && needsHours) step = 'hours';
-                else if (!needsAccount && !needsHours && needsServices) step = 'services';
-                else if (!needsAccount && !needsHours && !needsServices && needsStripe) step = 'payouts';
-                
-                nav(`/onboarding/barber?step=${step}`, { replace: true });
-                return;
+        // Ensure profile (idempotent server call)
+        try {
+          const response = await supabase.functions.invoke('ensure-profile', {
+            body: { 
+              userId: user.id, 
+              email,
+              userType: user.user_metadata?.user_type,
+              defaults: {
+                first_name: user.user_metadata?.first_name || '',
+                last_name: user.user_metadata?.last_name || '',
+                business_name: user.user_metadata?.business_name,
+                communication_consent: user.user_metadata?.communication_consent ?? false,
+                sms_consent: user.user_metadata?.sms_consent ?? false,
+                email_consent: user.user_metadata?.email_consent ?? false
               }
             }
-          } catch (error) {
-            console.warn('Error checking barber onboarding status:', error);
+          });
+
+          if (response.error) {
+            console.warn('Profile ensure failed (continuing anyway):', response.error);
           }
+        } catch (error) {
+          console.warn('Profile ensure error (continuing anyway):', error);
         }
+
+        // Route only if you're on auth/landing pages
+        const isOnAuthPage = loc.pathname === '/' || 
+                           loc.pathname.startsWith('/login') || 
+                           loc.pathname.startsWith('/signup') || 
+                           loc.pathname.startsWith('/auth') ||
+                           loc.pathname.startsWith('/forgot-password') ||
+                           loc.pathname.startsWith('/reset-password')
         
-        // Profile exists and complete, go to dashboard
-        nav('/dashboard', { replace: true })
+        if (isOnAuthPage && mounted) {
+          nav('/dashboard', { replace: true })
+        }
+      } catch (error) {
+        console.error('AuthGate profile ensure error:', error)
+        const repaired = await repairAuthIfNeeded(error)
+        if (!repaired && mounted) {
+          nav('/login', { replace: true })
+        }
       }
     })()
-  }, [ready, nav, loc.pathname])
+    
+    return () => { mounted = false }
+  }, [ready, authed, nav, loc.pathname])
+
+  // Handle unauthenticated users
+  useEffect(() => {
+    if (!ready) return
+    
+    if (!authed) {
+      // Allow public pages
+      const publicPaths = [
+        '/',
+        '/login', 
+        '/signup', 
+        '/auth',
+        '/forgot-password',
+        '/reset-password',
+        '/barbers',
+        '/barber/',
+        '/how-it-works',
+        '/pricing',
+        '/support',
+        '/privacy',
+        '/terms'
+      ]
+      
+      const isPublicPath = publicPaths.some(path => 
+        path === '/' ? loc.pathname === '/' : loc.pathname.startsWith(path)
+      )
+      
+      if (!isPublicPath) {
+        nav('/login', { replace: true })
+      }
+    }
+  }, [ready, authed, nav, loc.pathname])
 
   if (!ready) {
     return (

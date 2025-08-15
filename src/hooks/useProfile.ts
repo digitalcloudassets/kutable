@@ -1,24 +1,31 @@
 import { useEffect, useState } from 'react'
-import { supabase, getUserSafe } from '../lib/auth'
+import { supabase, getUser } from '../lib/supabaseClient'
+import { repairAuthIfNeeded } from '../utils/authRepair'
 
 export function useProfile() {
   const [profile, setProfile] = useState<any | null>(null)
   const [profileType, setProfileType] = useState<'client' | 'barber' | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let isMounted = true
+    
     ;(async () => {
-      setLoading(true)
-      const user = await getUserSafe()
-      if (!user) { 
-        setProfile(null)
-        setProfileType(null)
-        setLoading(false)
-        return 
-      }
-
       try {
+        setLoading(true)
+        setError(null)
+        
+        const user = await getUser()
+        if (!isMounted) return
+        
+        if (!user) { 
+          setProfile(null)
+          setProfileType(null)
+          setLoading(false)
+          return 
+        }
+
         // Check for barber profile first
         const { data: barberProfile, error: barberError } = await supabase
           .from('barber_profiles')
@@ -54,20 +61,28 @@ export function useProfile() {
         // No profile found
         setProfile(null)
         setProfileType(null)
-      } catch (error) {
+        setLoading(false)
+      } catch (error: any) {
         console.error('Profile lookup error:', error)
+        
+        // Try to repair auth if it's an auth-related error
+        const repaired = await repairAuthIfNeeded(error)
+        
         if (isMounted) {
+          if (!repaired) {
+            setError('Authentication error - please sign in again')
+          } else {
+            setError('Failed to load profile')
+          }
           setProfile(null)
           setProfileType(null)
-        }
-      } finally {
-        if (isMounted) {
           setLoading(false)
         }
       }
     })()
+    
     return () => { isMounted = false }
   }, [])
 
-  return { profile, profileType, loading }
+  return { profile, profileType, loading, error }
 }

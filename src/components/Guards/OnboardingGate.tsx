@@ -1,12 +1,13 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
 import { useProfile } from '../../hooks/useProfile';
+import { repairAuthIfNeeded } from '../../utils/authRepair';
 
 export function OnboardingGate({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const { profile, profileType, loading: profileLoading } = useProfile();
+  const { profile, profileType, loading: profileLoading, error: profileError } = useProfile();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -15,9 +16,19 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
       // Wait for profile to load
       if (profileLoading) return;
       
+      // Handle profile loading errors
+      if (profileError) {
+        console.warn('Profile loading error in OnboardingGate:', profileError);
+        if (profileError.includes('Authentication error')) {
+          navigate('/login', { replace: true });
+          return;
+        }
+      }
+      
       // Ignore if already on onboarding route
       if (pathname.startsWith('/onboarding/barber')) return;
 
+      // Only check barber onboarding requirements
       if (!user || user.user_metadata?.user_type !== 'barber') return;
 
       // If no barber profile exists, go to onboarding
@@ -27,8 +38,13 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        // Check if they still need onboarding
+        // Check if they still need onboarding steps
         const needAccount = !profile?.city || !profile?.state || !profile?.phone || !profile?.business_name;
+        
+        if (needAccount) {
+          navigate('/onboarding/barber?step=account', { replace: true });
+          return;
+        }
         
         const { count: hours } = await supabase
           .from('availability')
@@ -46,20 +62,27 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
         const needServices = (svc || 0) === 0;
         const needStripe = !profile?.stripe_onboarding_completed;
 
-        if (needAccount || needHours || needServices || needStripe) {
-          let redirectStep = 'account';
-          if (!needAccount && needHours) redirectStep = 'hours';
-          else if (!needAccount && !needHours && needServices) redirectStep = 'services';
-          else if (!needAccount && !needHours && !needServices && needStripe) redirectStep = 'payouts';
-          
-          navigate(`/onboarding/barber?step=${redirectStep}`, { replace: true });
+        if (needHours) {
+          navigate('/onboarding/barber?step=hours', { replace: true });
+        } else if (needServices) {
+          navigate('/onboarding/barber?step=services', { replace: true });
+        } else if (needStripe) {
+          navigate('/onboarding/barber?step=payouts', { replace: true });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error checking onboarding status:', error);
-        // If there's an error, don't block navigation
+        
+        // Try to repair auth if needed
+        const repaired = await repairAuthIfNeeded(error);
+        if (!repaired) {
+          navigate('/login', { replace: true });
+          return;
+        }
+        
+        // If there's an error but auth is OK, don't block navigation
       }
     })();
-  }, [pathname, navigate, user, profile, profileType, profileLoading]);
+  }, [pathname, navigate, user, profile, profileType, profileLoading, profileError]);
 
   return <>{children}</>;
 }
