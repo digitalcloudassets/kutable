@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { User, LogOut, Menu, X, Scissors, Crown, MessageSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -10,6 +11,8 @@ import { chooseDashboard } from '../../utils/appScope';
 import AdminGuardBanner from '../Debug/AdminGuardBanner';
 
 const Header: React.FC = () => {
+  const rootRef = useRef<HTMLDivElement>(null);
+
   // ✅ Always call hooks at top-level, every render
   const navigate = useNavigate();
   const location = useLocation();
@@ -17,6 +20,22 @@ const Header: React.FC = () => {
   const { unreadCount } = useMessaging();
   const { loading: adminLoading, allowed: isAdmin, error: adminError } = useAdminGuard();
   
+  useLayoutEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const update = () =>
+      document.body.classList.contains('app-shell') &&
+      document.body.style.setProperty('--header-h', `${el.offsetHeight}px`);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener('orientationchange', update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('orientationchange', update);
+    };
+  }, []);
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -66,7 +85,7 @@ const Header: React.FC = () => {
   return (
     <>
       <AdminGuardBanner />
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-20 ${
+      <header ref={rootRef} className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-20 ${
         scrolled || !isHomePage 
           ? 'glass-effect border-b border-white/10 shadow-premium-lg' 
           : 'bg-transparent'

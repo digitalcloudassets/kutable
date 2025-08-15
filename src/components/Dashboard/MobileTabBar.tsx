@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useLayoutEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, 
@@ -34,8 +34,25 @@ const MobileTabBar: React.FC<MobileTabBarProps> = ({
   onTabChange,
   unreadCount = 0
 }) => {
+  const barRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const [showMoreSheet, setShowMoreSheet] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const update = () =>
+      document.body.classList.contains('app-shell') &&
+      document.body.style.setProperty('--tabbar-h', `${el.offsetHeight}px`);
+    const ro = new ResizeObserver(update);
+    update();
+    ro.observe(el);
+    window.addEventListener('orientationchange', update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('orientationchange', update);
+    };
+  }, []);
 
   // More menu items for barbers only
   const moreItems: Item[] = useMemo(() => {
@@ -102,7 +119,11 @@ const MobileTabBar: React.FC<MobileTabBarProps> = ({
 
   return (
     <>
-      <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 h-20 border-t bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 px-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <nav
+        ref={barRef}
+        className="md:hidden fixed inset-x-0 bottom-0 z-40 h-20 border-t bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 px-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        role="navigation"
+      >
         <div className="grid h-full" style={{ gridTemplateColumns: `repeat(${tabItems.length}, 1fr)` }}>
           {tabItems.map((item) => (
             <button

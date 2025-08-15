@@ -205,6 +205,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       {/* Header */}
       <div className="bg-white border-b border-gray-200 rounded-t-2xl w-full max-w-none flex-shrink-0 thread-header">
         <div className="section-inner">
+        <div className="section-inner">
         <div className="space-y-3">
           {/* Top row with avatar and name */}
           <div className="flex items-start space-x-3 sm:space-x-6">
@@ -243,6 +244,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
             <span>•</span>
             <span>{formatAppointmentDate(conversation.booking.appointmentDate)} at {formatTimeToAMPM(conversation.booking.appointmentTime)}</span>
           </div>
+        </div>
         </div>
         </div>
       </div>
@@ -304,7 +306,12 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
                     className={`px-4 py-3 rounded-2xl ${
                       isFromMe
                         ? 'bg-primary-500 text-white rounded-br-md'
-                        : 'bg-white text-gray-900 border border-gray-200 rounded-bl-md shadow-sm chat-bubble'
+                        : 'bg-white text-gray-900 border border-gray-200 rounded-bl-md shadow-sm'
+                    }`}
+                    className={`px-4 py-3 rounded-2xl chat-bubble ${
+                      isFromMe
+                        ? 'bg-primary-500 text-white rounded-br-md'
+                        : 'bg-white text-gray-900 border border-gray-200 rounded-bl-md shadow-sm'
                     }`}
                   >
                     <p className="text-sm leading-relaxed">
@@ -356,7 +363,6 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder={`Message ${conversation.participant.name}...`}
-              className="w-full px-3 sm:px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all duration-200 text-base chat-bubble"
               rows={newMessage.includes('\n') ? 3 : 1}
               maxLength={1000}
               disabled={!conversation.participant.id}
