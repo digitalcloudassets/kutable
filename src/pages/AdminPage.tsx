@@ -196,7 +196,7 @@ const AdminPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-gradient-to-r from-white via-gray-50 to-white border-b border-gray-100 shadow-premium page-header-bg -mt-24 pt-24">
+      <header className="bg-gradient-to-r from-white via-gray-50 to-white border-b border-gray-100 shadow-premium page-header-bg md:-mt-24 md:pt-24 mt-0 pt-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center space-x-4">
@@ -318,7 +318,7 @@ const AdminPage: React.FC = () => {
           </div>
 
           {/* Navigation Tabs */}
-          <div className="card-premium hidden md:block">
+          <div className="card-premium hidden md:block admin-quick-actions">
             <div className="border-b border-gray-100">
               <nav className="flex space-x-8 px-8 py-2">
                 {[

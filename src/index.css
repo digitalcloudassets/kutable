@@ -566,7 +566,9 @@ body {
 
 /* Hide desktop admin pills on mobile if they overlap */
 @media (max-width: 767px){
+  .admin-quick-actions,
   .admin-pills { display: none !important; }
+  .dashboard-top-nav { display: none !important; }
 }
 
 /* Medium screens (tablets) */
