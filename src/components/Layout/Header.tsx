@@ -11,6 +11,10 @@ import AdminGuardBanner from '../Debug/AdminGuardBanner';
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // ✅ Do not show the global site header anywhere under /admin
+  if (location.pathname.startsWith('/admin')) return null;
+  
   const { user, loading } = useAuth();
   const { unreadCount } = useMessaging();
   const { allowed: isAdmin, loading: adminLoading, error: adminError } = useAdminGuard();
