@@ -196,7 +196,7 @@ const ClientProfileSettings: React.FC = () => {
     })();
 
     return () => { alive = false; };
-  }, [userId]); // 🔁 Only run when userId is available</parameter>
+  }, [userId, user]); // 🔁 Only run when userId is available
 
 
   const handleSave = async () => {
@@ -712,70 +712,6 @@ const ClientProfileSettings: React.FC = () => {
                     }).catch(error => {
                       console.warn('Error refreshing profile after consent update:', error);
                     });
-                  }
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Account Information */}
-          <div className="pt-6 border-t border-gray-200">
-            <h4 className="text-xl font-display font-bold text-gray-900 mb-6">Account Information</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Account Email</label>
-                <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl">
-                  <div className="bg-gray-200 p-2 rounded-lg">
-                    <Mail className="h-4 w-4 text-gray-600" />
-                  </div>
-                  <span className="text-gray-900 font-medium">{user?.email}</span>
-                </div>
-                <p className="text-sm text-gray-500 mt-2">This is your login email and cannot be changed here</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Account Status</label>
-                <div className="flex items-center space-x-3 p-4 bg-emerald-50 rounded-xl">
-                  <div className="bg-emerald-500 p-2 rounded-lg">
-                    <CheckCircle className="h-4 w-4 text-white" />
-                  </div>
-                  <span className="text-emerald-800 font-semibold">Active</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Contact Preferences Info */}
-          <div className="bg-gradient-to-r from-primary-50 to-accent-50 border border-primary-200 rounded-2xl p-6">
-            <div className="flex items-start space-x-4">
-              <div className="bg-primary-500 p-2 rounded-lg">
-                <Settings className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h5 className="font-semibold text-primary-900 mb-2">Communication Preferences</h5>
-                <p className="text-primary-800 leading-relaxed">
-                  You'll receive booking confirmations, reminders, and updates via your preferred contact method.
-                  {!clientProfile?.phone && clientProfile?.preferred_contact === 'sms' && (
-                    <span className="block mt-2 text-primary-700 font-semibold">
-                      Add a phone number to receive SMS notifications.
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default ClientProfileSettings;
-                      if (result) {
-                        setProfile(result);
-                        setClientProfile(result);
-                      }
-                    }).catch(console.warn);
                   }
                 }}
               />
