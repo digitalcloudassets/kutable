@@ -696,4 +696,8 @@ textarea {
   @media (max-width: 640px) {
     .mobile-stack { @apply flex-col space-y-4 space-x-0; }
   }
+  
+  .app-stack { @apply space-y-6 md:space-y-8; }
+  .app-bleed { @apply w-full; }
+  .app-pad   { @apply p-4 sm:p-6 lg:p-8; }
 }
