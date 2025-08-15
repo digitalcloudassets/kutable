@@ -71,6 +71,9 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
   const [disconnectingStripe, setDisconnectingStripe] = useState(false);
   const [settingUpStripe, setSettingUpStripe] = useState(false);
   
+  const { user } = useAuth();
+  const { isConnected } = useSupabaseConnection();
+  
   // Only use Stripe Connect hook for this user's account
   const { 
     status: stripeStatus, 
@@ -79,9 +82,6 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
     needsAction, 
     refresh: refreshStripeStatus 
   } = useStripeConnect(barber.stripe_account_id, user?.id);
-  
-  const { user } = useAuth();
-  const { isConnected } = useSupabaseConnection();
   
   const [editData, setEditData] = useState({
     business_name: barber.business_name,
