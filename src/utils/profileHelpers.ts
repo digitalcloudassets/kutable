@@ -3,7 +3,10 @@ import { User } from '@supabase/supabase-js';
 
 // Centralized client profile management to prevent duplicates
 export const getOrCreateClientProfile = async (user: User) => {
-  if (!user) return null;
+  if (!user || !user.id) {
+    console.warn('[getOrCreateClientProfile] No user or user.id provided');
+    return null;
+  }
 
   // Check if user is intended to be a barber (don't create client profile)
   if (user.user_metadata?.user_type === 'barber') {

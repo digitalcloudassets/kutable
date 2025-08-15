@@ -20,7 +20,6 @@ import { Database } from '../../lib/supabase';
 import { uploadAvatar } from '../../lib/uploadAvatar';
 import ConsentManagement from './ConsentManagement';
 import { NotificationManager } from '../../utils/notifications';
-import { getOrCreateClientProfile } from '../../utils/profileHelpers';
 import { validateEmail, validatePhone, validateFileUpload } from '../../utils/security';
 
 type ClientProfileRow = Database['public']['Tables']['client_profiles']['Row'];
@@ -116,6 +115,33 @@ const ClientProfileSettings: React.FC = () => {
     profile_image_url: ''
   });
 
+  // Define fetchClientProfile function to refresh profile data
+  const fetchClientProfile = React.useCallback(async () => {
+    if (!userId) {
+      setProfile(null);
+      setClientProfile(null);
+      return;
+    }
+
+    try {
+      const result = await ensureOrFetchClientProfile(userId);
+      if (result) {
+        setProfile(result);
+        setClientProfile(result);
+        setEditData({
+          first_name: result.first_name || '',
+          last_name: result.last_name || '',
+          phone: result.phone || '',
+          email: result.email || '',
+          preferred_contact: result.preferred_contact as 'sms' | 'email' | 'phone' || 'sms',
+          profile_image_url: result.profile_image_url || ''
+        });
+      }
+    } catch (error) {
+      console.warn('[ClientProfile] fetchClientProfile error:', error);
+    }
+  }, [userId]);
+
   useEffect(() => {
     let alive = true;
 
@@ -172,7 +198,6 @@ const ClientProfileSettings: React.FC = () => {
     return () => { alive = false; };
   }, [userId]); // 🔁 Only run when userId is available</parameter>
 
-  // Removed - now handled in useEffect above</parameter>
 
   const handleSave = async () => {
     if (!userId) return;
@@ -219,8 +244,8 @@ const ClientProfileSettings: React.FC = () => {
       if (saveError) throw saveError;
 
       // Update local state
-      setProfile(savedProfile as ClientProfile);
-      setClientProfile(savedProfile as ClientProfile);
+      setProfile(savedProfile as ClientProfileRow);
+      setClientProfile(savedProfile as ClientProfileRow);
       setSoftError(null);
 
       setIsEditing(false);
@@ -309,32 +334,6 @@ const ClientProfileSettings: React.FC = () => {
       if (fileInput) {
         fileInput.value = '';
       }
-    }
-
-    if (clientProfile) {
-      const { error: updateError } = await supabase
-        .from('client_profiles')
-        .update({
-          profile_image_url: avatarUrl,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', clientProfile.id);
-
-      if (updateError) throw updateError;
-
-      // Also update user metadata for immediate display
-      await supabase.auth.updateUser({ 
-        data: { avatar_url: avatarUrl } 
-      });
-
-      // Update local state
-      setEditData(prev => ({ ...prev, profile_image_url: avatarUrl }));
-      setClientProfile(prev => prev ? { ...prev, profile_image_url: avatarUrl } : null);
-      
-      // Refresh the client profile to ensure state consistency
-      await fetchClientProfile();
-      
-      NotificationManager.success('Profile photo updated successfully!');
     }
   };
 
