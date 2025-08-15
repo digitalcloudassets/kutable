@@ -8,7 +8,8 @@ import {
   Users, 
   Phone,
   Scissors,
-  Link as LinkIcon
+  Link as LinkIcon,
+  ExternalLink
 } from 'lucide-react';
 import { Database } from '../../lib/supabase';
 import EditProfileLinkButton from '../Profile/EditProfileLinkButton';
@@ -25,11 +26,30 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
   barber, 
   onEditProfile 
 }) => {
+  // Check if slug is a proper branded slug (not UUID or fallback)
+  const isBrandedSlug = (slug?: string | null): boolean => {
+    if (!slug) return false;
+    
+    // Not a UUID pattern
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (uuidPattern.test(slug)) return false;
+    
+    // Not a fallback pattern like "barber-8620af49"
+    const fallbackPattern = /^barber-[0-9a-f]{8}$/i;
+    if (fallbackPattern.test(slug)) return false;
+    
+    // Must be at least 3 characters and contain meaningful content
+    if (slug.length < 3) return false;
+    
+    return true;
+  };
+
   const handleEditClick = useCallback(() => {
     onEditProfile();
   }, [onEditProfile]);
 
-  const profileUrl = `/barber/${barber.slug && barber.slug !== barber.id ? barber.slug : barber.id}`;
+  // Use branded slug only if it's actually branded, otherwise use ID
+  const profileUrl = isBrandedSlug(barber.slug) ? `/barber/${barber.slug}` : `/barber/${barber.id}`;
 
   return (
     <div className="space-y-8 mb-8">
@@ -89,7 +109,7 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
               rel="noopener noreferrer"
               className="btn-secondary justify-center"
             >
-              <Eye className="h-4 w-4" />
+              <ExternalLink className="h-4 w-4" />
               <span>View Public Profile</span>
             </Link>
           </div>
