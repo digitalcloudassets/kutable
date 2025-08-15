@@ -383,6 +383,24 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
               )}
             </div>
 
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="rounded-xl bg-primary-50 p-2">
+                  <Clock className="h-5 w-5 text-primary-600" />
+                </div>
+                <h3 className="text-2xl font-display font-bold text-gray-900">Business Hours</h3>
+              </div>
+              {barber && (
+                <button
+                  type="button"
+                  className="w-full sm:w-auto rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white shadow hover:bg-blue-700"
+                  onClick={saveAvailability}
+                >
+                  Save Changes
+                </button>
+              )}
+            </div>
+
             {barber ? (
               <div className="space-y-6">
                 {dayNames.map((dayName, dayIndex) => (
@@ -448,7 +466,6 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
             )}
           </div>
         </Surface>
-      )}
       
       {activeTab === 'privacy' && (
         <Surface mdClassName="card-premium p-8">
