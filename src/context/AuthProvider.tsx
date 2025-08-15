@@ -106,3 +106,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
+
+// Re-export useAuth from hooks for legacy imports
+export { useAuth } from '../hooks/useAuth';
