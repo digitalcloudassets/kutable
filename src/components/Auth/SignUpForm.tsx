@@ -27,13 +27,13 @@ const SignUpForm: React.FC = () => {
     password: false,
     confirmPassword: false,
   });
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitting(true);
     setError('');
 
     // Sanitize inputs
@@ -112,6 +112,7 @@ const SignUpForm: React.FC = () => {
     }
 
     try {
+      // Use the existing form data structure
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: cleanPassword,
@@ -141,51 +142,33 @@ const SignUpForm: React.FC = () => {
       const hasSession = !!data.session;
 
       if (formData.userType === 'client') {
-        // Client: fast path - either go to dashboard or sign in
+        // ✅ Client: fast path - either go to dashboard or sign in
         if (hasSession) {
           navigate('/dashboard', { replace: true });
         } else {
-          navigate(`/login?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/dashboard')}`, { replace: true });
+          navigate(`/signin?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/dashboard')}`, { replace: true });
         }
         return;
       }
 
-      // Barber: send to Stripe onboarding (or to login first, then onboarding)
+      // ✅ Barber: send to Stripe onboarding (or to login first, then onboarding)
       if (hasSession) {
         navigate('/onboarding/barber', { replace: true });
       } else {
-        navigate(`/login?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/onboarding/barber')}`, { replace: true });
+        navigate(`/signin?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/onboarding/barber')}`, { replace: true });
       }
 
     } catch (error: any) {
-      // Fallback to admin signup for any unexpected errors
-      try {
-        const user = await adminSignup(cleanEmail, cleanPassword, {
-        first_name: cleanFirstName,
-        last_name: cleanLastName,
-        user_type: formData.userType,
-        communication_consent: formData.communicationConsent,
-        sms_consent: formData.communicationConsent,
-        email_consent: formData.communicationConsent,
-        consent_date: new Date().toISOString(),
-      });
-
-      navigate(`/signup-success?email=${encodeURIComponent(cleanEmail)}&type=${formData.userType}`);
-      } catch (adminError: any) {
-        console.error('Both signup methods failed:', error, adminError);
-        setError(adminError?.message || 'Failed to create account. Please try again.');
-      }
-    } catch (error: any) {
-      // Don't expose internal error details
+      // Keep errors user-friendly
       console.error('Signup error:', error);
       
       if (error.message?.includes('already')) {
         setError('An account with this email already exists. Please sign in instead.');
       } else {
-        setError(error?.message || 'Failed to create account. Please try again.');
+        setError(error?.message || 'Could not create your account. Please try again.');
       }
     } finally {
-      setLoading(false);
+      setSubmitting(false);
       // Clear sensitive data on error
       if (error) {
         setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
@@ -417,11 +400,11 @@ const SignUpForm: React.FC = () => {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={submitting}
               className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-all duration-200"
             >
-              {loading && <Loader className="h-5 w-5 animate-spin" />}
-              {loading ? 'Creating account...' : 'Create Account'}
+              {submitting && <Loader className="h-5 w-5 animate-spin" />}
+              {submitting ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
 
