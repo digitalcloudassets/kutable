@@ -181,6 +181,7 @@ const ClientBookings: React.FC = () => {
     } catch (error) {
       console.warn('[ClientBookings] non-fatal error:', error);
       // Soft-fail: return empty array to keep UI alive
+      setBookings([]);
     } finally {
       setLoading(false);
     }

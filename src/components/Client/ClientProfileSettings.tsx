@@ -117,14 +117,15 @@ const ClientProfileSettings: React.FC = () => {
 
   // Define fetchClientProfile function to refresh profile data
   const fetchClientProfile = React.useCallback(async () => {
-    if (!userId) {
+    const uid = userId ?? null;
+    if (!uid) {
       setProfile(null);
       setClientProfile(null);
       return;
     }
 
     try {
-      const result = await ensureOrFetchClientProfile(userId);
+      const result = await ensureOrFetchClientProfile(uid);
       if (result) {
         setProfile(result);
         setClientProfile(result);
@@ -140,14 +141,14 @@ const ClientProfileSettings: React.FC = () => {
     } catch (error) {
       console.warn('[ClientProfile] fetchClientProfile error:', error);
     }
-  }, [userId]);
 
   useEffect(() => {
     let alive = true;
 
     (async () => {
       // 🚫 Never hit Supabase with undefined user_id
-      if (!userId) {
+      const uid = userId ?? null;
+      if (!uid) {
         setLoading(false);          // clear any spinners
         setSoftError(null);         // don't show scary messages
         setProfile(null);           // nothing yet
@@ -159,7 +160,7 @@ const ClientProfileSettings: React.FC = () => {
 
       // Cap the whole operation so UI never hangs
       const result = await Promise.race([
-        ensureOrFetchClientProfile(userId),
+        ensureOrFetchClientProfile(uid),
         new Promise<null>(res => setTimeout(() => res(null), 4000)),
       ]);
 
@@ -200,7 +201,8 @@ const ClientProfileSettings: React.FC = () => {
 
 
   const handleSave = async () => {
-    if (!userId) return;
+    const uid = userId ?? null;
+    if (!uid) return;
 
     // Validation
     if (!editData.first_name.trim() || !editData.last_name.trim()) {
@@ -224,7 +226,7 @@ const ClientProfileSettings: React.FC = () => {
 
     try {
       const payload = {
-        user_id: user.id,
+        user_id: uid,
         first_name: editData.first_name.trim(),
         last_name: editData.last_name.trim(),
         phone: editData.phone.trim() || null,

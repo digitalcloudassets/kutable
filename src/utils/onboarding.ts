@@ -7,31 +7,37 @@ type MinimalChecks = {
   hasBarberProfile: boolean;
   payoutsEnabled: boolean;
   hasAnyBooking: boolean;
-  hasActiveSub: boolean; // optional, defaults to false
 };
 
 async function getMinimalChecks(userId: string): Promise<MinimalChecks> {
+  // 1) Get profile ids first
   const [{ data: cp }, { data: bp }] = await Promise.all([
     supabase.from('client_profiles').select('id').eq('user_id', userId).maybeSingle(),
     supabase.from('barber_profiles').select('id,stripe_onboarding_completed').eq('user_id', userId).maybeSingle(),
   ]);
 
-  // any booking tied to client or to the user's barber profile
-  const { data: bks } = await supabase
-    .from('bookings')
-    .select('id')
-    .or(`client_id.in.(${cp?.id || 'null'}),barber_id.in.(${bp?.id || 'null'})`)
-    .limit(1);
+  let hasAnyBooking = false;
+  if (cp?.id || bp?.id) {
+    // 2) Only query bookings if we have a real id; avoid in.(null)
+    const orParts: string[] = [];
+    if (cp?.id) orParts.push(`client_id.eq.${cp.id}`);
+    if (bp?.id) orParts.push(`barber_id.eq.${bp.id}`);
 
-  // optional subscription status table. If you do not have one, leave false.
-  let hasActiveSub = false;
+    if (orParts.length > 0) {
+      const { data: bks } = await supabase
+        .from('bookings')
+        .select('id')
+        .or(orParts.join(','))
+        .limit(1);
+      hasAnyBooking = !!(bks && bks.length > 0);
+    }
+  }
 
   return {
     hasClientProfile: !!cp?.id,
     hasBarberProfile: !!bp?.id,
     payoutsEnabled: !!bp?.stripe_onboarding_completed,
-    hasAnyBooking: !!(bks && bks.length > 0),
-    hasActiveSub,
+    hasAnyBooking,
   };
 }
 
@@ -44,21 +50,21 @@ export async function computeOnboardingState(userId: string): Promise<Onboarding
         hasBarberProfile: false,
         payoutsEnabled: false,
         hasAnyBooking: false,
-        hasActiveSub: false,
       }), 3500)
     ),
   ]);
 
-  // Clients with a profile are done. Do not send to Stripe.
+  // Clients with a profile are DONE — never send them to Stripe.
   if (checks.hasClientProfile) return 'complete';
 
-  // Barbers without payouts go to payouts
+  // Barbers without payouts go to payouts.
   if (checks.hasBarberProfile && !checks.payoutsEnabled) return 'needs_payouts';
 
-  // Any signal of history counts as complete
-  if (checks.hasBarberProfile || checks.hasAnyBooking || checks.hasActiveSub || localStorage.getItem('kutable:returning') === '1') {
+  // Any sign of prior use counts as complete.
+  if (checks.hasBarberProfile || checks.hasAnyBooking || localStorage.getItem('kutable:returning') === '1') {
     return 'complete';
   }
 
+  // Otherwise, treat as new and send to profile onboarding.
   return 'needs_profile';
 }

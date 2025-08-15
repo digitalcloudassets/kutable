@@ -3,8 +3,8 @@ import { User } from '@supabase/supabase-js';
 
 // Centralized client profile management to prevent duplicates
 export const getOrCreateClientProfile = async (user: User) => {
-  const userId = user?.id ?? null;
-  if (!user || !userId) {
+  const uid = user?.id ?? null;
+  if (!user || !uid) {
     console.warn('[getOrCreateClientProfile] No user or user.id provided');
     return null;
   }
@@ -20,7 +20,7 @@ export const getOrCreateClientProfile = async (user: User) => {
     let { data: existingProfile } = await supabase
       .from('client_profiles')
       .select('id, user_id, email')
-      .eq('user_id', userId)
+      .eq('user_id', uid)
       .maybeSingle();
 
     if (existingProfile) {
@@ -41,7 +41,7 @@ export const getOrCreateClientProfile = async (user: User) => {
         const { data: updatedProfile, error: updateError } = await supabase
           .from('client_profiles')
           .update({ 
-            user_id: userId,
+            user_id: uid,
             updated_at: new Date().toISOString()
           })
           .eq('id', profileByEmail.id)
@@ -53,9 +53,6 @@ export const getOrCreateClientProfile = async (user: User) => {
         } else {
           console.error('❌ Failed to fix user_id mismatch:', updateError);
         }
-        if (session?.user) {
-          await supabase.auth.updateUser({ data: { avatar_url: url } });
-        }
       }
     }
 
@@ -64,7 +61,7 @@ export const getOrCreateClientProfile = async (user: User) => {
     const { data: newProfile, error: createError } = await supabase
       .from('client_profiles')
       .upsert({
-        user_id: userId,
+        user_id: uid,
         first_name: user.user_metadata?.first_name || '',
         last_name: user.user_metadata?.last_name || '',
         email: user.email || '',

@@ -15,18 +15,20 @@ export default function OnboardingGuard({ children }: Props) {
     let alive = true;
 
     const run = async () => {
+      // Wait for auth settle (max 4s)
       const start = Date.now();
       while (loading && Date.now() - start < 4000) {
         await new Promise(r => setTimeout(r, 50));
       }
 
-      if (!user?.id) { 
+      const uid = user?.id ?? null;
+      if (!uid) { 
         setChecking(false); 
-        return; 
+        return; // let login UI handle it
       }
 
       try {
-        const state = await computeOnboardingState(user.id);
+        const state = await computeOnboardingState(uid);
         const onOnboarding = loc.pathname.startsWith('/onboarding') || loc.search.includes('step=');
 
         if (state === 'complete') {
