@@ -470,9 +470,9 @@ const ClientBookings: React.FC = () => {
       </div>
 
       {/* Bookings List */}
-      <div className="space-y-4">
+      <div className="space-y-1 app-list">
         {filteredBookings.length === 0 ? (
-          <div className="card-premium p-6 sm:p-12 text-center">
+          <div className="text-center py-12 px-4">
             <div className="bg-gray-100 w-24 h-24 rounded-3xl flex items-center justify-center mx-auto mb-8">
               <Calendar className="h-12 w-12 text-gray-400" />
             </div>
@@ -502,10 +502,10 @@ const ClientBookings: React.FC = () => {
             return (
               <div 
                 key={booking.id} 
-                className={`card-premium p-4 sm:p-6 transition-all duration-200 hover:shadow-lg ${
+                className={`app-item transition-all duration-200 hover:bg-gray-50 ${
                   upcoming && booking.status === 'confirmed' 
-                    ? 'border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-primary-50/30' 
-                    : ''
+                    ? 'bg-gradient-to-br from-emerald-50/50 to-primary-50/30' 
+                    : 'bg-white'
                 }`}
               >
                 <div className="flex flex-col gap-4">

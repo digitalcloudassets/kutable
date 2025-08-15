@@ -291,8 +291,10 @@ const DashboardPage: React.FC = () => {
           
           {import.meta.env.DEV && <AdminDebugPanel />}
           
-          <section className="rounded-3xl border bg-white app-bleed app-pad">
+          <section className="rounded-3xl border bg-white app-full">
+            <div className="px-4 py-6">
             <ClientDashboardHeader user={user} clientProfile={clientProfile} />
+            </div>
           </section>
 
           <DashboardNavigation 
@@ -302,8 +304,10 @@ const DashboardPage: React.FC = () => {
             unreadCount={unreadCount}
           />
 
-          <section className="rounded-3xl border bg-white app-bleed app-pad">
+          <section className="rounded-3xl border bg-white app-full">
+            <div className="px-4 py-6">
             <ClientDashboardContent activeTab={activeTab} />
+            </div>
           </section>
         </div>
       </div>
@@ -319,11 +323,13 @@ const DashboardPage: React.FC = () => {
           
           {import.meta.env.DEV && <AdminDebugPanel />}
           
-          <section className="rounded-3xl border bg-white app-bleed app-pad">
+          <section className="rounded-3xl border bg-white app-full">
+            <div className="px-4 py-6">
             <BarberDashboardHeader 
               barber={barber}
               onEditProfile={handleEditProfile}
             />
+            </div>
           </section>
 
           <DashboardNavigation 
@@ -333,7 +339,8 @@ const DashboardPage: React.FC = () => {
             unreadCount={unreadCount}
           />
 
-          <section className="rounded-3xl border bg-white app-bleed app-pad">
+          <section className="rounded-3xl border bg-white app-full">
+            <div className="px-4 py-6">
             <BarberDashboardContent 
               activeTab={activeTab}
               barber={barber}
@@ -342,6 +349,7 @@ const DashboardPage: React.FC = () => {
               triggerEdit={triggerEdit}
               onTriggerEditChange={handleTriggerEditChange}
             />
+            </div>
           </section>
         </div>
       </div>
@@ -353,8 +361,10 @@ const DashboardPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="container app-stack py-8 pt-28">
         <SupabaseConnectionBanner isConnected={isConnected} />
-        <section className="rounded-3xl border bg-white app-bleed app-pad">
+        <section className="rounded-3xl border bg-white app-full">
+          <div className="px-4 py-6">
           <FallbackDashboard />
+          </div>
         </section>
         {import.meta.env.DEV && <AdminDebugPanel />}
       </div>
