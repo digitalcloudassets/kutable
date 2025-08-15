@@ -19,9 +19,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Initial boot with a safety timeout
   useEffect(() => {
     let mounted = true;
-    const timeout = setTimeout(() => {
+    const bootTimeout = setTimeout(() => {
       if (mounted && loading) {
-        console.warn('Auth boot timeout → continuing without session');
+        console.warn('Auth boot timeout -> continuing without session');
         setLoading(false);
       }
     }, 8000);
@@ -40,30 +40,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(data.session ?? null);
       } catch (err) {
         console.error('Auth boot error:', err);
-        try {
+        try { await repairAuthIfNeeded(err); } catch {}
           await repairAuthIfNeeded(err);
         } catch {}
       } finally {
         if (mounted) {
           setLoading(false);
-          console.log('AUTH READY →', { user: !!session?.user });
+          console.log('AUTH READY →', { user: !!(data?.session?.user) });
         }
       }
     })();
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!mounted) return;
-      // Use Supabase's session directly; don't re-fetch here
       setSession(newSession ?? null);
     });
 
     return () => {
       mounted = false;
-      clearTimeout(timeout);
+      clearTimeout(bootTimeout);
       clearTimeout(timeout);
       sub?.subscription?.unsubscribe?.();
     };
-  }, []); // eslint-disable-line
+  }, []); // ignore deps for this boot effect
 
   // One-time deferred avatar upload after login
   useEffect(() => {
