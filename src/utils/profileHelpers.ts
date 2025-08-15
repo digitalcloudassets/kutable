@@ -63,7 +63,7 @@ export const getOrCreateClientProfile = async (user: User) => {
         email: user.email || '',
         phone: '',
         preferred_contact: 'sms',
-        profile_image_url: null,
+        profile_image_url: null, // Explicit null - no default avatar
         updated_at: new Date().toISOString()
       }, {
         onConflict: 'user_id'

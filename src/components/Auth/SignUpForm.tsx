@@ -149,6 +149,7 @@ const SignUpForm: React.FC = () => {
             first_name: cleanFirstName,
             last_name: cleanLastName,
             email: cleanEmail,
+            profile_image_url: null, // No default avatar for new clients
             communication_consent: formData.communicationConsent,
             sms_consent: formData.communicationConsent,
             email_consent: formData.communicationConsent,
@@ -160,7 +161,7 @@ const SignUpForm: React.FC = () => {
 
       if (formData.userType === 'client') {
         if (hasSession) {
-          navigate('/dashboard', { replace: true });
+          navigate('/dashboard', { replace: true }); // Go straight to dashboard
         } else {
           navigate(`/login?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/dashboard')}`, { replace: true });
         }
@@ -169,7 +170,7 @@ const SignUpForm: React.FC = () => {
 
       // Barber: send to Stripe onboarding
       if (hasSession) {
-        navigate('/onboarding/barber?step=account', { replace: true });
+        navigate('/onboarding/barber?step=account', { replace: true }); // Barber engine
       } else {
         navigate(`/login?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/onboarding/barber?step=account')}`, { replace: true });
       }
