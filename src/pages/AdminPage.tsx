@@ -31,6 +31,7 @@ import SupabaseConnectionBanner from '../components/Setup/SupabaseConnectionBann
 import { fetchAdminKpis, AdminKPIs } from '../api/adminKpis';
 import { NotificationManager } from '../utils/notifications';
 import { updateAllBarberSlugs } from '../utils/updateBarberSlugs';
+import AdminMobileNav from '../components/Admin/AdminMobileNav';
 
 const AdminPage: React.FC = () => {
   const navigate = useNavigate();
@@ -244,8 +245,16 @@ const AdminPage: React.FC = () => {
         </div>
       </header>
 
+      {/* Mobile Navigation */}
+      <AdminMobileNav 
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      />
+
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-[var(--admin-nav-h,0px)] md:pt-8">
         <SupabaseConnectionBanner isConnected={isConnected} />
         
         <div className="space-y-8">
@@ -309,7 +318,7 @@ const AdminPage: React.FC = () => {
           </div>
 
           {/* Navigation Tabs */}
-          <div className="card-premium">
+          <div className="card-premium hidden md:block">
             <div className="border-b border-gray-100">
               <nav className="flex space-x-8 px-8 py-2">
                 {[
@@ -335,7 +344,10 @@ const AdminPage: React.FC = () => {
                 ))}
               </nav>
             </div>
+          </div>
 
+          {/* Tab Content */}
+          <div className="card-premium md:mt-0 -mt-8">
             <div className="p-8">
               {/* Overview Tab */}
               {activeTab === 'overview' && (

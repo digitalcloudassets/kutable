@@ -560,6 +560,15 @@ body {
   display: none;
 }
 
+/* Admin mobile nav utilities */
+.no-scrollbar::-webkit-scrollbar{ display:none; }
+.no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
+
+/* Hide desktop admin pills on mobile if they overlap */
+@media (max-width: 767px){
+  .admin-pills { display: none !important; }
+}
+
 /* Medium screens (tablets) */
 @media (min-width: 641px) and (max-width: 1024px) {
   .tablet-adjustments {
