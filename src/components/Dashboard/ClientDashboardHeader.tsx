@@ -12,35 +12,29 @@ interface ClientDashboardHeaderProps {
 
 const ClientDashboardHeader = React.memo<ClientDashboardHeaderProps>(({ user, clientProfile }) => {
   return (
-    <div className="card-premium p-8 mb-8 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary-500/10 to-accent-500/10 rounded-full blur-2xl"></div>
-      <div className="relative z-10 flex items-center space-x-6">
+    <div className="card-premium p-5 md:p-6 mb-8">
+      <div className="flex items-center justify-center">
         <div className="relative">
-          {clientProfile?.profile_image_url ? (
-            <img
-              src={clientProfile.profile_image_url}
-              alt="Profile"
-              className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-premium"
-            />
-          ) : (
-            <div className="bg-gradient-to-br from-primary-500 to-accent-500 w-20 h-20 rounded-2xl flex items-center justify-center shadow-premium">
-              <User className="h-10 w-10 text-white" />
-            </div>
-          )}
-          <div className="absolute -bottom-1 -right-1 bg-accent-500 text-white p-1.5 rounded-lg shadow-lg">
-            <User className="h-3 w-3" />
+          {/* Avatar */}
+          <div className="h-24 w-24 md:h-28 md:w-28 overflow-hidden rounded-full ring-8 ring-white shadow">
+            {clientProfile?.profile_image_url ? (
+              <img
+                src={clientProfile.profile_image_url}
+                alt="Profile"
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="bg-gradient-to-br from-primary-500 to-accent-500 h-full w-full flex items-center justify-center">
+                <User className="h-12 w-12 md:h-14 md:w-14 text-white" />
+              </div>
+            )}
           </div>
-        </div>
-        <div>
-          <div className="flex items-center space-x-3 mb-2">
-            <h1 className="text-3xl font-display font-bold text-gray-900">
-              Welcome back, {clientProfile?.first_name || user.user_metadata?.first_name || 'Friend'}!
-            </h1>
-            <div className="bg-accent-100 text-accent-700 px-3 py-1 rounded-full text-sm font-medium">
-              Client
-            </div>
-          </div>
-          <p className="text-gray-600 text-lg">Manage your appointments and discover amazing barbers</p>
+
+          {/* Badge */}
+          <span className="absolute -bottom-1 -right-1 rounded-full bg-accent-600 text-white px-2 py-0.5 text-xs font-semibold shadow">
+            Client
+          </span>
         </div>
       </div>
     </div>
