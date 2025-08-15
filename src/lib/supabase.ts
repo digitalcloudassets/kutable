@@ -47,5 +47,5 @@ export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey, {
 // ✅ Pin Functions base URL to prevent invoke() going to wrong host
 if (env.supabaseFunctionsUrl) {
   (supabase as any)._functionsUrl = env.supabaseFunctionsUrl;
-}</action>
+}
 export type { Database } from './database.types';
