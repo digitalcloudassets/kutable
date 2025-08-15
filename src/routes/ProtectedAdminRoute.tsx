@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAdminGuard } from "../hooks/useAdminGuard";
 import { devPreviewEnabled } from "../lib/devFlags";
 import { useAuth } from "../context/AuthProvider";
+import { useAuth } from "../context/AuthProvider";
 
 type Props = { children: React.ReactNode };
 
@@ -10,7 +11,7 @@ export default function ProtectedAdminRoute({ children }: Props) {
   if (devPreviewEnabled()) return <>{children}</>; // bypass in Bolt preview only
   
   const { loading: authLoading } = useAuth();
-  const { loading, allowed, errorMsg } = useAdminGuard();
+  const { loading, allowed, error: adminError } = useAdminGuard();
 
   // Wait for auth to be ready before evaluating admin status
   if (authLoading) {
@@ -22,11 +23,11 @@ export default function ProtectedAdminRoute({ children }: Props) {
   }
 
   // If the guard itself errored (CORS/preview), don't imply the *login* failed.
-  if (errorMsg && allowed === false) {
+  if (adminError && allowed === false) {
     return (
       <div className="p-4">
         <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          Admin check failed: {errorMsg}. If you're in a preview environment, this may be expected.
+          Admin check failed: {adminError}. If you're in a preview environment, this may be expected.
         </div>
         <Navigate to="/dashboard" replace />
       </div>

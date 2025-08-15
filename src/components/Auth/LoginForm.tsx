@@ -5,7 +5,8 @@ import { supabase } from '../../lib/supabase';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { validateEmail, sanitizeInput, rateLimiter, bruteForceProtection } from '../../utils/security';
 import { devPreviewEnabled, shouldBypassConnectionChecks } from '../../lib/devFlags';
-import { useAuth } from '../../context/AuthProvider';
+import { useAuth } from '../../hooks/useAuth';
+import TurnstileGate from '../Security/TurnstileGate';
 
 const LoginForm: React.FC = () => {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   // If already logged in, redirect away (prevents loop)
   if (user) {
@@ -152,6 +154,8 @@ const LoginForm: React.FC = () => {
           <h2 className="text-4xl font-display font-bold text-gray-900 mb-4">Welcome back</h2>
           <p className="text-xl text-gray-600 font-medium">Sign in to your Kutable account</p>
         </div>
+
+        <TurnstileGate onVerify={setCaptchaToken} />
 
         <div className="card-premium p-8 relative z-10 animate-fade-in-up">
           <form onSubmit={handleSubmit} className="space-y-6">
