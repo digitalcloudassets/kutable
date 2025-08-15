@@ -36,12 +36,11 @@ const MessagingDashboard: React.FC = () => {
       )}
       
     <section className="card-premium p-0">
-      <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] h-[calc(100vh-var(--site-header-h,80px)-160px)]">
-        {/* LEFT: conversation sidebar - Desktop only */}
-        <aside className={`border-r bg-white flex-col ${
-          showMobileThread ? 'hidden' : 'flex md:flex'
-        } md:flex`}>
-          {/* Sidebar header */}
+
+      {/* ============ MOBILE: restore the OLD layout ============ */}
+      <div className="md:hidden">
+        <div className="flex flex-col h-[calc(100vh-var(--site-header-h,80px)-96px)] bg-white">
+          {/* Mobile header */}
           <div className="p-4 border-b bg-gradient-to-r from-primary-50 to-accent-50">
             <div className="flex items-center space-x-3">
               <div className="bg-primary-500 p-2 rounded-xl">
@@ -50,24 +49,21 @@ const MessagingDashboard: React.FC = () => {
               <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
             </div>
           </div>
-          
-          {/* Conversation list */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <ConversationList
-              onSelectConversation={handleSelectConversation}
-              selectedConversationId={selectedConversation?.bookingId}
-            />
-          </div>
-        </aside>
 
-        {/* RIGHT: chat pane */}
-        <div className={`flex flex-col bg-gray-50/50 ${
-          showMobileThread ? 'flex' : 'hidden md:flex'
-        }`}>
-          {selectedConversation ? (
+          {/* Show conversation list or selected thread */}
+          {!showMobileThread ? (
+            /* Conversation List View */
+            <div className="flex-1 overflow-y-auto p-4">
+              <ConversationList
+                onSelectConversation={handleSelectConversation}
+                selectedConversationId={selectedConversation?.bookingId}
+              />
+            </div>
+          ) : selectedConversation ? (
+            /* Message Thread View */
             <>
               {/* Mobile back button */}
-              <div className="md:hidden bg-white border-b border-gray-200 p-3">
+              <div className="bg-white border-b border-gray-200 p-3">
                 <button
                   onClick={handleBackToList}
                   className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
@@ -82,22 +78,58 @@ const MessagingDashboard: React.FC = () => {
                 onBack={handleBackToList}
               />
             </>
-          ) : (
-            /* Empty State */
-            <div className="flex-1 flex items-center justify-center bg-gray-50 min-h-[300px]">
-              <div className="text-center max-w-sm mx-auto px-4">
-                <div className="bg-gradient-to-br from-primary-100 to-accent-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                  <Users className="h-10 w-10 text-primary-600" />
+          ) : null}
+        </div>
+      </div>
+
+      {/* ============ DESKTOP: keep the NEW layout ============ */}
+      <div className="hidden md:block">
+        <div className="grid grid-cols-[320px_1fr] h-[calc(100vh-var(--site-header-h,80px)-160px)]">
+          {/* LEFT: conversation sidebar - Desktop only */}
+          <aside className="border-r bg-white flex-col flex">
+            {/* Sidebar header */}
+            <div className="p-4 border-b bg-gradient-to-r from-primary-50 to-accent-50">
+              <div className="flex items-center space-x-3">
+                <div className="bg-primary-500 p-2 rounded-xl">
+                  <MessageSquare className="h-5 w-5 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  Select a conversation
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  Choose a conversation from the list to start messaging with your {user ? 'clients or barbers' : 'barber or customers'}.
-                </p>
+                <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
               </div>
             </div>
-          )}
+            
+            {/* Conversation list */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <ConversationList
+                onSelectConversation={handleSelectConversation}
+                selectedConversationId={selectedConversation?.bookingId}
+              />
+            </div>
+          </aside>
+
+          {/* RIGHT: chat pane */}
+          <div className="flex flex-col bg-gray-50/50">
+            {selectedConversation ? (
+              <MessageThread 
+                conversation={selectedConversation}
+                onBack={handleBackToList}
+              />
+            ) : (
+              /* Empty State */
+              <div className="flex-1 flex items-center justify-center bg-gray-50 min-h-[300px]">
+                <div className="text-center max-w-sm mx-auto px-4">
+                  <div className="bg-gradient-to-br from-primary-100 to-accent-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                    <Users className="h-10 w-10 text-primary-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                    Select a conversation
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    Choose a conversation from the list to start messaging with your {user ? 'clients or barbers' : 'barber or customers'}.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </section>
