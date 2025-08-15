@@ -169,9 +169,9 @@ const SignUpForm: React.FC = () => {
 
       // Barber: send to Stripe onboarding
       if (hasSession) {
-        navigate('/onboarding/barber', { replace: true });
+        navigate('/onboarding/barber?step=account', { replace: true });
       } else {
-        navigate(`/login?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/onboarding/barber')}`, { replace: true });
+        navigate(`/login?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/onboarding/barber?step=account')}`, { replace: true });
       }
 
     } catch (error: any) {

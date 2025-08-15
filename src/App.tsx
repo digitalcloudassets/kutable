@@ -36,6 +36,8 @@ import SignUpForm from './components/Auth/SignUpForm';
 import SignUpSuccessPage from './pages/SignUpSuccessPage';
 import ForgotPassword from './components/Auth/ForgotPassword';
 import ResetPassword from './components/Auth/ResetPassword';
+import BarberOnboardingEngine from './pages/Onboarding/BarberOnboardingEngine';
+import { OnboardingGate } from './components/Guards/OnboardingGate';
 
 // Error handler
 setupGlobalErrorHandling();
@@ -62,6 +64,7 @@ function App() {
           <Header />
 
           <main className="flex-1">
+            <OnboardingGate>
             <Routes>
               <Route path="/" element={<HomeGate />} />
               <Route path="/login" element={<LoginForm />} />
@@ -76,6 +79,7 @@ function App() {
               <Route path="/book/:barberSlug/:serviceId?" element={<BookingFlow />} />
               <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/onboarding/barber" element={<BarberOnboarding />} />
+              <Route path="/onboarding/barber" element={<BarberOnboardingEngine />} />
               <Route
                 path="/admin"
                 element={
@@ -94,6 +98,7 @@ function App() {
               <Route path="/privacy" element={<PrivacyPolicyPage />} />
               <Route path="/terms" element={<TermsOfServicePage />} />
             </Routes>
+            </OnboardingGate>
           </main>
 
           <Footer />
