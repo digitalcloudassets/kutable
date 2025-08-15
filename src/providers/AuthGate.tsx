@@ -1,210 +1,91 @@
-import React, { useEffect, useState } from 'react'
-import { supabase, getSession, getUser } from '../lib/supabaseClient'
-import { repairAuthIfNeeded } from '../utils/authRepair'
-import { useNavigate, useLocation } from 'react-router-dom'
+import React from 'react';
+import { useAuth } from '../context/AuthProvider';
+import { supabase } from '../lib/supabaseClient';
 
-export default function AuthGate({ children }: { children: React.ReactNode }) {
-  const nav = useNavigate()
-  const loc = useLocation()
-  const [ready, setReady] = useState(false)
-  const [authed, setAuthed] = useState(false)
-  
-  // Add breadcrumb logging
-  console.log('[AuthGate] render', { ready, authed });
+type Props = { children: React.ReactNode };
 
-  // 1) Hydrate session FIRST
-  useEffect(() => {
-    let mounted = true
-    
-    const handleAuthChange = async (event: string, session: any) => {
-      if (!mounted) return
-      
-      // Handle sign out event specifically
-      if (event === 'SIGNED_OUT') {
-        setAuthed(false)
-        setReady(true)
-        return
+export default function AuthGate({ children }: Props) {
+  const { loading, user } = useAuth();
+
+  const [ready, setReady] = React.useState(false);
+  const [reason, setReason] = React.useState<'boot'|'no-user'|'ok'|'profile-error'|'timeout'>('boot');
+
+  React.useEffect(() => {
+    let alive = true;
+
+    const run = async () => {
+      // 1) Wait for AuthProvider to settle, but cap at 6s
+      const start = Date.now();
+      while (loading && Date.now() - start < 6000) {
+        await new Promise(r => setTimeout(r, 50));
       }
-      
-      // For other events, verify the session is actually valid
+
+      // 2) If no user after auth settles, allow the app to render (your login UI should handle it)
+      if (!user) {
+        if (!alive) return;
+        setReason('no-user');
+        setReady(true);
+        return;
+      }
+
+      // 3) Minimal profile ensure, with a hard 3s cap so we never spin forever
       try {
-        const currentSession = await getSession()
-        setAuthed(!!currentSession)
-        setReady(true)
-      } catch (error) {
-        const repaired = await repairAuthIfNeeded(error)
-        if (mounted) {
-          setAuthed(false)
-          setReady(true)
+        const ensure = async () => {
+          const { data, error } = await supabase
+            .from('barber_profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          if (error) throw error;
+          // You can add lightweight "create if missing" here if you have an Edge Function
+          return true;
+        };
+
+        const ok = await Promise.race([
+          ensure().then(() => true),
+          new Promise<boolean>(res => setTimeout(() => res(false), 3000))
+        ]);
+
+        if (!alive) return;
+
+        if (!ok) {
+          console.warn('[AuthGate] profile check timed out → proceeding');
+          setReason('timeout');
+          setReady(true);
+          return;
         }
+
+        setReason('ok');
+        setReady(true);
+      } catch (e) {
+        console.error('[AuthGate] profile ensure failed:', e);
+        if (!alive) return;
+        // Fail open: render the app with a soft error
+        setReason('profile-error');
+        setReady(true);
       }
-    }
+    };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange)
-    
-    // Initial session check
-    ;(async () => {
-      try {
-        const session = await getSession()
-        if (mounted) {
-          setAuthed(!!session)
-          setReady(true)
-        }
-      } catch (error) {
-        const repaired = await repairAuthIfNeeded(error)
-        if (mounted) {
-          setAuthed(false)
-          setReady(true)
-        }
-      }
-    })()
-    
-    return () => {
-      mounted = false
-      subscription.unsubscribe()
-    }
-  }, [])
+    run();
+    return () => { alive = false; };
+  }, [loading, user?.id]); // important: re-run when loading flips OR user changes
 
-  // 2) If logged in, ensure profile exactly once (server idempotent)
-  useEffect(() => {
-    if (!ready || !authed) return
-    
-    let mounted = true
-    
-    ;(async () => {
-      try {
-        const user = await getUser()
-        if (!mounted) return
-        
-        if (!user) {
-          // User should be authed but no user found - repair auth
-          const repaired = await repairAuthIfNeeded({ message: 'User not found but authed=true' })
-          if (!repaired && mounted) {
-            nav('/login', { replace: true })
-          }
-          return
-        }
-
-        // Ensure profile (idempotent server call)
-        try {
-          const email = (user.email || user.user_metadata?.email || '').toLowerCase()
-          
-          const response = await supabase.functions.invoke('ensure-profile', {
-            body: { 
-              userId: user.id, 
-              email,
-              userType: user.user_metadata?.user_type,
-              defaults: {
-                first_name: user.user_metadata?.first_name || '',
-                last_name: user.user_metadata?.last_name || '',
-                business_name: user.user_metadata?.business_name,
-                communication_consent: user.user_metadata?.communication_consent ?? false,
-                sms_consent: user.user_metadata?.sms_consent ?? false,
-                email_consent: user.user_metadata?.email_consent ?? false
-              }
-            }
-          });
-
-          if (response.error) {
-            console.warn('Profile ensure failed, fallback to direct check:', response.error);
-            
-            // Fallback: check if any profile exists for this user
-            const { data: existingClient } = await supabase
-              .from('client_profiles')
-              .select('id')
-              .eq('user_id', user.id)
-              .maybeSingle();
-              
-            if (!existingClient) {
-              const { data: existingBarber } = await supabase
-                .from('barber_profiles')
-                .select('id')
-                .eq('user_id', user.id)
-                .maybeSingle();
-                
-              if (!existingBarber) {
-                // No profile exists, redirect to general onboarding (not forcing barber mode)
-                nav('/onboarding', { replace: true });
-                return;
-              }
-            }
-          }
-        } catch (error) {
-          console.warn('Profile ensure error (continuing anyway):', error);
-        }
-
-        // Route only if you're on auth/landing pages
-        const isOnAuthPage = loc.pathname === '/' || 
-                           loc.pathname.startsWith('/login') || 
-                           loc.pathname.startsWith('/signup') || 
-                           loc.pathname.startsWith('/auth') ||
-                           loc.pathname.startsWith('/forgot-password') ||
-                           loc.pathname.startsWith('/reset-password')
-        
-        if (isOnAuthPage && mounted) {
-          nav('/dashboard', { replace: true })
-        }
-      } catch (error) {
-        console.error('AuthGate profile ensure error:', error)
-        const repaired = await repairAuthIfNeeded(error)
-        if (!repaired && mounted) {
-          nav('/login', { replace: true })
-        }
-      }
-    })()
-    
-    return () => { mounted = false }
-  }, [ready, authed, nav, loc.pathname])
-
-  // Handle unauthenticated users
-  useEffect(() => {
-    if (!ready) return
-    
-    if (!authed) {
-      // Allow public pages
-      const publicPaths = [
-        '/',
-        '/login', 
-        '/signup', 
-        '/auth',
-        '/forgot-password',
-        '/reset-password',
-        '/barbers',
-        '/barber/',
-        '/how-it-works',
-        '/pricing',
-        '/support',
-        '/privacy',
-        '/terms'
-      ]
-      
-      const isPublicPath = publicPaths.some(path => 
-        path === '/' ? loc.pathname === '/' : loc.pathname.startsWith(path)
-      )
-      
-      if (!isPublicPath) {
-        nav('/login', { replace: true })
-      }
-    }
-  }, [ready, authed, nav, loc.pathname])
+  // Breadcrumbs
+  console.log('[AuthGate] render', { ready, authed: !!user, reason });
 
   if (!ready) {
     console.log('[AuthGate] showing spinner (not ready)');
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center space-y-6">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary-100 border-t-primary-500 mx-auto"></div>
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-accent-500 opacity-20 blur-lg"></div>
-          </div>
-          <div className="space-y-2">
-            <p className="text-gray-700 font-medium">Loading Kutable...</p>
-            <p className="text-sm text-gray-500">Preparing your experience</p>
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center text-sm text-gray-500">
+        Loading Kutable…
       </div>
-    )
+    );
   }
-  
-  return <>{children}</>
+
+  // Optional: tiny banner if we failed open (won't block UI)
+  if (reason === 'profile-error' || reason === 'timeout') {
+    console.warn('[AuthGate] soft error:', reason);
+  }
+
+  return <>{children}</>;
 }
