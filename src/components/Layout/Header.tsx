@@ -4,7 +4,7 @@ import { User, LogOut, Menu, X, Scissors, Crown, MessageSquare } from 'lucide-re
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useMessaging } from '../../hooks/useMessaging';
-import { useProfile } from '../../hooks/useProfile';
+import { useAdminGuard } from '../../hooks/useAdminGuard';
 import { logger } from '../../utils/logger';
 import { chooseDashboard } from '../../utils/appScope';
 import AdminGuardBanner from '../Debug/AdminGuardBanner';
@@ -15,7 +15,7 @@ const Header: React.FC = () => {
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const { unreadCount } = useMessaging();
-  const { profile } = useProfile();
+  const { allowed: isAdmin, loading: adminLoading } = useAdminGuard();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -38,7 +38,6 @@ const Header: React.FC = () => {
 
   // Check admin route and admin status
   const isAdminRoute = location.pathname.startsWith('/admin');
-  const isAdmin = !!profile?.is_admin;
 
   useEffect(() => {
     const handleScroll = () => {

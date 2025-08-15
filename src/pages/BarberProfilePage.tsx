@@ -75,7 +75,6 @@ const BarberProfilePage: React.FC = () => {
       let { data: supabaseBarber, error } = await supabase
         .from('barber_profiles')
         .select('*')
-        .eq('is_active', true)
         .eq('slug', slug)
         .maybeSingle();
 
@@ -84,7 +83,6 @@ const BarberProfilePage: React.FC = () => {
         const { data: barberById, error: idError } = await supabase
           .from('barber_profiles')
           .select('*')
-          .eq('is_active', true)
           .eq('id', slug)
           .maybeSingle();
         
