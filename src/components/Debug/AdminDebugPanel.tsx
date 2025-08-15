@@ -78,7 +78,7 @@ const AdminDebugPanel: React.FC = () => {
       console.error('🔍 Admin guard test error:', error);
       setResult({ 
         success: false, 
-        error: error.message,
+        error: error?.message || 'Network error or function unreachable',
         timestamp: new Date().toISOString()
       });
       NotificationManager.error('Function test failed');

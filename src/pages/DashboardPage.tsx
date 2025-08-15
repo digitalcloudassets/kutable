@@ -173,9 +173,9 @@ const DashboardPage: React.FC = () => {
 
       // Use robust role detection
       const lastRolePref = (localStorage.getItem('kutable:lastRole') as UserRole | null) ?? undefined;
-      const { role, ids } = await decideRoleAndState(uid, lastRolePref);
+      const { role, state: onboardingState, ids } = await decideRoleAndState(uid, lastRolePref);
 
-      console.log('[DashboardPage] determineUserType result:', { role, state, ids, lastRolePref });
+      console.log('[DashboardPage] determineUserType result:', { role, onboardingState, ids, lastRolePref });
 
       if (role === 'barber' && ids.barberId) {
         // Fetch full barber data
