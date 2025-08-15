@@ -1,6 +1,7 @@
 // Admin guard hook: session-aware, only calls Edge Function when logged in
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { shouldBypassAdminGuards } from "../lib/devFlags";
 
 type State = { loading: boolean; allowed: boolean | null; error: string | null };
 
@@ -12,6 +13,12 @@ export function useAdminGuard(): State {
 
     const run = async () => {
       try {
+        // Bypass admin guards in preview environments to prevent network errors
+        if (shouldBypassAdminGuards()) {
+          if (!cancelled) set({ loading: false, allowed: true, error: null });
+          return;
+        }
+
         // 1) Check session first
         const { data: { session } } = await supabase.auth.getSession();
 
