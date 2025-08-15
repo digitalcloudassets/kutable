@@ -321,7 +321,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
   };
 
   return (
-    <div className="card-premium p-8 animate-fade-in-up">
+    <div className="w-full border bg-white shadow-sm p-8 animate-fade-in-up">
       <div className="space-y-8">
         {/* Profile Content */}
         {isEditing ? (

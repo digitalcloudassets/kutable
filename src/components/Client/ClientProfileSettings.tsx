@@ -253,7 +253,7 @@ const ClientProfileSettings: React.FC = () => {
   }
 
   return (
-    <div className="card-premium p-8">
+    <div className="w-full border bg-white shadow-sm p-8">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-3">
           <div className="bg-gradient-to-br from-primary-500 to-accent-500 p-2 rounded-xl">

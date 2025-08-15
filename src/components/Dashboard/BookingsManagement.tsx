@@ -237,7 +237,7 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
 
       <div className="space-y-4">
         {filteredBookings.map((booking) => (
-          <div key={booking.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 overflow-hidden min-w-0">
+          <div key={booking.id} className="w-full bg-white border border-gray-100 p-6 shadow-sm overflow-hidden min-w-0">
             <div className="flex justify-between items-start mb-4 gap-3 min-w-0">
               <div>
                 <div className="flex items-center space-x-3 mb-2 min-w-0">

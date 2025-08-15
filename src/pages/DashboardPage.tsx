@@ -228,12 +228,12 @@ const DashboardPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="w-full min-w-0">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 app-stack py-8 pt-28">
+          <div className="w-full px-4 sm:px-6 lg:px-8 app-stack py-8 pt-28">
             <SupabaseConnectionBanner isConnected={isConnected} />
             
             {import.meta.env.DEV && <AdminDebugPanel />}
             
-            <Surface mdClassName="rounded-3xl border bg-white shadow-sm p-6 w-full min-w-0">
+            <Surface mdClassName="border bg-white shadow-sm p-6 w-full min-w-0">
               <ClientDashboardHeader user={user} clientProfile={clientProfile} />
             </Surface>
 
@@ -244,7 +244,7 @@ const DashboardPage: React.FC = () => {
               unreadCount={unreadCount}
             />
 
-            <Surface mdClassName="rounded-3xl border bg-white shadow-sm p-6 w-full min-w-0">
+            <Surface mdClassName="border bg-white shadow-sm p-6 w-full min-w-0">
               <div className="px-4 md:px-0">
                 <ClientDashboardContent activeTab={activeTab} />
               </div>
@@ -260,12 +260,12 @@ const DashboardPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="w-full min-w-0">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 app-stack py-8 pt-28">
+          <div className="w-full px-4 sm:px-6 lg:px-8 app-stack py-8 pt-28">
             <SupabaseConnectionBanner isConnected={isConnected} />
             
             {import.meta.env.DEV && <AdminDebugPanel />}
             
-            <Surface mdClassName="rounded-3xl border bg-white shadow-sm p-6 w-full min-w-0">
+            <Surface mdClassName="border bg-white shadow-sm p-6 w-full min-w-0">
               <BarberDashboardHeader 
                 barber={barber}
                 onEditProfile={handleEditProfile}
@@ -279,7 +279,7 @@ const DashboardPage: React.FC = () => {
               unreadCount={unreadCount}
             />
 
-            <Surface mdClassName="rounded-3xl border bg-white shadow-sm p-6 w-full min-w-0">
+            <Surface mdClassName="border bg-white shadow-sm p-6 w-full min-w-0">
               <div className="px-4 md:px-0">
                 <BarberDashboardContent 
                   activeTab={activeTab}
@@ -301,9 +301,9 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="w-full min-w-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 app-stack py-8 pt-28">
+        <div className="w-full px-4 sm:px-6 lg:px-8 app-stack py-8 pt-28">
           <SupabaseConnectionBanner isConnected={isConnected} />
-          <Surface mdClassName="rounded-3xl border bg-white shadow-sm p-6 w-full min-w-0">
+          <Surface mdClassName="border bg-white shadow-sm p-6 w-full min-w-0">
             <div className="px-4 md:px-0">
               <FallbackDashboard />
             </div>

@@ -262,12 +262,14 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
 
       {/* Services */}
       {activeTab === 'services' && barber && (
-        <ServicesManagement barberId={barber.id} />
+        <div className="w-full">
+          <ServicesManagement barberId={barber.id} />
+        </div>
       )}
 
       {/* Gallery */}
       {activeTab === 'gallery' && barber && (
-        <Surface mdClassName="card-premium p-8">
+        <Surface mdClassName="w-full border bg-white shadow-sm p-8">
           <div className="px-4 md:px-0 space-y-8">
             <div>
               <div className="flex items-center space-x-3 mb-6">
@@ -306,7 +308,7 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
 
       {/* Hours */}
       {activeTab === 'hours' && (
-        <Surface mdClassName="card-premium p-8">
+        <Surface mdClassName="w-full border bg-white shadow-sm p-8">
           <div className="px-4 md:px-0">
             <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">

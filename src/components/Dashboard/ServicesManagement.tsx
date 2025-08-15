@@ -188,7 +188,7 @@ const ServicesManagement: React.FC<ServicesManagementProps> = ({ barberId }) => 
 
       {/* Create New Service */}
       {isCreating && (
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+        <div className="w-full bg-white border border-gray-100 p-6 shadow-sm">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold text-gray-900">New Service</h3>
             <button
@@ -293,7 +293,7 @@ const ServicesManagement: React.FC<ServicesManagementProps> = ({ barberId }) => 
       {/* Services List */}
       <div className="space-y-4">
         {services.map((service) => (
-          <div key={service.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
+          <div key={service.id} className="w-full bg-white border border-gray-100 p-6 shadow-sm">
             {editingService?.id === service.id ? (
               // Edit Mode
               <div className="space-y-4">

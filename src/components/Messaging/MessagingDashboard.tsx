@@ -36,7 +36,7 @@ const MessagingDashboard: React.FC = () => {
         </div>
       )}
       
-    <Surface mdClassName="rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 p-0">
+    <Surface mdClassName="w-full border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 p-0">
 
       {/* ============ MOBILE: restore the OLD layout ============ */}
       <div className="md:hidden">
