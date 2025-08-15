@@ -4,6 +4,7 @@ import App from './App.tsx';
 import './index.css';
 import { performanceOptimizer, initializeWebVitals } from './utils/performanceOptimizations';
 import { initializeProductionOptimizations } from './utils/productionConfig';
+import { logger } from './utils/logger';
 
 // Initialize production optimizations
 if (!import.meta.env.DEV) {
@@ -11,6 +12,14 @@ if (!import.meta.env.DEV) {
   performanceOptimizer.initializeAll();
   initializeWebVitals();
 }
+
+// Global error taps: quiet in prod for debug/info, but always capture errors/warns.
+window.addEventListener('error', (e) => {
+  logger.error('Uncaught error', e.error ?? e.message ?? e);
+});
+window.addEventListener('unhandledrejection', (e) => {
+  logger.error('Unhandled promise rejection', e.reason ?? e);
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

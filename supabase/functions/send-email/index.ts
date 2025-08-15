@@ -4,6 +4,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { corsHeaders, handlePreflight, withCors } from "../_shared/cors.ts";
 import { withSecurityHeaders } from "../_shared/security_headers.ts";
 import { recordNotification } from "../_shared/notify.ts";
+import { slog } from "../_shared/logger.ts";
 
 const base = withSecurityHeaders(
   corsHeaders(["POST", "OPTIONS"]),
@@ -27,12 +28,15 @@ serve(async (req) => {
     const template = typeof body?.template === "string" ? body.template : undefined;
 
     if (!to || !subject || !html) {
+      slog.warn('Email request missing required fields:', { hasTo: !!to, hasSubject: !!subject, hasHtml: !!html });
       const resBody = { ok: false, error: "Missing to, subject, or html" };
       return new Response(JSON.stringify(resBody), {
         status: 200, // keep 200 now
         headers: { ...cors.headers, "Content-Type": "application/json", "X-Notification-Status": "failed" },
       });
     }
+
+    slog.debug('Sending email:', { to, subject });
 
     const resp = await fetch(EMAIL_PROVIDER_URL, {
       method: "POST",
@@ -45,6 +49,7 @@ serve(async (req) => {
 
     const raw = await resp.text();
     if (!resp.ok) {
+      slog.warn('Email provider send failed:', { status: resp.status, response: raw.slice(0, 500) });
       await recordNotification({
         channel: "email",
         recipient: to,
@@ -71,6 +76,7 @@ serve(async (req) => {
       providerId = null;
     }
 
+    slog.info('Email sent successfully:', { to, subject, providerId });
     await recordNotification({
       channel: "email",
       recipient: to,
@@ -85,6 +91,7 @@ serve(async (req) => {
       headers: { ...cors.headers, "Content-Type": "application/json", "X-Notification-Status": "sent" },
     });
   } catch (e) {
+    slog.error('Email unexpected error:', e);
     await recordNotification({
       channel: "email",
       recipient: "unknown",

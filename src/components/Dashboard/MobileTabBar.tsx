@@ -5,9 +5,7 @@ import {
   MessageSquare, 
   Scissors, 
   BarChart3,
-  Camera,
-  Clock,
-  Settings
+  MoreHorizontal
 } from 'lucide-react';
 
 interface MobileTabBarProps {
@@ -28,7 +26,8 @@ const MobileTabBar: React.FC<MobileTabBarProps> = ({
       return [
         { id: 'bookings', label: 'Bookings', icon: Calendar },
         { id: 'messages', label: 'Messages', icon: MessageSquare },
-        { id: 'profile', label: 'Profile', icon: User }
+        { id: 'profile', label: 'Profile', icon: User },
+        { id: 'more', label: 'More', icon: MoreHorizontal }
       ];
     } else {
       return [
@@ -36,20 +35,31 @@ const MobileTabBar: React.FC<MobileTabBarProps> = ({
         { id: 'bookings', label: 'Bookings', icon: Calendar },
         { id: 'messages', label: 'Messages', icon: MessageSquare },
         { id: 'services', label: 'Services', icon: Scissors },
-        { id: 'analytics', label: 'Analytics', icon: BarChart3 }
+        { id: 'more', label: 'More', icon: MoreHorizontal }
       ];
     }
   };
 
   const tabItems = getTabItems();
+  
+  const handleTabClick = (id: string) => {
+    if (id === 'more') {
+      // Show additional options in a modal or navigate to a more page
+      // For now, just set to analytics for barbers or profile for clients
+      const fallbackTab = userType === 'barber' ? 'analytics' : 'profile';
+      onTabChange(fallbackTab);
+    } else {
+      onTabChange(id);
+    }
+  };
 
   return (
-    <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 h-20 border-t bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 px-2 pb-safe">
+    <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 h-20 border-t bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 px-2" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div className="grid h-full" style={{ gridTemplateColumns: `repeat(${tabItems.length}, 1fr)` }}>
         {tabItems.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
-            onClick={() => onTabChange(id)}
+            onClick={() => handleTabClick(id)}
             className={`flex flex-col items-center justify-center gap-1 text-xs transition-all duration-200 relative ${
               activeTab === id
                 ? 'text-primary-600 font-semibold'

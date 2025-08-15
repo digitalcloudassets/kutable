@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { handlePreflight, buildCorsHeaders } from "../_shared/cors.ts";
 import { consumeRateLimit } from "../_shared/rateLimit.ts";
 import { withSecurityHeaders } from "../_shared/security_headers.ts";
+import { slog } from "../_shared/logger.ts";
 import { withSecurityHeaders } from "../_shared/security_headers.ts";
 import { withSecurityHeaders } from "../_shared/security_headers.ts";
 
@@ -42,8 +43,8 @@ Deno.serve(async (req) => {
 
   // Hard fail if required environment variables are missing
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-    console.error("🚨 CRITICAL: Missing required environment variables for admin-guard");
-    console.error("Required: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY");
+    slog.error("🚨 CRITICAL: Missing required environment variables for admin-guard");
+    slog.error("Required: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY");
     return new Response(JSON.stringify({ 
       ok: false, 
       reason: "Server configuration error",
@@ -56,8 +57,8 @@ Deno.serve(async (req) => {
 
   // Hard fail if no admin users configured
   if (ADMIN_UIDS.length === 0 && ADMIN_EMAILS.length === 0) {
-    console.error("🚨 CRITICAL: No admin users configured");
-    console.error("Set ADMIN_UIDS and/or ADMIN_EMAILS in Supabase Functions environment");
+    slog.error("🚨 CRITICAL: No admin users configured");
+    slog.error("Set ADMIN_UIDS and/or ADMIN_EMAILS in Supabase Functions environment");
     return new Response(JSON.stringify({ 
       ok: false, 
       reason: "No admin users configured",
@@ -106,7 +107,7 @@ Deno.serve(async (req) => {
       headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error('Admin guard error:', e);
+    slog.error('Admin guard error:', e);
     return new Response(JSON.stringify({ ok: false, reason: "Error", detail: String(e) }), {
       status: 500,
       headers: { ...cors, "Content-Type": "application/json" },

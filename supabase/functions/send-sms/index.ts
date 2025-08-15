@@ -5,6 +5,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { corsHeaders, handlePreflight, withCors } from "../_shared/cors.ts";
 import { withSecurityHeaders } from "../_shared/security_headers.ts";
 import { recordNotification } from "../_shared/notify.ts";
+import { slog } from "../_shared/logger.ts";
 
 const base = withSecurityHeaders(
   corsHeaders(["POST", "OPTIONS"]),
@@ -24,10 +25,11 @@ serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const to = String(body?.to ?? "").trim();
-    const text = String(body?.body ?? "").trim();
+    const text = String(body?.message ?? body?.body ?? "").trim();
     const template = typeof body?.template === "string" ? body.template : undefined;
 
     if (!to || !text) {
+      slog.warn('SMS request missing required fields:', { hasTo: !!to, hasText: !!text });
       const resBody = { ok: false, error: "Missing to or body" };
       return new Response(JSON.stringify(resBody), {
         status: 200, // keep 200 to avoid breaking flows
@@ -35,6 +37,8 @@ serve(async (req) => {
       });
       // To enforce failure via HTTP status later, change to: status: 400
     }
+
+    slog.debug('Sending SMS:', { to, textPreview: text.slice(0, 50) + '...' });
 
     const auth = btoa(`${TWILIO_SID}:${TWILIO_TOKEN}`);
     const params = new URLSearchParams({
@@ -57,6 +61,7 @@ serve(async (req) => {
 
     const raw = await twilioResp.text();
     if (!twilioResp.ok) {
+      slog.warn('Twilio send failed:', { status: twilioResp.status, response: raw.slice(0, 500) });
       await recordNotification({
         channel: "sms",
         recipient: to,
@@ -75,6 +80,7 @@ serve(async (req) => {
     }
 
     const data = JSON.parse(raw);
+    slog.info('SMS sent successfully:', { to, sid: data?.sid });
     await recordNotification({
       channel: "sms",
       recipient: to,
@@ -89,6 +95,7 @@ serve(async (req) => {
       headers: { ...cors.headers, "Content-Type": "application/json", "X-Notification-Status": "sent" },
     });
   } catch (e) {
+    slog.error('SMS unexpected error:', e);
     await recordNotification({
       channel: "sms",
       recipient: "unknown",

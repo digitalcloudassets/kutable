@@ -5,6 +5,7 @@
 import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
 import { consumeRateLimit } from '../_shared/rateLimit.ts';
 import { withSecurityHeaders } from '../_shared/security_headers.ts';
+import { slog } from '../_shared/logger.ts';
 
 const base = withSecurityHeaders(corsHeaders(['POST', 'OPTIONS']));
 
@@ -168,7 +169,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('Creating payment intent for:', { barberId, amount, currency, metadata });
+    slog.info('Creating payment intent for:', { barberId, amount, currency, metadata });
 
     const { createClient } = await import('npm:@supabase/supabase-js@2');
     const db = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
@@ -181,7 +182,7 @@ Deno.serve(async (req) => {
       .single();
     
     if (barberErr || !barber?.stripe_account_id) {
-      console.error('Barber lookup error:', barberErr, 'Barber data:', barber);
+      slog.error('Barber lookup error:', barberErr, 'Barber data:', barber);
       return resJson(400, { success: false, error: 'Barber is not connected to Stripe' });
     }
 
@@ -192,7 +193,7 @@ Deno.serve(async (req) => {
     // Calculate platform fee (1%)
     const application_fee_amount = Math.floor(amount * 0.01);
 
-    console.log('Payment intent fee calculation:', {
+    slog.info('Payment intent fee calculation:', {
       originalAmount: amount,
       calculatedPlatformFee: application_fee_amount,
       percentageCheck: (application_fee_amount / amount * 100).toFixed(2) + '%'
@@ -215,7 +216,7 @@ Deno.serve(async (req) => {
       ),
     };
 
-    console.log('Payment intent params with platform fee:', { 
+    slog.debug('Payment intent params with platform fee:', { 
       amount, 
       application_fee_amount, 
       destination: barber.stripe_account_id,
@@ -226,10 +227,10 @@ Deno.serve(async (req) => {
     const pi = await stripePost('payment_intents', form(params), STRIPE_SECRET_KEY!);
     if (!pi.ok) return resJson(pi.status || 400, { success: false, error: pi.message, requestId: pi.requestId });
 
-    console.log('Payment intent created successfully:', pi.data.id);
+    slog.info('Payment intent created successfully:', pi.data.id);
     return resJson(200, { success: true, clientSecret: pi.data.client_secret, paymentIntentId: pi.data.id });
   } catch (e: any) {
-    console.error('Payment intent creation error:', e);
+    slog.error('Payment intent creation error:', e);
     return resJson(500, { success: false, error: e?.message || 'Unexpected server error' });
   }
 });
