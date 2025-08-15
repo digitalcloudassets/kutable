@@ -4,6 +4,7 @@ import { useAdminGuard } from '../../hooks/useAdminGuard';
 import { NotificationManager } from '../../utils/notifications';
 import { pingFunctions, getFunctionsBaseUrl, checkFunctionDeployment, plainFetchProbe } from '../../lib/functionsDiagnostics';
 import { generateDataIntegrityReport, repairUserIdLinkage, findProfilesByEmail } from '../../utils/dataRepair';
+import { isWebContainer } from '../../lib/runtimeEnv';
 
 const AdminDebugPanel: React.FC = () => {
   const { allowed: isAdmin, loading: adminLoading, errorMsg: adminError } = useAdminGuard();
@@ -101,6 +102,23 @@ const AdminDebugPanel: React.FC = () => {
   const testAdminGuard = async () => {
     setTesting(true);
     setResult(null);
+    
+    // Check if running in webcontainer environment
+    if (isWebContainer()) {
+      const webcontainerResult = {
+        success: false,
+        data: null,
+        error: 'Edge Function calls are restricted in webcontainer environment',
+        timestamp: new Date().toISOString(),
+        webcontainerMode: true
+      };
+      
+      console.log('🔍 Webcontainer detected - skipping Edge Function call');
+      setResult(webcontainerResult);
+      NotificationManager.info('ℹ️ Running in development mode - Edge Function calls restricted');
+      setTesting(false);
+      return;
+    }
     
     try {
       console.log('🔍 Testing admin-guard function...');
