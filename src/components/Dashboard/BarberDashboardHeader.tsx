@@ -92,7 +92,7 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
           <ShareProfileLink 
             slug={barber.slug} 
             id={barber.id} 
-            className="mt-4 flex items-center gap-2 text-sm justify-center"
+            className="mt-4"
           />
         </div>
       </div>

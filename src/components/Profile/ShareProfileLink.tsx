@@ -10,6 +10,7 @@ type Props = {
 export default function ShareProfileLink({ slug, id, className }: Props) {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://kutable.com';
   const url = slug ? `${origin}/barber/${slug}` : `${origin}/barber/${id ?? ''}`;
+  const brandedUrl = slug ? `kutable.com/barber/${slug}` : `kutable.com/barber/${id ?? ''}`;
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -41,8 +42,8 @@ export default function ShareProfileLink({ slug, id, className }: Props) {
       <div className="w-full flex justify-center">
         <div className="flex items-center gap-2 rounded-xl border px-3 py-2 bg-white">
           <LinkIcon className="h-4 w-4 text-gray-500 shrink-0" />
-          <span className="max-w-[82vw] sm:max-w-[520px] break-anywhere hyphens-auto text-gray-800 text-sm">
-            {url.replace(/^https?:\/\//, '')}
+          <span className="max-w-[82vw] sm:max-w-[520px] text-gray-800 text-sm font-medium">
+            {brandedUrl}
           </span>
         </div>
       </div>
