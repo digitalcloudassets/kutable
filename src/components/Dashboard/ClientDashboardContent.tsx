@@ -13,7 +13,7 @@ const ClientDashboardContent = React.memo<ClientDashboardContentProps>(({ active
     <div className="animate-fade-in-up">
       {activeTab === 'bookings' && <ClientBookings />}
       {activeTab === 'messages' && (
-        <div className="card-premium p-8">
+        <div className="md:card-premium md:p-8 px-4 md:px-0">
           <div className="flex items-center space-x-3 mb-6">
             <div className="bg-primary-100 p-2 rounded-xl">
               <MessageSquare className="h-6 w-6 text-primary-600" />

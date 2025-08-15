@@ -228,7 +228,7 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
       )}
       
       {activeTab === 'hours' && (
-        <div className="card-premium p-8 animate-fade-in-up">
+        <div className="md:card-premium md:p-8 px-4 md:px-0 animate-fade-in-up">
           <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-primary-100 p-2 rounded-xl">
@@ -317,7 +317,7 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
       )}
       
       {activeTab === 'privacy' && (
-        <div className="card-premium p-8 animate-fade-in-up">
+        <div className="md:card-premium md:p-8 px-4 md:px-0 animate-fade-in-up">
           <div className="flex items-center space-x-3 mb-6">
             <div className="bg-primary-100 p-2 rounded-xl">
               <Settings className="h-6 w-6 text-primary-600" />

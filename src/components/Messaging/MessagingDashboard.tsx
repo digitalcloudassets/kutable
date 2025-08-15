@@ -5,6 +5,7 @@ import MessageThread from './MessageThread';
 import { Conversation } from '../../services/MessagingService';
 import { useAuth } from '../../hooks/useAuth';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
+import Surface from '../Layout/Surface';
 
 const MessagingDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -35,11 +36,11 @@ const MessagingDashboard: React.FC = () => {
         </div>
       )}
       
-    <section className="bg-white p-0 overflow-hidden md:rounded-2xl md:border md:border-gray-100 md:shadow-sm md:hover:shadow-lg md:transition-all md:duration-300 app-bleed md:mx-0">
+    <Surface mdClassName="rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 p-0">
 
       {/* ============ MOBILE: restore the OLD layout ============ */}
       <div className="md:hidden">
-        <div className="flex flex-col h-[calc(100vh-var(--site-header-h,80px)-96px)] bg-white">
+        <div className="flex flex-col h-[calc(100dvh-var(--site-header-h,80px)-96px)] bg-white">
           {/* Mobile header */}
           <div className="p-4 border-b bg-gradient-to-r from-primary-50 to-accent-50">
             <div className="flex items-center space-x-3">
@@ -53,7 +54,7 @@ const MessagingDashboard: React.FC = () => {
           {/* Show conversation list or selected thread */}
           {!showMobileThread ? (
             /* Conversation List View */
-            <div className="flex-1 overflow-y-auto px-0 py-4">
+            <div className="flex-1 overflow-y-auto px-4 py-4">
               <ConversationList
                 onSelectConversation={handleSelectConversation}
                 selectedConversationId={selectedConversation?.bookingId}
@@ -132,7 +133,7 @@ const MessagingDashboard: React.FC = () => {
           </div>
         </div>
       </div>
-    </section>
+    </Surface>
     </>
   );
 };

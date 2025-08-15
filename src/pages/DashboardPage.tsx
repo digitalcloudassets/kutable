@@ -17,6 +17,7 @@ import { Database } from '../lib/supabase';
 import { NotificationManager } from '../utils/notifications';
 import { useAdminGuard } from '../hooks/useAdminGuard';
 import AdminDebugPanel from '../components/Debug/AdminDebugPanel';
+import Surface from '../components/Layout/Surface';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 type ClientProfile = Database['public']['Tables']['client_profiles']['Row'];
@@ -232,9 +233,9 @@ const DashboardPage: React.FC = () => {
             
             {import.meta.env.DEV && <AdminDebugPanel />}
             
-            <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
+            <Surface mdClassName="rounded-3xl border bg-white shadow-sm p-6 w-full min-w-0">
               <ClientDashboardHeader user={user} clientProfile={clientProfile} />
-            </section>
+            </Surface>
 
             <DashboardNavigation 
               userType="client"
@@ -243,9 +244,11 @@ const DashboardPage: React.FC = () => {
               unreadCount={unreadCount}
             />
 
-            <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
-              <ClientDashboardContent activeTab={activeTab} />
-            </section>
+            <Surface mdClassName="rounded-3xl border bg-white shadow-sm p-6 w-full min-w-0">
+              <div className="px-4 md:px-0">
+                <ClientDashboardContent activeTab={activeTab} />
+              </div>
+            </Surface>
           </div>
         </div>
       </div>
@@ -262,12 +265,12 @@ const DashboardPage: React.FC = () => {
             
             {import.meta.env.DEV && <AdminDebugPanel />}
             
-            <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
+            <Surface mdClassName="rounded-3xl border bg-white shadow-sm p-6 w-full min-w-0">
               <BarberDashboardHeader 
                 barber={barber}
                 onEditProfile={handleEditProfile}
               />
-            </section>
+            </Surface>
 
             <DashboardNavigation 
               userType="barber"
@@ -276,16 +279,18 @@ const DashboardPage: React.FC = () => {
               unreadCount={unreadCount}
             />
 
-            <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
-              <BarberDashboardContent 
-                activeTab={activeTab}
-                barber={barber}
-                user={user}
-                onBarberUpdate={refreshBarberData}
-                triggerEdit={triggerEdit}
-                onTriggerEditChange={handleTriggerEditChange}
-              />
-            </section>
+            <Surface mdClassName="rounded-3xl border bg-white shadow-sm p-6 w-full min-w-0">
+              <div className="px-4 md:px-0">
+                <BarberDashboardContent 
+                  activeTab={activeTab}
+                  barber={barber}
+                  user={user}
+                  onBarberUpdate={refreshBarberData}
+                  triggerEdit={triggerEdit}
+                  onTriggerEditChange={handleTriggerEditChange}
+                />
+              </div>
+            </Surface>
           </div>
         </div>
       </div>
@@ -298,9 +303,11 @@ const DashboardPage: React.FC = () => {
       <div className="w-full min-w-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 app-stack py-8 pt-28">
           <SupabaseConnectionBanner isConnected={isConnected} />
-          <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
-            <FallbackDashboard />
-          </section>
+          <Surface mdClassName="rounded-3xl border bg-white shadow-sm p-6 w-full min-w-0">
+            <div className="px-4 md:px-0">
+              <FallbackDashboard />
+            </div>
+          </Surface>
           {import.meta.env.DEV && <AdminDebugPanel />}
         </div>
       </div>
