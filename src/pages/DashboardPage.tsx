@@ -227,7 +227,7 @@ const DashboardPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="w-full min-w-0">
-          <div className="container app-stack py-8 pt-28">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 app-stack py-8 pt-28">
             <SupabaseConnectionBanner isConnected={isConnected} />
             
             {import.meta.env.DEV && <AdminDebugPanel />}
@@ -257,7 +257,7 @@ const DashboardPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="w-full min-w-0">
-          <div className="container app-stack py-8 pt-28">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 app-stack py-8 pt-28">
             <SupabaseConnectionBanner isConnected={isConnected} />
             
             {import.meta.env.DEV && <AdminDebugPanel />}
@@ -296,7 +296,7 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="w-full min-w-0">
-        <div className="container app-stack py-8 pt-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 app-stack py-8 pt-28">
           <SupabaseConnectionBanner isConnected={isConnected} />
           <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
             <FallbackDashboard />
