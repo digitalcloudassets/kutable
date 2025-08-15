@@ -11,6 +11,8 @@ import MediaUpload from '../Gallery/MediaUpload';
 import MediaGallery from '../Gallery/MediaGallery';
 import MessagingDashboard from '../Messaging/MessagingDashboard';
 import { Crown, Calendar, BarChart3 } from 'lucide-react';
+import MobileProfileActions from '../Profile/MobileProfileActions';
+import Surface from '../Layout/Surface';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -97,32 +99,169 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
   return (
     <div className="animate-fade-in-up">
       {activeTab === 'profile' && (
-       barber ? (
-        <BarberProfile 
-          barber={barber} 
-          onUpdate={onBarberUpdate}
-          triggerEdit={triggerEdit}
-          setTriggerEdit={onTriggerEditChange}
-        />
-       ) : (
-         <div className="card-premium p-8 text-center">
-           <div className="bg-yellow-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
-             <Crown className="h-10 w-10 text-yellow-600" />
-           </div>
-           <h3 className="text-2xl font-display font-bold text-gray-900 mb-4">Complete Your Profile Claim</h3>
-           <p className="text-gray-600 mb-8">
-             It looks like you're in the middle of claiming a barber profile. Please complete the claim process to access your dashboard.
-           </p>
-           <div className="space-y-4">
-             <a href="/barbers" className="btn-primary">
-               Find Profile to Claim
-             </a>
-             <p className="text-sm text-gray-500">
-               Or contact support if you need assistance with your claim.
-             </p>
-           </div>
-         </div>
-       )
+        <>
+          {barber && (
+            <MobileProfileActions
+              renderGallery={() => (
+                <div className="space-y-8 py-4">
+                  <div>
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className="bg-primary-100 p-2 rounded-xl">
+                        <Camera className="h-6 w-6 text-primary-600" />
+                      </div>
+                      <h3 className="text-2xl font-display font-bold text-gray-900">Upload New Media</h3>
+                    </div>
+                    <MediaUpload 
+                      barberId={barber.id} 
+                      onUploadComplete={() => {
+                        setGalleryRefreshTrigger(prev => prev + 1);
+                      }} 
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className="bg-accent-100 p-2 rounded-xl">
+                        <ImageIcon className="h-6 w-6 text-accent-600" />
+                      </div>
+                      <h3 className="text-2xl font-display font-bold text-gray-900">Your Gallery</h3>
+                    </div>
+                    <MediaGallery 
+                      barberId={barber.id} 
+                      isOwner={true}
+                      refreshTrigger={galleryRefreshTrigger}
+                      onMediaUpdate={() => {
+                        setGalleryRefreshTrigger(prev => prev + 1);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+              renderHours={() => (
+                <div className="py-4">
+                  <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary-100 p-2 rounded-xl">
+                        <Clock className="h-5 w-5 text-primary-600" />
+                      </div>
+                      <h3 className="text-2xl font-display font-bold text-gray-900">Business Hours</h3>
+                    </div>
+                    <button
+                      type="button"
+                      className="w-full sm:w-auto rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white shadow hover:bg-blue-700"
+                      onClick={saveAvailability}
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+
+                  <div className="space-y-6">
+                    {dayNames.map((dayName, dayIndex) => (
+                      <div key={dayIndex} className="rounded-2xl bg-gray-50 p-4 sm:p-5">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <div className="min-w-[96px] text-lg font-semibold text-gray-900">
+                            {dayName}
+                          </div>
+
+                          <label className="inline-flex items-center gap-2">
+                            <input 
+                              type="checkbox" 
+                              className="h-5 w-5 accent-blue-600" 
+                              checked={availability[dayIndex]?.isOpen || false}
+                              onChange={(e) => updateAvailability(dayIndex, 'isOpen', e.target.checked)}
+                            />
+                            <span className="text-gray-700 font-medium">Open</span>
+                          </label>
+
+                          {availability[dayIndex]?.isOpen && (
+                            <div className="ms-auto w-full sm:w-auto min-w-0">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full min-w-0">
+                                <div className="min-w-0">
+                                  <div className="relative">
+                                    <input
+                                      type="time"
+                                      value={availability[dayIndex].startTime}
+                                      onChange={(e) => updateAvailability(dayIndex, 'startTime', e.target.value)}
+                                      className="block w-full box-border h-12 rounded-xl border border-gray-200 bg-white px-3 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
+                                      <Clock className="h-4 w-4" />
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="min-w-0">
+                                  <div className="relative">
+                                    <input
+                                      type="time"
+                                      value={availability[dayIndex].endTime}
+                                      onChange={(e) => updateAvailability(dayIndex, 'endTime', e.target.value)}
+                                      className="block w-full box-border h-12 rounded-xl border border-gray-200 bg-white px-3 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
+                                      <Clock className="h-4 w-4" />
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              renderPrivacy={() => (
+                <div className="py-4">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="bg-primary-100 p-2 rounded-xl">
+                      <Settings className="h-6 w-6 text-primary-600" />
+                    </div>
+                    <h3 className="text-2xl font-display font-bold text-gray-900">Privacy & Communication Preferences</h3>
+                  </div>
+                  <ConsentManagement 
+                    userId={user?.id}
+                    userType="barber"
+                    currentConsent={{
+                      communication: barber.communication_consent ?? false,
+                      sms: barber.sms_consent ?? false,
+                      email: barber.email_consent ?? false
+                    }}
+                    onConsentUpdate={handleConsentUpdate}
+                  />
+                </div>
+              )}
+            />
+          )}
+          
+          {barber ? (
+            <BarberProfile 
+              barber={barber} 
+              onUpdate={onBarberUpdate}
+              triggerEdit={triggerEdit}
+              setTriggerEdit={onTriggerEditChange}
+            />
+          ) : (
+            <div className="md:card-premium md:p-8 px-4 md:px-0 text-center">
+              <div className="bg-yellow-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <Crown className="h-10 w-10 text-yellow-600" />
+              </div>
+              <h3 className="text-2xl font-display font-bold text-gray-900 mb-4">Complete Your Profile Claim</h3>
+              <p className="text-gray-600 mb-8">
+                It looks like you're in the middle of claiming a barber profile. Please complete the claim process to access your dashboard.
+              </p>
+              <div className="space-y-4">
+                <a href="/barbers" className="btn-primary">
+                  Find Profile to Claim
+                </a>
+                <p className="text-sm text-gray-500">
+                  Or contact support if you need assistance with your claim.
+                </p>
+              </div>
+            </div>
+          )}
+        </>
       )}
       
       {activeTab === 'bookings' && (
@@ -137,17 +276,7 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
         )
       )}
       
-      {activeTab === 'messages' && (
-        <div className="card-premium p-8 animate-fade-in-up">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="bg-primary-100 p-2 rounded-xl">
-              <MessageSquare className="h-6 w-6 text-primary-600" />
-            </div>
-            <h3 className="text-2xl font-display font-bold text-gray-900">Customer Messages</h3>
-          </div>
-          <MessagingDashboard />
-        </div>
-      )}
+      {activeTab === 'messages' && <MessagingDashboard />}
       
       {activeTab === 'analytics' && (
         barber ? (
@@ -162,187 +291,192 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
       )}
       
       {activeTab === 'services' && (
-        <div className="card-premium p-8 animate-fade-in-up">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="bg-primary-100 p-2 rounded-xl">
-              <Scissors className="h-6 w-6 text-primary-600" />
+        <Surface mdClassName="card-premium p-8">
+          <div className="px-4 md:px-0 animate-fade-in-up">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="bg-primary-100 p-2 rounded-xl">
+                <Scissors className="h-6 w-6 text-primary-600" />
+              </div>
+              <h3 className="text-2xl font-display font-bold text-gray-900">Manage Services</h3>
             </div>
-            <h3 className="text-2xl font-display font-bold text-gray-900">Manage Services</h3>
+            {barber ? (
+              <ServicesManagement barberId={barber.id} />
+            ) : (
+              <div className="text-center py-12">
+                <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Services Management</h3>
+                <p className="text-gray-600">Complete your profile setup to add services.</p>
+              </div>
+            )}
           </div>
-          {barber ? (
-            <ServicesManagement barberId={barber.id} />
-          ) : (
-            <div className="text-center py-12">
-              <Scissors className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Services Management</h3>
-              <p className="text-gray-600">Complete your profile setup to add services.</p>
-            </div>
-          )}
-        </div>
+        </Surface>
       )}
       
       {activeTab === 'gallery' && (
-        <div className="space-y-8 animate-fade-in-up">
-         {barber ? (
-           <>
-          <div className="card-premium p-8">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="bg-primary-100 p-2 rounded-xl">
-                <Camera className="h-6 w-6 text-primary-600" />
-              </div>
-              <h3 className="text-2xl font-display font-bold text-gray-900">Upload New Media</h3>
-            </div>
-            <MediaUpload 
-              barberId={barber.id} 
-              onUploadComplete={() => {
-                setGalleryRefreshTrigger(prev => prev + 1);
-              }} 
-            />
-          </div>
+        <Surface mdClassName="space-y-8">
+          <div className="px-4 md:px-0 animate-fade-in-up">
+            {barber ? (
+              <>
+                <div className="md:card-premium md:p-8">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="bg-primary-100 p-2 rounded-xl">
+                      <Camera className="h-6 w-6 text-primary-600" />
+                    </div>
+                    <h3 className="text-2xl font-display font-bold text-gray-900">Upload New Media</h3>
+                  </div>
+                  <MediaUpload 
+                    barberId={barber.id} 
+                    onUploadComplete={() => {
+                      setGalleryRefreshTrigger(prev => prev + 1);
+                    }} 
+                  />
+                </div>
 
-          <div className="card-premium p-8">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="bg-accent-100 p-2 rounded-xl">
-                <ImageIcon className="h-6 w-6 text-accent-600" />
+                <div className="md:card-premium md:p-8">
+                  <div className="flex items-center space-x-3 mb-6">
+                    <div className="bg-accent-100 p-2 rounded-xl">
+                      <ImageIcon className="h-6 w-6 text-accent-600" />
+                    </div>
+                    <h3 className="text-2xl font-display font-bold text-gray-900">Your Gallery</h3>
+                  </div>
+                  <MediaGallery 
+                    barberId={barber.id} 
+                    isOwner={true}
+                    refreshTrigger={galleryRefreshTrigger}
+                    onMediaUpdate={() => {
+                      setGalleryRefreshTrigger(prev => prev + 1);
+                    }}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="md:card-premium md:p-8 px-4 md:px-0 text-center">
+                <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Gallery Management</h3>
+                <p className="text-gray-600">Complete your profile setup to upload photos and videos.</p>
               </div>
-              <h3 className="text-2xl font-display font-bold text-gray-900">Your Gallery</h3>
-            </div>
-            <MediaGallery 
-              barberId={barber.id} 
-              isOwner={true}
-              refreshTrigger={galleryRefreshTrigger}
-              onMediaUpdate={() => {
-                setGalleryRefreshTrigger(prev => prev + 1);
-              }}
-            />
+            )}
           </div>
-           </>
-         ) : (
-           <div className="card-premium p-8 text-center">
-             <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-             <h3 className="text-lg font-medium text-gray-900 mb-2">Gallery Management</h3>
-             <p className="text-gray-600">Complete your profile setup to upload photos and videos.</p>
-           </div>
-         )}
-        </div>
+        </Surface>
       )}
       
       {activeTab === 'hours' && (
-        <div className="md:card-premium md:p-8 px-4 md:px-0 animate-fade-in-up">
-          <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary-100 p-2 rounded-xl">
-                <Clock className="h-5 w-5 text-primary-600" />
-              </div>
-              <h3 className="text-2xl font-display font-bold text-gray-900">Business Hours</h3>
-            </div>
-           {barber && (
-            <button
-              type="button"
-              className="w-full sm:w-auto rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white shadow hover:bg-blue-700"
-              onClick={saveAvailability}
-            >
-              Save Changes
-            </button>
-           )}
-          </div>
-
-         {barber ? (
-          <div className="space-y-6">
-            {dayNames.map((dayName, dayIndex) => (
-              <div key={dayIndex} className="rounded-2xl bg-gray-50 p-4 sm:p-5">
-                <div className="flex flex-wrap items-center gap-3">
-                  {/* Left: Day label */}
-                  <div className="min-w-[96px] text-lg font-semibold text-gray-900">
-                    {dayName}
-                  </div>
-
-                  <label className="inline-flex items-center gap-2">
-                    <input 
-                      type="checkbox" 
-                      className="h-5 w-5 accent-blue-600" 
-                      checked={availability[dayIndex]?.isOpen || false}
-                      onChange={(e) => updateAvailability(dayIndex, 'isOpen', e.target.checked)}
-                    />
-                    <span className="text-gray-700 font-medium">Open</span>
-                  </label>
-
-                  {availability[dayIndex]?.isOpen && (
-                    <div className="ms-auto w-full sm:w-auto min-w-0">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full min-w-0">
-                        {/* Start */}
-                        <div className="min-w-0">
-                          <div className="relative">
-                            <input
-                              type="time"
-                              value={availability[dayIndex].startTime}
-                              onChange={(e) => updateAvailability(dayIndex, 'startTime', e.target.value)}
-                              className="block w-full box-border h-12 rounded-xl border border-gray-200 bg-white px-3 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
-                              <Clock className="h-4 w-4" />
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* End */}
-                        <div className="min-w-0">
-                          <div className="relative">
-                            <input
-                              type="time"
-                              value={availability[dayIndex].endTime}
-                              onChange={(e) => updateAvailability(dayIndex, 'endTime', e.target.value)}
-                              className="block w-full box-border h-12 rounded-xl border border-gray-200 bg-white px-3 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
-                              <Clock className="h-4 w-4" />
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+        <Surface mdClassName="card-premium p-8">
+          <div className="px-4 md:px-0 animate-fade-in-up">
+            <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary-100 p-2 rounded-xl">
+                  <Clock className="h-5 w-5 text-primary-600" />
                 </div>
+                <h3 className="text-2xl font-display font-bold text-gray-900">Business Hours</h3>
               </div>
-            ))}
+              {barber && (
+                <button
+                  type="button"
+                  className="w-full sm:w-auto rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white shadow hover:bg-blue-700"
+                  onClick={saveAvailability}
+                >
+                  Save Changes
+                </button>
+              )}
+            </div>
+
+            {barber ? (
+              <div className="space-y-6">
+                {dayNames.map((dayName, dayIndex) => (
+                  <div key={dayIndex} className="rounded-2xl bg-gray-50 p-4 sm:p-5">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="min-w-[96px] text-lg font-semibold text-gray-900">
+                        {dayName}
+                      </div>
+
+                      <label className="inline-flex items-center gap-2">
+                        <input 
+                          type="checkbox" 
+                          className="h-5 w-5 accent-blue-600" 
+                          checked={availability[dayIndex]?.isOpen || false}
+                          onChange={(e) => updateAvailability(dayIndex, 'isOpen', e.target.checked)}
+                        />
+                        <span className="text-gray-700 font-medium">Open</span>
+                      </label>
+
+                      {availability[dayIndex]?.isOpen && (
+                        <div className="ms-auto w-full sm:w-auto min-w-0">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full min-w-0">
+                            <div className="min-w-0">
+                              <div className="relative">
+                                <input
+                                  type="time"
+                                  value={availability[dayIndex].startTime}
+                                  onChange={(e) => updateAvailability(dayIndex, 'startTime', e.target.value)}
+                                  className="block w-full box-border h-12 rounded-xl border border-gray-200 bg-white px-3 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
+                                  <Clock className="h-4 w-4" />
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="min-w-0">
+                              <div className="relative">
+                                <input
+                                  type="time"
+                                  value={availability[dayIndex].endTime}
+                                  onChange={(e) => updateAvailability(dayIndex, 'endTime', e.target.value)}
+                                  className="block w-full box-border h-12 rounded-xl border border-gray-200 bg-white px-3 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
+                                  <Clock className="h-4 w-4" />
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Business Hours</h3>
+                <p className="text-gray-600">Complete your profile setup to set your business hours.</p>
+              </div>
+            )}
           </div>
-         ) : (
-           <div className="text-center py-12">
-             <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-             <h3 className="text-lg font-medium text-gray-900 mb-2">Business Hours</h3>
-             <p className="text-gray-600">Complete your profile setup to set your business hours.</p>
-           </div>
-         )}
-        </div>
+        </Surface>
       )}
       
       {activeTab === 'privacy' && (
-        <div className="md:card-premium md:p-8 px-4 md:px-0 animate-fade-in-up">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="bg-primary-100 p-2 rounded-xl">
-              <Settings className="h-6 w-6 text-primary-600" />
+        <Surface mdClassName="card-premium p-8">
+          <div className="px-4 md:px-0 animate-fade-in-up">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="bg-primary-100 p-2 rounded-xl">
+                <Settings className="h-6 w-6 text-primary-600" />
+              </div>
+              <h3 className="text-2xl font-display font-bold text-gray-900">Privacy & Communication Preferences</h3>
             </div>
-            <h3 className="text-2xl font-display font-bold text-gray-900">Privacy & Communication Preferences</h3>
+            {barber ? (
+              <ConsentManagement 
+                userId={user?.id}
+                userType="barber"
+                currentConsent={{
+                  communication: barber.communication_consent ?? false,
+                  sms: barber.sms_consent ?? false,
+                  email: barber.email_consent ?? false
+                }}
+                onConsentUpdate={handleConsentUpdate}
+              />
+            ) : (
+              <div className="text-center py-12">
+                <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Privacy Settings</h3>
+                <p className="text-gray-600">Complete your profile setup to manage privacy settings.</p>
+              </div>
+            )}
           </div>
-         {barber ? (
-          <ConsentManagement 
-            userId={user?.id}
-            userType="barber"
-            currentConsent={{
-              communication: barber.communication_consent ?? false,
-              sms: barber.sms_consent ?? false,
-              email: barber.email_consent ?? false
-            }}
-            onConsentUpdate={handleConsentUpdate}
-          />
-         ) : (
-           <div className="text-center py-12">
-             <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-             <h3 className="text-lg font-medium text-gray-900 mb-2">Privacy Settings</h3>
-             <p className="text-gray-600">Complete your profile setup to manage privacy settings.</p>
-           </div>
-         )}
-        </div>
+        </Surface>
       )}
     </div>
   );
