@@ -32,33 +32,35 @@ if (shouldUseFallback) {
   logger.info(`📁 ${reason}`);
   
   // Create fallback client
+  // Helper to create chainable query builder
+  const createChainableQuery = (tableName: string) => {
+    const chainable: any = {
+      then: (resolve: any) => resolve({ data: [], error: null }),
+      single: () => Promise.resolve({ data: null, error: { message: `Connect to Supabase for ${tableName}` } }),
+      maybeSingle: () => Promise.resolve({ data: null, error: null }),
+      eq: () => chainable,
+      order: () => chainable,
+      limit: () => chainable,
+      range: () => chainable,
+      lt: () => chainable,
+      gt: () => chainable,
+      lte: () => chainable,
+      gte: () => chainable,
+      like: () => chainable,
+      ilike: () => chainable,
+      is: () => chainable,
+      in: () => chainable,
+      contains: () => chainable,
+      containedBy: () => chainable,
+      overlaps: () => chainable,
+    };
+    return chainable;
+  };
+
   supabase = {
     from: (table: string) => {
-      if (table === 'barber_profiles') {
-        return {
-          select: () => ({ 
-            then: (resolve: any) => resolve({ data: [], error: null }),
-            single: () => Promise.resolve({ data: null, error: { message: 'Connect to Supabase for barber profiles' } }),
-            maybeSingle: () => Promise.resolve({ data: null, error: null }),
-            eq: () => ({ 
-              then: (resolve: any) => resolve({ data: [], error: null }),
-              single: () => Promise.resolve({ data: null, error: { message: 'Connect to Supabase for barber profiles' } }),
-              maybeSingle: () => Promise.resolve({ data: null, error: null })
-            }),
-            order: () => ({ 
-              then: (resolve: any) => resolve({ data: [], error: null })
-            })
-          })
-        };
-      }
-      
-      // For other tables when not connected to Supabase
       return {
-        select: () => ({ 
-          then: (resolve: any) => resolve({ data: [], error: null }),
-          single: () => Promise.resolve({ data: null, error: { message: 'Connect to Supabase for database tables' } }),
-          maybeSingle: () => Promise.resolve({ data: null, error: null })
-        }),
+        select: () => createChainableQuery(table),
         insert: () => ({ 
           select: () => ({ single: () => Promise.resolve({ data: null, error: { message: 'Connect to Supabase to enable database operations' } }) })
         }),
