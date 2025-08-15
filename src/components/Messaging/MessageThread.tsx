@@ -201,9 +201,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0 thread-page">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-9 py-4 sm:py-6 rounded-t-2xl w-full max-w-none flex-shrink-0">
+      <div className="bg-white border-b border-gray-200 rounded-t-2xl w-full max-w-none flex-shrink-0 thread-header">
+        <div className="section-inner">
         <div className="space-y-3">
           {/* Top row with avatar and name */}
           <div className="flex items-start space-x-3 sm:space-x-6">
@@ -243,10 +244,11 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
             <span>{formatAppointmentDate(conversation.booking.appointmentDate)} at {formatTimeToAMPM(conversation.booking.appointmentTime)}</span>
           </div>
         </div>
+        </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 bg-gray-50 min-h-0">
+      <div className="flex-1 overflow-y-auto space-y-4 bg-gray-50 min-h-0 thread-scroll">
         {messages.length === 0 ? (
           <div className="text-center py-12">
             <div className="bg-white w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-sm">
@@ -302,10 +304,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
                     className={`px-4 py-3 rounded-2xl ${
                       isFromMe
                         ? 'bg-primary-500 text-white rounded-br-md'
-                        : 'bg-white text-gray-900 border border-gray-200 rounded-bl-md shadow-sm'
+                        : 'bg-white text-gray-900 border border-gray-200 rounded-bl-md shadow-sm chat-bubble'
                     }`}
                   >
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                    <p className="text-sm leading-relaxed">
                       {message.message_text}
                     </p>
                     <p className={`text-xs mt-1 ${
@@ -329,7 +331,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       </div>
 
       {/* Message Input */}
-      <div className="bg-white border-t border-gray-200 p-3 sm:p-4 rounded-b-2xl flex-shrink-0">
+      <div className="bg-white border-t border-gray-200 rounded-b-2xl flex-shrink-0 thread-composer">
         {error && (
           <div className="mb-3 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm flex items-center space-x-2">
             <AlertCircle className="h-4 w-4" />
@@ -354,7 +356,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder={`Message ${conversation.participant.name}...`}
-              className="w-full px-3 sm:px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all duration-200 text-base"
+              className="w-full px-3 sm:px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all duration-200 text-base chat-bubble"
               rows={newMessage.includes('\n') ? 3 : 1}
               maxLength={1000}
               disabled={!conversation.participant.id}
