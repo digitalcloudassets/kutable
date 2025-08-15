@@ -18,27 +18,10 @@ const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Enhanced debug logging - single useEffect with proper dependency array
-  useEffect(() => {
-    if (user && import.meta.env.DEV) {
-      logger.debug('Header Debug Admin Check:', {
-        userId: user.id,
-        userEmail: user.email,
-        isAdmin,
-        adminLoading,
-        adminError
-      });
-    }
-  }, [user, isAdmin, adminLoading, adminError]);
-
-  // Show admin error in development for debugging
+  // Optional: surface guard errors in dev only (when there's actually an error)
   useEffect(() => {
     if (adminError && import.meta.env.DEV) {
-      if (adminError.includes('fallback mode') || adminError.includes('Development environment detected') || adminError.includes('WebContainer')) {
-        logger.info('Admin Guard:', adminError);
-      } else {
-        logger.error('Admin Guard Error:', adminError);
-      }
+      logger.debug('Admin guard error:', adminError);
     }
   }, [adminError]);
 

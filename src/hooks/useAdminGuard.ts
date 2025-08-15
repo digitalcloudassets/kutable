@@ -1,47 +1,65 @@
-// Admin guard hook with better error bubbling
+// Admin guard hook: session-aware, only calls Edge Function when logged in
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type State = { loading: boolean; allowed: boolean | null; errorMsg: string | null };
+type State = { loading: boolean; allowed: boolean | null; error: string | null };
 
-export function useAdminGuard(): State & { error: string | null } {
-  const [state, setState] = useState<State>({ loading: true, allowed: null, errorMsg: null });
+export function useAdminGuard(): State {
+  const [state, set] = useState<State>({ loading: true, allowed: null, error: null });
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+
+    const run = async () => {
       try {
+        // 1) Check session first
         const { data: { session } } = await supabase.auth.getSession();
+
+        // No session is NOT an error; just say not allowed (quietly)
         if (!session) {
-          if (!cancelled) setState({ loading: false, allowed: false, errorMsg: "No session" });
+          if (!cancelled) set({ loading: false, allowed: false, error: null });
           return;
         }
 
+        // 2) We have a session — call the guard
         const { data, error } = await supabase.functions.invoke("admin-guard", { body: {} });
+
         if (cancelled) return;
 
         if (error) {
-          setState({ loading: false, allowed: false, errorMsg: error.message ?? "Edge call failed" });
-          return;
-        }
-        
-        if (!data?.ok) {
-          setState({ loading: false, allowed: false, errorMsg: data?.reason ?? "Not allowed" });
+          // Real failure (CORS/401/403/5xx)
+          set({ loading: false, allowed: false, error: error.message ?? "Edge call failed" });
           return;
         }
 
-        setState({ loading: false, allowed: true, errorMsg: null });
+        if (!data?.ok) {
+          // Not an admin (403) or unauth (401) — still not an exception
+          set({ loading: false, allowed: false, error: data?.reason ?? null });
+          return;
+        }
+
+        set({ loading: false, allowed: true, error: null });
       } catch (e: any) {
         if (!cancelled) {
-          setState({ loading: false, allowed: false, errorMsg: String(e?.message ?? e) });
+          set({ loading: false, allowed: false, error: String(e?.message ?? e) });
         }
       }
-    })();
-    
-    return () => { 
-      cancelled = true; 
+    };
+
+    run();
+
+    // Also react to login/logout so the guard re-evaluates
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, _session) => {
+      // Re-run on auth events
+      set({ loading: true, allowed: null, error: null });
+      run();
+    });
+
+    return () => {
+      cancelled = true;
+      sub?.subscription?.unsubscribe?.();
     };
   }, []);
 
-  return { ...state, error: state.errorMsg };
+  return state;
 }
