@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, MapPin, Star, Filter, Clock, DollarSign, Calendar, MapIcon, X, SlidersHorizontal, Scissors, Sparkles } from 'lucide-react';
+import { Search, MapPin, Star, Filter, Clock, DollarSign, Calendar, MapIcon, X, SlidersHorizontal, Scissors, Sparkles, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { applySearchFilters, SearchFilters, DEFAULT_FILTERS } from '../utils/searchFilters';
 import AdvancedSearchPanel from '../components/Search/AdvancedSearchPanel';
@@ -241,14 +241,13 @@ const BarberListPage: React.FC = () => {
                   </div>
                   
                   {/* City Selector */}
-                  <div className="relative w-full shrink-0 lg:basis-64">
-                    <div className="flex items-center gap-2 pl-3 pr-10 py-4 border border-gray-200 rounded-xl bg-gray-50 focus-within:ring-2 focus-within:ring-primary-500 transition-all duration-200 min-h-[56px]">
-                      <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400 shrink-0" />
+                  <div className="kutable-with-icon w-full shrink-0 lg:basis-64">
+                    <MapPin className="kutable-icon-left h-5 w-5 text-gray-400" />
                       <select
                         aria-label="Filter by city"
                         value={selectedCity}
                         onChange={(e) => setSelectedCity(e.target.value)}
-                        className="w-full bg-transparent outline-none appearance-none text-gray-900 font-medium pr-6"
+                        className="kutable-select has-left has-right w-full h-14 rounded-xl border border-gray-200 bg-gray-50 text-base font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 pl-10 pr-8"
                       >
                         <option value="">All Cities</option>
                         {cities.map((city) => (
@@ -257,19 +256,7 @@ const BarberListPage: React.FC = () => {
                           </option>
                         ))}
                       </select>
-                    </div>
-                    <svg
-                      className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.06 0L5.25 8.27a.75.75 0 01-.02-1.06z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
+                    <ChevronDown className="kutable-icon-right h-4 w-4 text-gray-500" />
                   </div>
                   
                   {/* Filters Button */}

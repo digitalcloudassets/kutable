@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import './styles/daypicker.mobile.css';
+import './styles/field-icons.css';
 import './styles/stepper.mobile.css';
 import './styles/stepper.mobile.css';
 import { AuthProvider, useAuth } from './context/AuthProvider';

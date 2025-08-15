@@ -1,0 +1,36 @@
+/* Generic left/right icon helpers for inputs/selects */
+.kutable-with-icon { 
+  position: relative; 
+}
+
+.kutable-icon-left {
+  position: absolute; 
+  inset-inline-start: 0.75rem; 
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none; /* never block taps */
+}
+
+.kutable-icon-right {
+  position: absolute; 
+  inset-inline-end: 0.75rem; 
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* Safari/iOS select fixes */
+.kutable-select {
+  -webkit-appearance: none; 
+  appearance: none;   /* hide native arrow */
+  background-color: #fff;
+}
+
+/* Make sure text never collides with icons */
+.kutable-select.has-left  { 
+  padding-left: 2.5rem; 
+}  /* ~40px */
+
+.kutable-select.has-right { 
+  padding-right: 2.25rem; 
+}

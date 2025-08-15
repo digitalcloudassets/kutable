@@ -18,7 +18,8 @@ import {
   Save,
   Loader,
   Trash2,
-  CreditCard
+  CreditCard,
+  ChevronDown
 } from 'lucide-react';
 import { format, isAfter, isBefore, addDays } from 'date-fns';
 import DatePicker from 'react-datepicker';
@@ -447,12 +448,13 @@ const ClientBookings: React.FC = () => {
             />
           </div>
           
-          <div className="relative">
-            <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <div className="kutable-with-icon w-full">
+            <Filter className="kutable-icon-left h-4 w-4 text-gray-500" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white font-medium"
+              aria-label="Filter bookings"
+              className="kutable-select has-left has-right w-full h-12 rounded-xl border border-gray-200 bg-white text-base font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
             >
               <option value="all">All Bookings</option>
               <option value="upcoming">Upcoming</option>
@@ -462,6 +464,7 @@ const ClientBookings: React.FC = () => {
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
+            <ChevronDown className="kutable-icon-right h-4 w-4 text-gray-500" />
           </div>
         </div>
       </div>
