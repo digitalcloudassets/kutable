@@ -56,12 +56,18 @@ const BarberProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (slug) {
+    if (slug && slug !== 'undefined') {
       fetchBarberData();
     }
   }, [slug]);
 
   const fetchBarberData = async () => {
+    if (!slug || slug === 'undefined') {
+      setBarber(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       

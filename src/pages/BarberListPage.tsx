@@ -400,7 +400,7 @@ const BarberListPage: React.FC = () => {
               {displayedBarbers.map((barber) => (
                 <Link
                   key={`${barber.id}-profile`}
-                  to={`/barber/${barber.slug}`}
+                  to={`/barber/${barber.slug || barber.id}`}
                   className="card-premium group hover:scale-[1.02] transition-all duration-300"
                 >
                   <div className="relative overflow-hidden">
