@@ -4,6 +4,7 @@ import { User, LogOut, Menu, X, Scissors, Crown, MessageSquare } from 'lucide-re
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useMessaging } from '../../hooks/useMessaging';
+import { useMessaging } from '../../hooks/useMessaging';
 import { useAdminGuard } from '../../hooks/useAdminGuard';
 import { logger } from '../../utils/logger';
 import AdminGuardBanner from '../Debug/AdminGuardBanner';
@@ -12,7 +13,9 @@ const Header: React.FC = () => {
   // ✅ Always call hooks at top-level, every render
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { unreadCount } = useMessaging();
+  const { loading: adminLoading, allowed: isAdmin, error: adminError } = useAdminGuard();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -92,7 +95,7 @@ const Header: React.FC = () => {
 
             {/* User Actions */}
             <div className="flex items-center space-x-3 lg:space-x-4">
-              {loading ? (
+              {authLoading ? (
                 <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
               ) : user ? (
                 <div className="hidden md:flex items-center space-x-3">
