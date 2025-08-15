@@ -22,6 +22,7 @@ import DashboardPage from './pages/DashboardPage';
 import BarberDashboard from './pages/BarberDashboard';
 import ProfileSetupPage from './pages/ProfileSetupPage';
 import OnboardingPage from './pages/OnboardingPage';
+import BarberOnboarding from './pages/BarberOnboarding';
 import AdminPage from './pages/AdminPage';
 import HowItWorksPage from './pages/HowItWorksPage';
 import PricingPage from './pages/PricingPage';
@@ -74,6 +75,7 @@ function App() {
               <Route path="/dashboard/barber/*" element={<BarberDashboard />} />
               <Route path="/book/:barberSlug/:serviceId?" element={<BookingFlow />} />
               <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/onboarding/barber" element={<BarberOnboarding />} />
               <Route
                 path="/admin"
                 element={

@@ -112,7 +112,55 @@ const SignUpForm: React.FC = () => {
     }
 
     try {
-      const user = await adminSignup(cleanEmail, cleanPassword, {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password: cleanPassword,
+        options: {
+          data: {
+            user_type: formData.userType,
+            first_name: cleanFirstName,
+            last_name: cleanLastName,
+            communication_consent: formData.communicationConsent,
+            sms_consent: formData.communicationConsent,
+            email_consent: formData.communicationConsent,
+            consent_date: new Date().toISOString(),
+          }
+        }
+      });
+
+      if (signUpError) {
+        if (signUpError.message?.includes('already')) {
+          setError('An account with this email already exists. Please sign in instead.');
+        } else {
+          setError(signUpError.message || 'Failed to create account. Please try again.');
+        }
+        return;
+      }
+
+      // Check if we got a session immediately (email confirmation disabled)
+      const hasSession = !!data.session;
+
+      if (formData.userType === 'client') {
+        // Client: fast path - either go to dashboard or sign in
+        if (hasSession) {
+          navigate('/dashboard', { replace: true });
+        } else {
+          navigate(`/login?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/dashboard')}`, { replace: true });
+        }
+        return;
+      }
+
+      // Barber: send to Stripe onboarding (or to login first, then onboarding)
+      if (hasSession) {
+        navigate('/onboarding/barber', { replace: true });
+      } else {
+        navigate(`/login?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/onboarding/barber')}`, { replace: true });
+      }
+
+    } catch (error: any) {
+      // Fallback to admin signup for any unexpected errors
+      try {
+        const user = await adminSignup(cleanEmail, cleanPassword, {
         first_name: cleanFirstName,
         last_name: cleanLastName,
         user_type: formData.userType,
@@ -122,11 +170,11 @@ const SignUpForm: React.FC = () => {
         consent_date: new Date().toISOString(),
       });
 
-      // Check if user came from claim flow
-      // Navigate to onboarding for new users
-      navigate(`/onboarding?type=${formData.userType}`);
-      // Redirect to success page instead of directly to onboarding
       navigate(`/signup-success?email=${encodeURIComponent(cleanEmail)}&type=${formData.userType}`);
+      } catch (adminError: any) {
+        console.error('Both signup methods failed:', error, adminError);
+        setError(adminError?.message || 'Failed to create account. Please try again.');
+      }
     } catch (error: any) {
       // Don't expose internal error details
       console.error('Signup error:', error);

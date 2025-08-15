@@ -68,7 +68,7 @@ const SignUpSuccessPage: React.FC = () => {
 
             {/* Functional Sign In CTA */}
             <Link
-              to={`/login${email ? `?email=${encodeURIComponent(email)}` : ''}`}
+              to={`/login${email ? `?email=${encodeURIComponent(email)}` : ''}${userType ? `&next=${encodeURIComponent(userType === 'barber' ? '/onboarding/barber' : '/dashboard')}` : ''}`}
               className="btn-primary w-full group hover:scale-105 transition-all duration-200"
             >
               <CheckCircle className="h-5 w-5 group-hover:scale-110 transition-transform" />

@@ -65,7 +65,8 @@ const OnboardingPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const { isConnected: isSupabaseConnected } = useSupabaseConnection();
   
-  const userTypeFromUrl = searchParams.get('type') as 'client' | 'barber';
+  const userTypeFromUrl = (searchParams.get('type') as 'client' | 'barber') || 
+                          (user?.user_metadata?.user_type as 'client' | 'barber');
   const [currentStep, setCurrentStep] = useState(() => {
     // Skip user type selection if already known from signup
     if (userTypeFromUrl === 'client') return 2; // Go to profile photo

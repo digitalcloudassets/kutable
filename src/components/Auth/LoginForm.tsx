@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams, useEffect } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, Loader, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
@@ -21,6 +21,14 @@ const LoginForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  // Prefill email from URL parameter
+  useEffect(() => {
+    const qEmail = searchParams.get('email');
+    if (qEmail && !formData.email) {
+      setFormData(prev => ({ ...prev, email: qEmail }));
+    }
+  }, [searchParams, formData.email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,8 +101,19 @@ const LoginForm: React.FC = () => {
         // Record successful attempt
         bruteForceProtection.recordAttempt(identifier, true);
         
-        // Navigate to next URL or dashboard
-        const next = searchParams.get('next') || '/dashboard';
+        // Navigate to next URL or dashboard based on user type
+        const next = searchParams.get('next');
+        const userType = data.user.user_metadata?.user_type;
+        
+        let redirectUrl = '/dashboard';
+        if (next) {
+          redirectUrl = next;
+        } else if (userType === 'barber') {
+          redirectUrl = '/dashboard/barber';
+        } else {
+          redirectUrl = '/dashboard';
+        }
+        
         navigate(next);
       }
     } catch (error: any) {
