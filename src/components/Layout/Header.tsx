@@ -12,16 +12,16 @@ const Header: React.FC = () => {
   // ✅ Always call hooks at top-level, every render
   const navigate = useNavigate();
   const location = useLocation();
+  // ✅ Always call hooks at top-level, every render
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading } = useAuth();
-  const { unreadCount } = useMessaging();
-  const { allowed: isAdmin, loading: adminLoading, error: adminError } = useAdminGuard();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // ✅ Do not show the global site header anywhere under /admin
-  // Only return null AFTER all hooks are called
-  if (location.pathname.startsWith('/admin')) return null;
+  // Check admin route but don't early return
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   // Optional: surface guard errors in dev only (when there's actually an error)
   useEffect(() => {
@@ -59,6 +59,8 @@ const Header: React.FC = () => {
 
   const isHomePage = location.pathname === '/';
 
+  // ❌ No early return. We render the same component tree each time.
+  //    We just hide it when we're on /admin.
   return (
     <>
       <AdminGuardBanner />
@@ -66,7 +68,10 @@ const Header: React.FC = () => {
         scrolled || !isHomePage 
           ? 'glass-effect border-b border-white/10 shadow-premium-lg' 
           : 'bg-transparent'
-      }`}>
+      }`}
+        style={isAdminRoute ? { display: 'none' } : undefined}
+        data-role="global-header"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
