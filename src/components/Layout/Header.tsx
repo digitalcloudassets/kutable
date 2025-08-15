@@ -13,36 +13,32 @@ const Header: React.FC = () => {
   const location = useLocation();
   const { user, loading } = useAuth();
   const { unreadCount } = useMessaging();
-  const { allowed: isAdmin, loading: adminLoading, errorMsg } = useAdminGuard();
+  const { allowed: isAdmin, loading: adminLoading, error: adminError } = useAdminGuard();
   
   // Enhanced debug logging
   useEffect(() => {
-    if (user) {
-      logger.debug('🔐 Header Debug - Admin Check:', {
+      logger.debug('Header Debug Admin Check:', {
         userId: user.id,
         userEmail: user.email,
         isAdmin,
         adminLoading,
         userLoading: loading,
-        hasAdminGuard: !!isAdmin || adminLoading,
-        adminErrorMsg: errorMsg
+        adminError
       });
     }
-  }, [user, isAdmin, adminLoading, loading, errorMsg]);
+  }, [user, isAdmin, adminLoading, loading, adminError]);
 
   // Show admin error in development for debugging
   useEffect(() => {
-    if (errorMsg && import.meta.env.DEV) {
+    if (adminError && import.meta.env.DEV) {
       // Only log as error if it's not a development mode issue
-      if (errorMsg.includes('fallback mode') || errorMsg.includes('Development environment detected') || errorMsg.includes('WebContainer')) {
-        logger.info('ℹ️  Admin Guard:', errorMsg);
-        logger.info('ℹ️  Admin Guard:', errorMsg);
+      if (adminError.includes('fallback mode') || adminError.includes('Development environment detected') || adminError.includes('WebContainer')) {
+        logger.info('Admin Guard:', adminError);
       } else {
-        logger.error('🔐 Admin Guard Error:', errorMsg);
-        logger.error('🔐 Admin Guard Error:', errorMsg);
+        logger.error('Admin Guard Error:', adminError);
       }
     }
-  }, [errorMsg]);
+  }, [adminError]);
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -83,7 +79,7 @@ const Header: React.FC = () => {
 
   return (
     <>
-      {errorMsg && <AdminGuardBanner message={errorMsg} />}
+      {adminError && <AdminGuardBanner />}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-20 ${
         scrolled || !isHomePage 
           ? 'glass-effect border-b border-white/10 shadow-premium-lg' 

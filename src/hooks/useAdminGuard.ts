@@ -1,70 +1,32 @@
+// Admin guard hook with better error bubbling
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { isWebContainer, isRealRuntime } from "../lib/runtimeEnv";
 
-export function useAdminGuard() {
-  const [loading, setLoading] = useState(true);
-  const [allowed, setAllowed] = useState<boolean | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+type State = { loading: boolean; allowed: boolean | null; error: string | null };
+
+export function useAdminGuard(): State {
+  const [state, set] = useState<State>({ loading: true, allowed: null, error: null });
 
   useEffect(() => {
     let cancelled = false;
-
-
-
-    if (isWebContainer() && !isRealRuntime()) {
-      setAllowed(false);
-      setErrorMsg("Admin features are disabled in WebContainer environments. Deploy or run locally.");
-      setLoading(false);
-      return;
-    }
-
     (async () => {
-      setLoading(true);
-      setErrorMsg(null);
       try {
-        // 1) Ensure session exists and is fresh
-        let { data: { session }, error: sessErr } = await supabase.auth.getSession();
-        if (sessErr) throw sessErr;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return !cancelled && set({ loading: false, allowed: false, error: "No session" });
 
-        // 2) If no session or near expiry, refresh
-        const now = Math.floor(Date.now() / 1000);
-        const exp = session?.expires_at ?? 0;
-        if (!session || exp - now < 30) {
-          const { data, error } = await supabase.auth.refreshSession();
-          if (error) throw error;
-          session = data.session;
-        }
-        if (!session?.access_token) {
-          setAllowed(false);
-          setErrorMsg("No active session");
-          return;
-        }
-
-        // 3) Call admin-guard function with fresh session
         const { data, error } = await supabase.functions.invoke("admin-guard", { body: {} });
         if (cancelled) return;
 
-        if (error) {
-          setAllowed(false);
-          setErrorMsg(error.message ?? "admin-guard failed");
-        } else {
-          setAllowed(Boolean(data?.ok));
-          if (!data?.ok) setErrorMsg(data?.reason ?? "Forbidden");
-        }
+        if (error) return set({ loading: false, allowed: false, error: error.message ?? "Edge call failed" });
+        if (!data?.ok) return set({ loading: false, allowed: false, error: data?.reason ?? "Not allowed" });
+
+        set({ loading: false, allowed: true, error: null });
       } catch (e: any) {
-        if (!cancelled) {
-          setAllowed(false);
-          setErrorMsg(e?.message ?? "Failed to reach admin-guard");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) set({ loading: false, allowed: false, error: String(e?.message ?? e) });
       }
     })();
-
     return () => { cancelled = true; };
   }, []);
 
-  // Return errorMsg to show helpful debugging info
-  return { loading, allowed, errorMsg };
+  return state;
 }
