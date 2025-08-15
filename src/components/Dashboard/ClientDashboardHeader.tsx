@@ -12,18 +12,16 @@ interface ClientDashboardHeaderProps {
 }
 
 const ClientDashboardHeader = React.memo<ClientDashboardHeaderProps>(({ user, clientProfile }) => {
-  const getAvatarUrl = () => {
-    // Order of precedence: client_profiles.profile_image_url → user.user_metadata.avatar_url → placeholder
-    return clientProfile?.profile_image_url ||
-           (user?.user_metadata?.avatar_url as string | undefined) ||
-           'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=200';
-  };
-
-  const avatarUrl = getAvatarUrl();
-  // Add cache busting parameter for new uploads
-  const cacheBustedUrl = avatarUrl.includes('avatars/') 
-    ? `${avatarUrl}${avatarUrl.includes('?') ? '&' : '?'}_=${Date.now()}`
-    : avatarUrl;
+  // Get avatar URL without default fallback
+  const avatarUrl = clientProfile?.profile_image_url || user?.user_metadata?.avatar_url || null;
+  
+  // Generate initials for placeholder
+  const initials = (() => {
+    const f = clientProfile?.first_name?.[0] ?? user?.user_metadata?.first_name?.[0];
+    const l = clientProfile?.last_name?.[0] ?? user?.user_metadata?.last_name?.[0];
+    const e = user?.email?.[0];
+    return ((f ?? '') + (l ?? '') || (e ?? '?')).toUpperCase();
+  })();
 
   return (
     <div className="card-premium p-5 md:p-6 mb-8">
@@ -31,21 +29,18 @@ const ClientDashboardHeader = React.memo<ClientDashboardHeaderProps>(({ user, cl
         <div className="relative">
           {/* Avatar */}
           <div className="h-24 w-24 md:h-28 md:w-28 overflow-hidden rounded-full ring-8 ring-white shadow">
-            <img
-              src={cacheBustedUrl}
-              alt="Profile"
-              className="h-full w-full object-cover"
-              loading="lazy"
-              onError={(e) => {
-                // Fallback to gradient if image fails to load
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-                target.nextElementSibling?.classList.remove('hidden');
-              }}
-            />
-            <div className="bg-gradient-to-br from-primary-500 to-accent-500 h-full w-full flex items-center justify-center hidden">
-              <User className="h-12 w-12 md:h-14 md:w-14 text-white" />
-            </div>
+            {avatarUrl ? (
+              <img
+                src={`${avatarUrl}${avatarUrl.includes('avatars/') ? (avatarUrl.includes('?') ? '&' : '?') + '_=' + Date.now() : ''}`}
+                alt="Profile avatar"
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="bg-gradient-to-br from-primary-500 to-accent-500 h-full w-full flex items-center justify-center text-white text-2xl md:text-3xl font-bold">
+                {initials}
+              </div>
+            )}
           </div>
 
           {/* Badge */}
