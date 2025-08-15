@@ -56,7 +56,8 @@ export const getOrCreateClientProfile = async (user: User) => {
         if (session?.user) {
           await supabase.auth.updateUser({ data: { avatar_url: url } });
         }
-          }
+        }
+      }
     }
 
     // STEP 3: Create new profile only if none exists
@@ -85,6 +86,7 @@ export const getOrCreateClientProfile = async (user: User) => {
     return newProfile;
 
   } catch (error) {
+    console.warn('Error in getOrCreateClientProfile:', error);
     return null;
   }
 };

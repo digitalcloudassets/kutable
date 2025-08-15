@@ -14,6 +14,7 @@ import HomeGate from './routes/HomeGate';
 import { OnboardingGate } from './components/Guards/OnboardingGate';
 import AppShellToggle from './components/Layout/AppShellToggle';
 import AppBoot from './providers/AppBoot';
+import OnboardingGuard from './guards/OnboardingGuard';
 
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
