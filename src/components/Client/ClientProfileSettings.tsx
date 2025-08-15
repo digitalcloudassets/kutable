@@ -34,6 +34,8 @@ const ClientProfileSettings: React.FC = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [softError, setSoftError] = useState<string | null>(null);
+  const [profile, setProfile] = useState<ClientProfile | null>(null);
   
   const [editData, setEditData] = useState({
     first_name: '',
@@ -71,6 +73,7 @@ const ClientProfileSettings: React.FC = () => {
         if (fetchError) throw fetchError;
         
         setClientProfile(fullProfile);
+        setProfile(fullProfile);
         setEditData({
           first_name: fullProfile.first_name || '',
           last_name: fullProfile.last_name || '',
@@ -95,7 +98,7 @@ const ClientProfileSettings: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!user || !clientProfile) return;
+    if (!user) return;
 
     // Validation
     if (!editData.first_name.trim() || !editData.last_name.trim()) {
@@ -114,28 +117,12 @@ const ClientProfileSettings: React.FC = () => {
     }
 
     setSaving(true);
-    setError('');
+    setSoftError(null);
     setSuccessMessage('');
 
     try {
-      const { error: updateError } = await supabase
-        .from('client_profiles')
-        .update({
-          first_name: editData.first_name.trim(),
-          last_name: editData.last_name.trim(),
-          phone: editData.phone.trim() || null,
-          email: editData.email.trim() || null,
-          preferred_contact: editData.preferred_contact,
-          profile_image_url: editData.profile_image_url || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', clientProfile.id);
-
-      if (updateError) throw updateError;
-
-      // Update local state
-      setClientProfile(prev => prev ? {
-        ...prev,
+      const payload = {
+        user_id: user.id,
         first_name: editData.first_name.trim(),
         last_name: editData.last_name.trim(),
         phone: editData.phone.trim() || null,
@@ -143,38 +130,53 @@ const ClientProfileSettings: React.FC = () => {
         preferred_contact: editData.preferred_contact,
         profile_image_url: editData.profile_image_url || null,
         updated_at: new Date().toISOString()
-      } : null);
+      };
+
+      // Use upsert to handle both create and update cases
+      const { data: savedProfile, error: saveError } = await supabase
+        .from('client_profiles')
+        .upsert(payload, { onConflict: 'user_id' })
+        .select('*')
+        .single();
+
+      if (saveError) throw saveError;
+
+      // Update local state
+      setProfile(savedProfile as ClientProfile);
+      setClientProfile(savedProfile as ClientProfile);
+      setSoftError(null);
 
       setIsEditing(false);
       NotificationManager.success('Profile updated successfully!');
       
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      NotificationManager.error('Failed to update profile. Please try again.');
+      setSoftError('Save failed. Please try again.');
+      NotificationManager.error('Failed to save profile. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleCancel = () => {
-    if (clientProfile) {
+    if (profile) {
       setEditData({
-        first_name: clientProfile.first_name || '',
-        last_name: clientProfile.last_name || '',
-        phone: clientProfile.phone || '',
-        email: clientProfile.email || '',
-        preferred_contact: clientProfile.preferred_contact as 'sms' | 'email' | 'phone' || 'sms',
-        profile_image_url: clientProfile.profile_image_url || ''
+        first_name: profile.first_name || '',
+        last_name: profile.last_name || '',
+        phone: profile.phone || '',
+        email: profile.email || '',
+        preferred_contact: profile.preferred_contact as 'sms' | 'email' | 'phone' || 'sms',
+        profile_image_url: profile.profile_image_url || ''
       });
     }
     setIsEditing(false);
-    setError('');
+    setSoftError(null);
     setSuccessMessage('');
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !clientProfile) return;
+    if (!file) return;
 
     // Guard: ensure user is signed in before upload
     const { data: auth } = await supabase.auth.getUser();
@@ -195,6 +197,44 @@ const ClientProfileSettings: React.FC = () => {
       // Use the centralized avatar upload utility
       const avatarUrl = await uploadAvatar(file, auth.user.id, 'clients');
 
+      // Update profile if it exists, otherwise just update local state
+      if (profile) {
+        const { error: updateError } = await supabase
+          .from('client_profiles')
+          .update({
+            profile_image_url: avatarUrl,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', profile.id);
+
+        if (updateError) throw updateError;
+
+        // Update local state
+        setProfile(prev => prev ? { ...prev, profile_image_url: avatarUrl } : null);
+      } else {
+        // No profile yet - just update form state
+        setEditData(prev => ({ ...prev, profile_image_url: avatarUrl }));
+      }
+
+      // Also update user metadata for immediate display
+      await supabase.auth.updateUser({ 
+        data: { avatar_url: avatarUrl } 
+      });
+      
+      NotificationManager.success('Profile photo updated successfully!');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      NotificationManager.error('Failed to upload image. Please check your Supabase storage configuration.');
+    } finally {
+      setUploadingImage(false);
+      // Reset file input to allow re-selection of the same file
+      const fileInput = document.getElementById('client-profile-image-upload') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    }
+
+    if (clientProfile) {
       const { error: updateError } = await supabase
         .from('client_profiles')
         .update({
@@ -218,16 +258,6 @@ const ClientProfileSettings: React.FC = () => {
       await fetchClientProfile();
       
       NotificationManager.success('Profile photo updated successfully!');
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      NotificationManager.error('Failed to upload image. Please check your Supabase storage configuration.');
-    } finally {
-      setUploadingImage(false);
-      // Reset file input to allow re-selection of the same file
-      const fileInput = document.getElementById('client-profile-image-upload') as HTMLInputElement;
-      if (fileInput) {
-        fileInput.value = '';
-      }
     }
   };
 
@@ -641,7 +671,7 @@ const ClientProfileSettings: React.FC = () => {
                 <h5 className="font-semibold text-primary-900 mb-2">Communication Preferences</h5>
                 <p className="text-primary-800 leading-relaxed">
                   You'll receive booking confirmations, reminders, and updates via your preferred contact method.
-                  {!profile?.phone && (profile?.preferred_contact || 'sms') === 'sms' && (
+                  {!clientProfile?.phone && clientProfile?.preferred_contact === 'sms' && (
                     <span className="block mt-2 text-primary-700 font-semibold">
                       Add a phone number to receive SMS notifications.
                     </span>
