@@ -82,5 +82,6 @@ export default function ShareProfileLink({ slug, id, className }: Props) {
         </button>
       </div>
     </div>
+  )
   );
 }
