@@ -45,7 +45,24 @@ export default function ShareProfileLink({ slug, id, className }: Props) {
             {url.replace(/^https?:\/\//, '')}
           </span>
         </div>
+          <LinkIcon className="h-4 w-4 text-gray-500 shrink-0" />
+          <span className="max-w-[82vw] sm:max-w-[520px] break-anywhere hyphens-auto text-gray-800 text-sm">
+            {url.replace(/^https?:\/\//, '')}
+          </span>
+        </div>
       </div>
+
+      {/* Actions underneath, centered */}
+      <div className="mt-2 flex items-center justify-center gap-2">
+        <button
+          onClick={copy}
+          className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          {copied ? 'Copied' : 'Copy'}
+        </button>
+        <button
+          onClick={nativeShare}
 
       {/* Actions underneath, centered */}
       <div className="mt-2 flex items-center justify-center gap-2">

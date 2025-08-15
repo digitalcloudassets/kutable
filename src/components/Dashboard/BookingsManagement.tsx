@@ -237,11 +237,11 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
 
       <div className="space-y-4">
         {filteredBookings.map((booking) => (
-          <div key={booking.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-100">
-            <div className="flex justify-between items-start mb-4">
+          <div key={booking.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 overflow-hidden min-w-0">
+            <div className="flex justify-between items-start mb-4 gap-3 min-w-0">
               <div>
-                <div className="flex items-center space-x-3 mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">
+                <div className="flex items-center space-x-3 mb-2 min-w-0">
+                  <h3 className="text-lg font-semibold text-gray-900 text-ellipsis-1 min-w-0">
                     {booking.client_profiles?.first_name} {booking.client_profiles?.last_name}
                   </h3>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(booking.status)} flex items-center space-x-1`}>
@@ -249,9 +249,9 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
                     <span>{booking.status.replace('_', ' ').toUpperCase()}</span>
                   </span>
                 </div>
-                <p className="text-gray-600 font-medium">{booking.services?.name}</p>
+                <p className="text-gray-600 font-medium text-ellipsis-1 min-w-0">{booking.services?.name}</p>
               </div>
-              <div className="text-right">
+              <div className="text-right shrink-0">
                 <p className="text-xl font-bold text-gray-900">{formatUSD(booking.total_amount)}</p>
                 {booking.deposit_amount > 0 && (
                   <p className="text-sm text-orange-600 font-medium">{formatUSD(booking.deposit_amount)} deposit</p>
@@ -259,39 +259,39 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-sm text-gray-600">
-              <div className="flex items-center space-x-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-sm text-gray-600 min-w-0">
+              <div className="flex items-center space-x-2 min-w-0">
                 <Calendar className="h-4 w-4" />
-                <span className="font-medium">{format(new Date(booking.appointment_date), 'MMM d, yyyy')}</span>
+                <span className="font-medium text-ellipsis-1 min-w-0">{format(new Date(booking.appointment_date), 'MMM d, yyyy')}</span>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 min-w-0">
                 <Clock className="h-4 w-4" />
-                <span className="font-medium">{booking.appointment_time} ({booking.services?.duration_minutes} min)</span>
+                <span className="font-medium text-ellipsis-1 min-w-0">{booking.appointment_time} ({booking.services?.duration_minutes} min)</span>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 min-w-0">
                 <User className="h-4 w-4" />
-                <span className="font-medium">Booked {new Date(booking.created_at).toLocaleDateString()}</span>
+                <span className="font-medium text-ellipsis-1 min-w-0">Booked {new Date(booking.created_at).toLocaleDateString()}</span>
               </div>
             </div>
 
             {booking.client_profiles && (
-              <div className="flex items-center space-x-6 mb-4 text-sm text-gray-600">
+              <div className="flex items-center space-x-6 mb-4 text-sm text-gray-600 min-w-0">
                 {booking.client_profiles.phone && (
                   <a 
                     href={`tel:${booking.client_profiles.phone}`}
-                    className="flex items-center space-x-2 hover:text-primary-600 transition-colors"
+                    className="flex items-center space-x-2 hover:text-primary-600 transition-colors min-w-0"
                   >
-                    <Phone className="h-4 w-4" />
-                    <span className="font-medium">{booking.client_profiles.phone}</span>
+                    <Phone className="h-4 w-4 shrink-0" />
+                    <span className="font-medium text-ellipsis-1 min-w-0">{booking.client_profiles.phone}</span>
                   </a>
                 )}
                 {booking.client_profiles.email && (
                   <a 
                     href={`mailto:${booking.client_profiles.email}`}
-                    className="flex items-center space-x-2 hover:text-primary-600 transition-colors"
+                    className="flex items-center space-x-2 hover:text-primary-600 transition-colors min-w-0"
                   >
-                    <Mail className="h-4 w-4" />
-                    <span className="font-medium">{booking.client_profiles.email}</span>
+                    <Mail className="h-4 w-4 shrink-0" />
+                    <span className="font-medium break-anywhere hyphens-auto text-clamp-2 min-w-0">{booking.client_profiles.email}</span>
                   </a>
                 )}
               </div>
@@ -299,7 +299,7 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
 
             {booking.notes && (
               <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-100">
-                <p className="text-sm text-gray-700 font-medium">
+                <p className="text-sm text-gray-700 font-medium break-anywhere hyphens-auto">
                   <strong>Customer Notes:</strong> {booking.notes}
                 </p>
               </div>

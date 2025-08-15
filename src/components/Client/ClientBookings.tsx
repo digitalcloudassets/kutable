@@ -513,18 +513,18 @@ const ClientBookings: React.FC = () => {
             const upcoming = isUpcoming(booking);
             
             return (
-              <div 
+              <div
                 key={booking.id} 
-                className={`card-premium p-4 sm:p-6 transition-all duration-200 hover:shadow-lg ${
+                className={`card-premium p-4 sm:p-6 transition-all duration-200 hover:shadow-lg overflow-hidden min-w-0 ${
                   upcoming && booking.status === 'confirmed' 
                     ? 'border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-primary-50/30' 
                     : ''
                 }`}
               >
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-4 min-w-0">
                   {/* Booking Info */}
-                  <div className="flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 min-w-0">
                       {/* Barber Image */}
                       <Link 
                         to={`/barber/${booking.barber_profiles?.slug}`}
@@ -539,68 +539,68 @@ const ClientBookings: React.FC = () => {
 
                       {/* Booking Details */}
                       <div className="flex-1 min-w-0 text-center sm:text-left">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 space-y-2 sm:space-y-0">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 space-y-2 sm:space-y-0 gap-3 min-w-0">
                           <div className="space-y-1">
                             <Link 
                               to={`/barber/${booking.barber_profiles?.slug}`}
-                              className="text-base sm:text-lg font-display font-bold text-gray-900 hover:text-primary-600 transition-colors block"
+                              className="text-base sm:text-lg font-display font-bold text-gray-900 hover:text-primary-600 transition-colors block text-ellipsis-1"
                             >
                               {booking.barber_profiles?.business_name}
                             </Link>
-                            <p className="text-gray-600 font-medium text-sm">{booking.barber_profiles?.owner_name}</p>
+                            <p className="text-gray-600 font-medium text-sm text-ellipsis-1">{booking.barber_profiles?.owner_name}</p>
                           </div>
                           
-                          <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(booking.status)} flex items-center space-x-1`}>
+                          <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(booking.status)} flex items-center space-x-1 shrink-0`}>
                             {getStatusIcon(booking.status)}
                             <span>{booking.status.replace('_', ' ').toUpperCase()}</span>
                           </div>
                         </div>
 
                         <div className="space-y-2">
-                          <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4">
-                            <div className="flex items-center space-x-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 min-w-0">
+                            <div className="flex items-center space-x-2 min-w-0">
                               <div className="bg-primary-100 p-1.5 rounded-lg">
-                                <User className="h-4 w-4" />
+                                <User className="h-4 w-4 shrink-0" />
                               </div>
-                              <span className="font-semibold text-gray-900 text-sm">{booking.services?.name}</span>
+                              <span className="font-semibold text-gray-900 text-sm text-ellipsis-1 min-w-0">{booking.services?.name}</span>
                             </div>
                             <div className="flex items-center space-x-2">
                               <div className="bg-gray-200 p-1.5 rounded-lg">
-                                <Clock className="h-4 w-4" />
+                                <Clock className="h-4 w-4 shrink-0" />
                               </div>
                               <span className="text-gray-600 font-medium text-sm">{booking.services?.duration_minutes} min</span>
                             </div>
                           </div>
 
-                          <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4">
-                            <div className="flex items-center space-x-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 min-w-0">
+                            <div className="flex items-center space-x-2 min-w-0">
                               <div className="bg-accent-100 p-1.5 rounded-lg">
-                                <Calendar className="h-4 w-4" />
+                                <Calendar className="h-4 w-4 shrink-0" />
                               </div>
-                              <span className="font-semibold text-gray-900 text-sm">
+                              <span className="font-semibold text-gray-900 text-sm text-ellipsis-1 min-w-0">
                                 {format(new Date(booking.appointment_date), 'EEEE, MMMM d, yyyy')}
                               </span>
                             </div>
                             <div className="flex items-center space-x-2">
                               <div className="bg-yellow-100 p-1.5 rounded-lg">
-                                <Clock className="h-4 w-4" />
+                                <Clock className="h-4 w-4 shrink-0" />
                               </div>
                               <span className="font-semibold text-gray-900 text-sm">{booking.appointment_time}</span>
                             </div>
                           </div>
 
                           {booking.barber_profiles?.city && (
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-2 min-w-0">
                               <div className="bg-gray-200 p-1.5 rounded-lg">
-                                <MapPin className="h-4 w-4" />
+                                <MapPin className="h-4 w-4 shrink-0" />
                               </div>
-                              <span className="text-gray-600 font-medium text-sm">{booking.barber_profiles.city}, {booking.barber_profiles.state}</span>
+                              <span className="text-gray-600 font-medium text-sm text-ellipsis-1 min-w-0">{booking.barber_profiles.city}, {booking.barber_profiles.state}</span>
                             </div>
                           )}
 
                           {booking.notes && (
-                            <div className="bg-gray-50 rounded-lg p-3 mt-2">
-                              <p className="text-gray-700 text-sm">
+                            <div className="bg-gray-50 rounded-lg p-3 mt-2 min-w-0">
+                              <p className="text-gray-700 text-sm break-anywhere hyphens-auto">
                                 <strong>Notes:</strong> {booking.notes}
                               </p>
                             </div>

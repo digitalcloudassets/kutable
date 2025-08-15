@@ -393,6 +393,22 @@ body {
 .scroll-x { 
   overflow-x: auto; 
 }
+
+@layer utilities {
+  /* Text overflow utilities */
+  .text-ellipsis-1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .text-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .break-anywhere { overflow-wrap: anywhere; word-break: break-word; }
+  .hyphens-auto { hyphens: auto; }
+  
+  @media (max-width: 640px) {
+    .mobile-stack { @apply flex-col space-y-4 space-x-0; }
+  }
+  
+  .app-stack { @apply space-y-6 md:space-y-8; }
+  .app-bleed { @apply w-full; }
+  .app-pad   { @apply p-4 sm:p-6 lg:p-8; }
+}
 .badge-warning {
   @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800;
 }
