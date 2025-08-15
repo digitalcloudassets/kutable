@@ -350,7 +350,7 @@ const DashboardPage: React.FC = () => {
 
   // Fallback: User type not determined yet
   return (
-    <div className="min-h-screen bg-gray-50 page-container">
+    <div className="min-h-screen bg-gray-50">
       <div className="container app-stack py-8 pt-28">
         <SupabaseConnectionBanner isConnected={isConnected} />
         <section className="rounded-3xl border bg-white app-bleed app-pad">
