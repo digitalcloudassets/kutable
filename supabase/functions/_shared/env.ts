@@ -26,4 +26,10 @@ export const serverEnv = {
     from: get('TWILIO_PHONE_NUMBER'),
   },
   emailProviderKey: get('EMAIL_PROVIDER_API_KEY', false) ?? '',
+  
+  // Turnstile (optional)
+  turnstileSecretKey: (Deno.env.get('TURNSTILE_SECRET_KEY') ?? '').trim(),
 };
+
+// Turnstile is enabled only if secret key exists
+export const TURNSTILE_ENABLED = serverEnv.turnstileSecretKey.length > 0;

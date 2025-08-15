@@ -28,10 +28,17 @@ export const env = {
   supabaseFunctionsUrl: (import.meta.env.VITE_SUPABASE_FUNCTIONS_URL as string) ||
                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`,    // ✅ fallback
   stripePublishableKey,
-  googleMapsApiKey,
-  turnstileSiteKey,       // optional; leave blank to disable
+  turnstileSiteKey: (import.meta.env.VITE_TURNSTILE_SITE_KEY as string || '').trim(),
   isBolt,
-  enableTurnstile: !!turnstileSiteKey && import.meta.env.PROD, // default OFF unless prod + real key
+  enableTurnstile: !!(import.meta.env.VITE_TURNSTILE_SITE_KEY || '').trim() && import.meta.env.PROD,
 };
+
+// Turnstile is enabled only if site key exists and in production
+export const TURNSTILE_ENABLED = env.enableTurnstile && env.turnstileSiteKey.length > 0;
+
+if (!TURNSTILE_ENABLED && import.meta.env.DEV) {
+  // eslint-disable-next-line no-console
+  console.info('[env] Turnstile disabled (no site key or not in production)');
+}
 
 export type Env = typeof env;

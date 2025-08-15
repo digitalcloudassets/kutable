@@ -1,5 +1,5 @@
 // Turnstile utility functions - safe to call whether enabled or not
-import { env } from '../utils/env';
+import { env, TURNSTILE_ENABLED } from '../utils/env';
 
 declare global {
   interface Window {
@@ -19,7 +19,7 @@ declare global {
  */
 export async function getCaptchaToken(action?: string): Promise<string | null> {
   // Return immediately if Turnstile is disabled
-  if (!env.enableTurnstile || !env.turnstileSiteKey) {
+  if (!TURNSTILE_ENABLED) {
     return 'no-captcha-configured';
   }
 
@@ -81,7 +81,7 @@ export async function getCaptchaToken(action?: string): Promise<string | null> {
  * Check if Turnstile is properly configured and available
  */
 export function isTurnstileAvailable(): boolean {
-  return env.enableTurnstile && !!env.turnstileSiteKey && !!window.turnstile;
+  return TURNSTILE_ENABLED && !!window.turnstile;
 }
 
 /**
@@ -89,7 +89,7 @@ export function isTurnstileAvailable(): boolean {
  */
 export function initializeTurnstile(): Promise<boolean> {
   return new Promise((resolve) => {
-    if (!env.enableTurnstile || !env.turnstileSiteKey) {
+    if (!TURNSTILE_ENABLED) {
       resolve(false);
       return;
     }

@@ -5,6 +5,7 @@
 import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
 import { consumeRateLimit } from '../_shared/rateLimit.ts';
 import { withSecurityHeaders } from '../_shared/security_headers.ts';
+import { verifyTurnstile } from '../_shared/turnstile.ts';
 import { slog } from '../_shared/logger.ts';
 
 const base = withSecurityHeaders(corsHeaders(['POST', 'OPTIONS']));
@@ -112,56 +113,31 @@ Deno.serve(async (req) => {
 
   // Verify Turnstile CAPTCHA token
   if (captchaToken && captchaToken !== 'no-captcha-configured') {
-    try {
-      const turnstileSecret = Deno.env.get('TURNSTILE_SECRET_KEY');
-      if (!turnstileSecret) {
-        console.warn('Turnstile secret not configured - skipping CAPTCHA verification');
-      } else {
-        const form = new FormData();
-        form.append('secret', turnstileSecret);
-        form.append('response', captchaToken);
-        const clientIp = getClientIp(req);
-        if (clientIp) {
-          form.append('remoteip', clientIp);
-        }
-
-        const verifyResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-          method: 'POST',
-          body: form,
-        });
-        
-        const verifyResult = await verifyResponse.json();
-        
-        if (!verifyResult?.success) {
-          slog.warn('Turnstile verification failed:', verifyResult);
-          return resJson(403, { 
-            success: false, 
-            error: 'captcha_failed',
-            detail: 'Security verification failed' 
-          });
-        }
-        
-        // Optionally verify the action matches
-        if (verifyResult.action && verifyResult.action !== 'create_payment_intent') {
-          slog.warn('Turnstile action mismatch:', verifyResult.action);
-          return resJson(403, { 
-            success: false, 
-            error: 'captcha_failed',
-            detail: 'Security verification action mismatch' 
-          });
-        }
-        
-        slog.debug('Turnstile verification passed for payment intent creation');
-      }
-    } catch (captchaError) {
-      slog.error('CAPTCHA verification error:', captchaError);
-      return resJson(502, { 
+    const clientIp = getClientIp(req);
+    const verification = await verifyTurnstile(captchaToken, clientIp);
+    
+    if (!verification.bypassed && !verification.ok) {
+      slog.warn('Turnstile verification failed:', verification);
+      return resJson(403, { 
         success: false, 
-        error: 'captcha_verify_error',
-        detail: 'Security verification temporarily unavailable' 
+        error: 'captcha_failed',
+        detail: 'Security verification failed' 
       });
     }
-  } else if (!captchaToken) {
+    
+    if (verification.result?.action && verification.result.action !== 'create_payment_intent') {
+      slog.warn('Turnstile action mismatch:', verification.result.action);
+      return resJson(403, { 
+        success: false, 
+        error: 'captcha_failed',
+        detail: 'Security verification action mismatch' 
+      });
+    }
+    
+    if (!verification.bypassed) {
+      slog.debug('Turnstile verification passed for payment intent creation');
+    }
+  } else if (!captchaToken && TURNSTILE_ENABLED) {
     // CAPTCHA token is required
     return resJson(400, { 
       success: false, 

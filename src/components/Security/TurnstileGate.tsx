@@ -1,6 +1,6 @@
 // Complete replacement: Bypass entirely unless enableTurnstile is true.
 import React, { useEffect, useRef, useState } from 'react';
-import { env } from '../../utils/env';
+import { TURNSTILE_ENABLED, env } from '../../utils/env';
 
 type Props = {
   children: React.ReactNode;
@@ -16,7 +16,7 @@ declare global {
 
 export default function TurnstileGate({ children, onToken }: Props) {
   // If not enabled, render children immediately — no script, no blocking.
-  if (!env.enableTurnstile || !env.turnstileSiteKey) {
+  if (!TURNSTILE_ENABLED) {
     return <>{children}</>;
   }
 
