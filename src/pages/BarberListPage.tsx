@@ -58,7 +58,6 @@ const BarberListPage: React.FC = () => {
       const { data: dbProfiles, error } = await supabase
         .from('barber_profiles')
         .select('*')
-        .eq('is_active', true)
         .eq('is_claimed', true)
         .order('created_at', { ascending: false });
 
@@ -77,7 +76,7 @@ const BarberListPage: React.FC = () => {
         profile_image_url: profile.profile_image_url || 'https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=400'
       }));
 
-      logger.info(`✅ Found ${profiles.length} verified barber profiles`);
+      logger.info(`✅ Found ${profiles.length} claimed barber profiles`);
       
       setBarbers(profiles);
       setFilteredBarbers(profiles);
