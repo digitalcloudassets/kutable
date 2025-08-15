@@ -12,6 +12,22 @@ type AuthCtx = {
 
 const Ctx = createContext<AuthCtx>({ loading: true, session: null, user: null });
 
+// Export the context for external use
+export const AuthContext = Ctx;
+
+// Local, cycle-free hook for modules that import from context/AuthProvider
+export function useAuth() {
+  const ctx = useContext(Ctx);
+  if (!ctx) {
+    throw new Error('useAuth must be used within <AuthProvider>');
+  }
+  return {
+    user: ctx.user,
+    loading: ctx.loading,
+    session: ctx.session
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
