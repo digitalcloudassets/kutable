@@ -36,10 +36,10 @@ const Hero: React.FC = () => {
           <h1 className={`font-display font-bold text-white mb-8 transition-all duration-700 delay-200 ${
             animationStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           } text-4xl md:text-6xl lg:text-7xl leading-tight`}>
-            Your booking page —
+            Your Booking Page
             <br />
             <span className="bg-gradient-to-r from-accent-400 via-primary-400 to-accent-400 bg-clip-text text-transparent animate-gradient text-5xl md:text-7xl lg:text-8xl">
-              live today
+              Live Today
             </span>
           </h1>
 
