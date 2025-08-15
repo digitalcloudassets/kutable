@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   User, 
   Calendar, 
@@ -39,6 +39,7 @@ const MobileTabBar: React.FC<MobileTabBarProps> = ({
   unreadCount = 0
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
@@ -99,10 +100,16 @@ const MobileTabBar: React.FC<MobileTabBarProps> = ({
   };
   
   const handleTabClick = (item: any) => {
-    if (item.onClick) {
-      item.onClick();
+    if (userType === 'barber') {
+      // Use URL routing for barber tabs
+      navigate(`/dashboard/barber/${item.id}`);
     } else {
-      onTabChange(item.id);
+      // Use state-based routing for client tabs
+      if (item.onClick) {
+        item.onClick();
+      } else {
+        onTabChange(item.id);
+      }
     }
   };
 
@@ -113,31 +120,29 @@ const MobileTabBar: React.FC<MobileTabBarProps> = ({
         <div className="relative h-full">
           {/* Left fade */}
           {!atStart && (
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white/90 to-transparent z-10" />
+            <>
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white/90 to-transparent z-10" />
+              <button
+                aria-label="Scroll tabs left"
+                onClick={() => nudge('left')}
+                className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-gray-100/90 shadow-md flex items-center justify-center z-20 border"
+              >
+                <ChevronLeft className="h-4 w-4 text-gray-400" />
+              </button>
+            </>
           )}
           {/* Right fade */}
           {!atEnd && (
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white/90 to-transparent z-10" />
-          )}
-
-          {/* Scroll buttons */}
-          {!atStart && (
-            <button
-              aria-label="Scroll tabs left"
-              onClick={() => nudge('left')}
-              className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-white/90 shadow-md flex items-center justify-center z-20 border"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-          )}
-          {!atEnd && (
-            <button
-              aria-label="Scroll tabs right"
-              onClick={() => nudge('right')}
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-white/90 shadow-md flex items-center justify-center z-20 border"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+            <>
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white/90 to-transparent z-10" />
+              <button
+                aria-label="Scroll tabs right"
+                onClick={() => nudge('right')}
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-gray-100/90 shadow-md flex items-center justify-center z-20 border"
+              >
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </button>
+            </>
           )}
 
           <div

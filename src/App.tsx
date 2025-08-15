@@ -19,6 +19,7 @@ import HomePage from './pages/HomePage';
 import BarberListPage from './pages/BarberListPage';
 import BarberProfilePage from './pages/BarberProfilePage';
 import DashboardPage from './pages/DashboardPage';
+import BarberDashboard from './pages/BarberDashboard';
 import ProfileSetupPage from './pages/ProfileSetupPage';
 import OnboardingPage from './pages/OnboardingPage';
 import AdminPage from './pages/AdminPage';
