@@ -108,6 +108,8 @@ Deno.serve(async (req) => {
     return resJson(400, { success: false, error: 'Missing or invalid fields: barberId, amount (cents), currency' });
   }
 
+  slog.info('Creating payment intent for:', { barberId, amount, currency, metadata });
+
   // Verify Turnstile CAPTCHA token
   if (captchaToken && captchaToken !== 'no-captcha-configured') {
     try {
@@ -131,7 +133,7 @@ Deno.serve(async (req) => {
         const verifyResult = await verifyResponse.json();
         
         if (!verifyResult?.success) {
-          console.warn('Turnstile verification failed:', verifyResult);
+          slog.warn('Turnstile verification failed:', verifyResult);
           return resJson(403, { 
             success: false, 
             error: 'captcha_failed',
@@ -141,7 +143,7 @@ Deno.serve(async (req) => {
         
         // Optionally verify the action matches
         if (verifyResult.action && verifyResult.action !== 'create_payment_intent') {
-          console.warn('Turnstile action mismatch:', verifyResult.action);
+          slog.warn('Turnstile action mismatch:', verifyResult.action);
           return resJson(403, { 
             success: false, 
             error: 'captcha_failed',
@@ -149,10 +151,10 @@ Deno.serve(async (req) => {
           });
         }
         
-        console.log('Turnstile verification passed for payment intent creation');
+        slog.debug('Turnstile verification passed for payment intent creation');
       }
     } catch (captchaError) {
-      console.error('CAPTCHA verification error:', captchaError);
+      slog.error('CAPTCHA verification error:', captchaError);
       return resJson(502, { 
         success: false, 
         error: 'captcha_verify_error',

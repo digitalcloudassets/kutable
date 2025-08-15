@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { applySearchFilters, SearchFilters, DEFAULT_FILTERS } from '../utils/searchFilters';
 import AdvancedSearchPanel from '../components/Search/AdvancedSearchPanel';
 import { NotificationManager } from '../utils/notifications';
+import { logger } from '../utils/logger';
 
 interface BarberProfile {
   id: string;
@@ -53,6 +54,7 @@ const BarberListPage: React.FC = () => {
   const loadBarberData = async () => {
     try {
       logger.debug('📁 Loading verified barber profiles from database...');
+      logger.debug('📁 Loading verified barber profiles from database...');
       
       const { data: dbProfiles, error } = await supabase
         .from('barber_profiles')
@@ -62,6 +64,7 @@ const BarberListPage: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
+        logger.warn('Database query failed:', error);
         logger.warn('Database query failed:', error);
         setBarbers([]);
         setFilteredBarbers([]);
@@ -77,6 +80,7 @@ const BarberListPage: React.FC = () => {
       }));
 
       logger.info(`✅ Found ${profiles.length} verified barber profiles`);
+      logger.info(`✅ Found ${profiles.length} verified barber profiles`);
       
       setBarbers(profiles);
       setFilteredBarbers(profiles);
@@ -88,6 +92,7 @@ const BarberListPage: React.FC = () => {
       setCities(uniqueCities.sort());
 
     } catch (error) {
+      logger.error('❌ Failed to load profiles:', error);
       logger.error('❌ Failed to load profiles:', error);
       setBarbers([]);
       setFilteredBarbers([]);

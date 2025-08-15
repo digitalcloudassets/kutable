@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useMessaging } from '../../hooks/useMessaging';
 import { useAdminGuard } from '../../hooks/useAdminGuard';
 import { logger } from '../../utils/logger';
+import { logger } from '../../utils/logger';
 import AdminGuardBanner from '../Debug/AdminGuardBanner';
 
 const Header: React.FC = () => {
@@ -18,6 +19,7 @@ const Header: React.FC = () => {
   // Enhanced debug logging
   useEffect(() => {
     if (user) {
+      logger.debug('🔐 Header Debug - Admin Check:', {
       logger.debug('🔐 Header Debug - Admin Check:', {
         userId: user.id,
         userEmail: user.email,
@@ -36,7 +38,9 @@ const Header: React.FC = () => {
       // Only log as error if it's not a development mode issue
       if (errorMsg.includes('fallback mode') || errorMsg.includes('Development environment detected') || errorMsg.includes('WebContainer')) {
         logger.info('ℹ️  Admin Guard:', errorMsg);
+        logger.info('ℹ️  Admin Guard:', errorMsg);
       } else {
+        logger.error('🔐 Admin Guard Error:', errorMsg);
         logger.error('🔐 Admin Guard Error:', errorMsg);
       }
     }

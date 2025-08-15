@@ -5,6 +5,7 @@ import './index.css';
 import { performanceOptimizer, initializeWebVitals } from './utils/performanceOptimizations';
 import { initializeProductionOptimizations } from './utils/productionConfig';
 import { logger } from './utils/logger';
+import { logger } from './utils/logger';
 
 // Initialize production optimizations
 if (!import.meta.env.DEV) {
@@ -13,6 +14,13 @@ if (!import.meta.env.DEV) {
   initializeWebVitals();
 }
 
+// Global error taps: quiet in prod for debug/info, but always capture errors/warns.
+window.addEventListener('error', (e) => {
+  logger.error('Uncaught error', e.error ?? e.message ?? e);
+});
+window.addEventListener('unhandledrejection', (e) => {
+  logger.error('Unhandled promise rejection', e.reason ?? e);
+});
 // Global error taps: quiet in prod for debug/info, but always capture errors/warns.
 window.addEventListener('error', (e) => {
   logger.error('Uncaught error', e.error ?? e.message ?? e);

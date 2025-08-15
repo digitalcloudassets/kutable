@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { env } from './env';
 import { isWebContainer } from './runtimeEnv';
 import { logger } from '../utils/logger';
+import { logger } from '../utils/logger';
 
 const supabaseUrl = env.supabaseUrl;
 const supabaseAnonKey = env.supabaseAnonKey;
@@ -27,6 +28,7 @@ if (shouldUseFallback) {
   const reason = !hasValidCredentials 
     ? 'Supabase not connected - using fallback mode'
     : 'WebContainer environment detected - using fallback mode';
+  logger.info(`📁 ${reason}`);
   logger.info(`📁 ${reason}`);
   
   // Create fallback client

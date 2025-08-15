@@ -29,17 +29,17 @@ const Hero: React.FC = () => {
             animationStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}>
             <Sparkles className="h-5 w-5 text-accent-400" />
-            <span className="text-white/90 font-medium">The Future of Barber Booking</span>
+            <span className="text-white/90 font-medium">No membership. No setup fee.</span>
           </div>
 
           {/* Main Headline */}
           <h1 className={`font-display font-bold text-white mb-8 transition-all duration-700 delay-200 ${
             animationStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           } text-4xl md:text-6xl lg:text-7xl leading-tight`}>
-            Book More Cuts With
+            Your booking page —
             <br />
             <span className="bg-gradient-to-r from-accent-400 via-primary-400 to-accent-400 bg-clip-text text-transparent animate-gradient text-5xl md:text-7xl lg:text-8xl">
-              Kutable
+              live today
             </span>
           </h1>
 
@@ -47,44 +47,9 @@ const Hero: React.FC = () => {
           <p className={`text-xl md:text-2xl text-white/80 mb-12 max-w-3xl mx-auto leading-relaxed transition-all duration-700 delay-400 ${
             animationStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}>
-            Accept online bookings, get paid automatically, and showcase your work to thousands 
-            of potential customers. The modern way to run your barber business.
+            Kutable gives solo barbers a clean, mobile-first booking site with payments, 
+            reminders, and your own shareable link. Just 1% per booking.
           </p>
-          
-          {/* Stats Row */}
-          <div className={`flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-12 mb-12 transition-all duration-700 delay-600 ${
-            animationStep >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-          }`}>
-            <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-3 border border-white/20">
-              <div className="bg-yellow-400 p-2 rounded-xl">
-                <Star className="h-5 w-5 text-gray-900" />
-              </div>
-              <div className="text-left">
-                <div className="text-white font-bold text-lg">4.8★</div>
-                <div className="text-white/70 text-sm">Average Rating</div>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-3 border border-white/20">
-              <div className="bg-accent-500 p-2 rounded-xl">
-                <Calendar className="h-5 w-5 text-white" />
-              </div>
-              <div className="text-left">
-                <div className="text-white font-bold text-lg">2.5K+</div>
-                <div className="text-white/70 text-sm">Barbers Listed</div>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-3 border border-white/20">
-              <div className="bg-primary-500 p-2 rounded-xl">
-                <Scissors className="h-5 w-5 text-white" />
-              </div>
-              <div className="text-left">
-                <div className="text-white font-bold text-lg">No</div>
-                <div className="text-white/70 text-sm">Setup Fees</div>
-              </div>
-            </div>
-          </div>
           
           {/* CTA Buttons */}
           <div className={`flex flex-col sm:flex-row gap-6 justify-center items-center mb-16 transition-all duration-700 delay-700 ${
@@ -95,7 +60,7 @@ const Hero: React.FC = () => {
               className="group bg-white text-gray-900 px-8 py-4 rounded-2xl text-lg font-semibold hover:bg-gray-100 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-premium-lg hover:shadow-2xl flex items-center space-x-3"
             >
               <Scissors className="h-6 w-6 text-primary-600 group-hover:rotate-12 transition-transform" />
-              <span>Join Kutable</span>
+              <span>Create my page</span>
               <ArrowRight className="h-5 w-5 text-primary-600 group-hover:translate-x-1 transition-transform" />
             </Link>
             
@@ -104,7 +69,7 @@ const Hero: React.FC = () => {
               className="group bg-gradient-to-r from-accent-500 to-accent-600 text-white px-8 py-4 rounded-2xl text-lg font-semibold hover:from-accent-600 hover:to-accent-700 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-premium-lg hover:shadow-2xl flex items-center space-x-3"
             >
               <Search className="h-6 w-6 group-hover:scale-110 transition-transform" />
-              <span>View Directory</span>
+              <span>See examples</span>
             </Link>
           </div>
 
@@ -114,17 +79,17 @@ const Hero: React.FC = () => {
           }`}>
             <div className="flex items-center space-x-2 text-white/70">
               <CheckCircle className="h-5 w-5 text-accent-400" />
-              <span className="text-sm font-medium">Trusted by 2,500+ Barbers</span>
+              <span className="text-sm font-medium">No setup fees</span>
             </div>
             <div className="hidden sm:block w-1 h-1 bg-white/40 rounded-full"></div>
             <div className="hidden sm:flex items-center space-x-2 text-white/70">
               <CheckCircle className="h-5 w-5 text-accent-400" />
-              <span className="text-sm font-medium">No Setup Fees</span>
+              <span className="text-sm font-medium">1% per booking</span>
             </div>
             <div className="hidden lg:block w-1 h-1 bg-white/40 rounded-full"></div>
             <div className="hidden lg:flex items-center space-x-2 text-white/70">
               <CheckCircle className="h-5 w-5 text-accent-400" />
-              <span className="text-sm font-medium">Get Paid Instantly</span>
+              <span className="text-sm font-medium">Own your data</span>
             </div>
           </div>
         </div>
