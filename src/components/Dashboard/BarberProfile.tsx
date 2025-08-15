@@ -39,6 +39,7 @@ import { NotificationManager } from '../../utils/notifications';
 import { uploadBarberAvatar, uploadBarberBanner } from '../../lib/uploadAvatar';
 import { useStripeConnect } from '../../hooks/useStripeConnect';
 import { getConnectState, setConnectState, clearConnectState } from '../../lib/connectState';
+import ShareProfileLink from '../Profile/ShareProfileLink';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -477,6 +478,14 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                     {barber.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </div>
+               
+               {/* Brand Link */}
+               <div className="mt-6">
+                 <ShareProfileLink 
+                   slug={barber.slug} 
+                   id={barber.id} 
+                 />
+               </div>
               </div>
             </div>
 
