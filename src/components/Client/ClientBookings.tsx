@@ -115,12 +115,12 @@ const ClientBookings: React.FC = () => {
   }, [bookings, statusFilter, searchTerm]);
 
   const fetchBookings = async () => {
-   const uid = user?.id ?? null;
-   if (!uid) {
-     setBookings([]);
-     setLoading(false);
-     return;
-   }
+    const uid = user?.id ?? null;
+    if (!uid) {
+      setBookings([]);
+      setLoading(false);
+      return;
+    }
 
     if (!isConnected) {
       console.warn('Supabase not connected - cannot fetch bookings');
@@ -131,13 +131,6 @@ const ClientBookings: React.FC = () => {
 
     try {
       // Get client profile first
-      const uid = user?.id ?? null;
-      if (!uid) {
-        setBookings([]);
-        setLoading(false);
-        return;
-      }
-
       const { data: cp, error: cpErr } = await supabase
         .from('client_profiles')
         .select('id')
@@ -151,7 +144,7 @@ const ClientBookings: React.FC = () => {
         return;
       }
 
-      // Query bookings by client_profile id (no cross-table expansion to avoid RLS issues)
+      // Step 1: Query bookings by client_profile id (no cross-table expansion to avoid RLS issues)
       const { data, error } = await supabase
         .from('bookings')
         .select('id, appointment_date, appointment_time, status, total_amount, deposit_amount, notes, created_at, barber_id, service_id')
@@ -161,7 +154,7 @@ const ClientBookings: React.FC = () => {
         
       if (error) throw error;
      
-      // Fetch barber and service details separately to avoid RLS recursion
+      // Step 2: Fetch barber and service details separately to avoid RLS recursion
       const enrichedBookings = [];
       for (const booking of data || []) {
         let barberData = null;

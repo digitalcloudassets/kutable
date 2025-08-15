@@ -45,36 +45,50 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
 
   const fetchBookings = async () => {
     try {
+      // Step 1: Query bookings only (no cross-table expansion to avoid RLS recursion)
       const { data, error } = await supabase
         .from('bookings')
-        .select(`
-          id,
-          appointment_date,
-          appointment_time,
-          status,
-          total_amount,
-          deposit_amount,
-          notes,
-          created_at,
-          stripe_payment_intent_id,
-          stripe_charge_id,
-          client_profiles (
-            first_name,
-            last_name,
-            phone,
-            email
-          ),
-          services (
-            name,
-            duration_minutes
-          )
-        `)
+        .select('id, appointment_date, appointment_time, status, total_amount, deposit_amount, notes, created_at, stripe_payment_intent_id, stripe_charge_id, client_id, service_id')
         .eq('barber_id', barberId)
         .order('appointment_date', { ascending: false })
         .order('appointment_time', { ascending: false });
 
       if (error) throw error;
-      setBookings(data || []);
+      
+      // Step 2: Fetch client and service details separately to avoid RLS recursion
+      const enrichedBookings = [];
+      for (const booking of data || []) {
+        let clientData = null;
+        let serviceData = null;
+        
+        // Fetch client profile separately
+        if (booking.client_id) {
+          const { data: client } = await supabase
+            .from('client_profiles')
+            .select('first_name, last_name, phone, email')
+            .eq('id', booking.client_id)
+            .maybeSingle();
+          clientData = client;
+        }
+        
+        // Fetch service details
+        if (booking.service_id) {
+          const { data: service } = await supabase
+            .from('services')
+            .select('name, duration_minutes')
+            .eq('id', booking.service_id)
+            .maybeSingle();
+          serviceData = service;
+        }
+        
+        enrichedBookings.push({
+          ...booking,
+          client_profiles: clientData,
+          services: serviceData
+        });
+      }
+      
+      setBookings(enrichedBookings);
     } catch (error) {
       console.error('Error fetching bookings:', error);
       NotificationManager.error('Failed to load bookings');

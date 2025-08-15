@@ -203,13 +203,16 @@ const ClientProfileSettings: React.FC = () => {
 
   // Handle profile refresh after consent updates
   useEffect(() => {
-    if (!consentJustUpdated || !userId) return;
+    if (!consentJustUpdated) return;
+    
+    const uid = userId ?? null;
+    if (!uid) return;
     
     let cancelled = false;
     
     const run = async () => {
       try {
-        const result = await ensureOrFetchClientProfile(userId);
+        const result = await ensureOrFetchClientProfile(uid);
         if (!cancelled && result) {
           setProfile(result);
           setClientProfile(result);
@@ -219,6 +222,7 @@ const ClientProfileSettings: React.FC = () => {
       }
     };
     
+    // Use void to safely call async function without awaiting
     void run();
     
     return () => {

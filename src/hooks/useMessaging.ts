@@ -24,7 +24,10 @@ export const useMessaging = () => {
 
   const loadConversations = useCallback(async () => {
     const uid = user?.id ?? null;
-    if (!uid) return;
+    if (!uid) {
+      setConversations([]);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -32,6 +35,7 @@ export const useMessaging = () => {
       setConversations(conversationData);
     } catch (error) {
       console.error('Error loading conversations:', error);
+      setConversations([]);
     } finally {
       setLoading(false);
     }
@@ -39,13 +43,17 @@ export const useMessaging = () => {
 
   const loadUnreadCount = useCallback(async () => {
     const uid = user?.id ?? null;
-    if (!uid) return;
+    if (!uid) {
+      setUnreadCount(0);
+      return;
+    }
 
     try {
       const count = await messagingService.getUnreadMessageCount(uid);
       setUnreadCount(count);
     } catch (error) {
       console.error('Error loading unread count:', error);
+      setUnreadCount(0);
     }
   }, [user]);
 

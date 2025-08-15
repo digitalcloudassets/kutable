@@ -79,8 +79,22 @@ function App() {
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/barbers" element={<BarberListPage />} />
                     <Route path="/barber/:slug" element={<BarberProfilePage />} />
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/dashboard/barber/*" element={<BarberDashboard />} />
+                    <Route 
+                      path="/dashboard" 
+                      element={
+                        <OnboardingGuard>
+                          <DashboardPage />
+                        </OnboardingGuard>
+                      } 
+                    />
+                    <Route 
+                      path="/dashboard/barber/*" 
+                      element={
+                        <OnboardingGuard>
+                          <BarberDashboard />
+                        </OnboardingGuard>
+                      } 
+                    />
                     <Route path="/book/:barberSlug/:serviceId?" element={<BookingFlow />} />
                     <Route path="/onboarding" element={<OnboardingPage />} />
                     <Route path="/onboarding/barber" element={<BarberOnboardingEngine />} />

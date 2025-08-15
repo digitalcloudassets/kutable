@@ -110,15 +110,15 @@ export async function decideRoleAndState(userId: string, lastRolePref?: UserRole
     hasAnyBooking = !!(bks && bks.length > 0);
   }
 
-  // 3) Choose role
+  // 3) Choose role (favor barber if exists)
   let role: UserRole = 'unknown';
   if (barberId) role = 'barber';
   else if (clientId) role = 'client';
 
-  // Allow a user to prefer "client" if both exist and they picked client last time
-  if (clientId && barberId && lastRolePref === 'client') {
-    role = 'client';
-  }
+  // ✅ TEMP: disable lastRole preference to avoid auto-flipping to client
+  // if (clientId && barberId && lastRolePref === 'client') {
+  //   role = 'client';
+  // }
 
   // 4) Compute state
   let state: OnboardingState = 'needs_profile';
@@ -130,6 +130,12 @@ export async function decideRoleAndState(userId: string, lastRolePref?: UserRole
     // unknown role (no profiles yet)
     state = hasAnyBooking || localStorage.getItem('kutable:returning') === '1' ? 'complete' : 'needs_profile';
   }
+
+  // Deep logs for debugging
+  console.log('[decideRoleAndState]', {
+    userId, clientId, barberId, payoutsEnabled, hasAnyBooking, lastRolePref,
+    chosenRole: role, state
+  });
 
   return { role, state, ids: { clientId, barberId } };
 }

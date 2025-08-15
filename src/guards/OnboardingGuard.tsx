@@ -27,9 +27,29 @@ export default function OnboardingGuard({ children }: Props) {
         return; // let login UI handle it
       }
 
+      /** 🚨 TEMP BYPASS: allow specific barber(s) to enter unconditionally */
+      const ALLOW_UIDS = new Set<string>([
+        // Add your barber's auth.users.id here
+        // 'YOUR_BARBER_AUTH_USER_ID',
+      ]);
+      const ALLOW_EMAILS = new Set<string>([
+        'pete@kutable.com', // Add barber emails here
+      ]);
+
+      if (ALLOW_UIDS.has(uid) || ALLOW_EMAILS.has((user.email ?? '').toLowerCase())) {
+        localStorage.setItem('kutable:lastRole', 'barber');
+        localStorage.setItem('kutable:returning', '1');
+        setChecking(false);
+        return;
+      }
+
       try {
         const lastRolePref = (localStorage.getItem('kutable:lastRole') as UserRole | null) ?? undefined;
         const { role, state } = await decideRoleAndState(uid, lastRolePref);
+
+        console.log('[OnboardingGuard] decision', {
+          uid, email: user.email, role, state, path: loc.pathname, search: loc.search
+        });
 
         // mark returning once they pass guard
         localStorage.setItem('kutable:returning', '1');
@@ -56,9 +76,7 @@ export default function OnboardingGuard({ children }: Props) {
       }
     };
 
-    if (alive) {
-      run();
-    }
+    run();
     return () => { alive = false; };
   }, [user?.id, loading, nav, loc.pathname, loc.search]);
 

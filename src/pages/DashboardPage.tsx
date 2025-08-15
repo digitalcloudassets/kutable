@@ -165,14 +165,17 @@ const DashboardPage: React.FC = () => {
   }, [searchParams, user, isConnected, userType, setSearchParams, refreshBarberData]);
 
   const determineUserType = useCallback(async () => {
-    if (!user) return;
+    const uid = user?.id ?? null;
+    if (!uid) return;
 
     try {
       setLoading(true);
 
       // Use robust role detection
       const lastRolePref = (localStorage.getItem('kutable:lastRole') as UserRole | null) ?? undefined;
-      const { role, ids } = await decideRoleAndState(user.id, lastRolePref);
+      const { role, ids } = await decideRoleAndState(uid, lastRolePref);
+
+      console.log('[DashboardPage] determineUserType result:', { role, state, ids, lastRolePref });
 
       if (role === 'barber' && ids.barberId) {
         // Fetch full barber data
@@ -183,6 +186,7 @@ const DashboardPage: React.FC = () => {
           .single();
 
         if (barberData) {
+          localStorage.setItem('kutable:lastRole', 'barber');
           setUserType('barber');
           setBarber(barberData);
           setActiveTab('profile');
@@ -195,21 +199,24 @@ const DashboardPage: React.FC = () => {
       const clientProfile = await getOrCreateClientProfile(user);
       
       if (clientProfile) {
+        localStorage.setItem('kutable:lastRole', 'client');
         setUserType('client');
         setClientProfile(clientProfile);
         setActiveTab('bookings');
       } else {
+        localStorage.setItem('kutable:lastRole', 'client');
         setUserType('client');
         setActiveTab('bookings');
       }
     } catch (error) {
       console.error('DashboardPage load error:', error);
+      localStorage.setItem('kutable:lastRole', 'client');
       setUserType('client');
       setActiveTab('bookings');
     } finally {
       setLoading(false);
     }
-  }, [user, isConnected]);
+  }, [user]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);

@@ -74,11 +74,12 @@ export class MessagingService {
       return [];
     }
 
-   // Guard against undefined userId
-   if (!userId) {
-     console.warn('getUserConversations called with undefined userId');
-     return [];
-   }
+    // Guard against undefined userId
+    if (!userId) {
+      console.warn('getUserConversations called with undefined userId');
+      return [];
+    }
+    
     try {
       console.log('Loading conversations for user:', userId);
       
@@ -91,103 +92,74 @@ export class MessagingService {
 
       console.log('User barber profile:', barberProfile?.id || 'none');
       
-      // Get user's client profile - try by user_id first, then by email as fallback
-      let { data: clientProfile } = await supabase
+      // Get user's client profile
+      const { data: clientProfile } = await supabase
         .from('client_profiles')
         .select('id')
         .eq('user_id', userId)
         .maybeSingle();
 
-      // If no client profile found by user_id, try by email as fallback
-      if (!clientProfile) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email) {
-          const { data: profileByEmail } = await supabase
-            .from('client_profiles')
-            .select('id, user_id')
-            .eq('email', user.email)
-            .maybeSingle();
-            
-          if (profileByEmail) {
-            // Update the user_id to match the authenticated user
-            const { error: updateError } = await supabase
-              .from('client_profiles')
-              .update({ user_id: userId })
-              .eq('id', profileByEmail.id);
-              
-            if (!updateError) {
-              clientProfile = { id: profileByEmail.id };
-              console.log('Fixed client profile user_id mismatch in messaging');
-            }
-          }
-        }
-      }
       console.log('User client profile:', clientProfile?.id || 'none');
       
       let allBookings: any[] = [];
 
       // Get bookings where user is a barber
       if (barberProfile) {
+        // Step 1: Query bookings only
         const { data: barberBookings, error: barberError } = await supabase
           .from('bookings')
-          .select(`
-            id,
-            barber_id,
-            client_id,
-            appointment_date,
-            appointment_time,
-            status,
-            services(name),
-            barber_profiles(id, user_id, business_name, owner_name, profile_image_url),
-            client_profiles(id, user_id, first_name, last_name, profile_image_url)
-          `)
+          .select('id, barber_id, client_id, appointment_date, appointment_time, status, service_id')
           .eq('barber_id', barberProfile.id)
           .in('status', ['pending', 'confirmed', 'completed']);
 
         if (barberError) throw barberError;
         
-        // Debug: Check if any bookings have null client_profiles
-        console.log('Barber bookings client profiles check:', barberBookings?.map(b => ({
-          id: b.id,
-          client_id: b.client_id,
-          hasClientProfiles: !!b.client_profiles,
-          clientProfilesData: b.client_profiles
-        })));
-        
-        // Filter out bookings with null client_profiles and fetch client data separately
+        // Step 2: Fetch associated data separately to avoid RLS recursion
         const enrichedBarberBookings = [];
         for (const booking of barberBookings || []) {
-          if (!booking.client_profiles && booking.client_id) {
-            console.log('Fetching missing client data for booking:', booking.id, 'client_id:', booking.client_id);
-            // Fetch client profile separately
+          let clientData = null;
+          let serviceData = null;
+          let barberData = null;
+          
+          // Fetch client profile separately
+          if (booking.client_id) {
             const { data: clientProfile, error: clientFetchError } = await supabase
               .from('client_profiles')
-              .select('id, user_id, first_name, last_name, profile_image_url, email')
+              .select('id, user_id, first_name, last_name, profile_image_url')
               .eq('id', booking.client_id)
               .maybeSingle();
               
             if (clientFetchError) {
               console.error('Client profile fetch error:', clientFetchError, 'for client_id:', booking.client_id);
-            }
-              
-            if (clientProfile) {
-              booking.client_profiles = clientProfile;
-              console.log('Found missing client profile:', clientProfile);
             } else {
-              console.warn('Client profile not found for client_id:', booking.client_id, 'Error:', clientFetchError?.message);
-              // Create a fallback participant using the booking's client_id as a reference
-              console.log('Creating fallback client participant for messaging');
-              booking.client_profiles = {
-                id: booking.client_id,
-                user_id: null, // We don't know the user_id, so messaging won't work
-                first_name: 'Client',
-                last_name: '',
-                profile_image_url: null,
-                email: null
-              };
+              clientData = clientProfile;
             }
           }
-          enrichedBarberBookings.push(booking);
+          
+          // Fetch service data
+          if (booking.service_id) {
+            const { data: service } = await supabase
+              .from('services')
+              .select('name')
+              .eq('id', booking.service_id)
+              .maybeSingle();
+            serviceData = service;
+          }
+          
+          // Fetch barber data (current user)
+          const { data: barber } = await supabase
+            .from('barber_profiles')
+            .select('id, user_id, business_name, owner_name, profile_image_url')
+            .eq('id', barberProfile.id)
+            .maybeSingle();
+          barberData = barber;
+          
+          enrichedBarberBookings.push({
+            ...booking,
+            client_profiles: clientData,
+            services: serviceData,
+            barber_profiles: barberData
+          });
         }
         allBookings.push(...enrichedBarberBookings);
         console.log('Added barber bookings:', barberBookings?.length || 0);
@@ -195,52 +167,58 @@ export class MessagingService {
 
       // Get bookings where user is a client
       if (clientProfile) {
+        // Step 1: Query bookings only
         const { data: clientBookings, error: clientError } = await supabase
           .from('bookings')
-          .select(`
-            id,
-            barber_id,
-            client_id,
-            appointment_date,
-            appointment_time,
-            status,
-            services(name),
-            barber_profiles(id, user_id, business_name, owner_name, profile_image_url),
-            client_profiles(id, user_id, first_name, last_name, profile_image_url)
-          `)
+          .select('id, barber_id, client_id, appointment_date, appointment_time, status, service_id')
           .eq('client_id', clientProfile.id)
           .in('status', ['pending', 'confirmed', 'completed'])
           .order('appointment_date', { ascending: false });
 
         if (clientError) throw clientError;
-        console.log('Client bookings barber profiles check:', clientBookings?.map(b => ({
-          id: b.id,
-          barber_id: b.barber_id,
-          hasBarberProfiles: !!b.barber_profiles,
-          barberProfilesData: b.barber_profiles
-        })));
         
-        // Filter out bookings with null barber_profiles and fetch barber data separately
+        // Step 2: Fetch associated data separately to avoid RLS recursion
         const enrichedClientBookings = [];
         for (const booking of clientBookings || []) {
-          if (!booking.barber_profiles && booking.barber_id) {
-            console.log('Fetching missing barber data for booking:', booking.id, 'barber_id:', booking.barber_id);
-            // Fetch barber profile separately
+          let barberData = null;
+          let serviceData = null;
+          let clientData = null;
+          
+          // Fetch barber profile separately  
+          if (booking.barber_id) {
             const { data: barberProfile } = await supabase
               .from('barber_profiles')
               .select('id, user_id, business_name, owner_name, profile_image_url')
               .eq('id', booking.barber_id)
               .maybeSingle();
-              
-            if (barberProfile) {
-              booking.barber_profiles = barberProfile;
-              console.log('Found missing barber profile:', barberProfile);
-            } else {
-              console.warn('Barber profile not found for barber_id:', booking.barber_id);
-            }
+            barberData = barberProfile;
           }
-          enrichedClientBookings.push(booking);
-        }
+          
+          // Fetch service data
+          if (booking.service_id) {
+            const { data: service } = await supabase
+              .from('services')
+              .select('name')
+              .eq('id', booking.service_id)
+              .maybeSingle();
+            serviceData = service;
+          }
+          
+          // Fetch client data (current user)
+          const { data: client } = await supabase
+            .from('client_profiles')
+            .select('id, user_id, first_name, last_name, profile_image_url')
+            .eq('id', clientProfile.id)
+            .maybeSingle();
+          clientData = client;
+          
+          enrichedClientBookings.push({
+            ...booking,
+            barber_profiles: barberData,
+            services: serviceData,
+            client_profiles: clientData
+          });
+          }
         allBookings.push(...enrichedClientBookings);
         console.log('Added client bookings:', clientBookings?.length || 0);
       }
