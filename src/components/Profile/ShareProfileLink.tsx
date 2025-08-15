@@ -10,6 +10,7 @@ type Props = {
 export default function ShareProfileLink({ slug, id, className }: Props) {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const url = slug ? `${origin}/barber/${slug}` : `${origin}/barber/${id ?? ''}`;
+  const displayUrl = slug ? `kutable.com/barber/${slug}` : `kutable.com/barber/${id ?? ''}`;
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -39,7 +40,7 @@ export default function ShareProfileLink({ slug, id, className }: Props) {
     <div className={className ?? 'mt-2 flex items-center gap-2 text-sm'}>
       <div className="flex items-center gap-1 rounded-lg border px-2 py-1">
         <LinkIcon className="h-4 w-4 text-gray-500" />
-        <span className="truncate max-w-[52vw] text-gray-700">{url}</span>
+        <span className="truncate max-w-[52vw] text-gray-700">{displayUrl}</span>
       </div>
       <button onClick={copy} className="rounded-lg border px-2 py-1 text-gray-700 hover:bg-gray-50">
         {copied ? (
