@@ -12,9 +12,6 @@ const Header: React.FC = () => {
   // ✅ Always call hooks at top-level, every render
   const navigate = useNavigate();
   const location = useLocation();
-  // ✅ Always call hooks at top-level, every render
-  const navigate = useNavigate();
-  const location = useLocation();
   const { user, loading } = useAuth();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
