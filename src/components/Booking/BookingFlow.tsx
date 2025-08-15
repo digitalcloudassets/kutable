@@ -421,7 +421,7 @@ const BookingFlow: React.FC = () => {
                       <div className="text-center sm:text-right bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 shadow-sm">
                         <div className="flex items-center justify-center space-x-1 text-3xl sm:text-4xl font-display font-bold text-gray-900 mb-1">
                           <DollarSign className="h-6 w-6" />
-                          <span>{formatUSD(service.price)}</span>
+                          <span>{service.price}</span>
                         </div>
                         <p className="text-gray-500 text-sm font-medium">Service Price</p>
                       </div>
