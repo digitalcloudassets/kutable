@@ -621,26 +621,54 @@ const BookingFlow: React.FC = () => {
                 </div>
               )}
 
-              <div className="mt-8 flex justify-between">
-                <button
-                  onClick={() => setStep('datetime')}
-                  className="btn-secondary"
+              {/* Action bar — mobile: 2 equal buttons with spacing; desktop: your normal flow */}
+              <div className="mt-6 md:mt-8">
+                <div
+                  className="
+                    grid grid-cols-2 gap-3 items-stretch
+                    md:flex md:justify-between md:gap-4
+                    pb-[env(safe-area-inset-bottom)]
+                  "
                 >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Back</span>
-                </button>
-                <button
-                  onClick={handleDetailsSubmit}
-                  disabled={paymentLoading || !customerInfo.firstName || !customerInfo.lastName || !customerInfo.phone || !customerInfo.email}
-                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-all duration-200"
-                >
-                  {paymentLoading ? (
-                    <Loader className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <CreditCard className="h-5 w-5" />
-                  )}
-                  <span>{paymentLoading ? 'Preparing Payment...' : 'Continue to Payment'}</span>
-                </button>
+                  {/* Back */}
+                  <button
+                    type="button"
+                    onClick={() => setStep('datetime')}
+                    className="
+                      h-12 md:h-11
+                      rounded-2xl border border-gray-200 bg-white
+                      px-3 md:px-4 text-sm md:text-base font-medium
+                      shadow-sm hover:bg-gray-50 active:scale-[.99] transition
+                      flex items-center justify-center space-x-2
+                    "
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span>Back</span>
+                  </button>
+
+                  {/* Continue to Payment */}
+                  <button
+                    type="button"
+                    onClick={handleDetailsSubmit}
+                    disabled={paymentLoading || !customerInfo.firstName || !customerInfo.lastName || !customerInfo.phone || !customerInfo.email}
+                    className="
+                      h-12 md:h-11
+                      rounded-2xl
+                      px-3 md:px-4 text-sm md:text-base font-semibold
+                      text-white
+                      bg-blue-600 hover:bg-blue-500 disabled:bg-blue-300
+                      shadow-sm active:scale-[.99] transition disabled:opacity-50 disabled:cursor-not-allowed
+                      flex items-center justify-center space-x-2
+                    "
+                  >
+                    {paymentLoading ? (
+                      <Loader className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <CreditCard className="h-5 w-5" />
+                    )}
+                    <span>{paymentLoading ? 'Preparing Payment...' : 'Continue to Payment'}</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
