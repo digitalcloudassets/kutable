@@ -252,9 +252,9 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
                 <p className="text-gray-600 font-medium">{booking.services?.name}</p>
               </div>
               <div className="text-right">
-                <p className="text-xl font-bold text-gray-900">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(booking.total_amount)}</p>
+                <p className="text-xl font-bold text-gray-900">{formatUSD(booking.total_amount)}</p>
                 {booking.deposit_amount > 0 && (
-                  <p className="text-sm text-orange-600 font-medium">${booking.deposit_amount} deposit</p>
+                  <p className="text-sm text-orange-600 font-medium">{formatUSD(booking.deposit_amount)} deposit</p>
                 )}
               </div>
             </div>
