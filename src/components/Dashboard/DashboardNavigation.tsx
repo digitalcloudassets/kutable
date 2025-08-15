@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   Building, 
   Calendar, 
@@ -11,6 +11,7 @@ import {
   Clock,
   MessageSquare
 } from 'lucide-react';
+import MobileTabBar from './MobileTabBar';
 
 interface DashboardNavigationProps {
   userType: 'client' | 'barber';
@@ -80,7 +81,9 @@ const DashboardNavigation = React.memo<DashboardNavigationProps>(({
   const navButtons = userType === 'client' ? clientNavButtons : barberNavButtons;
 
   return (
-    <div className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 mb-8 relative">
+    <>
+      {/* Desktop Navigation - Horizontal Scrolling Chips */}
+      <div className="hidden md:block bg-white rounded-2xl p-2 shadow-sm border border-gray-100 mb-8 relative">
       {/* Scroll Container */}
       <div 
         ref={scrollContainerRef}
@@ -141,7 +144,16 @@ const DashboardNavigation = React.memo<DashboardNavigationProps>(({
           </div>
         </>
       )}
-    </div>
+      </div>
+
+      {/* Mobile Navigation - Bottom Tab Bar */}
+      <MobileTabBar 
+        userType={userType}
+        activeTab={activeTab}
+        onTabChange={onTabChange}
+        unreadCount={unreadCount}
+      />
+    </>
   );
 });
 

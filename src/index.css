@@ -545,6 +545,21 @@ body {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 
+/* Mobile tab bar safe area support */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Medium screens (tablets) */
 @media (min-width: 641px) and (max-width: 1024px) {
   .tablet-adjustments {
