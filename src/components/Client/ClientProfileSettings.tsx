@@ -176,6 +176,13 @@ const ClientProfileSettings: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file || !clientProfile) return;
 
+    // Guard: ensure user is signed in before upload
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) {
+      NotificationManager.error('Please sign in to upload your profile image.');
+      return;
+    }
+
     // Validate file
     const validation = validateFileUpload(file);
     if (!validation.isValid) {
@@ -186,7 +193,7 @@ const ClientProfileSettings: React.FC = () => {
     setUploadingImage(true);
     try {
       // Use the centralized avatar upload utility
-      const avatarUrl = await uploadAvatar(file, user!.id, 'clients');
+      const avatarUrl = await uploadAvatar(file, auth.user.id, 'clients');
 
       const { error: updateError } = await supabase
         .from('client_profiles')
@@ -213,14 +220,7 @@ const ClientProfileSettings: React.FC = () => {
       NotificationManager.success('Profile photo updated successfully!');
     } catch (error) {
       console.error('Error uploading image:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
-      if (errorMessage.includes('Storage bucket not configured') || 
-          errorMessage.includes('Bucket not found')) {
-        NotificationManager.error('Storage setup required: Please create the "avatars" bucket in your Supabase Storage dashboard with public access enabled.');
-      } else {
-        NotificationManager.error(`Failed to upload image: ${errorMessage}`);
-      }
+      NotificationManager.error('Failed to upload image. Please check your Supabase storage configuration.');
     } finally {
       setUploadingImage(false);
       // Reset file input to allow re-selection of the same file
