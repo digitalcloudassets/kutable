@@ -17,8 +17,10 @@ export async function uploadAvatar(file: File, userId: string, role: 'clients' |
   if (up.error) {
     // Handle bucket not found error specifically
     if (up.error.message?.includes('Bucket not found') || 
+        up.error.message?.includes('bucket_not_found') ||
         (up.error as any)?.statusCode === '404' ||
-        up.error.message?.includes('bucket_not_found')) {
+        (up.error as any)?.statusCode === 404 ||
+        up.error.message?.includes('Not found')) {
       throw new Error('Storage bucket not configured. Please create the "avatars" bucket in your Supabase Storage dashboard with public access enabled.');
     }
     throw up.error;
