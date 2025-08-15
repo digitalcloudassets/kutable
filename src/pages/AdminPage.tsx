@@ -606,7 +606,7 @@ const AdminPage: React.FC = () => {
                         {formatUSD(kpis?.platformRevenue || 0)}
                       </div>
                       <p className="text-emerald-800 font-semibold mb-2">Platform Fees Collected</p>
-                      <p className="text-sm text-emerald-600 font-medium">1% of gross volume</p>
+                      <p className="text-sm text-emerald-600 font-medium">1% min $0.25 per transaction</p>
                     </div>
 
                     <div className="bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 p-8 rounded-2xl shadow-sm">
