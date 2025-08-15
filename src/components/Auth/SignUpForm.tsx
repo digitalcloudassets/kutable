@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, Scissors, Loader, AlertTriangle } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Scissors, Loader, AlertTriangle, Camera } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { uploadAvatar } from '../../lib/uploadAvatar';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { 
   validatePassword, 
@@ -23,6 +24,8 @@ const SignUpForm: React.FC = () => {
     userType: 'client' as 'client' | 'barber',
     communicationConsent: false,
   });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [showPassword, setShowPassword] = useState({
     password: false,
     confirmPassword: false,
@@ -44,39 +47,39 @@ const SignUpForm: React.FC = () => {
 
     if (!isSupabaseConnected) {
       setError('Database not connected. Please connect to Supabase to create an account.');
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
     // Enhanced validation
     if (!cleanFirstName || !cleanLastName) {
       setError('First name and last name are required');
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
     if (cleanFirstName.length < 2 || cleanLastName.length < 2) {
       setError('Names must be at least 2 characters long');
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
     if (cleanFirstName.length > 50 || cleanLastName.length > 50) {
       setError('Name fields must be 50 characters or less');
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
     // Validate email format
     if (!validateEmail(cleanEmail)) {
       setError('Please enter a valid email address');
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
     if (cleanPassword !== formData.confirmPassword.trim()) {
       setError('Passwords do not match');
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
@@ -84,13 +87,13 @@ const SignUpForm: React.FC = () => {
     const passwordCheck = validatePassword(cleanPassword);
     if (!passwordCheck.isValid) {
       setError(passwordCheck.errors[0]);
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
     if (!formData.communicationConsent) {
       setError('You must consent to receive communications to use this service');
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
@@ -98,7 +101,7 @@ const SignUpForm: React.FC = () => {
     const identifier = cleanEmail;
     if (rateLimiter.isRateLimited(identifier, 3, 10 * 60 * 1000)) { // 3 attempts per 10 minutes
       setError('Too many signup attempts. Please wait 10 minutes before trying again.');
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
@@ -107,12 +110,11 @@ const SignUpForm: React.FC = () => {
     const emailDomain = cleanEmail.split('@')[1]?.toLowerCase();
     if (disposableDomains.includes(emailDomain)) {
       setError('Please use a permanent email address');
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
     try {
-      // Use the existing form data structure
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: cleanPassword,
@@ -138,28 +140,63 @@ const SignUpForm: React.FC = () => {
         return;
       }
 
-      // Check if we got a session immediately (email confirmation disabled)
+      const userId = data.user?.id;
       const hasSession = !!data.session;
 
+      // Ensure a client profile row exists (safe upsert)
+      if (userId && hasSession) {
+        await supabase.from('client_profiles').upsert(
+          { 
+            user_id: userId, 
+            first_name: cleanFirstName,
+            last_name: cleanLastName,
+            email: cleanEmail,
+            communication_consent: formData.communicationConsent,
+            sms_consent: formData.communicationConsent,
+            email_consent: formData.communicationConsent,
+            consent_date: new Date().toISOString()
+          },
+          { onConflict: 'user_id' }
+        );
+      }
+
+      // Avatar handling
+      if (avatarFile && userId) {
+        if (hasSession) {
+          // Upload now (authenticated)
+          const avatarUrl = await uploadAvatar(avatarFile, userId, 'clients');
+          await Promise.all([
+            supabase.from('client_profiles').update({ profile_image_url: avatarUrl }).eq('user_id', userId),
+            supabase.auth.updateUser({ data: { avatar_url: avatarUrl } }),
+          ]);
+        } else {
+          // No session yet (email confirm flow) – defer to first login
+          const buf = await avatarFile.arrayBuffer();
+          const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+          localStorage.setItem(
+            'kutable:pendingAvatar',
+            JSON.stringify({ role: 'clients', userId, name: avatarFile.name, b64 })
+          );
+        }
+      }
+
       if (formData.userType === 'client') {
-        // ✅ Client: fast path - either go to dashboard or sign in
         if (hasSession) {
           navigate('/dashboard', { replace: true });
         } else {
-          navigate(`/signin?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/dashboard')}`, { replace: true });
+          navigate(`/login?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/dashboard')}`, { replace: true });
         }
         return;
       }
 
-      // ✅ Barber: send to Stripe onboarding (or to login first, then onboarding)
+      // Barber: send to Stripe onboarding
       if (hasSession) {
         navigate('/onboarding/barber', { replace: true });
       } else {
-        navigate(`/signin?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/onboarding/barber')}`, { replace: true });
+        navigate(`/login?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/onboarding/barber')}`, { replace: true });
       }
 
     } catch (error: any) {
-      // Keep errors user-friendly
       console.error('Signup error:', error);
       
       if (error.message?.includes('already')) {
@@ -169,15 +206,23 @@ const SignUpForm: React.FC = () => {
       }
     } finally {
       setSubmitting(false);
-      // Clear sensitive data on error
-      if (error) {
-        setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
-      }
     }
   };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -240,6 +285,51 @@ const SignUpForm: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {/* Avatar Upload (Client Only) */}
+            {formData.userType === 'client' && (
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-4 text-center">
+                  Profile Photo (Optional)
+                </label>
+                <div className="text-center">
+                  {avatarPreview ? (
+                    <div className="relative inline-block">
+                      <img
+                        src={avatarPreview}
+                        alt="Avatar preview"
+                        className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-premium"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAvatarFile(null);
+                          setAvatarPreview('');
+                        }}
+                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="inline-block">
+                      <label className="cursor-pointer">
+                        <div className="w-24 h-24 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-primary-400 transition-colors">
+                          <Camera className="h-8 w-8 text-gray-400" />
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 mt-2">JPG, PNG • Max 5MB</p>
+                </div>
+              </div>
+            )}
 
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">

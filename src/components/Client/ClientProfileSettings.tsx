@@ -17,6 +17,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { Database } from '../../lib/supabase';
+import { uploadAvatar } from '../../lib/uploadAvatar';
 import ConsentManagement from './ConsentManagement';
 import { NotificationManager } from '../../utils/notifications';
 import { getOrCreateClientProfile } from '../../utils/profileHelpers';
@@ -184,37 +185,27 @@ const ClientProfileSettings: React.FC = () => {
 
     setUploadingImage(true);
     try {
-      const fileName = `${clientProfile.id}/profile-${Date.now()}.jpg`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('barber-images') // Use same bucket as barbers for consistency
-        .upload(fileName, file);
-
-      if (uploadError) {
-        if (uploadError.message.includes('Bucket not found')) {
-          NotificationManager.error('Storage setup required: Please create the "barber-images" bucket in your Supabase Storage dashboard before uploading images.');
-          setUploadingImage(false);
-          return;
-        }
-        throw uploadError;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('barber-images')
-        .getPublicUrl(fileName);
+      // Use the centralized avatar upload utility
+      const avatarUrl = await uploadAvatar(file, user!.id, 'clients');
 
       const { error: updateError } = await supabase
         .from('client_profiles')
-        .update({ 
-          profile_image_url: urlData.publicUrl,
+        .update({
+          profile_image_url: avatarUrl,
           updated_at: new Date().toISOString()
         })
         .eq('id', clientProfile.id);
 
       if (updateError) throw updateError;
 
+      // Also update user metadata for immediate display
+      await supabase.auth.updateUser({ 
+        data: { avatar_url: avatarUrl } 
+      });
+
       // Update local state
-      setEditData(prev => ({ ...prev, profile_image_url: urlData.publicUrl }));
-      setClientProfile(prev => prev ? { ...prev, profile_image_url: urlData.publicUrl } : null);
+      setEditData(prev => ({ ...prev, profile_image_url: avatarUrl }));
+      setClientProfile(prev => prev ? { ...prev, profile_image_url: avatarUrl } : null);
       
       // Refresh the client profile to ensure state consistency
       await fetchClientProfile();
@@ -222,7 +213,11 @@ const ClientProfileSettings: React.FC = () => {
       NotificationManager.success('Profile photo updated successfully!');
     } catch (error) {
       console.error('Error uploading image:', error);
-      NotificationManager.error('Failed to upload image. Please check your Supabase storage configuration.');
+      if (error instanceof Error && error.message.includes('Bucket not found')) {
+        NotificationManager.error('Storage setup required: Please create the "avatars" bucket in your Supabase Storage dashboard.');
+      } else {
+        NotificationManager.error('Failed to upload image. Please check your Supabase storage configuration.');
+      }
     } finally {
       setUploadingImage(false);
     }
