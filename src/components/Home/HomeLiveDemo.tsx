@@ -69,13 +69,13 @@ export default function HomeLiveDemo() {
 
           {/* Phone stack (auto-rotating client booking) */}
           <div className="relative order-1 lg:order-2">
-            <div className="relative mx-auto w-[270px] sm:w-[300px]">
+            <div className="relative mx-auto w-[320px] sm:w-[380px]">
               {/* Back phone (depth) - only show if we have multiple images */}
               {phoneImgs.length > 1 && (
                 <img
                   src={phoneImgs[(idx + phoneImgs.length - 1) % phoneImgs.length]}
                   alt="Kutable booking (previous)"
-                  className="absolute -left-6 top-6 w-full rotate-[-4deg] rounded-[22px] border bg-white opacity-60 blur-[0.3px]"
+                  className="absolute -left-8 top-8 w-full rotate-[-6deg] rounded-[32px] border bg-white opacity-50 blur-[0.5px]"
                   style={{ transformOrigin: 'bottom left' }}
                   loading="lazy"
                 />
@@ -84,12 +84,12 @@ export default function HomeLiveDemo() {
               <img
                 src={phoneImgs[idx]}
                 alt="Kutable booking (current)"
-                className="relative w-full rounded-[22px] border bg-white shadow-2xl"
+                className="relative w-full rounded-[32px] border bg-white shadow-2xl"
                 loading="lazy"
               />
             </div>
 
-            <div className="mt-4 text-center text-sm text-gray-600">
+            <div className="mt-6 text-center text-base font-medium text-gray-700">
               Client booking — tap services, pick a time, pay online.
             </div>
           </div>
