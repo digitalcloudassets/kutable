@@ -4,6 +4,7 @@ import ValueProps from '../components/Home/ValueProps';
 import HowItWorks from '../components/Home/HowItWorks';
 import FAQ from '../components/Home/FAQ';
 import FeaturedBarbers from '../components/Home/FeaturedBarbers';
+import HomeLiveDemo from '../components/Home/HomeLiveDemo';
 import { Link } from 'react-router-dom';
 import { 
   ArrowRight, 
@@ -26,6 +27,9 @@ const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen">
       <Hero />
+      
+      {/* Live Demo Strip */}
+      <HomeLiveDemo />
       
       {/* Stats Section - More Visual Interest */}
       <section className="relative py-20 bg-gradient-to-br from-white via-gray-50 to-primary-50/30 overflow-hidden">
@@ -193,34 +197,6 @@ const HomePage: React.FC = () => {
                 <Calendar className="h-5 w-5" />
                 <span>Start Accepting Bookings</span>
               </Link>
-            </div>
-          </div>
-          
-          {/* Pricing Breakdown */}
-          <div className="mt-20 max-w-4xl mx-auto">
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8">
-              <h3 className="text-2xl font-display font-bold text-white text-center mb-8">
-                How Fees Work: $50 Haircut Example
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
-                <div>
-                  <div className="text-3xl font-bold text-white mb-2">$50.00</div>
-                  <div className="text-white/70">Customer Pays</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-red-300 mb-2">-$0.50</div>
-                  <div className="text-white/70">Platform Fee (1%)</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-red-300 mb-2">-$1.75</div>
-                  <div className="text-white/70">Stripe Fee (3.5%)</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-emerald-300 mb-2">$47.75</div>
-                  <div className="text-emerald-200 font-semibold">You Keep (95.5%)</div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
