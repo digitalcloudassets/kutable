@@ -521,11 +521,6 @@ body {
   }
 }
 
-/* Mobile tab bar safe area support */
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
 /* Hide scrollbar utility */
 .no-scrollbar {
   -ms-overflow-style: none;

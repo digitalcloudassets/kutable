@@ -180,91 +180,113 @@ const DashboardPage: React.FC = () => {
      if (intendedUserType === 'barber') {
        setUserType('barber');
        setActiveTab('profile');
+      setLoading(false);
+      return;
      }
     }
-    <div className="min-h-screen bg-gray-50">
-      <div className="w-full min-w-0">
-        <div className="container app-stack py-8 pt-28">
-          <SupabaseConnectionBanner isConnected={isConnected} />
-          
-          {import.meta.env.DEV && <AdminDebugPanel />}
-          
-          <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
-            <ClientDashboardHeader user={user} clientProfile={clientProfile} />
-          </section>
+    
+    // For other users, create client profile
+    const clientProfile = await getOrCreateClientProfile(user);
+    if (clientProfile) {
+      setUserType('client');
+      setClientProfile(clientProfile);
+      setActiveTab('bookings');
+    } else {
+      setUserType('client');
+      setActiveTab('bookings');
+  } catch (error) {
+    console.error('DashboardPage load error:', error);
+    setUserType('client');
+    setActiveTab('bookings');
+  } finally {
+    setLoading(false);
+  }
+}, [user, isConnected]);
 
-          <DashboardNavigation 
-            userType="client"
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            unreadCount={unreadCount}
-          />
+  // Client Dashboard
+  if (userType === 'client') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="w-full min-w-0">
+          <div className="container app-stack py-8 pt-28">
+            <SupabaseConnectionBanner isConnected={isConnected} />
+            
+            {import.meta.env.DEV && <AdminDebugPanel />}
+            
+            <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
+              <ClientDashboardHeader user={user} clientProfile={clientProfile} />
+            </section>
 
-          <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
-            <ClientDashboardContent activeTab={activeTab} />
-          </section>
+            <DashboardNavigation 
+              userType="client"
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              unreadCount={unreadCount}
+            />
+
+            <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
+              <ClientDashboardContent activeTab={activeTab} />
+            </section>
+          </div>
         </div>
       </div>
-    </div>
+    );
   }
-  );
-}
+
+  // Barber Dashboard
+  if (userType === 'barber' && barber) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="w-full min-w-0">
+          <div className="container app-stack py-8 pt-28">
+            <SupabaseConnectionBanner isConnected={isConnected} />
+            
+            {import.meta.env.DEV && <AdminDebugPanel />}
+            
+            <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
+              <BarberDashboardHeader 
+                barber={barber}
+                onEditProfile={handleEditProfile}
+              />
+            </section>
+
+            <DashboardNavigation 
+              userType="barber"
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              unreadCount={unreadCount}
+            />
+
+            <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
+              <BarberDashboardContent 
+                activeTab={activeTab}
+                barber={barber}
+                user={user}
+                onBarberUpdate={refreshBarberData}
+                triggerEdit={triggerEdit}
+                onTriggerEditChange={handleTriggerEditChange}
+              />
+            </section>
+          </div>
+        </div>
       </div>
-// Barber Dashboard
-if (userType === 'barber' && barber) {
+    );
+  }
+
+  // Fallback: User type not determined yet
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="w-full min-w-0">
         <div className="container app-stack py-8 pt-28">
           <SupabaseConnectionBanner isConnected={isConnected} />
-          
+          <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
+            <FallbackDashboard />
+          </section>
           {import.meta.env.DEV && <AdminDebugPanel />}
-          
-          <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
-            <BarberDashboardHeader 
-              barber={barber}
-              onEditProfile={handleEditProfile}
-            />
-          </section>
-
-          <DashboardNavigation 
-            userType="barber"
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            unreadCount={unreadCount}
-          />
-
-          <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
-            <BarberDashboardContent 
-              activeTab={activeTab}
-              barber={barber}
-              user={user}
-              onBarberUpdate={refreshBarberData}
-              triggerEdit={triggerEdit}
-              onTriggerEditChange={handleTriggerEditChange}
-            />
-          </section>
         </div>
-      </div>
-    </div>
-  );
-}
-    </div>
-// Fallback: User type not determined yet
-return (
-  <div className="min-h-screen bg-gray-50">
-    <div className="w-full min-w-0">
-      <div className="container app-stack py-8 pt-28">
-        <SupabaseConnectionBanner isConnected={isConnected} />
-        <section className="rounded-3xl border bg-white app-bleed app-pad w-full min-w-0">
-          <FallbackDashboard />
-        </section>
-        {import.meta.env.DEV && <AdminDebugPanel />}
       </div>
     </div>
   );
 };
 
 export default DashboardPage;
-)
-)
