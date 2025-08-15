@@ -720,7 +720,7 @@ function StepPayouts() {
           <div>
             <h4 className="font-semibold text-blue-800 mb-2">About the Setup Process</h4>
             <p className="text-blue-700 leading-relaxed font-medium">
-              Stripe will securely collect your business information and bank details. This typically takes 2-3 minutes and you'll be able to accept payments immediately after completion.
+              Stripe will securely collect your business information and bank details. This typically takes 2-3 minutes and you'll be able to accept payments immediately after completion. Platform fee is 1% (minimum $0.25) per transaction.
             </p>
           </div>
         </div>
