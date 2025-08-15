@@ -112,6 +112,7 @@ const MessagingDashboard: React.FC = () => {
         </div>
       </div>
     </div>
+    </div>
     </>
   );
 };
