@@ -394,21 +394,6 @@ const BarberListPage: React.FC = () => {
                     </span>
                   )}
                   {filters.serviceTypes.map(serviceType => (
-                    <span key={serviceType} className="bg-indigo-100 text-indigo-800 px-3 py-2 rounded-full mobile-small flex items-center space-x-2">
-                      <span>{serviceType}</span>
-                      <button
-                        onClick={() => setFilters(prev => ({ 
-                          ...prev, 
-                          serviceTypes: prev.serviceTypes.filter(t => t !== serviceType) 
-                        }))}
-                        className="hover:text-indigo-600 p-1"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">

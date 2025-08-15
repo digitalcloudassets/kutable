@@ -1,19 +1,29 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Loader, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { validateEmail, sanitizeInput, rateLimiter, bruteForceProtection } from '../../utils/security';
 import { devPreviewEnabled, shouldBypassConnectionChecks } from '../../lib/devFlags';
+import { useAuth } from '../../context/AuthProvider';
 
 const LoginForm: React.FC = () => {
+  const { user } = useAuth();
   const { isConnected: isSupabaseConnected, reason } = useSupabaseConnection();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+
+  // If already logged in, redirect away (prevents loop)
+  if (user) {
+    const redirectTo = (location.state as any)?.from || '/dashboard';
+    navigate(redirectTo, { replace: true });
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

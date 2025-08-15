@@ -2,13 +2,20 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAdminGuard } from "../hooks/useAdminGuard";
 import { devPreviewEnabled } from "../lib/devFlags";
+import { useAuth } from "../context/AuthProvider";
 
 type Props = { children: React.ReactNode };
 
 export default function ProtectedAdminRoute({ children }: Props) {
   if (devPreviewEnabled()) return <>{children}</>; // bypass in Bolt preview only
   
+  const { loading: authLoading } = useAuth();
   const { loading, allowed, errorMsg } = useAdminGuard();
+
+  // Wait for auth to be ready before evaluating admin status
+  if (authLoading) {
+    return <div className="w-full h-[50vh] flex items-center justify-center text-sm text-gray-500">Loading...</div>;
+  }
 
   if (loading) {
     return <div className="w-full h-[50vh] flex items-center justify-center text-sm text-gray-500">Checking admin access…</div>;
