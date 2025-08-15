@@ -49,7 +49,7 @@ export default function BarberOnboardingEngine() {
         const { data: prof } = await supabase
           .from('barber_profiles')
           .select('*')
-         .eq('user_id', user.id)
+          .eq('user_id', user.id)
           .maybeSingle();
 
         if (!prof) {
@@ -72,8 +72,8 @@ export default function BarberOnboardingEngine() {
         const { data: prof2 } = await supabase
           .from('barber_profiles')
           .select('*')
-         .eq('user_id', user.id)
-         .maybeSingle();
+          .eq('user_id', user.id)
+          .maybeSingle();
 
         setProfile(prof2);
 
@@ -81,7 +81,7 @@ export default function BarberOnboardingEngine() {
         const { count: availabilityCount } = await supabase
           .from('availability')
           .select('id', { count: 'exact', head: true })
-         .eq('barber_id', prof2?.id)
+          .eq('barber_id', prof2?.id)
           .eq('is_available', true);
 
         setHasHours((availabilityCount || 0) > 0);
@@ -89,7 +89,7 @@ export default function BarberOnboardingEngine() {
         const { count: servicesCount } = await supabase
           .from('services')
           .select('id', { count: 'exact', head: true })
-         .eq('barber_id', prof2?.id)
+          .eq('barber_id', prof2?.id)
           .eq('is_active', true);
 
         setHasServices((servicesCount || 0) > 0);
@@ -210,35 +210,35 @@ function ProgressHeader({ step }: { step: Step }) {
         </div>
         
         <div className="flex items-center justify-between">
-        {STEPS.map((s, i) => {
-          const Icon = stepIcons[i];
-          const isActive = i === idx;
-          const isCompleted = i < idx;
-          
-          return (
-            <div key={s} className="flex items-center">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-premium ${
-                isActive 
-                  ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-premium-lg transform scale-110' 
-                  : isCompleted 
-                  ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg' 
-                  : 'bg-white border-2 border-gray-200 text-gray-400'
-              }`}>
-                {isCompleted ? (
-                  <CheckCircle className="h-7 w-7" />
-                ) : (
-                  <Icon className="h-7 w-7" />
+          {STEPS.map((s, i) => {
+            const Icon = stepIcons[i];
+            const isActive = i === idx;
+            const isCompleted = i < idx;
+            
+            return (
+              <div key={s} className="flex items-center">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-premium ${
+                  isActive 
+                    ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-premium-lg transform scale-110' 
+                    : isCompleted 
+                    ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg' 
+                    : 'bg-white border-2 border-gray-200 text-gray-400'
+                }`}>
+                  {isCompleted ? (
+                    <CheckCircle className="h-7 w-7" />
+                  ) : (
+                    <Icon className="h-7 w-7" />
+                  )}
+                </div>
+                {i < STEPS.length - 1 && (
+                  <div className={`w-20 h-2 mx-4 rounded-full transition-all duration-300 ${
+                    i < idx ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-md' : 'bg-gray-200'
+                  }`} />
                 )}
               </div>
-              {i < STEPS.length - 1 && (
-                <div className={`w-20 h-2 mx-4 rounded-full transition-all duration-300 ${
-                  i < idx ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-md' : 'bg-gray-200'
-                }`} />
-              )}
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
         
         <div className="flex justify-between text-sm text-gray-600 font-semibold mt-6">
           {stepLabels.map((label, i) => (
@@ -397,6 +397,7 @@ function StepAccount({ profile, onSaved }: { profile: any, onSaved: () => void }
 
 /* ---------- HOURS STEP ---------- */
 function StepHours({ profileId, onSaved }: { profileId: string, onSaved: () => void }) {
+  const { user } = useAuth();
   const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const [availability, setAvailability] = useState<Record<number,{isOpen:boolean;startTime:string;endTime:string}>>({
     0:{isOpen:false,startTime:'09:00',endTime:'17:00'},
@@ -450,33 +451,36 @@ function StepHours({ profileId, onSaved }: { profileId: string, onSaved: () => v
               <div className="flex items-center space-x-6">
                 <div className="w-28 text-lg font-display font-bold text-gray-900">{name}</div>
                 <label className="inline-flex items-center space-x-3">
-                <input 
-                  type="checkbox" 
-                  checked={availability[i]?.isOpen||false}
-                  onChange={e => setAvailability(v => ({...v, [i]: {...v[i], isOpen: e.target.checked}}))}
-                  className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                />
-                <span className="text-gray-700">Open</span>
-              </label>
-            </div>
+                  <input 
+                    type="checkbox" 
+                    checked={availability[i]?.isOpen||false}
+                    onChange={e => setAvailability(v => ({...v, [i]: {...v[i], isOpen: e.target.checked}}))}
+                    className="w-5 h-5 text-primary-600 border-gray-300 rounded-lg focus:ring-primary-500 transition-all duration-200"
+                  />
+                  <span className="text-gray-700 font-semibold">Open</span>
+                </label>
+              </div>
+              {availability[i]?.isOpen && (
                 <div className="flex items-center space-x-4">
                   <div className="text-sm font-medium text-gray-500 uppercase tracking-wide">Hours:</div>
-              <div className="flex items-center space-x-2">
-                <input 
-                  type="time" 
-                  value={availability[i].startTime}
-                    className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white transition-all duration-200 font-medium"
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  <span className="text-gray-500 font-semibold">to</span>
-                <span className="text-gray-500">to</span>
-                <input 
-                  type="time" 
-                    className="w-5 h-5 text-primary-600 border-gray-300 rounded-lg focus:ring-primary-500 transition-all duration-200"
-                    className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white transition-all duration-200 font-medium"
-                  <span className="text-gray-700 font-semibold">Open</span>
-                />
-              </div>
-            )}
+                  <div className="flex items-center space-x-2">
+                    <input 
+                      type="time" 
+                      value={availability[i].startTime}
+                      onChange={e => setAvailability(v => ({...v, [i]: {...v[i], startTime: e.target.value}}))}
+                      className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white transition-all duration-200 font-medium"
+                    />
+                    <span className="text-gray-500 font-semibold">to</span>
+                    <input 
+                      type="time" 
+                      value={availability[i].endTime}
+                      onChange={e => setAvailability(v => ({...v, [i]: {...v[i], endTime: e.target.value}}))}
+                      className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white transition-all duration-200 font-medium"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -514,6 +518,7 @@ function StepHours({ profileId, onSaved }: { profileId: string, onSaved: () => v
 
 /* ---------- SERVICES STEP ---------- */
 function StepServices({ profileId, onSaved }: { profileId: string, onSaved: () => void }) {
+  const { user } = useAuth();
   const [name, setName] = useState('Haircut');
   const [duration, setDuration] = useState(45);
   const [price, setPrice] = useState(35);
@@ -715,6 +720,10 @@ function StepPayouts() {
           <div>
             <h4 className="font-semibold text-blue-800 mb-2">About the Setup Process</h4>
             <p className="text-blue-700 leading-relaxed font-medium">
+              Stripe will securely collect your business information and bank details. This typically takes 2-3 minutes and you'll be able to accept payments immediately after completion.
+            </p>
+          </div>
+        </div>
       </div>
       
       <div className="flex flex-col sm:flex-row justify-center gap-4">
