@@ -141,14 +141,14 @@ const ClientProfileSettings: React.FC = () => {
     } catch (error) {
       console.warn('[ClientProfile] fetchClientProfile error:', error);
     }
+  }, [userId]);
 
   useEffect(() => {
     let alive = true;
 
     (async () => {
       // 🚫 Never hit Supabase with undefined user_id
-      const uid = userId ?? null;
-      if (!uid) {
+      if (!userId) {
         setLoading(false);          // clear any spinners
         setSoftError(null);         // don't show scary messages
         setProfile(null);           // nothing yet
@@ -160,7 +160,7 @@ const ClientProfileSettings: React.FC = () => {
 
       // Cap the whole operation so UI never hangs
       const result = await Promise.race([
-        ensureOrFetchClientProfile(uid),
+        ensureOrFetchClientProfile(userId),
         new Promise<null>(res => setTimeout(() => res(null), 4000)),
       ]);
 
@@ -201,8 +201,7 @@ const ClientProfileSettings: React.FC = () => {
 
 
   const handleSave = async () => {
-    const uid = userId ?? null;
-    if (!uid) return;
+    if (!userId) return;
 
     // Validation
     if (!editData.first_name.trim() || !editData.last_name.trim()) {
@@ -226,7 +225,7 @@ const ClientProfileSettings: React.FC = () => {
 
     try {
       const payload = {
-        user_id: uid,
+        user_id: user.id,
         first_name: editData.first_name.trim(),
         last_name: editData.last_name.trim(),
         phone: editData.phone.trim() || null,
