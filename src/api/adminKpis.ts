@@ -41,7 +41,7 @@ export async function fetchAdminKpis(): Promise<AdminKPIs> {
     bookingsThisMonth: Number(kpiData?.bookings_this_month || 0),
     bookingsToday: Number(kpiData?.bookings_today || 0),
     totalRevenue: (Number(kpiData?.gross_cents || 0)) / 100,        // Gross revenue in dollars
-    platformRevenue: (Number(kpiData?.platform_cents || 0)) / 100, // Platform revenue in dollars
+    platformRevenue: (Number(kpiData?.platform_cents || 0)) / 100, // Platform revenue in dollars (1% min $0.25)
     avgBookingValue: (Number(kpiData?.avg_booking_cents || 0)) / 100
   };
 }
