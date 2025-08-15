@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { handlePreflight, buildCorsHeaders } from "../_shared/cors.ts";
 import { consumeRateLimit } from "../_shared/rateLimit.ts";
 import { withSecurityHeaders } from "../_shared/security_headers.ts";
+import { withSecurityHeaders } from "../_shared/security_headers.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

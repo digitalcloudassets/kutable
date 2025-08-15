@@ -1,83 +1,105 @@
-// Replace any direct Deno.env.get(...) usage with the centralized helper.
-// Remove any reliance on VITE_* keys here.
-import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
-import { serverEnv } from '../_shared/env.ts';
-import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
-import { consumeRateLimit } from '../_shared/rateLimit.ts';
-import { withSecurityHeaders } from '../_shared/security_headers.ts';
+// Replace entire file. Explicit ok flags, logs every attempt, no silent 200s.
+// NOTE: We keep HTTP 200 for now to avoid breaking booking flow.
+// To enforce failures via HTTP status, see the commented line below.
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { corsHeaders, handlePreflight, withCors } from "../_shared/cors.ts";
+import { withSecurityHeaders } from "../_shared/security_headers.ts";
+import { recordNotification } from "../_shared/notify.ts";
 
-const base = withSecurityHeaders(corsHeaders(['POST', 'OPTIONS']));
+const base = withSecurityHeaders(
+  corsHeaders(["POST", "OPTIONS"]),
+);
+
+const TWILIO_SID = Deno.env.get("TWILIO_ACCOUNT_SID")!;
+const TWILIO_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN")!;
+const TWILIO_FROM = Deno.env.get("TWILIO_PHONE_NUMBER")!;
 
 serve(async (req) => {
-  const preflight = handlePreflight(req, base, { requireBrowserOrigin: true });
-  if (preflight) return preflight;
+  const pre = handlePreflight(req, base, { requireBrowserOrigin: true });
+  if (pre) return pre;
 
   const cors = withCors(req, base, { requireBrowserOrigin: true });
   if (!cors.ok) return cors.res;
 
-  // RATE LIMIT: 3 SMS per 60 seconds per IP to prevent abuse
-  const rl = await consumeRateLimit(req, "send-sms", { limit: 3, windowSeconds: 60 });
-  if (!rl.allowed) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: "Too many SMS attempts. Try again in a minute.",
-      retryAfter: 60
-    }), {
-      status: 429,
-      headers: cors.headers
-    });
-  }
-
-  // Hard fail if SMS service environment variables are missing
-  if (!serverEnv.twilio.sid || !serverEnv.twilio.token || !serverEnv.twilio.from) {
-    console.error("🚨 CRITICAL: Missing Twilio configuration for SMS service");
-    console.error("Required: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER");
-    return new Response(JSON.stringify({ 
-      error: 'SMS service not configured',
-      details: 'Missing Twilio environment variables'
-    }), { status: 500, headers: cors.headers });
-  }
-
   try {
-    const { to, body } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const to = String(body?.to ?? "").trim();
+    const text = String(body?.body ?? "").trim();
+    const template = typeof body?.template === "string" ? body.template : undefined;
 
-    if (!to || !body) {
-      return new Response(JSON.stringify({ error: 'Missing to or body' }), { status: 400, headers: cors.headers });
+    if (!to || !text) {
+      const resBody = { ok: false, error: "Missing to or body" };
+      return new Response(JSON.stringify(resBody), {
+        status: 200, // keep 200 to avoid breaking flows
+        headers: { ...cors.headers, "Content-Type": "application/json", "X-Notification-Status": "failed" },
+      });
+      // To enforce failure via HTTP status later, change to: status: 400
     }
 
-    const auth = btoa(`${serverEnv.twilio.sid}:${serverEnv.twilio.token}`);
+    const auth = btoa(`${TWILIO_SID}:${TWILIO_TOKEN}`);
     const params = new URLSearchParams({
       To: to,
-      From: serverEnv.twilio.from,
-      Body: body,
+      From: TWILIO_FROM,
+      Body: text,
     });
 
     const twilioResp = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${serverEnv.twilio.sid}/Messages.json`,
+      `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
           Authorization: `Basic ${auth}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
         body: params,
       },
     );
 
+    const raw = await twilioResp.text();
     if (!twilioResp.ok) {
-      const errText = await twilioResp.text();
-      return new Response(JSON.stringify({ error: 'Twilio send failed', detail: errText }), {
-        status: 502,
-        headers: cors.headers,
+      await recordNotification({
+        channel: "sms",
+        recipient: to,
+        template,
+        payload: { to, body: text },
+        status: "failed",
+        provider_message_id: null,
+        error_detail: raw.slice(0, 2000),
+      });
+
+      const resBody = { ok: false, error: "Twilio send failed", detail: raw };
+      return new Response(JSON.stringify(resBody), {
+        status: 200, // keep 200 now; later you can switch to 502
+        headers: { ...cors.headers, "Content-Type": "application/json", "X-Notification-Status": "failed" },
       });
     }
 
-    const data = await twilioResp.json();
-    return new Response(JSON.stringify({ ok: true, sid: data.sid }), { status: 200, headers: cors.headers });
+    const data = JSON.parse(raw);
+    await recordNotification({
+      channel: "sms",
+      recipient: to,
+      template,
+      payload: { to, body: text },
+      status: "sent",
+      provider_message_id: data?.sid ?? null,
+    });
+
+    return new Response(JSON.stringify({ ok: true, sid: data?.sid ?? null }), {
+      status: 200,
+      headers: { ...cors.headers, "Content-Type": "application/json", "X-Notification-Status": "sent" },
+    });
   } catch (e) {
-    return new Response(JSON.stringify({ error: 'Unexpected error', detail: String(e) }), {
-      status: 500,
-      headers: cors.headers,
+    await recordNotification({
+      channel: "sms",
+      recipient: "unknown",
+      status: "failed",
+      error_detail: String(e).slice(0, 2000),
+    });
+
+    const resBody = { ok: false, error: "Unexpected error", detail: String(e) };
+    return new Response(JSON.stringify(resBody), {
+      status: 200, // keep 200 now; later you can switch to 500
+      headers: { ...cors.headers, "Content-Type": "application/json", "X-Notification-Status": "failed" },
     });
   }
 });

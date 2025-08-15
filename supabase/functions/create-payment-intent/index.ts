@@ -56,16 +56,6 @@ async function stripePost(path: string, body: URLSearchParams, key: string) {
   return { ok: true, status: r.status, data: j };
 }
 
-function getClientIp(req: Request): string {
-  const xfwd = req.headers.get("x-forwarded-for");
-  if (xfwd) return xfwd.split(",")[0].trim();
-  const cf = req.headers.get("cf-connecting-ip");
-  if (cf) return cf.trim();
-  const real = req.headers.get("x-real-ip");
-  if (real) return real.trim();
-  return "";
-}
-
 Deno.serve(async (req) => {
   const preflight = handlePreflight(req, base, { requireBrowserOrigin: true });
   if (preflight) return preflight;

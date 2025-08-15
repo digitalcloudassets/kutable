@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { Calendar, Clock, User, Phone, Mail, Filter, Search, CheckCircle, X, Loader, CreditCard } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { NotificationManager } from '../../utils/notifications';
+import { formatUSD } from '../../utils/money';
 
 interface Booking {
   id: string;
@@ -134,7 +135,7 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
       // Update booking status to cancelled
       await updateBookingStatus(booking.id, 'cancelled');
       
-      NotificationManager.success(`Refund of $${booking.total_amount} processed successfully. The customer will receive their money within 5-10 business days.`);
+      NotificationManager.success(`Refund of ${formatUSD(booking.total_amount)} processed successfully. The customer will receive their money within 5-10 business days.`);
 
     } catch (error: any) {
       console.error('Error processing refund:', error);
@@ -350,9 +351,9 @@ const BookingsManagement: React.FC<BookingsManagementProps> = ({ barberId }) => 
                         <>
                           <CreditCard className="h-4 w-4" />
                           <span>Refund</span>
-                        </>
+                  <p className="text-xl font-bold text-gray-900">{formatUSD(booking.total_amount)}</p>
                       )}
-                    </button>
+                    <p className="text-sm text-orange-600 font-medium">{formatUSD(booking.deposit_amount)} deposit</p>
                   )}
                 </>
               )}
