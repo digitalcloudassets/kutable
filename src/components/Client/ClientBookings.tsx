@@ -586,7 +586,7 @@ const ClientBookings: React.FC = () => {
                               <p className="text-gray-700 text-sm">
                                 <strong>Notes:</strong> {booking.notes}
                               </p>
-                            </div>
+                        <div className="btn-primary group-hover:scale-105 transition-all duration-200 w-full justify-center">
                           )}
                         </div>
                       </div>

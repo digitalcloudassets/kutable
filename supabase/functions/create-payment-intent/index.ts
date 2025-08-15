@@ -4,8 +4,9 @@
 
 import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts';
 import { consumeRateLimit } from '../_shared/rateLimit.ts';
+import { withSecurityHeaders } from '../_shared/security_headers.ts';
 
-const headers = corsHeaders(['POST', 'OPTIONS']);
+const base = withSecurityHeaders(corsHeaders(['POST', 'OPTIONS']));
 
 type ReqBody = {
   barberId: string;
@@ -66,10 +67,10 @@ function getClientIp(req: Request): string {
 }
 
 Deno.serve(async (req) => {
-  const preflight = handlePreflight(req, headers);
+  const preflight = handlePreflight(req, base, { requireBrowserOrigin: true });
   if (preflight) return preflight;
 
-  const cors = withCors(req, headers);
+  const cors = withCors(req, base, { requireBrowserOrigin: true });
   if (!cors.ok) return cors.res;
 
   // RATE LIMIT: 10 requests per 60 seconds per IP for payment intent creation

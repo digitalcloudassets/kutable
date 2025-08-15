@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { handlePreflight, buildCorsHeaders } from "../_shared/cors.ts";
 import { consumeRateLimit } from "../_shared/rateLimit.ts";
+import { withSecurityHeaders } from "../_shared/security_headers.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -17,11 +18,12 @@ const ADMIN_EMAILS = (Deno.env.get("ADMIN_EMAILS") ?? "")
   .filter(Boolean);
 
 Deno.serve(async (req) => {
-  const preflight = handlePreflight(req, ["POST", "OPTIONS"]);
+  const base = withSecurityHeaders(buildCorsHeaders(null, ["POST", "OPTIONS"]));
+  const preflight = handlePreflight(req, base);
   if (preflight) return preflight;
 
   const origin = req.headers.get("Origin");
-  const cors = buildCorsHeaders(origin, ["POST", "OPTIONS"]);
+  const cors = withSecurityHeaders(buildCorsHeaders(origin, ["POST", "OPTIONS"]));
 
   // RATE LIMIT: 30 admin guard checks per 60 seconds per IP
   const rl = await consumeRateLimit(req, "admin-guard", { limit: 30, windowSeconds: 60 });

@@ -687,15 +687,15 @@ const BookingFlow: React.FC = () => {
                     </div>
                     <div className="flex justify-between text-sm text-gray-500">
                       <span>Platform Fee (1%):</span>
-                      <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(selectedService.price * 0.01)}</span>
+                      <span>${(selectedService.price * 0.01).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm text-gray-500">
                       <span>Processing Fee (~2.9%):</span>
-                      <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(selectedService.price * 0.029 + 0.30)}</span>
+                      <span>${(selectedService.price * 0.029 + 0.30).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between font-semibold text-lg border-t border-gray-300 pt-3 mt-3">
                       <span>Total:</span>
-                      <span className="text-emerald-600">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(selectedService.price)}</span>
+                      <span className="text-emerald-600">${selectedService.price.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -777,7 +777,7 @@ const BookingFlow: React.FC = () => {
                   <div className="border-t border-gray-300 pt-4 mt-4">
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total Paid:</span>
-                      <span className="text-emerald-600">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(confirmedBooking.total_amount)}</span>
+                      <span className="text-emerald-600">${confirmedBooking.total_amount.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
