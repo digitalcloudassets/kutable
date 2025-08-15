@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Smartphone, Monitor, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 // NOTE: images live in /public. Spaces must be URL-encoded.
@@ -15,83 +15,69 @@ export default function HomeLiveDemo() {
   }, []);
 
   return (
-    <section className="relative bg-gradient-to-b from-gray-50 to-white py-12 md:py-16">
-      <div className="mx-auto max-w-6xl px-4">
-        <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm text-gray-600 bg-white">
-              <span className="inline-flex items-center gap-1">
-                <Monitor className="h-4 w-4" /> Barber dashboard
-              </span>
-              <span className="mx-2 text-gray-300">/</span>
-              <span className="inline-flex items-center gap-1">
-                <Smartphone className="h-4 w-4" /> Client booking
-              </span>
+    <section className="py-16 bg-white">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        
+        {/* Simple, clean header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-gray-900 mb-4">
+            Your business page. Live in minutes.
+          </h2>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Clean, mobile-first booking that works everywhere. Your brand, your way.
+          </p>
+        </div>
+
+        {/* Minimal demo layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          
+          {/* Desktop view - clean, minimal */}
+          <div className="text-center lg:text-left">
+            <div className="inline-block">
+              <img
+                src={laptopImg}
+                alt="Barber dashboard view"
+                className="w-full max-w-lg rounded-2xl shadow-premium"
+                loading="lazy"
+              />
+              <p className="text-sm text-gray-500 mt-4 font-medium">
+                Your dashboard — manage everything from your phone
+              </p>
             </div>
-            <h2 className="mt-3 text-2xl font-display font-bold text-gray-900 md:text-3xl">
-              See exactly what your clients see — and what you control
-            </h2>
-            <p className="mt-2 text-gray-600">
-              Instant online presence. Booking on the left. Your tools on the right. No membership.
-            </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              to="/signup?type=barber"
-              className="inline-flex items-center rounded-xl bg-black px-4 py-2 text-white font-semibold hover:opacity-90"
-            >
-              Create my page <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-            <Link
-              to="/barbers"
-              className="inline-flex items-center rounded-xl border px-4 py-2 font-semibold hover:bg-gray-50"
-            >
-              Explore barbers
-            </Link>
+
+          {/* Mobile view - prominent but clean */}
+          <div className="text-center lg:text-right">
+            <div className="inline-block relative">
+              <img
+                src={phoneImgs[idx]}
+                alt="Client booking experience"
+                className="w-full max-w-sm rounded-3xl shadow-premium-lg"
+                loading="lazy"
+              />
+              <p className="text-sm text-gray-500 mt-4 font-medium">
+                Customer experience — tap, book, pay, done
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Demo canvas */}
-        <div className="relative grid items-center gap-8 lg:grid-cols-2">
-          {/* Laptop frame (dashboard / booking site) */}
-          <div className="relative order-2 rounded-3xl border bg-white p-3 shadow-xl lg:order-1">
-            <div className="absolute -top-3 left-4 inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1 text-xs text-gray-600 shadow-sm">
-              <Monitor className="h-4 w-4" />
-              Barber dashboard
-            </div>
-            <img
-              src={laptopImg}
-              alt="Kutable desktop view"
-              className="w-full rounded-2xl border"
-              loading="lazy"
-            />
-          </div>
-
-          {/* Phone stack (auto-rotating client booking) */}
-          <div className="relative order-1 lg:order-2">
-            <div className="relative mx-auto w-[320px] sm:w-[380px]">
-              {/* Back phone (depth) - only show if we have multiple images */}
-              {phoneImgs.length > 1 && (
-                <img
-                  src={phoneImgs[(idx + phoneImgs.length - 1) % phoneImgs.length]}
-                  alt="Kutable booking (previous)"
-                  className="absolute -left-8 top-8 w-full rotate-[-6deg] rounded-[32px] border bg-white opacity-50 blur-[0.5px]"
-                  style={{ transformOrigin: 'bottom left' }}
-                  loading="lazy"
-                />
-              )}
-              {/* Front phone */}
-              <img
-                src={phoneImgs[idx]}
-                alt="Kutable booking (current)"
-                className="relative w-full rounded-[32px] border bg-white shadow-2xl"
-                loading="lazy"
-              />
-            </div>
-
-            <div className="mt-6 text-center text-base font-medium text-gray-700">
-              Client booking — tap services, pick a time, pay online.
-            </div>
+        {/* Simple CTA */}
+        <div className="text-center mt-16">
+          <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
+            <Link
+              to="/signup?type=barber"
+              className="btn-primary inline-flex items-center justify-center"
+            >
+              <span>Start your page</span>
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+            <Link
+              to="/barbers"
+              className="btn-secondary inline-flex items-center justify-center"
+            >
+              <span>See examples</span>
+            </Link>
           </div>
         </div>
       </div>
