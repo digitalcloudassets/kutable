@@ -31,6 +31,7 @@ import { NotificationManager } from '../../utils/notifications';
 import 'react-datepicker/dist/react-datepicker.css';
 import InAppCheckout from '../Checkout/InAppCheckout';
 import { formatUSD } from '../../utils/money';
+import BookingStepper from './BookingStepper';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 type Service = Database['public']['Tables']['services']['Row'];
@@ -354,32 +355,12 @@ const BookingFlow: React.FC = () => {
           </div>
         </div>
 
-        {/* Progress Steps */}
-        <div className="flex items-center justify-between mb-12 px-2 relative z-10">
-          {['service', 'datetime', 'details', 'payment', 'confirmation'].map((stepName, index) => (
-            <div key={stepName} className="flex items-center flex-1">
-              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center text-xs sm:text-sm font-semibold shadow-premium transition-all duration-300 ${
-                step === stepName
-                  ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-premium-lg scale-110'
-                  : index < ['service', 'datetime', 'details', 'payment', 'confirmation'].indexOf(step)
-                  ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white'
-                  : 'bg-white text-gray-600 border-2 border-gray-200'
-              }`}>
-                {index < ['service', 'datetime', 'details', 'payment', 'confirmation'].indexOf(step) ? (
-                  <Check className="h-5 w-5" />
-                ) : (
-                  index + 1
-                )}
-              </div>
-              {index < 4 && (
-                <div className={`flex-1 h-2 mx-2 sm:mx-3 rounded-full transition-all duration-300 ${
-                  index < ['service', 'datetime', 'details', 'payment', 'confirmation'].indexOf(step)
-                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600'
-                    : 'bg-gray-200'
-                }`} />
-              )}
-            </div>
-          ))}
+        {/* Centered stepper above the content */}
+        <div className="mb-12 relative z-10">
+          <BookingStepper 
+            current={['service', 'datetime', 'details', 'payment', 'confirmation'].indexOf(step) + 1} 
+            total={5} 
+          />
         </div>
 
         {/* Step Content */}

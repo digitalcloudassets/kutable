@@ -1,0 +1,16 @@
+/* Mobile-first size & centering for the booking stepper. */
+.kutable-stepper .kutable-step {
+  /* 44–48px touch target on mobile */
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 0.95rem;
+}
+
+/* Slightly denser on ≥640px; desktop remains compact */
+@media (min-width: 640px) {
+  .kutable-stepper .kutable-step {
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 0.9rem;
+  }
+}
