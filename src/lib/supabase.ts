@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import { env } from './env';
+import { env } from '../utils/env';
 import { isWebContainer } from './runtimeEnv';
-import { logger } from '../utils/logger';
 import { logger } from '../utils/logger';
 
 const supabaseUrl = env.supabaseUrl;
@@ -98,7 +97,7 @@ if (shouldUseFallback) {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true, // harmless for password; required for OAuth/magic link
+      detectSessionInUrl: true,
     },
   });
 }

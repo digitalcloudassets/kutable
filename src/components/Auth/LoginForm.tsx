@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { validateEmail, sanitizeInput, rateLimiter, bruteForceProtection } from '../../utils/security';
 import { devPreviewEnabled, shouldBypassConnectionChecks } from '../../lib/devFlags';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthProvider';
 import TurnstileGate from '../Security/TurnstileGate';
 
 const LoginForm: React.FC = () => {
