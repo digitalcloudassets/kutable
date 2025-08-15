@@ -202,7 +202,8 @@ const ClientProfileSettings: React.FC = () => {
 
 
   const handleSave = async () => {
-    if (!userId) return;
+    const uid = userId ?? null;
+    if (!uid) return;
 
     // Validation
     if (!editData.first_name.trim() || !editData.last_name.trim()) {
@@ -226,7 +227,7 @@ const ClientProfileSettings: React.FC = () => {
 
     try {
       const payload = {
-        user_id: user.id,
+        user_id: uid,
         first_name: editData.first_name.trim(),
         last_name: editData.last_name.trim(),
         phone: editData.phone.trim() || null,
