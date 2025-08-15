@@ -50,20 +50,15 @@ const Header: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        await supabase.auth.signOut();
-      }
-    } catch (error) {
-      console.log('Sign out error:', error);
-    } finally {
-      localStorage.removeItem('sb-' + (import.meta.env.VITE_SUPABASE_URL?.split('://')[1]?.split('.')[0] || 'auth') + '-auth-token');
+      await supabase.auth.signOut();
+    } catch {}
+    // belt-and-suspenders clear
+    try {
+      const ref = import.meta.env.VITE_SUPABASE_URL?.replace(/^https?:\/\//,'').split('.')[0];
+      Object.keys(localStorage).forEach(k => { if (ref && k.startsWith(`sb-${ref}-auth-token`)) localStorage.removeItem(k); });
+    } catch {}
       setMobileMenuOpen(false);
-      setTimeout(() => {
-        navigate('/');
-      }, 100);
-    }
+      navigate('/');
   };
 
   const isHomePage = location.pathname === '/';

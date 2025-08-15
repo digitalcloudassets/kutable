@@ -8,6 +8,7 @@ import {
 import { Toaster } from 'react-hot-toast';
 import { setupGlobalErrorHandling } from './utils/errorHandling';
 import { initializeAnalytics, trackPageView } from './utils/analytics';
+import { validateSession } from './lib/supabase';
 import AuthGate from './providers/AuthGate';
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
 import HomeGate from './routes/HomeGate';
@@ -57,6 +58,8 @@ const AnalyticsRouter: React.FC<{ children: React.ReactNode }> = ({ children }) 
 function App() {
   useEffect(() => {
     initializeAnalytics();
+    // proactively prune broken sessions to avoid 403 spam on first render
+    validateSession();
   }, []);
 
   return (

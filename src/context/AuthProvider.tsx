@@ -106,7 +106,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
-
-export function useAuth() {
-  return useContext(Ctx);
-}
