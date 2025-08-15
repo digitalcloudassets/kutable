@@ -60,11 +60,3 @@ export function useAdminGuardLegacy(): AdminGuardState & { errorMsg?: string } {
     errorMsg: result.error
   };
 }
-      }
-    })();
-    
-    return () => { mounted = false };
-  }, []);
-
-  return state;
-}
