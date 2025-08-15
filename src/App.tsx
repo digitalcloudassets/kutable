@@ -9,6 +9,7 @@ import { Toaster } from 'react-hot-toast';
 import { setupGlobalErrorHandling } from './utils/errorHandling';
 import { initializeAnalytics, trackPageView } from './utils/analytics';
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
+import HomeGate from './routes/HomeGate';
 
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
@@ -57,7 +58,7 @@ function App() {
 
           <main className="flex-1">
             <Routes>
-              <Route path="/" element={<HomePage />} />
+              <Route path="/" element={<HomeGate />} />
               <Route path="/login" element={<LoginForm />} />
               <Route path="/signup" element={<SignUpForm />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />

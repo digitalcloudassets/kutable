@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useMessaging } from '../../hooks/useMessaging';
 import { useAdminGuard } from '../../hooks/useAdminGuard';
 import { logger } from '../../utils/logger';
+import { chooseDashboard } from '../../utils/appScope';
 import AdminGuardBanner from '../Debug/AdminGuardBanner';
 
 const Header: React.FC = () => {
@@ -58,6 +59,8 @@ const Header: React.FC = () => {
 
   const isHomePage = location.pathname === '/';
 
+  const brandTo = user ? chooseDashboard({ user } as any) : '/';
+
   // ❌ No early return. We render the same component tree each time.
   //    We just hide it when we're on /admin.
   return (
@@ -74,7 +77,7 @@ const Header: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-3 group">
+            <Link to={brandTo} className="flex items-center space-x-3 group">
               <div className="relative">
                 <img 
                   src="/Kutable Logo.png" 

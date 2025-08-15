@@ -180,6 +180,8 @@ const DashboardPage: React.FC = () => {
      if (intendedUserType === 'barber') {
        setUserType('barber');
        setActiveTab('profile');
+        // Remember barber dashboard preference
+        try { localStorage.setItem('lastDashboard', 'barber'); } catch {}
        setLoading(false);
        return;
      }
@@ -211,11 +213,15 @@ const DashboardPage: React.FC = () => {
         }
         setUserType('client');
         setActiveTab('bookings');
+        // Remember client dashboard preference
+        try { localStorage.setItem('lastDashboard', 'client'); } catch {}
       }
     } catch (error) {
       console.warn('Database query failed, defaulting to client mode:', error);
       setUserType('client');
       setActiveTab('bookings');
+      // Remember client dashboard preference
+      try { localStorage.setItem('lastDashboard', 'client'); } catch {}
     } finally {
       setLoading(false);
     }

@@ -1,8 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import { inAuthedApp } from '../../utils/appScope';
 import { Scissors, Mail, Phone } from 'lucide-react';
 
 const Footer: React.FC = () => {
+  const { pathname } = useLocation();
+  const { user } = useAuth();
+  
+  // Hide footer inside the app when the user is signed in
+  if (user && inAuthedApp(pathname)) return null;
+
   return (
     <footer className="bg-gray-900 border-t border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
