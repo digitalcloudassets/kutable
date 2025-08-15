@@ -236,6 +236,9 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
               />
             </div>
           )}
+
+          <div className="md:hidden">
+            <MobileProfileActions
               renderGallery={() => (
                 <div className="space-y-8 py-4">
                   <div>
@@ -367,105 +370,113 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
                 </div>
               )}
             />
-          )}
-                  <Clock className="h-5 w-5 text-primary-600" />
+          </div>
+
+          <Surface mdClassName="card-premium p-8">
+            <div className="px-4 md:px-0 animate-fade-in-up">
+              <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-xl bg-primary-50 p-2">
+                    <Clock className="h-5 w-5 text-primary-600" />
+                  </div>
+                  <h3 className="text-2xl font-display font-bold text-gray-900">Business Hours</h3>
                 </div>
-                <h3 className="text-2xl font-display font-bold text-gray-900">Business Hours</h3>
+                {barber && (
+                  <button
+                    type="button"
+                    className="w-full sm:w-auto rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white shadow hover:bg-blue-700"
+                    onClick={saveAvailability}
+                  >
+                    Save Changes
+                  </button>
+                )}
               </div>
-              {barber && (
-                <button
-                  type="button"
-                  className="w-full sm:w-auto rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white shadow hover:bg-blue-700"
-                  onClick={saveAvailability}
-                >
-                  Save Changes
-                </button>
-              )}
-            </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="rounded-xl bg-primary-50 p-2">
-                  <Clock className="h-5 w-5 text-primary-600" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-xl bg-primary-50 p-2">
+                    <Clock className="h-5 w-5 text-primary-600" />
+                  </div>
+                  <h3 className="text-2xl font-display font-bold text-gray-900">Business Hours</h3>
                 </div>
-                <h3 className="text-2xl font-display font-bold text-gray-900">Business Hours</h3>
+                {barber && (
+                  <button
+                    type="button"
+                    className="w-full sm:w-auto rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white shadow hover:bg-blue-700"
+                    onClick={saveAvailability}
+                  >
+                    Save Changes
+                  </button>
+                )}
               </div>
-              {barber && (
-                <button
-                  type="button"
-                  className="w-full sm:w-auto rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white shadow hover:bg-blue-700"
-                  onClick={saveAvailability}
-                >
-                  Save Changes
-                </button>
-              )}
-            </div>
 
-            {barber ? (
-              <div className="space-y-6">
-                {dayNames.map((dayName, dayIndex) => (
-                  <div key={dayIndex} className="rounded-2xl bg-gray-50 p-4 sm:p-5">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="min-w-[96px] text-lg font-semibold text-gray-900">
-                        {dayName}
-                      </div>
+              {barber ? (
+                <div className="space-y-6">
+                  {dayNames.map((dayName, dayIndex) => (
+                    <div key={dayIndex} className="rounded-2xl bg-gray-50 p-4 sm:p-5">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="min-w-[96px] text-lg font-semibold text-gray-900">
+                          {dayName}
+                        </div>
 
-                      <label className="inline-flex items-center gap-2">
-                        <input 
-                          type="checkbox" 
-                          className="h-5 w-5 accent-blue-600" 
-                          checked={availability[dayIndex]?.isOpen || false}
-                          onChange={(e) => updateAvailability(dayIndex, 'isOpen', e.target.checked)}
-                        />
-                        <span className="text-gray-700 font-medium">Open</span>
-                      </label>
+                        <label className="inline-flex items-center gap-2">
+                          <input 
+                            type="checkbox" 
+                            className="h-5 w-5 accent-blue-600" 
+                            checked={availability[dayIndex]?.isOpen || false}
+                            onChange={(e) => updateAvailability(dayIndex, 'isOpen', e.target.checked)}
+                          />
+                          <span className="text-gray-700 font-medium">Open</span>
+                        </label>
 
-                      {availability[dayIndex]?.isOpen && (
-                        <div className="ms-auto w-full sm:w-auto min-w-0">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full min-w-0">
-                            <div className="min-w-0">
-                              <div className="relative">
-                                <input
-                                  type="time"
-                                  value={availability[dayIndex].startTime}
-                                  onChange={(e) => updateAvailability(dayIndex, 'startTime', e.target.value)}
-                                  className="block w-full box-border h-12 rounded-xl border border-gray-200 bg-white px-3 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
-                                  <Clock className="h-4 w-4" />
-                                </span>
+                        {availability[dayIndex]?.isOpen && (
+                          <div className="ms-auto w-full sm:w-auto min-w-0">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full min-w-0">
+                              <div className="min-w-0">
+                                <div className="relative">
+                                  <input
+                                    type="time"
+                                    value={availability[dayIndex].startTime}
+                                    onChange={(e) => updateAvailability(dayIndex, 'startTime', e.target.value)}
+                                    className="block w-full box-border h-12 rounded-xl border border-gray-200 bg-white px-3 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  />
+                                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
+                                    <Clock className="h-4 w-4" />
+                                  </span>
+                                </div>
                               </div>
-                            </div>
 
-                            <div className="min-w-0">
-                              <div className="relative">
-                                <input
-                                  type="time"
-                                  value={availability[dayIndex].endTime}
-                                  onChange={(e) => updateAvailability(dayIndex, 'endTime', e.target.value)}
-                                  className="block w-full box-border h-12 rounded-xl border border-gray-200 bg-white px-3 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
-                                  <Clock className="h-4 w-4" />
-                                </span>
+                              <div className="min-w-0">
+                                <div className="relative">
+                                  <input
+                                    type="time"
+                                    value={availability[dayIndex].endTime}
+                                    onChange={(e) => updateAvailability(dayIndex, 'endTime', e.target.value)}
+                                    className="block w-full box-border h-12 rounded-xl border border-gray-200 bg-white px-3 pr-10 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  />
+                                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
+                                    <Clock className="h-4 w-4" />
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Business Hours</h3>
-                <p className="text-gray-600">Complete your profile setup to set your business hours.</p>
-              </div>
-            )}
-          </div>
-        </Surface>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Business Hours</h3>
+                  <p className="text-gray-600">Complete your profile setup to set your business hours.</p>
+                </div>
+              )}
+            </div>
+          </Surface>
+        </>
+      )}
       
       {activeTab === 'privacy' && (
         <Surface mdClassName="card-premium p-8">
