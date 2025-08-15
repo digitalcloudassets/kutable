@@ -1,49 +1,62 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
-type AuthCtx = {
-  loading: boolean;   // initial hydration/loading state
-  session: Session | null;
-  user: User | null;
+type AuthState = {
+  session: import('@supabase/supabase-js').Session | null;
+  loading: boolean;
 };
 
-const Ctx = createContext<AuthCtx>({ loading: true, session: null, user: null });
+const AuthCtx = createContext<AuthState>({ session: null, loading: true });
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+async function healSession(): Promise<import('@supabase/supabase-js').Session | null> {
+  // 1) Load current session
+  const { data: { session } } = await supabase.auth.getSession();
+
+  // No session -> nothing to heal
+  if (!session) return null;
+
+  // 2) Try a refresh; if it fails with "session_not_found", wipe locally
+  const { data, error } = await supabase.auth.refreshSession();
+  if (error?.message?.toLowerCase().includes('session_not_found')) {
+    // Local-only sign out to clear bad tokens; don't revoke server session we don't own.
+    try { await supabase.auth.signOut({ scope: 'local' }); } catch {}
+    return null;
+  }
+
+  // 3) Return fresh session if available
+  return data?.session ?? session;
+}
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [session, setSession] = useState<import('@supabase/supabase-js').Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
-    let mounted = true;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const s = await healSession();
+        if (!cancelled) setSession(s);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
 
-    // Initial session fetch (critical for Bolt; don't render guards before this)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      setSession(session ?? null);
-      setLoading(false);
-    });
-
-    // Subscribe to changes (login/logout/token refresh)
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession ?? null);
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, _session) => {
+      // Whenever auth changes, attempt a light heal then publish the latest session.
+      const healed = await healSession();
+      if (!cancelled) setSession(healed);
     });
 
     return () => {
-      mounted = false;
-      sub?.subscription?.unsubscribe?.();
+      cancelled = true;
+      sub.subscription.unsubscribe();
     };
   }, []);
 
-  const value = useMemo<AuthCtx>(() => ({
-    loading,
-    session,
-    user: session?.user ?? null,
-  }), [loading, session]);
+  const value = useMemo(() => ({ session, loading }), [session, loading]);
+  return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
+};
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
-}
-
-export function useAuth() {
-  return useContext(Ctx);
-}
+export const useAuth = () => useContext(AuthCtx);
