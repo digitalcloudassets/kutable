@@ -1,302 +1,101 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { User, LogOut, Menu, X, Scissors, Crown, MessageSquare } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../hooks/useAuth';
-import { useMessaging } from '../../hooks/useMessaging';
+import React, { useEffect, useState } from 'react';
+import { Link, NavLink } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 import { useAdminGuard } from '../../hooks/useAdminGuard';
 import { logger } from '../../utils/logger';
-import AdminGuardBanner from '../Debug/AdminGuardBanner';
 
 const Header: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user, loading } = useAuth();
-  const { unreadCount } = useMessaging();
-  const { allowed: isAdmin, loading: adminLoading, error: adminError } = useAdminGuard();
-  
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Enhanced debug logging - single useEffect with proper dependency array
-  useEffect(() => {
-    if (user && import.meta.env.DEV) {
-      logger.debug('Header Debug Admin Check:', {
-        userId: user.id,
-        userEmail: user.email,
-        isAdmin,
-        adminLoading,
-        adminError
-      });
-    }
-  }, [user, isAdmin, adminLoading, adminError]);
+  // Normalize admin state from the hook you already have
+  const {
+    loading: adminLoading,
+    allowed: isAdmin,
+    error: adminError,
+  } = useAdminGuard();
 
-  // Show admin error in development for debugging
+  // Optional: surface guard errors in dev only
   useEffect(() => {
     if (adminError && import.meta.env.DEV) {
-      if (adminError.includes('fallback mode') || adminError.includes('Development environment detected') || adminError.includes('WebContainer')) {
-        logger.info('Admin Guard:', adminError);
-      } else {
-        logger.error('Admin Guard Error:', adminError);
-      }
+      logger.warn('Admin guard error:', adminError);
     }
   }, [adminError]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const handleSignOut = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        await supabase.auth.signOut();
-      }
-    } catch (error) {
-      console.log('Sign out error:', error);
-    } finally {
-      localStorage.removeItem('sb-' + (import.meta.env.VITE_SUPABASE_URL?.split('://')[1]?.split('.')[0] || 'auth') + '-auth-token');
-      setMobileMenuOpen(false);
-      setTimeout(() => {
-        navigate('/');
-      }, 100);
-    }
-  };
-
-  const isHomePage = location.pathname === '/';
-
   return (
-    <>
-      <AdminGuardBanner />
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-20 ${
-        scrolled || !isHomePage 
-          ? 'glass-effect border-b border-white/10 shadow-premium-lg' 
-          : 'bg-transparent'
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo */}
-            <Link to="/" className="flex items-center space-x-3 group">
-              <div className="relative">
-                <img 
-                  src="/Kutable Logo.png" 
-                  alt="Kutable Logo" 
-                  className="h-10 w-auto transition-transform duration-200 group-hover:scale-105"
-                />
-                <div className="absolute -inset-2 bg-gradient-to-r from-primary-500 to-accent-500 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-200 blur-md"></div>
-              </div>
-              <span className="text-2xl font-display font-bold bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 bg-clip-text text-transparent">
-                Kutable
-              </span>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link
-                to="/barbers"
-                className={`font-medium transition-all duration-200 hover:scale-105 px-4 py-2 rounded-xl ${
-                  isHomePage && !scrolled 
-                    ? 'text-white hover:bg-white/10' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                Find Barbers
-              </Link>
-              <Link
-                to="/pricing"
-                className={`font-medium transition-all duration-200 hover:scale-105 px-4 py-2 rounded-xl ${
-                  isHomePage && !scrolled 
-                    ? 'text-white hover:bg-white/10' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                Pricing
-              </Link>
-              <Link
-                to="/how-it-works"
-                className={`font-medium transition-all duration-200 hover:scale-105 px-4 py-2 rounded-xl ${
-                  isHomePage && !scrolled 
-                    ? 'text-white hover:bg-white/10' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                How It Works
-              </Link>
-            </nav>
-
-            {/* User Actions */}
-            <div className="flex items-center space-x-3 lg:space-x-4">
-              {loading ? (
-                <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
-              ) : user ? (
-                <div className="hidden md:flex items-center space-x-3">
-                  <Link
-                    to="/dashboard"
-                    className={`flex items-center space-x-2 font-medium transition-all duration-200 hover:scale-105 px-4 py-2 rounded-xl ${
-                      isHomePage && !scrolled 
-                        ? 'text-white hover:bg-white/10' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <User className="h-5 w-5" />
-                    <span>Dashboard</span>
-                    {unreadCount > 0 && (
-                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                  {/* Admin Link - Only show for verified admin users */}
-                  {isAdmin && !adminLoading && (
-                    <Link
-                      to="/admin"
-                      className={`flex items-center space-x-2 font-medium transition-all duration-200 hover:scale-105 px-4 py-2 rounded-xl ${
-                        isHomePage && !scrolled 
-                          ? 'text-white hover:bg-white/10' 
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`}
-                    >
-                      <Crown className="h-5 w-5" />
-                      <span>Admin</span>
-                    </Link>
-                  )}
-                  <button
-                    onClick={handleSignOut}
-                    className={`flex items-center space-x-2 font-medium transition-all duration-200 hover:scale-105 px-4 py-2 rounded-xl ${
-                      isHomePage && !scrolled 
-                        ? 'text-white/80 hover:text-white hover:bg-white/10' 
-                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-                    }`}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Sign Out</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="hidden md:flex items-center space-x-3">
-                  <Link
-                    to="/login"
-                    className={`font-medium transition-all duration-200 hover:scale-105 px-4 py-2 rounded-xl ${
-                      isHomePage && !scrolled 
-                        ? 'text-white hover:bg-white/10' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="btn-primary flex items-center space-x-2"
-                  >
-                    <Crown className="h-4 w-4" />
-                    <span>Get Started</span>
-                  </Link>
-                </div>
-              )}
-
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className={`md:hidden p-2 rounded-xl transition-all duration-200 ${
-                  isHomePage && !scrolled 
-                    ? 'text-white hover:bg-white/10' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="md:hidden border-t border-white/10 bg-white/95 backdrop-blur-sm">
-              <div className="px-4 py-4 space-y-2">
-                <Link
-                  to="/barbers"
-                  className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Find Barbers
-                </Link>
-                <Link
-                  to="/pricing"
-                  className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Pricing
-                </Link>
-                <Link
-                  to="/how-it-works"
-                  className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  How It Works
-                </Link>
-                
-                {user ? (
-                  <>
-                    <Link
-                      to="/dashboard"
-                      className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Dashboard
-                      {unreadCount > 0 && (
-                        <span className="ml-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </Link>
-                    {isAdmin && !adminLoading && (
-                      <Link
-                        to="/admin"
-                        className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        Admin
-                      </Link>
-                    )}
-                    <button
-                      onClick={() => {
-                        handleSignOut();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-                    >
-                      Sign Out
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      to="/login"
-                      className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      to="/signup"
-                      className="block px-4 py-3 bg-primary-500 text-white rounded-xl transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      Get Started
-                    </Link>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b">
+      <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            className="md:hidden p-2 rounded hover:bg-gray-100"
+            aria-label="Toggle menu"
+            onClick={() => setMobileOpen((v) => !v)}
+          >
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <Link to="/" className="font-bold">
+            Kutable
+          </Link>
         </div>
-      </header>
-    </>
+
+        <nav className="hidden md:flex items-center gap-4">
+          <NavLink
+            to="/barbers"
+            className={({ isActive }) =>
+              `px-3 py-2 rounded ${isActive ? 'text-black' : 'text-gray-600 hover:text-black'}`
+            }
+          >
+            Find a Barber
+          </NavLink>
+          <NavLink
+            to="/pricing"
+            className={({ isActive }) =>
+              `px-3 py-2 rounded ${isActive ? 'text-black' : 'text-gray-600 hover:text-black'}`
+            }
+          >
+            Pricing
+          </NavLink>
+          {/* Show Admin only when verified */}
+          {isAdmin && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                `px-3 py-2 rounded border ${isActive ? 'bg-black text-white border-black' : 'border-gray-200 hover:bg-gray-50'}`
+              }
+            >
+              Admin
+            </NavLink>
+          )}
+          <NavLink
+            to="/dashboard/barber"
+            className="px-3 py-2 rounded bg-black text-white"
+          >
+            Create my page
+          </NavLink>
+        </nav>
+      </div>
+
+      {/* Mobile drawer (simple, keep your existing styling if you had one) */}
+      {mobileOpen && (
+        <div className="md:hidden border-t">
+          <div className="mx-auto max-w-6xl px-4 py-2 flex flex-col">
+            <NavLink to="/barbers" className="px-3 py-2 rounded hover:bg-gray-50" onClick={() => setMobileOpen(false)}>
+              Find a Barber
+            </NavLink>
+            <NavLink to="/pricing" className="px-3 py-2 rounded hover:bg-gray-50" onClick={() => setMobileOpen(false)}>
+              Pricing
+            </NavLink>
+            {isAdmin && (
+              <NavLink to="/admin" className="px-3 py-2 rounded hover:bg-gray-50" onClick={() => setMobileOpen(false)}>
+                Admin
+              </NavLink>
+            )}
+            <NavLink to="/dashboard/barber" className="mt-1 px-3 py-2 rounded bg-black text-white" onClick={() => setMobileOpen(false)}>
+              Create my page
+            </NavLink>
+          </div>
+        </div>
+      )}
+    </header>
   );
 };
 
