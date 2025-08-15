@@ -33,6 +33,12 @@ const BarberDashboard: React.FC = () => {
   const [barber, setBarber] = useState<Barber | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Remember barber role preference
+  useEffect(() => {
+    localStorage.setItem('kutable:lastRole', 'barber');
+    localStorage.setItem('kutable:returning', '1');
+  }, []);
+
   // Derive active tab from URL
   const activeTab: Tab = useMemo(() => {
     const seg = pathname.replace(/\/+$/, '').split('/').pop() || 'profile';

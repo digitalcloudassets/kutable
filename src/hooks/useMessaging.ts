@@ -23,12 +23,12 @@ export const useMessaging = () => {
   }, [user, isConnected]);
 
   const loadConversations = useCallback(async () => {
-   const uid = user?.id ?? null;
-   if (!uid) return;
+    const uid = user?.id ?? null;
+    if (!uid) return;
 
     try {
       setLoading(true);
-     const conversationData = await messagingService.getUserConversations(uid);
+      const conversationData = await messagingService.getUserConversations(uid);
       setConversations(conversationData);
     } catch (error) {
       console.error('Error loading conversations:', error);
@@ -38,11 +38,11 @@ export const useMessaging = () => {
   }, [user]);
 
   const loadUnreadCount = useCallback(async () => {
-   const uid = user?.id ?? null;
-   if (!uid) return;
+    const uid = user?.id ?? null;
+    if (!uid) return;
 
     try {
-     const count = await messagingService.getUnreadMessageCount(uid);
+      const count = await messagingService.getUnreadMessageCount(uid);
       setUnreadCount(count);
     } catch (error) {
       console.error('Error loading unread count:', error);
@@ -74,11 +74,11 @@ export const useMessaging = () => {
   }, [loadConversations]);
 
   const markConversationAsRead = useCallback(async (bookingId: string) => {
-   const uid = user?.id ?? null;
-   if (!uid) return;
+    const uid = user?.id ?? null;
+    if (!uid) return;
 
     try {
-     await messagingService.markConversationAsRead(bookingId, uid);
+      await messagingService.markConversationAsRead(bookingId, uid);
       await loadUnreadCount();
       await loadConversations();
     } catch (error) {

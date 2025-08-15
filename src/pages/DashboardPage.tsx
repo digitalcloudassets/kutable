@@ -14,6 +14,7 @@ import BarberDashboardContent from '../components/Dashboard/BarberDashboardConte
 import LoadingDashboard from '../components/Dashboard/LoadingDashboard';
 import FallbackDashboard from '../components/Dashboard/FallbackDashboard';
 import { getOrCreateClientProfile } from '../utils/profileHelpers';
+import { decideRoleAndState, type UserRole } from '../utils/onboarding';
 import { Database } from '../lib/supabase';
 import { NotificationManager } from '../utils/notifications';
 import { useAdminGuard } from '../hooks/useAdminGuard';
@@ -38,6 +39,14 @@ const DashboardPage: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState('info');
   const [triggerEdit, setTriggerEdit] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Remember user's role preference
+  useEffect(() => {
+    if (userType) {
+      localStorage.setItem('kutable:lastRole', userType);
+      localStorage.setItem('kutable:returning', '1');
+    }
+  }, [userType]);
 
   const handleUserTypeCheck = useCallback(() => {
     if (!authLoading) {
@@ -161,17 +170,28 @@ const DashboardPage: React.FC = () => {
     try {
       setLoading(true);
 
-      // Check if user is a barber
-      const { data: barberData } = await supabase
-        .from('barber_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-      // Do NOT force barber mode from metadata alone—require an actual barber_profiles row.
+      // Use robust role detection
+      const lastRolePref = (localStorage.getItem('kutable:lastRole') as UserRole | null) ?? undefined;
+      const { role, ids } = await decideRoleAndState(user.id, lastRolePref);
 
-      // Check user metadata to determine intended user type
-      // Do NOT force barber mode from metadata alone—require an actual barber_profiles row.
+      if (role === 'barber' && ids.barberId) {
+        // Fetch full barber data
+        const { data: barberData } = await supabase
+          .from('barber_profiles')
+          .select('*')
+          .eq('id', ids.barberId)
+          .single();
+
+        if (barberData) {
+          setUserType('barber');
+          setBarber(barberData);
+          setActiveTab('profile');
+          setLoading(false);
+          return;
+        }
+      }
       
-      // For other users, create client profile
+      // Handle client role or fallback
       const clientProfile = await getOrCreateClientProfile(user);
       
       if (clientProfile) {

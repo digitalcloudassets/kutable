@@ -703,10 +703,10 @@ export class MessagingService {
       return 0;
     }
 
-   // Guard against undefined userId
-   if (!userId) {
-     return 0;
-   }
+    // Guard against undefined userId
+    if (!userId) {
+      return 0;
+    }
     try {
       const { count, error } = await supabase
         .from('messages')

@@ -1,6 +1,13 @@
 import { supabase } from '../lib/supabaseClient';
 
+export type UserRole = 'barber' | 'client' | 'unknown';
 export type OnboardingState = 'complete' | 'needs_profile' | 'needs_payouts';
+
+export type RoleDecision = {
+  role: UserRole;                 // who the user should be treated as
+  state: OnboardingState;         // where to route next
+  ids: { clientId?: string; barberId?: string; }; // resolved profile ids
+};
 
 type MinimalChecks = {
   hasClientProfile: boolean;
@@ -67,4 +74,62 @@ export async function computeOnboardingState(userId: string): Promise<Onboarding
 
   // Otherwise, treat as new and send to profile onboarding.
   return 'needs_profile';
+}
+
+/**
+ * Decide role+state without causing RLS recursion and without `.in.(null)`.
+ * Rules:
+ * - If barber profile exists -> role=barber (unless explicitly overridden by lastRole='client' and no barber use yet)
+ * - Else if client profile exists -> role=client
+ * - If neither exists -> needs_profile
+ * - Barbers with payouts_enabled=false -> needs_payouts
+ * - Any booking presence counts as returning (complete)
+ */
+export async function decideRoleAndState(userId: string, lastRolePref?: UserRole): Promise<RoleDecision> {
+  // 1) Fetch profile ids (owner-only queries; RLS-safe)
+  const [{ data: cp }, { data: bp }] = await Promise.all([
+    supabase.from('client_profiles').select('id').eq('user_id', userId).maybeSingle(),
+    supabase.from('barber_profiles').select('id,stripe_onboarding_completed').eq('user_id', userId).maybeSingle(),
+  ]);
+
+  const clientId = cp?.id ?? undefined;
+  const barberId = bp?.id ?? undefined;
+  const payoutsEnabled = !!bp?.stripe_onboarding_completed;
+
+  // 2) Any activity? (only query bookings if we have at least one id)
+  let hasAnyBooking = false;
+  const orClauses: string[] = [];
+  if (clientId) orClauses.push(`client_id.eq.${clientId}`);
+  if (barberId) orClauses.push(`barber_id.eq.${barberId}`);
+  if (orClauses.length > 0) {
+    const { data: bks } = await supabase
+      .from('bookings')
+      .select('id')
+      .or(orClauses.join(','))
+      .limit(1);
+    hasAnyBooking = !!(bks && bks.length > 0);
+  }
+
+  // 3) Choose role
+  let role: UserRole = 'unknown';
+  if (barberId) role = 'barber';
+  else if (clientId) role = 'client';
+
+  // Allow a user to prefer "client" if both exist and they picked client last time
+  if (clientId && barberId && lastRolePref === 'client') {
+    role = 'client';
+  }
+
+  // 4) Compute state
+  let state: OnboardingState = 'needs_profile';
+  if (role === 'barber') {
+    state = payoutsEnabled ? 'complete' : 'needs_payouts';
+  } else if (role === 'client') {
+    state = 'complete';
+  } else {
+    // unknown role (no profiles yet)
+    state = hasAnyBooking || localStorage.getItem('kutable:returning') === '1' ? 'complete' : 'needs_profile';
+  }
+
+  return { role, state, ids: { clientId, barberId } };
 }

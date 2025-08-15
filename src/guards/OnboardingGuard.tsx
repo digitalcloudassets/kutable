@@ -1,21 +1,21 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthProvider';
-import { computeOnboardingState } from '../utils/onboarding';
+import { decideRoleAndState, type UserRole } from '../utils/onboarding';
 
 type Props = { children: React.ReactNode };
 
 export default function OnboardingGuard({ children }: Props) {
   const { user, loading } = useAuth();
-  const [checking, setChecking] = React.useState(true);
   const nav = useNavigate();
   const loc = useLocation();
+  const [checking, setChecking] = React.useState(true);
 
   React.useEffect(() => {
     let alive = true;
 
     const run = async () => {
-      // Wait for auth settle (max 4s)
+      // wait for auth settle (max 4s)
       const start = Date.now();
       while (loading && Date.now() - start < 4000) {
         await new Promise(r => setTimeout(r, 50));
@@ -28,28 +28,30 @@ export default function OnboardingGuard({ children }: Props) {
       }
 
       try {
-        const state = await computeOnboardingState(uid);
+        const lastRolePref = (localStorage.getItem('kutable:lastRole') as UserRole | null) ?? undefined;
+        const { role, state } = await decideRoleAndState(uid, lastRolePref);
+
+        // mark returning once they pass guard
+        localStorage.setItem('kutable:returning', '1');
+
         const onOnboarding = loc.pathname.startsWith('/onboarding') || loc.search.includes('step=');
 
-        if (state === 'complete') {
-          localStorage.setItem('kutable:returning', '1');
-          setChecking(false);
-          return;
-        }
-
-        if (state === 'needs_payouts' && !onOnboarding) {
+        // Route rules:
+        // - Barbers → payouts if needed; else let them in
+        // - Clients → let them in
+        // - Unknown → onboarding
+        if (role === 'barber' && state === 'needs_payouts' && !onOnboarding) {
           nav('/onboarding/barber?step=payouts', { replace: true });
           return;
         }
-
-        if (state === 'needs_profile' && !onOnboarding) {
+        if (role === 'unknown' && state === 'needs_profile' && !onOnboarding) {
           nav('/onboarding', { replace: true });
           return;
         }
 
         setChecking(false);
       } catch (e) {
-        console.warn('[OnboardingGuard] checker failed, failing open:', e);
+        console.warn('[OnboardingGuard] fail-open due to error:', e);
         setChecking(false);
       }
     };
