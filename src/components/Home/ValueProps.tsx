@@ -9,12 +9,12 @@ const items = [
   },
   {
     title: 'No monthly membership',
-    desc: 'There's no subscription and no setup fee. Kutable charges a simple 1% per booking.',
+    desc: 'There\'s no subscription and no setup fee. Kutable charges a simple 1% per booking.',
     Icon: DownloadCloud,
   },
   {
     title: 'Keep your client list',
-    desc: 'Own your book. Export your data anytime — you're never locked in.',
+    desc: 'Own your book. Export your data anytime — you\'re never locked in.',
     Icon: Users,
   },
   {
