@@ -35,10 +35,10 @@ const MessagingDashboard: React.FC = () => {
         </div>
       )}
       
-    <div className="h-[600px] lg:h-[600px] min-h-[400px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden app-full">
+    <div className="h-[600px] lg:h-[600px] min-h-[400px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="h-full flex">
         {/* Conversation List - Desktop: Always visible, Mobile: Hidden when thread open */}
-        <div className={`w-full lg:w-1/3 border-r border-gray-200 ${
+        <div className={`w-full lg:w-1/5 xl:w-1/6 border-r border-gray-200 ${
           showMobileThread ? 'hidden lg:block' : 'block'
         }`}>
           <div className="h-full flex flex-col">
@@ -63,13 +63,13 @@ const MessagingDashboard: React.FC = () => {
         </div>
 
         {/* Message Thread - Desktop: Always visible when selected, Mobile: Full screen when open */}
-        <div className={`lg:flex-1 ${
+        <div className={`flex-1 ${
           showMobileThread ? 'block' : 'hidden lg:block'
-        } h-full w-full lg:w-auto`}>
+        } h-full`}>
           {selectedConversation ? (
-            <div className="h-full">
+            <div className="h-full flex flex-col">
               {/* Mobile back button */}
-              <div className="lg:hidden thread-header px-4 py-3">
+              <div className="lg:hidden bg-white border-b border-gray-200 p-3">
                 <button
                   onClick={handleBackToList}
                   className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"

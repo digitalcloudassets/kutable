@@ -11,31 +11,19 @@ interface ClientDashboardContentProps {
 const ClientDashboardContent = React.memo<ClientDashboardContentProps>(({ activeTab }) => {
   return (
     <div className="animate-fade-in-up">
-      {activeTab === 'bookings' && (
-        <div className="app-full">
-          <ClientBookings />
-        </div>
-      )}
+      {activeTab === 'bookings' && <ClientBookings />}
       {activeTab === 'messages' && (
-        <div className="app-full">
-          <div className="px-4 py-6 border-b border-gray-100">
-            <div className="flex items-center space-x-3">
+        <div className="card-premium p-8">
+          <div className="flex items-center space-x-3 mb-6">
             <div className="bg-primary-100 p-2 rounded-xl">
               <MessageSquare className="h-6 w-6 text-primary-600" />
             </div>
             <h3 className="text-2xl font-display font-bold text-gray-900">Messages</h3>
-            </div>
           </div>
           <MessagingDashboard />
         </div>
       )}
-      {activeTab === 'profile' && (
-        <div className="app-full">
-          <div className="px-4 py-6">
-            <ClientProfileSettings />
-          </div>
-        </div>
-      )}
+      {activeTab === 'profile' && <ClientProfileSettings />}
     </div>
   );
 });
