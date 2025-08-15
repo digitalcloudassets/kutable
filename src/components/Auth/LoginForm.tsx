@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link, useSearchParams, useEffect } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, Loader, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
