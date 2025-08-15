@@ -81,36 +81,6 @@ const Header: React.FC = () => {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-6">
-              <Link
-                to="/barbers"
-                className={`font-medium transition-all duration-200 hover:scale-105 px-4 py-2 rounded-xl ${
-                  isHomePage && !scrolled 
-                    ? 'text-white hover:bg-white/10' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                Find Barbers
-              </Link>
-              <Link
-                to="/pricing"
-                className={`font-medium transition-all duration-200 hover:scale-105 px-4 py-2 rounded-xl ${
-                  isHomePage && !scrolled 
-                    ? 'text-white hover:bg-white/10' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                Pricing
-              </Link>
-              <Link
-                to="/how-it-works"
-                className={`font-medium transition-all duration-200 hover:scale-105 px-4 py-2 rounded-xl ${
-                  isHomePage && !scrolled 
-                    ? 'text-white hover:bg-white/10' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                How It Works
-              </Link>
             </nav>
 
             {/* User Actions */}
@@ -201,27 +171,6 @@ const Header: React.FC = () => {
           {mobileMenuOpen && (
             <div className="md:hidden border-t border-white/10 bg-white/95 backdrop-blur-sm">
               <div className="px-4 py-4 space-y-2">
-                <Link
-                  to="/barbers"
-                  className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Find Barbers
-                </Link>
-                <Link
-                  to="/pricing"
-                  className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Pricing
-                </Link>
-                <Link
-                  to="/how-it-works"
-                  className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  How It Works
-                </Link>
                 
                 {user ? (
                   <>
