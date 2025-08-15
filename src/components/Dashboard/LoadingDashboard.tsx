@@ -1,6 +1,9 @@
 import React from 'react';
 
 const LoadingDashboard = React.memo(() => {
+  // Add breadcrumb logging
+  console.log('[LoadingDashboard] showing spinner');
+  
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center space-y-6">

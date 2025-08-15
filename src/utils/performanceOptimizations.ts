@@ -18,8 +18,8 @@ export class PerformanceOptimizer {
     if (!logoElement && !this.preloadedImages.has('/Kutable%20Logo.png')) {
       const link = document.createElement('link');
       link.rel = 'preload';
-      link.href = '/Kutable%20Logo.png';
       link.as = 'image';
+      link.href = '/Kutable%20Logo.png';
       document.head.appendChild(link);
       this.preloadedImages.add('/Kutable%20Logo.png');
     }

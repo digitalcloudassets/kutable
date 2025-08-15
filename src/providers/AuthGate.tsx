@@ -8,6 +8,9 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const loc = useLocation()
   const [ready, setReady] = useState(false)
   const [authed, setAuthed] = useState(false)
+  
+  // Add breadcrumb logging
+  console.log('[AuthGate] render', { ready, authed });
 
   // 1) Hydrate session FIRST
   useEffect(() => {
@@ -186,6 +189,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   }, [ready, authed, nav, loc.pathname])
 
   if (!ready) {
+    console.log('[AuthGate] showing spinner (not ready)');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center space-y-6">

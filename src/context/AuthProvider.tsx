@@ -16,18 +16,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
 
-  // Initial boot with a safety timeout
+  // Initial boot with a safety timeout so the splash can't be permanent
   useEffect(() => {
     let mounted = true;
     const bootTimeout = setTimeout(() => {
       if (mounted && loading) {
-        console.warn('Auth boot timeout -> continuing without session');
-        setLoading(false);
-      }
-    }, 8000);
-    const timeout = setTimeout(() => {
-      if (mounted && loading) {
-        console.warn('Auth boot timeout -> continuing without session');
+        console.warn('[AuthProvider] Boot timeout → continuing without session');
         setLoading(false);
       }
     }, 8000);
@@ -39,33 +33,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return;
         setSession(data.session ?? null);
       } catch (err) {
-        console.error('Auth boot error:', err);
+        console.error('[AuthProvider] Boot error:', err);
         try { await repairAuthIfNeeded(err); } catch {}
-        try {
-          await repairAuthIfNeeded(err);
-        } catch {}
       } finally {
         if (mounted) {
           setLoading(false);
-          console.log('AUTH READY →', { user: !!(data?.session?.user) });
+          console.log('[AuthProvider] READY →', { hasUser: !!(data?.session?.user) });
         }
       }
     })();
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!mounted) return;
+      // Use Supabase's session directly; don't re-fetch here
       setSession(newSession ?? null);
+      console.log('[AuthProvider] onAuthStateChange →', { hasUser: !!newSession?.user });
     });
 
     return () => {
       mounted = false;
       clearTimeout(bootTimeout);
-      clearTimeout(timeout);
       sub?.subscription?.unsubscribe?.();
     };
   }, []); // ignore deps for this boot effect
 
-  // One-time deferred avatar upload after login
+  // One-time deferred avatar upload after login (defensive parsing)
   useEffect(() => {
     let cancelled = false;
 
@@ -76,13 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!j) return;
 
       let pending: { role: 'clients' | 'barbers'; userId: string; name: string; b64: string } | null = null;
-      try {
-        pending = JSON.parse(j);
-      } catch {
-        // Bad JSON; clean up and bail
-        localStorage.removeItem('kutable:pendingAvatar');
-        return;
-      }
+      try { pending = JSON.parse(j); } catch { localStorage.removeItem('kutable:pendingAvatar'); return; }
       if (!pending || pending.userId !== session.user.id) return;
 
       try {
@@ -103,23 +89,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         localStorage.removeItem('kutable:pendingAvatar');
       } catch (e) {
-        console.warn('Deferred avatar upload failed:', e);
+        console.warn('[AuthProvider] Deferred avatar upload failed:', e);
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [session]);
 
-  const value = useMemo<AuthCtx>(
-    () => ({
-      loading,
-      session,
-      user: session?.user ?? null,
-    }),
-    [loading, session]
-  );
+  const value = useMemo<AuthCtx>(() => ({
+    loading,
+    session,
+    user: session?.user ?? null,
+  }), [loading, session]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
