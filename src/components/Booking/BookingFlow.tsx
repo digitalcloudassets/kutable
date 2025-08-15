@@ -667,6 +667,7 @@ const BookingFlow: React.FC = () => {
                       <CreditCard className="h-5 w-5" />
                     )}
                     <span>{paymentLoading ? 'Preparing Payment...' : 'Continue to Payment'}</span>
+                    <span>{paymentLoading ? 'Preparing Payment...' : 'Make Payment'}</span>
                   </button>
                 </div>
               </div>
