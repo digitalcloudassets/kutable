@@ -216,24 +216,28 @@ export default function InAppCheckout({
 
         setClientSecret(data.clientSecret);
       } catch (error: any) {
-        let errorMessage = error.message || 'Payment initialization failed';
-        
-        // Handle CAPTCHA errors gracefully
-        if (error.message?.includes('Turnstile')) {
-          errorMessage = 'Security verification failed. Please refresh and try again.';
+        // Normalize error to a safe string once (no re-declarations)
+        const e = error as { message?: string };
+        const msg =
+          typeof e?.message === 'string' && e.message.trim().length > 0
+            ? e.message
+            : 'Payment initialization failed';
+
+        // CAPTCHA-specific messaging stays graceful for users
+        if (msg.includes('Turnstile')) {
+          const friendly = 'Captcha verification failed — please try again.';
+          setError(friendly);
+          NotificationManager.error(friendly);
+        } else {
+          setError(msg);
+          NotificationManager.error(msg);
         }
-        
-        setError(errorMessage);
-        NotificationManager.error(errorMessage);
-        let errorMessage = error.message || 'Payment initialization failed';
-        
-        // Handle CAPTCHA errors gracefully
-        if (error.message?.includes('Turnstile')) {
-          errorMessage = 'Security verification failed. Please refresh and try again.';
+
+        // Optional dev logging (won't surface to users in prod)
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.error('[InAppCheckout] initialization error:', error);
         }
-        
-        setError(errorMessage);
-        NotificationManager.error(errorMessage);
       }
     };
 
