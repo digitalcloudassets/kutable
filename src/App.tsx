@@ -9,7 +9,6 @@ import { Toaster } from 'react-hot-toast';
 import { setupGlobalErrorHandling } from './utils/errorHandling';
 import { initializeAnalytics, trackPageView } from './utils/analytics';
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
-import AdminGuardBanner from './components/Debug/AdminGuardBanner';
 
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
@@ -53,8 +52,6 @@ function App() {
   return (
     <Router>
       <AnalyticsRouter>
-        {/* Dev-only, session-gated, non-blocking */}
-        <AdminGuardBanner />
         <div className="min-h-screen bg-gray-50 flex flex-col">
           <Header />
 
