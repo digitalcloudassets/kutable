@@ -21,6 +21,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
     const timeout = setTimeout(() => {
       if (mounted && loading) {
+        console.warn('Auth boot timeout → continuing without session');
+        setLoading(false);
+      }
+    }, 8000);
+    const timeout = setTimeout(() => {
+      if (mounted && loading) {
         console.warn('Auth boot timeout -> continuing without session');
         setLoading(false);
       }
@@ -38,18 +44,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await repairAuthIfNeeded(err);
         } catch {}
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          console.log('AUTH READY →', { user: !!session?.user });
+        }
       }
     })();
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!mounted) return;
-      // Do not re-call getSession here; use what Supabase gives us
+      // Use Supabase's session directly; don't re-fetch here
       setSession(newSession ?? null);
     });
 
     return () => {
       mounted = false;
+      clearTimeout(timeout);
       clearTimeout(timeout);
       sub?.subscription?.unsubscribe?.();
     };

@@ -23,6 +23,7 @@ export function shouldBypassFunctionCalls() {
 export function shouldBypassAdminGuards() {
   // Only bypass if you explicitly enable it via env + preview host
   return isPreviewHost() && (import.meta.env.VITE_DEV_PREVIEW_MODE === "true");
+  return isPreviewHost() && (import.meta.env.VITE_DEV_PREVIEW_MODE === "true");
 }
 
 // Check if we're in a development environment

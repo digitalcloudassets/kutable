@@ -1,4 +1,4 @@
-// Complete replacement: Bypass entirely unless enableTurnstile is true.
+// Complete replacement: Bypass entirely unless TURNSTILE_ENABLED is true.
 import React, { useEffect, useRef, useState } from 'react';
 import { env, TURNSTILE_ENABLED } from '../../utils/env';
 

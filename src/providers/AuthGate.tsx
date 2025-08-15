@@ -105,14 +105,14 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           if (response.error) {
             console.warn('Profile ensure failed, fallback to direct check:', response.error);
             
-            // Fallback: check if profile already exists
-            const { data: existingProfile } = await supabase
+            // Fallback: check if any profile exists for this user
+            const { data: existingClient } = await supabase
               .from('client_profiles')
               .select('id')
               .eq('user_id', user.id)
               .maybeSingle();
               
-            if (!existingProfile) {
+            if (!existingClient) {
               const { data: existingBarber } = await supabase
                 .from('barber_profiles')
                 .select('id')
@@ -120,7 +120,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                 .maybeSingle();
                 
               if (!existingBarber) {
-                // No profile exists, redirect to onboarding
+                // No profile exists, redirect to general onboarding (not forcing barber mode)
                 nav('/onboarding', { replace: true });
                 return;
               }

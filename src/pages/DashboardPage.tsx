@@ -161,15 +161,7 @@ const DashboardPage: React.FC = () => {
         .from('barber_profiles')
         .select('*')
         .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (barberData) {
-        setUserType('barber');
-        setBarber(barberData);
-        setActiveTab('profile');
-        setLoading(false);
-        return;
-      }
+      // Do NOT force barber mode from metadata alone—require an actual barber_profiles row.
 
       // Check user metadata to determine intended user type
       // Do NOT force barber mode from metadata alone—require an actual barber_profiles row.

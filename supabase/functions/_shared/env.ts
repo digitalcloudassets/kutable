@@ -29,4 +29,6 @@ export const serverEnv = {
   
   // Turnstile
   turnstileSecretKey: (Deno.env.get('TURNSTILE_SECRET_KEY') ?? '').trim(),
+  // Turnstile
+  turnstileSecretKey: (Deno.env.get('TURNSTILE_SECRET_KEY') ?? '').trim(),
 };

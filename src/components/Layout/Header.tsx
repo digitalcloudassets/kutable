@@ -36,11 +36,9 @@ const Header: React.FC = () => {
     };
   }, []);
 
-  // Check admin route but don't early return
+  // Check admin route and admin status
   const isAdminRoute = location.pathname.startsWith('/admin');
   const isAdmin = !!profile?.is_admin;
-
-  // Optional: surface guard errors in dev only (when there's actually an error)
 
   useEffect(() => {
     const handleScroll = () => {
