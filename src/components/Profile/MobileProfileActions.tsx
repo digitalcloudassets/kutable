@@ -8,7 +8,7 @@ type Props = {
   renderPrivacy: () => React.ReactNode;
 };
 
-export default function MobileProfileActions({ renderGallery, renderHours, renderPrivacy }: Props) {
+function MobileProfileActions({ renderGallery, renderHours, renderPrivacy }: Props) {
   const [panel, setPanel] = useState<null | 'gallery' | 'hours' | 'privacy'>(null);
 
   return (
@@ -56,3 +56,21 @@ export default function MobileProfileActions({ renderGallery, renderHours, rende
     </>
   );
 }
+
+// Hide the sticky action row on mobile since tabs are now in bottom nav
+const MobileProfileActionsWrapper = ({ renderGallery, renderHours, renderPrivacy }: Props) => {
+  return (
+    <>
+      {/* Desktop only - action chips remain visible */}
+      <div className="hidden md:block">
+        <MobileProfileActions 
+          renderGallery={renderGallery}
+          renderHours={renderHours}
+          renderPrivacy={renderPrivacy}
+        />
+      </div>
+    </>
+  );
+};
+
+export default MobileProfileActionsWrapper;
