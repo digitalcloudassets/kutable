@@ -1,6 +1,24 @@
 import React, { useState } from 'react';
 import { Link as LinkIcon, Copy, Check, Share2 } from 'lucide-react';
 
+// Check if slug is a proper branded slug (not UUID or fallback)
+const isBrandedSlug = (slug?: string | null): boolean => {
+  if (!slug) return false;
+  
+  // Not a UUID pattern
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (uuidPattern.test(slug)) return false;
+  
+  // Not a fallback pattern like "barber-8620af49"
+  const fallbackPattern = /^barber-[0-9a-f]{8}$/i;
+  if (fallbackPattern.test(slug)) return false;
+  
+  // Must be at least 3 characters and contain meaningful content
+  if (slug.length < 3) return false;
+  
+  return true;
+};
+
 type Props = {
   slug?: string | null;
   id?: string | null; // fallback if slug missing
@@ -8,9 +26,14 @@ type Props = {
 };
 
 export default function ShareProfileLink({ slug, id, className }: Props) {
+  // Only show branded link if we have a proper branded slug
+  if (!isBrandedSlug(slug)) {
+    return null;
+  }
+  
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://kutable.com';
-  const url = slug ? `${origin}/barber/${slug}` : `${origin}/barber/${id ?? ''}`;
-  const brandedUrl = slug ? `kutable.com/barber/${slug}` : `kutable.com/barber/${id ?? ''}`;
+  const url = `${origin}/barber/${slug}`;
+  const brandedUrl = `kutable.com/barber/${slug}`;
   const [copied, setCopied] = useState(false);
 
   async function copy() {
