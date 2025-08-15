@@ -4,7 +4,7 @@ import App from './App.tsx';
 import './index.css';
 import './styles/daypicker.mobile.css';
 import './styles/stepper.mobile.css';
-import './styles/flow.css';
+import './styles/stepper.mobile.css';
 import { AuthProvider, useAuth } from './context/AuthProvider';
 import { performanceOptimizer, initializeWebVitals } from './utils/performanceOptimizations';
 import { initializeProductionOptimizations } from './utils/productionConfig';
