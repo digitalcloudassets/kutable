@@ -15,7 +15,7 @@ export default function ShareProfileLink({ slug, id, className }: Props) {
 
   async function copy() {
     try { 
-      await navigator.clipboard.writeText(url); 
+      await navigator.clipboard.writeText(brandedUrl); 
       setCopied(true); 
       setTimeout(() => setCopied(false), 1200); 
     } catch {
@@ -26,7 +26,7 @@ export default function ShareProfileLink({ slug, id, className }: Props) {
   async function nativeShare() {
     if ((navigator as any).share) {
       try { 
-        await (navigator as any).share({ title: 'Book me on Kutable', url }); 
+        await (navigator as any).share({ title: 'Book me on Kutable', url: brandedUrl }); 
       } catch {
         // fallback to copy
         copy();
