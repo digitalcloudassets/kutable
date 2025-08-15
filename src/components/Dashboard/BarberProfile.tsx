@@ -38,6 +38,8 @@ import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { NotificationManager } from '../../utils/notifications';
 import { generateUniqueSlug } from '../../utils/updateBarberSlugs';
 import { updateSingleBarberSlug } from '../../utils/updateBarberSlugs';
+import EditProfileLinkButton from '../Profile/EditProfileLinkButton';
+import ShareProfileLink from '../Profile/ShareProfileLink';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -323,17 +325,6 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
   return (
     <div className="card-premium p-8 animate-fade-in-up">
       <div className="space-y-8">
-        {/* Edit Toggle */}
-        <div className="flex justify-end">
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            className="btn-primary"
-          >
-            {isEditing ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
-            <span>{isEditing ? 'Cancel' : 'Edit Profile'}</span>
-          </button>
-        </div>
-
         {/* Profile Content */}
         {isEditing ? (
           /* Edit Mode */
@@ -480,7 +471,18 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
           /* View Mode */
           <div className="space-y-8">
             {/* Profile Header */}
-            <div className="flex flex-col sm:flex-row sm:items-start space-y-6 sm:space-y-0 sm:space-x-8 pb-8 border-b border-gray-100">
+            <div className="relative flex flex-col sm:flex-row sm:items-start space-y-6 sm:space-y-0 sm:space-x-8 pb-8 border-b border-gray-100">
+              {/* Desktop Edit Button - top-right, hidden on mobile */}
+              <div className="absolute right-4 top-4 hidden md:block">
+                <button
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="btn-primary"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span>Edit Profile</span>
+                </button>
+              </div>
+              
               <div className="relative mx-auto sm:mx-0">
                 <img
                   src={barber.profile_image_url || 'https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=200'}
@@ -593,6 +595,17 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                     </div>
                   )}
                 </div>
+              </div>
+              
+              {/* Mobile Edit Button - centered under reviews, hidden on desktop */}
+              <div className="mt-4 md:hidden flex justify-center">
+                <button
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="btn-primary"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span>Edit Profile</span>
+                </button>
               </div>
 
               <div>
