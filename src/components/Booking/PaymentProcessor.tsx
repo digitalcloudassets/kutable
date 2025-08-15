@@ -276,7 +276,7 @@ const PaymentForm: React.FC<PaymentProcessorProps> = ({ booking, onSuccess, onBa
               ) : (
                 <>
                   <Lock className="h-4 w-4 mr-2" />
-                  Pay ${(booking.totalAmount + booking.totalAmount * 0.029 + 0.30).toFixed(2)}
+                  Pay ${booking.totalAmount.toLocaleString()}
                 </>
               )}
             </button>
