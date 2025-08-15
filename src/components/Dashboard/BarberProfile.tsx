@@ -38,7 +38,7 @@ import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { NotificationManager } from '../../utils/notifications';
 import { uploadBarberAvatar, uploadBarberBanner } from '../../lib/uploadAvatar';
 import { useStripeConnect } from '../../hooks/useStripeConnect';
-import { isConnectStateForUser } from '../../lib/connectState';
+import { getConnectState, setConnectState, clearConnectState } from '../../lib/connectState';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 

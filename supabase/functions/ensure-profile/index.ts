@@ -1,5 +1,3 @@
-// POST /functions/v1/ensure-profile
-// Idempotent: creates profile if missing; returns profile if exists.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts'
 
@@ -61,9 +59,6 @@ Deno.serve(async (req) => {
         },
       )
     }
-
-    // Normalize email
-    const normEmail = email.trim().toLowerCase()
 
     // Check for existing client profile first
     const { data: existingClient, error: clientErr } = await supabase

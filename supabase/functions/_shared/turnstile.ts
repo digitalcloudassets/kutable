@@ -1,4 +1,7 @@
-import { serverEnv, TURNSTILE_ENABLED } from './env.ts';
+import { serverEnv } from './env.ts';
+
+// Turnstile is enabled only if secret key exists
+export const TURNSTILE_ENABLED = serverEnv.turnstileSecretKey.length > 0;
 
 export async function verifyTurnstile(token: string, remoteIp?: string) {
   if (!TURNSTILE_ENABLED) {

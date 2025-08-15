@@ -21,7 +21,8 @@ export function shouldBypassFunctionCalls() {
 
 // Dev preview bypass for admin guards (only in preview, not prod)
 export function shouldBypassAdminGuards() {
-  return isPreviewHost(); // Bypass admin guards in any preview environment
+  // Only bypass if you explicitly enable it via env + preview host
+  return isPreviewHost() && (import.meta.env.VITE_DEV_PREVIEW_MODE === "true");
 }
 
 // Check if we're in a development environment

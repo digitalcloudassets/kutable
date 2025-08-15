@@ -24,6 +24,11 @@ function isAllowedOrigin(origin: string | null): string | null {
 
   if (EXACT.has(origin)) return origin;
 
+  // Fallback: if no allowlist configured, allow the requesting origin
+  if (EXACT.size === 0 && SUFFIXES.length === 0) {
+    return origin;
+  }
+
   try {
     const u = new URL(origin);
     for (const suf of SUFFIXES) {

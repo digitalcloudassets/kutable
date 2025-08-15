@@ -1,5 +1,5 @@
 // Turnstile utility functions - safe to call whether enabled or not
-import { env, TURNSTILE_ENABLED } from '../utils/env';
+import { TURNSTILE_ENABLED, env } from '../utils/env';
 
 declare global {
   interface Window {

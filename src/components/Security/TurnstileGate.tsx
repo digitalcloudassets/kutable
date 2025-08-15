@@ -1,6 +1,6 @@
 // Complete replacement: Bypass entirely unless enableTurnstile is true.
 import React, { useEffect, useRef, useState } from 'react';
-import { TURNSTILE_ENABLED, env } from '../../utils/env';
+import { env, TURNSTILE_ENABLED } from '../../utils/env';
 
 type Props = {
   children: React.ReactNode;

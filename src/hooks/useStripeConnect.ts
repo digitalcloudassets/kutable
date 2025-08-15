@@ -22,9 +22,10 @@ export function useStripeConnect(accountId?: string | null, userId?: string) {
       return
     }
     
-    // Only refresh if this Connect state belongs to the current user
-    if (!isConnectStateForUser(userId)) {
-      console.warn('Skipping Stripe status refresh - not current user\'s account')
+    // Verify this Connect state belongs to the current user
+    const connectState = getConnectState()
+    if (connectState && connectState.userId !== userId) {
+      console.warn('Skipping Stripe status refresh - Connect state belongs to different user')
       return
     }
     

@@ -82,11 +82,10 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           return
         }
 
-        // LINK IDENTITIES safeguard: prefer primary email lowercase
-        const email = (user.email || user.user_metadata?.email || '').toLowerCase()
-
         // Ensure profile (idempotent server call)
         try {
+          const email = (user.email || user.user_metadata?.email || '').toLowerCase()
+          
           const response = await supabase.functions.invoke('ensure-profile', {
             body: { 
               userId: user.id, 
@@ -104,7 +103,28 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           });
 
           if (response.error) {
-            console.warn('Profile ensure failed (continuing anyway):', response.error);
+            console.warn('Profile ensure failed, fallback to direct check:', response.error);
+            
+            // Fallback: check if profile already exists
+            const { data: existingProfile } = await supabase
+              .from('client_profiles')
+              .select('id')
+              .eq('user_id', user.id)
+              .maybeSingle();
+              
+            if (!existingProfile) {
+              const { data: existingBarber } = await supabase
+                .from('barber_profiles')
+                .select('id')
+                .eq('user_id', user.id)
+                .maybeSingle();
+                
+              if (!existingBarber) {
+                // No profile exists, redirect to onboarding
+                nav('/onboarding', { replace: true });
+                return;
+              }
+            }
           }
         } catch (error) {
           console.warn('Profile ensure error (continuing anyway):', error);

@@ -172,15 +172,7 @@ const DashboardPage: React.FC = () => {
       }
 
       // Check user metadata to determine intended user type
-      const intendedUserType = user.user_metadata?.user_type;
-      
-      // If user is supposed to be a barber but no profile exists yet, don't auto-create client profile
-      if (intendedUserType === 'barber') {
-        setUserType('barber');
-        setActiveTab('profile');
-        setLoading(false);
-        return;
-      }
+      // Do NOT force barber mode from metadata alone—require an actual barber_profiles row.
       
       // For other users, create client profile
       const clientProfile = await getOrCreateClientProfile(user);

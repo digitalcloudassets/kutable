@@ -28,6 +28,7 @@ export const env = {
   supabaseFunctionsUrl: (import.meta.env.VITE_SUPABASE_FUNCTIONS_URL as string) ||
                        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`,    // ✅ fallback
   stripePublishableKey,
+  googleMapsApiKey,
   turnstileSiteKey: (import.meta.env.VITE_TURNSTILE_SITE_KEY as string || '').trim(),
   isBolt,
   enableTurnstile: !!(import.meta.env.VITE_TURNSTILE_SITE_KEY || '').trim() && import.meta.env.PROD,

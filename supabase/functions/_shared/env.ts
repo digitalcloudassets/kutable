@@ -27,9 +27,6 @@ export const serverEnv = {
   },
   emailProviderKey: get('EMAIL_PROVIDER_API_KEY', false) ?? '',
   
-  // Turnstile (optional)
+  // Turnstile
   turnstileSecretKey: (Deno.env.get('TURNSTILE_SECRET_KEY') ?? '').trim(),
 };
-
-// Turnstile is enabled only if secret key exists
-export const TURNSTILE_ENABLED = serverEnv.turnstileSecretKey.length > 0;
