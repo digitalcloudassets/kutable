@@ -30,6 +30,7 @@ import { NotificationManager, BookingNotifications } from '../../utils/notificat
 import { getOrCreateClientProfile } from '../../utils/profileHelpers';
 import 'react-datepicker/dist/react-datepicker.css';
 import { formatUSD } from '../../utils/money';
+import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 
 interface Booking {
   id: string;
@@ -59,6 +60,7 @@ interface Booking {
 
 const ClientBookings: React.FC = () => {
   const { user } = useAuth();
+  const { isConnected } = useSupabaseConnection();
   const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
@@ -76,7 +78,7 @@ const ClientBookings: React.FC = () => {
   const [removingBooking, setRemovingBooking] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
+    if (user && isConnected) {
       fetchBookings();
       
       // Set up realtime subscription for instant booking updates
@@ -101,8 +103,12 @@ const ClientBookings: React.FC = () => {
       return () => {
         supabase.removeChannel(channel);
       };
+    } else if (!isConnected) {
+      // Clear bookings when not connected and stop loading
+      setBookings([]);
+      setLoading(false);
     }
-  }, [user]);
+  }, [user, isConnected]);
 
   useEffect(() => {
     filterBookings();
@@ -110,6 +116,13 @@ const ClientBookings: React.FC = () => {
 
   const fetchBookings = async () => {
     if (!user) return;
+
+    if (!isConnected) {
+      console.warn('Supabase not connected - cannot fetch bookings');
+      setBookings([]);
+      setLoading(false);
+      return;
+    }
 
     try {
       // Get or create client profile using centralized logic
