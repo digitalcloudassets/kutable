@@ -897,6 +897,8 @@ const BookingFlow: React.FC = () => {
             current={['service', 'datetime', 'details', 'payment', 'confirmation'].indexOf(step) + 1} 
             total={5} 
           />
+        <div className="mt-3">
+          <BookingStepper current={stepIndex + 1} total={5} />
         </div>
 
         {/* Step Content */}
