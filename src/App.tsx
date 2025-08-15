@@ -10,6 +10,7 @@ import { setupGlobalErrorHandling } from './utils/errorHandling';
 import { initializeAnalytics, trackPageView } from './utils/analytics';
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
 import HomeGate from './routes/HomeGate';
+import AppShellToggle from './components/Layout/AppShellToggle';
 
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
@@ -53,6 +54,7 @@ function App() {
   return (
     <Router>
       <AnalyticsRouter>
+        <AppShellToggle />
         <div className="min-h-screen bg-gray-50 flex flex-col">
           <Header />
 

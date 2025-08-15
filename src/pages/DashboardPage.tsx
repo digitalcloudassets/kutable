@@ -285,13 +285,15 @@ const DashboardPage: React.FC = () => {
   // Client Dashboard
   if (userType === 'client') {
     return (
-      <div className="min-h-screen bg-gray-50 pb-24 md:pb-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-28">
+      <div className="min-h-screen bg-gray-50">
+        <div className="container app-stack py-8 pt-28">
           <SupabaseConnectionBanner isConnected={isConnected} />
           
           {import.meta.env.DEV && <AdminDebugPanel />}
           
-          <ClientDashboardHeader user={user} clientProfile={clientProfile} />
+          <section className="rounded-3xl border bg-white app-bleed app-pad">
+            <ClientDashboardHeader user={user} clientProfile={clientProfile} />
+          </section>
 
           <DashboardNavigation 
             userType="client"
@@ -300,7 +302,9 @@ const DashboardPage: React.FC = () => {
             unreadCount={unreadCount}
           />
 
-          <ClientDashboardContent activeTab={activeTab} />
+          <section className="rounded-3xl border bg-white app-bleed app-pad">
+            <ClientDashboardContent activeTab={activeTab} />
+          </section>
         </div>
       </div>
     );
@@ -309,16 +313,18 @@ const DashboardPage: React.FC = () => {
   // Barber Dashboard
   if (userType === 'barber' && barber) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-24 md:pb-0">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-28 pb-24 md:pb-8">
+      <div className="min-h-screen bg-gray-50">
+        <div className="container app-stack py-8 pt-28">
           <SupabaseConnectionBanner isConnected={isConnected} />
           
           {import.meta.env.DEV && <AdminDebugPanel />}
           
-          <BarberDashboardHeader 
-            barber={barber}
-            onEditProfile={handleEditProfile}
-          />
+          <section className="rounded-3xl border bg-white app-bleed app-pad">
+            <BarberDashboardHeader 
+              barber={barber}
+              onEditProfile={handleEditProfile}
+            />
+          </section>
 
           <DashboardNavigation 
             userType="barber"
@@ -327,14 +333,16 @@ const DashboardPage: React.FC = () => {
             unreadCount={unreadCount}
           />
 
-          <BarberDashboardContent 
-            activeTab={activeTab}
-            barber={barber}
-            user={user}
-            onBarberUpdate={refreshBarberData}
-            triggerEdit={triggerEdit}
-            onTriggerEditChange={handleTriggerEditChange}
-          />
+          <section className="rounded-3xl border bg-white app-bleed app-pad">
+            <BarberDashboardContent 
+              activeTab={activeTab}
+              barber={barber}
+              user={user}
+              onBarberUpdate={refreshBarberData}
+              triggerEdit={triggerEdit}
+              onTriggerEditChange={handleTriggerEditChange}
+            />
+          </section>
         </div>
       </div>
     );
@@ -342,10 +350,12 @@ const DashboardPage: React.FC = () => {
 
   // Fallback: User type not determined yet
   return (
-    <div className="min-h-screen bg-gray-50 page-container pb-24 md:pb-0">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-28 pb-24 md:pb-8">
+    <div className="min-h-screen bg-gray-50 page-container">
+      <div className="container app-stack py-8 pt-28">
         <SupabaseConnectionBanner isConnected={isConnected} />
-        <FallbackDashboard />
+        <section className="rounded-3xl border bg-white app-bleed app-pad">
+          <FallbackDashboard />
+        </section>
         {import.meta.env.DEV && <AdminDebugPanel />}
       </div>
     </div>

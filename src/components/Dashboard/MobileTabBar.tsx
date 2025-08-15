@@ -59,12 +59,14 @@ const MobileTabBar: React.FC<MobileTabBarProps> = ({
 
   const getTabItems = () => {
     if (userType === 'client') {
+      // Client: clean 3-tab layout (no More)
       return [
         { id: 'bookings', label: 'Bookings', icon: Calendar },
         { id: 'messages', label: 'Messages', icon: MessageSquare },
         { id: 'profile', label: 'Profile', icon: User }
       ];
     } else {
+      // Barber: core tabs + More if we have extra items
       const baseItems = [
         { id: 'profile', label: 'Profile', icon: User },
         { id: 'bookings', label: 'Bookings', icon: Calendar },
@@ -72,7 +74,7 @@ const MobileTabBar: React.FC<MobileTabBarProps> = ({
         { id: 'services', label: 'Services', icon: Scissors }
       ];
 
-      // Add More if we have extra actions, otherwise add direct Profile
+      // Add More if we have extra actions
       if (moreItems.length > 0) {
         baseItems.push({ 
           id: 'more', 
