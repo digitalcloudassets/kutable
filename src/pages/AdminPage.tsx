@@ -414,8 +414,8 @@ const AdminPage: React.FC = () => {
                       <div className="text-4xl font-display font-bold text-gray-900 mb-2">
                         {(kpis?.totalRevenue ?? 0) > 0 ? '1%' : '0%'}
                       </div>
-                      <p className="text-primary-800 font-semibold mb-2">Platform Fee</p>
-                      <p className="text-sm text-primary-600 font-medium">Fee percentage rate</p>
+                      <p className="text-primary-800 font-semibold mb-2">Platform Fee (1% min $0.25)</p>
+                      <p className="text-sm text-primary-600 font-medium">Fee percentage rate (1% min $0.25)</p>
                     </div>
 
                     <div className="bg-gradient-to-br from-accent-50 to-accent-100 border border-accent-200 p-8 rounded-2xl shadow-sm">
@@ -605,16 +605,16 @@ const AdminPage: React.FC = () => {
                       <div className="text-4xl font-display font-bold text-gray-900 mb-2">
                         {formatUSD(kpis?.platformRevenue || 0)}
                       </div>
-                      <p className="text-emerald-800 font-semibold mb-2">Platform Fees Collected</p>
-                      <p className="text-sm text-emerald-600 font-medium">1% min $0.25 per transaction</p>
+                      <p className="text-emerald-800 font-semibold mb-2">Platform Fees Collected (1% min $0.25)</p>
+                      <p className="text-sm text-emerald-600 font-medium">Per transaction</p>
                     </div>
 
                     <div className="bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 p-8 rounded-2xl shadow-sm">
                       <div className="text-4xl font-display font-bold text-gray-900 mb-2">
                         {formatUSD(kpis?.totalRevenue || 0)}
                       </div>
-                      <p className="text-primary-800 font-semibold mb-2">Total Volume Processed</p>
-                      <p className="text-sm text-primary-600 font-medium">Gross booking revenue</p>
+                      <p className="text-primary-800 font-semibold mb-2">Gross Volume Processed</p>
+                      <p className="text-sm text-primary-600 font-medium">Total booking revenue</p>
                     </div>
 
                     <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 p-8 rounded-2xl shadow-sm">
