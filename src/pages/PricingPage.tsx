@@ -216,10 +216,10 @@ const PricingPage: React.FC = () => {
                 <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Users className="h-8 w-8 text-blue-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Customer Books</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">Platform Fee</h3>
                 <div className="text-3xl font-bold text-blue-600 mb-2">1%</div>
                 <p className="text-gray-600 text-sm">
-                  Small platform fee when customers book through your profile
+                  Platform fee (min $0.25) when customers book through your profile
                 </p>
               </div>
 
@@ -255,7 +255,7 @@ const PricingPage: React.FC = () => {
                   <span className="font-medium text-gray-900">$50.00</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">Platform Fee (1%)</span>
+                  <span className="text-gray-500">Platform Fee (1% min $0.25)</span>
                   <span className="text-red-600">-$0.50</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
@@ -396,7 +396,7 @@ const PricingPage: React.FC = () => {
                 </tr>
                 <tr>
                   <td className="px-8 py-4 text-sm text-gray-900">Per Booking Fee</td>
-                  <td className="px-8 py-4 text-center text-sm font-medium text-orange-600">4%</td>
+                  <td className="px-8 py-4 text-center text-sm font-medium text-orange-600">~4%</td>
                   <td className="px-8 py-4 text-center text-sm text-gray-600">3-5%</td>
                 </tr>
                 <tr>
@@ -430,11 +430,11 @@ const PricingPage: React.FC = () => {
           <div className="space-y-8">
             <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                When do I get charged the 4%?
+                When do I get charged the platform fee?
               </h3>
               <p className="text-gray-600">
                 Only when a customer books and pays through your profile. No bookings = no fees. 
-                The 4% is automatically deducted from each payment before it reaches your bank account.
+                The platform fee (1% minimum $0.25) is automatically deducted from each payment before it reaches your bank account.
               </p>
             </div>
 
