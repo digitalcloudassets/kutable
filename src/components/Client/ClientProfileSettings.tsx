@@ -216,6 +216,9 @@ const ClientProfileSettings: React.FC = () => {
       setEditData(prev => ({ ...prev, profile_image_url: urlData.publicUrl }));
       setClientProfile(prev => prev ? { ...prev, profile_image_url: urlData.publicUrl } : null);
       
+      // Refresh the client profile to ensure state consistency
+      await fetchClientProfile();
+      
       NotificationManager.success('Profile photo updated successfully!');
     } catch (error) {
       console.error('Error uploading image:', error);
