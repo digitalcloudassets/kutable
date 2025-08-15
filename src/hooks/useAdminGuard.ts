@@ -2,31 +2,46 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type State = { loading: boolean; allowed: boolean | null; error: string | null };
+type State = { loading: boolean; allowed: boolean | null; errorMsg: string | null };
 
-export function useAdminGuard(): State {
-  const [state, set] = useState<State>({ loading: true, allowed: null, error: null });
+export function useAdminGuard(): State & { error: string | null } {
+  const [state, setState] = useState<State>({ loading: true, allowed: null, errorMsg: null });
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return !cancelled && set({ loading: false, allowed: false, error: "No session" });
+        if (!session) {
+          if (!cancelled) setState({ loading: false, allowed: false, errorMsg: "No session" });
+          return;
+        }
 
         const { data, error } = await supabase.functions.invoke("admin-guard", { body: {} });
         if (cancelled) return;
 
-        if (error) return set({ loading: false, allowed: false, error: error.message ?? "Edge call failed" });
-        if (!data?.ok) return set({ loading: false, allowed: false, error: data?.reason ?? "Not allowed" });
+        if (error) {
+          setState({ loading: false, allowed: false, errorMsg: error.message ?? "Edge call failed" });
+          return;
+        }
+        
+        if (!data?.ok) {
+          setState({ loading: false, allowed: false, errorMsg: data?.reason ?? "Not allowed" });
+          return;
+        }
 
-        set({ loading: false, allowed: true, error: null });
+        setState({ loading: false, allowed: true, errorMsg: null });
       } catch (e: any) {
-        if (!cancelled) set({ loading: false, allowed: false, error: String(e?.message ?? e) });
+        if (!cancelled) {
+          setState({ loading: false, allowed: false, errorMsg: String(e?.message ?? e) });
+        }
       }
     })();
-    return () => { cancelled = true; };
+    
+    return () => { 
+      cancelled = true; 
+    };
   }, []);
 
-  return state;
+  return { ...state, error: state.errorMsg };
 }
