@@ -32,6 +32,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import InAppCheckout from '../Checkout/InAppCheckout';
 import { formatUSD } from '../../utils/money';
 import BookingStepper from './BookingStepper';
+import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 type Service = Database['public']['Tables']['services']['Row'];
@@ -59,6 +60,7 @@ interface BookingData {
 const BookingFlow: React.FC = () => {
   const { barberSlug, serviceId } = useParams<{ barberSlug: string; serviceId?: string }>();
   const { user } = useAuth();
+  const { isConnected } = useSupabaseConnection();
   const navigate = useNavigate();
   
   const [step, setStep] = useState<'service' | 'datetime' | 'details' | 'payment' | 'confirmation'>('service');
@@ -82,6 +84,7 @@ const BookingFlow: React.FC = () => {
   const [bookingId, setBookingId] = useState<string>('');
   const [currentClientId, setCurrentClientId] = useState<string>('');
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
+  const [connectionError, setConnectionError] = useState<string>('');
 
   useEffect(() => {
     if (barberSlug) {
@@ -96,6 +99,15 @@ const BookingFlow: React.FC = () => {
   }, [selectedService, selectedDate]);
 
   const fetchBarberData = async () => {
+    // Check Supabase connection first
+    if (!isConnected) {
+      setConnectionError('Database connection not available. Please ensure Supabase is properly configured.');
+      return;
+    }
+
+    // Clear any previous connection errors
+    setConnectionError('');
+
     try {
       const { data: barberData, error: barberError } = await supabase
         .from('barber_profiles')
@@ -126,11 +138,22 @@ const BookingFlow: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching barber data:', error);
+      // Provide more specific error handling
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        setConnectionError('Unable to connect to the database. Please check your Supabase configuration and ensure the VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables are properly set.');
+      } else {
+        setConnectionError('Failed to load barber information. Please try again later.');
+      }
     }
   };
 
   const loadAvailableTimeSlots = async () => {
     if (!barber || !selectedService) return;
+
+    if (!isConnected) {
+      NotificationManager.error('Database connection not available');
+      return;
+    }
 
     setLoadingSlots(true);
     try {
@@ -142,7 +165,11 @@ const BookingFlow: React.FC = () => {
       setTimeSlots(slots);
     } catch (error) {
       console.error('Error loading time slots:', error);
-      NotificationManager.error('Failed to load available time slots');
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        NotificationManager.error('Connection error: Unable to load available time slots');
+      } else {
+        NotificationManager.error('Failed to load available time slots');
+      }
       setTimeSlots([]);
     } finally {
       setLoadingSlots(false);
@@ -310,7 +337,38 @@ const BookingFlow: React.FC = () => {
     return format(date, 'EEEE, MMM d');
   };
 
-  if (!barber) {
+  // Show connection error if Supabase is not connected
+  if (connectionError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
+        <div className="max-w-md mx-auto text-center space-y-6 px-4">
+          <div className="bg-red-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto">
+            <AlertCircle className="h-10 w-10 text-red-600" />
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-display font-bold text-gray-900">Connection Error</h2>
+            <p className="text-gray-600 leading-relaxed">{connectionError}</p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+              <h3 className="font-semibold text-blue-800 mb-2">Quick Fix:</h3>
+              <ol className="text-blue-700 text-sm space-y-1">
+                <li>1. Check your .env file has valid Supabase credentials</li>
+                <li>2. Ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set</li>
+                <li>3. Restart the development server after changes</li>
+              </ol>
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="btn-primary"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!barber && !connectionError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 flex items-center justify-center">
         <div className="text-center space-y-6">
@@ -327,6 +385,7 @@ const BookingFlow: React.FC = () => {
     );
   }
 
+  if (!barber) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 page-container relative overflow-hidden">
       {/* Background Elements */}
