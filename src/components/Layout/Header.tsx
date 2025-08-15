@@ -19,7 +19,6 @@ const Header: React.FC = () => {
   useEffect(() => {
     if (user) {
       logger.debug('🔐 Header Debug - Admin Check:', {
-      logger.debug('🔐 Header Debug - Admin Check:', {
         userId: user.id,
         userEmail: user.email,
         isAdmin,
@@ -27,7 +26,6 @@ const Header: React.FC = () => {
         userLoading: loading,
         hasAdminGuard: !!isAdmin || adminLoading,
         adminErrorMsg: errorMsg
-      });
       });
     }
   }, [user, isAdmin, adminLoading, loading, errorMsg]);
