@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useRef } from 'react';
-import { RefreshCw, BarChart3, Users, Calendar, CreditCard, Download, Shield, LogOut } from 'lucide-react';
+import { RefreshCw, BarChart3, Users, Calendar, CreditCard, Download, Shield } from 'lucide-react';
 
 type Item = { id: string; label: string; icon?: React.ComponentType<any> };
 
@@ -18,7 +18,6 @@ type Props = {
   onTabChange: (tab: string) => void;
   onRefresh?: () => void; // pass your refetch() here; falls back to reload
   refreshing?: boolean;
-  onExitAdmin?: () => void; // optional exit handler
 };
 
 export default function AdminMobileNav({ 
@@ -26,8 +25,7 @@ export default function AdminMobileNav({
   activeTab, 
   onTabChange, 
   onRefresh,
-  refreshing = false,
-  onExitAdmin
+  refreshing = false 
 }: Props) {
   const barRef = useRef<HTMLDivElement>(null);
 
@@ -48,14 +46,6 @@ export default function AdminMobileNav({
     (onRefresh ?? (() => window.location.reload()))();
   };
 
-  const exitAdmin = () => {
-    if (onExitAdmin) {
-      onExitAdmin();
-    } else {
-      window.location.href = '/';
-    }
-  };
-
   return (
     <div
       ref={barRef}
@@ -64,23 +54,14 @@ export default function AdminMobileNav({
     >
       <div className="flex items-center justify-between gap-2 px-3 py-2">
         <div className="text-sm font-semibold text-gray-900">Admin Dashboard</div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={refresh}
-            disabled={refreshing}
-            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50 active:scale-[.99] disabled:opacity-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
-          </button>
-          <button
-            onClick={exitAdmin}
-            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50 active:scale-[.99]"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Exit</span>
-          </button>
-        </div>
+        <button
+          onClick={refresh}
+          disabled={refreshing}
+          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50 active:scale-[.99] disabled:opacity-50"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+        </button>
       </div>
 
       <div className="overflow-x-auto no-scrollbar">
