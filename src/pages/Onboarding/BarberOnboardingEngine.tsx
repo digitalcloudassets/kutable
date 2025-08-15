@@ -277,7 +277,7 @@ function StepAccount({ profile, onSaved }: { profile: any, onSaved: () => void }
           ...form,
           updated_at: new Date().toISOString()
         })
-        .eq('id', user.id);
+        .eq('id', profile.id);
 
       onSaved();
     } catch (error) {
@@ -413,11 +413,11 @@ function StepHours({ profileId, onSaved }: { profileId: string, onSaved: () => v
   async function save() {
     setSaving(true);
     try {
-      await supabase.from('availability').delete().eq('barber_id', user.id);
+      await supabase.from('availability').delete().eq('barber_id', profileId);
       const rows = Object.entries(availability)
         .filter(([_,d]) => d.isOpen)
         .map(([day,d]) => ({
-          barber_id: user.id, 
+          barber_id: profileId, 
           day_of_week: Number(day),
           start_time: d.startTime, 
           end_time: d.endTime, 
@@ -529,7 +529,7 @@ function StepServices({ profileId, onSaved }: { profileId: string, onSaved: () =
     setSaving(true);
     try {
       const { error } = await supabase.from('services').insert({
-        barber_id: user.id,
+        barber_id: profileId,
         name,
         description,
         duration_minutes: duration,
