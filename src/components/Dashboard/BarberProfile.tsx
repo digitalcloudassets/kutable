@@ -38,6 +38,7 @@ import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { NotificationManager } from '../../utils/notifications';
 import { generateUniqueSlug } from '../../utils/updateBarberSlugs';
 import { updateSingleBarberSlug } from '../../utils/updateBarberSlugs';
+import { uploadBarberAvatar, uploadBarberBanner } from '../../lib/uploadAvatar';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -133,41 +134,37 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Guard: ensure user is signed in before upload
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) {
+      NotificationManager.error('Please sign in to upload your profile image.');
+      return;
+    }
+
     setUploadingImage(true);
     try {
-      const fileName = `${barber.id}/profile-${Date.now()}.jpg`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('barber-images')
-        .upload(fileName, file);
-
-      if (uploadError) {
-        if (uploadError.message.includes('Bucket not found')) {
-          NotificationManager.error('Storage setup required: Please create the "barber-images" bucket in your Supabase Storage dashboard before uploading images.');
-          setUploadingImage(false);
-          return;
-        }
-        throw uploadError;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('barber-images')
-        .getPublicUrl(fileName);
+      const avatarUrl = await uploadBarberAvatar(file, auth.user.id);
 
       const { error: updateError } = await supabase
         .from('barber_profiles')
         .update({ 
-          profile_image_url: urlData.publicUrl,
+          profile_image_url: avatarUrl,
           updated_at: new Date().toISOString()
         })
         .eq('id', barber.id);
 
       if (updateError) throw updateError;
 
+      // Also update user metadata for immediate display
+      await supabase.auth.updateUser({ 
+        data: { avatar_url: avatarUrl } 
+      });
+
       onUpdate();
       NotificationManager.success('Profile photo updated successfully!');
     } catch (error) {
       console.error('Error uploading image:', error);
-      NotificationManager.error('Failed to upload image. Please check your Supabase storage configuration.');
+      NotificationManager.error('Failed to upload profile image. Please try again.');
     } finally {
       setUploadingImage(false);
     }
@@ -177,30 +174,21 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Guard: ensure user is signed in before upload
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) {
+      NotificationManager.error('Please sign in to upload your banner image.');
+      return;
+    }
+
     setUploadingBanner(true);
     try {
-      const fileName = `${barber.id}/banner-${Date.now()}.jpg`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('barber-images')
-        .upload(fileName, file);
-
-      if (uploadError) {
-        if (uploadError.message.includes('Bucket not found')) {
-         NotificationManager.error('Storage setup required: Please create the "barber-images" bucket in your Supabase Storage dashboard before uploading images.');
-          setUploadingBanner(false);
-          return;
-        }
-        throw uploadError;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('barber-images')
-        .getPublicUrl(fileName);
+      const bannerUrl = await uploadBarberBanner(file, auth.user.id);
 
       const { error: updateError } = await supabase
         .from('barber_profiles')
         .update({ 
-          banner_image_url: urlData.publicUrl,
+          banner_image_url: bannerUrl,
           updated_at: new Date().toISOString()
         })
         .eq('id', barber.id);
@@ -208,10 +196,10 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
       if (updateError) throw updateError;
 
       onUpdate();
-     NotificationManager.success('Banner image updated successfully!');
+      NotificationManager.success('Banner image updated successfully!');
     } catch (error) {
       console.error('Error uploading banner image:', error);
-     NotificationManager.error('Failed to upload banner image. Please check your Supabase storage configuration.');
+      NotificationManager.error('Failed to upload banner image. Please try again.');
     } finally {
       setUploadingBanner(false);
     }

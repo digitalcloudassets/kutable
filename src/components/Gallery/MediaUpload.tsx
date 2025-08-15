@@ -3,6 +3,7 @@ import { Upload, Image as ImageIcon, Video, X, Loader } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { NotificationManager } from '../../utils/notifications';
 import { validateFileUpload } from '../../utils/security';
+import { uploadGalleryItem } from '../../lib/uploadGallery';
 
 interface MediaUploadProps {
   barberId: string;
@@ -66,6 +67,15 @@ const MediaUpload: React.FC<MediaUploadProps> = ({ barberId, onUploadComplete })
 
   const uploadFile = async (uploadingFile: UploadingFile) => {
     try {
+      // Guard: ensure user is signed in before upload
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) {
+        NotificationManager.error('Please sign in to upload media.');
+        setUploadingFiles(prev => prev.filter(f => f.file !== uploadingFile.file));
+        URL.revokeObjectURL(uploadingFile.preview);
+        return;
+      }
+
       // Update progress to show upload starting
       setUploadingFiles(prev => 
         prev.map(f => 
@@ -89,37 +99,10 @@ const MediaUpload: React.FC<MediaUploadProps> = ({ barberId, onUploadComplete })
         );
       }, 200);
 
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, uploadingFile.file);
+      // Upload using the new gallery system
+      const { url: fileUrl } = await uploadGalleryItem(uploadingFile.file, auth.user.id);
 
       clearInterval(progressInterval);
-
-      // Set progress to 90% after upload completes
-      setUploadingFiles(prev => 
-        prev.map(f => 
-          f.file === uploadingFile.file 
-            ? { ...f, progress: 90 }
-            : f
-        )
-      );
-
-      if (uploadError) {
-        clearInterval(progressInterval);
-        if (uploadError.message.includes('Bucket not found')) {
-          NotificationManager.error(`Storage setup required: Please create the "${bucket}" bucket in your Supabase Storage dashboard before uploading ${uploadingFile.type}s.`);
-          setUploadingFiles(prev => prev.filter(f => f.file !== uploadingFile.file));
-          URL.revokeObjectURL(uploadingFile.preview);
-          return;
-        }
-        throw uploadError;
-      }
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(fileName);
 
       // Set progress to 95% before database save
       setUploadingFiles(prev => 
@@ -135,7 +118,7 @@ const MediaUpload: React.FC<MediaUploadProps> = ({ barberId, onUploadComplete })
         .from('gallery_media')
         .insert({
           barber_id: barberId,
-          file_url: urlData.publicUrl,
+          file_url: fileUrl,
           file_type: uploadingFile.type,
           display_order: 0
         });
@@ -161,7 +144,7 @@ const MediaUpload: React.FC<MediaUploadProps> = ({ barberId, onUploadComplete })
 
     } catch (error) {
       console.error('Upload error:', error);
-      NotificationManager.error('Failed to upload file. Please check your Supabase storage configuration.');
+      NotificationManager.error('Failed to upload file. Please try again.');
       setUploadingFiles(prev => prev.filter(f => f.file !== uploadingFile.file));
       URL.revokeObjectURL(uploadingFile.preview);
     }
