@@ -111,6 +111,14 @@ Deno.serve(async (req) => {
         console.error('Error updating stripe_accounts:', stripeAccountError);
       }
       
+      console.log('Updating barber profile with Stripe status:', {
+        accountId: account.id,
+        onboardingComplete: onboardingComplete,
+        chargesEnabled: cardPaymentsActive,
+        payoutsEnabled: account.payouts_enabled,
+        detailsSubmitted: account.details_submitted
+      });
+      
       // Update barber_profiles table - only mark as complete if fully enabled
       const { error: barberUpdateError } = await supabase
         .from('barber_profiles')
@@ -123,7 +131,7 @@ Deno.serve(async (req) => {
       if (barberUpdateError) {
         console.error('Error updating barber_profiles:', barberUpdateError);
       } else {
-        console.log(`Successfully updated barber profile. Complete: ${onboardingComplete}`);
+        console.log(`✅ Successfully updated barber profile onboarding status: ${onboardingComplete}`);
       }
     }
 

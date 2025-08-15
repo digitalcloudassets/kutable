@@ -329,6 +329,15 @@ serve(async (req) => {
         // Also update the barber profile's stripe_onboarding_completed status
         const isOnboardingCompleted = account.details_submitted && account.charges_enabled && account.payouts_enabled;
         
+        console.log('Webhook: Updating barber profile with Stripe status:', {
+          accountId: account.id,
+          onboardingComplete: isOnboardingCompleted,
+          chargesEnabled: account.charges_enabled,
+          payoutsEnabled: account.payouts_enabled,
+          detailsSubmitted: account.details_submitted,
+          requirementsCurrentlyDue: account.requirements?.currently_due?.length || 0
+        });
+        
         const { error: barberUpdateError } = await supabase
           .from('barber_profiles')
           .update({
@@ -339,6 +348,8 @@ serve(async (req) => {
 
         if (barberUpdateError) {
           console.error('Error updating barber profile Stripe status:', barberUpdateError)
+        } else {
+          console.log(`✅ Webhook successfully updated barber profile onboarding status: ${isOnboardingCompleted}`)
         }
         break
       }
