@@ -1,349 +1,314 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { 
-  Search, 
-  Calendar, 
-  CreditCard, 
-  Scissors, 
-  Star, 
-  Clock,
-  Shield,
-  CheckCircle,
-  ArrowRight,
-  MessageSquare,
-  MapPin,
-  UserPlus
+import {
+  Search, Star, MapPin, Scissors, Calendar, Clock, CreditCard,
+  MessageSquare, Shield, CheckCircle2, Users, TrendingUp, Map, Phone
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+const Section = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <section className={`py-16 md:py-24 ${className}`}>{children}</section>
+);
+
+const Container = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <div className={`mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 ${className}`}>{children}</div>
+);
+
+const Pill = ({ children }: { children: React.ReactNode }) => (
+  <div className="inline-flex items-center gap-2 rounded-full border bg-white/80 px-4 py-1.5 text-sm text-gray-700 shadow-sm">
+    {children}
+  </div>
+);
+
+const StepCard = ({ children, align = 'left' }: { children: React.ReactNode; align?: 'left' | 'right' }) => (
+  <div
+    className={`rounded-2xl border bg-white p-5 sm:p-6 shadow-sm ${align === 'right' ? 'sm:ml-auto' : 'sm:mr-auto'}`}
+  >
+    {children}
+  </div>
+);
+
+const Bullet = ({ children }: { children: React.ReactNode }) => (
+  <li className="flex items-start gap-2 text-gray-700">
+    <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+    <span>{children}</span>
+  </li>
+);
 
 const HowItWorksPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50 page-container">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-20 -mt-24 pt-44">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            How Kutable Works
-          </h1>
-          <p className="text-xl text-gray-300 leading-relaxed">
-            The modern way to book barber appointments. Simple, fast, and secure.
-          </p>
-        </div>
-      </section>
-
-      {/* For Customers Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">For Customers</h2>
-            <p className="text-xl text-gray-600">Book your perfect cut in just 3 easy steps</p>
+    <div className="min-h-screen bg-white page-container">
+      {/* Hero */}
+      <header className="relative overflow-hidden bg-gradient-to-b from-gray-900 to-gray-800 -mt-24 pt-44">
+        <Container className="py-20 md:py-28">
+          <div className="text-center">
+            <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2 text-sm text-white/90">
+              How Kutable Works
+            </div>
+            <h1 className="mt-4 text-4xl font-display font-extrabold text-white md:text-5xl">
+              The modern way to book barber appointments
+            </h1>
+            <p className="mx-auto mt-4 max-w-2xl text-lg text-white/80">
+              Simple, fast, and secure — for customers and barbers.
+            </p>
           </div>
+        </Container>
+      </header>
 
-          <div className="space-y-16">
+      {/* For Customers */}
+      <Section className="bg-white">
+        <Container>
+          <h2 className="text-center text-2xl font-display font-bold text-gray-900 md:text-3xl">
+            For Customers
+          </h2>
+          <p className="mx-auto mt-2 max-w-2xl text-center text-gray-600">
+            Book your perfect cut in just 3 easy steps.
+          </p>
+
+          <div className="mt-12 space-y-16 md:space-y-20">
             {/* Step 1 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-12 lg:gap-16">
-              <div className="lg:w-1/2">
-                <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mb-6">
-                  <span className="text-2xl font-bold text-orange-600">1</span>
+            <div className="grid items-center gap-8 md:grid-cols-2">
+              <div>
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-700 font-semibold">
+                  1
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Find Your Perfect Barber</h3>
-                <p className="text-gray-600 text-lg leading-relaxed mb-6">
-                  Browse our verified directory of professional barbers in your area. View their portfolios, 
-                  read authentic reviews, and check their specialties to find the perfect match for your style.
+                <h3 className="mt-4 text-xl font-bold text-gray-900">Find Your Perfect Barber</h3>
+                <p className="mt-2 text-gray-600">
+                  Browse our verified directory of professional barbers in your area. View portfolios,
+                  read authentic reviews, and check specialties to find the best match for your style.
                 </p>
-                <ul className="space-y-4">
-                  <li className="flex items-center space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    <span className="text-gray-700">Browse portfolios and work samples</span>
-                  </li>
-                  <li className="flex items-center space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    <span className="text-gray-700">Read verified customer reviews</span>
-                  </li>
-                  <li className="flex items-center space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    <span className="text-gray-700">Filter by location and specialty</span>
-                  </li>
+                <ul className="mt-4 space-y-2">
+                  <Bullet>Browse portfolios and work samples</Bullet>
+                  <Bullet>Read verified customer reviews</Bullet>
+                  <Bullet>Filter by location and specialty</Bullet>
                 </ul>
               </div>
-              <div className="lg:w-1/2">
-                <div className="bg-gray-100 rounded-2xl p-8">
-                  <div className="flex items-center space-x-3 mb-4">
-                    <Search className="h-6 w-6 text-orange-500" />
-                    <div className="flex-1 bg-white rounded-xl p-4 border">
-                      <span className="text-gray-500">Search barbers...</span>
-                    </div>
+              <StepCard align="right">
+                <div className="rounded-xl border bg-gray-50 p-4">
+                  <div className="mb-3 flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm text-gray-600">
+                    <Search className="h-4 w-4" /> Search barbers…
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    {['Elite Cuts', 'Style Masters', 'Fresh Fades', 'Classic Cuts'].map((name) => (
-                      <div key={name} className="bg-white rounded-xl p-4 border">
-                        <div className="w-full h-20 bg-gray-200 rounded-lg mb-3"></div>
-                        <h4 className="font-medium text-gray-900">{name}</h4>
-                        <div className="flex items-center space-x-1 mt-1">
-                          <Star className="h-3 w-3 text-yellow-400 fill-current" />
-                          <span className="text-xs text-gray-600">4.8 (24)</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    {['Elite Cuts', 'Style Masters', 'Fresh Fades', 'Classic Cuts'].map((name, i) => (
+                      <div key={name} className="rounded-xl border bg-white p-3">
+                        <div className="h-16 rounded-lg bg-gray-100" />
+                        <div className="mt-2 font-medium">{name}</div>
+                        <div className="mt-1 flex items-center gap-1 text-sm text-gray-500">
+                          <Star className="h-3.5 w-3.5 text-yellow-500" />
+                          4.{i + 2} • (24)
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-              </div>
+              </StepCard>
             </div>
 
             {/* Step 2 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-12 lg:gap-16">
-              <div className="lg:order-2">
-                <div className="lg:w-1/2">
-                  <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mb-6">
-                    <span className="text-2xl font-bold text-orange-600">2</span>
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">Book Instantly</h3>
-                  <p className="text-gray-600 text-lg leading-relaxed mb-6">
-                    Select your preferred service, choose from available time slots, and secure your appointment 
-                    with instant payment. No phone calls, no waiting on hold – just simple, fast booking.
-                  </p>
-                  <ul className="space-y-4">
-                    <li className="flex items-center space-x-3">
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                      <span className="text-gray-700">Real-time availability calendar</span>
-                    </li>
-                    <li className="flex items-center space-x-3">
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                      <span className="text-gray-700">Secure payment processing</span>
-                    </li>
-                    <li className="flex items-center space-x-3">
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                      <span className="text-gray-700">Instant confirmation via SMS</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              <div className="lg:order-1">
-                <div className="bg-gray-100 rounded-2xl p-8">
-                  <div className="bg-white rounded-xl p-6 mb-6">
-                    <h4 className="font-medium text-gray-900 mb-3">Select Service</h4>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                        <span className="text-gray-800">Haircut</span>
-                        <span className="font-medium">$35</span>
+            <div className="grid items-center gap-8 md:grid-cols-2">
+              <StepCard align="left">
+                <div className="rounded-xl border bg-gray-50 p-4">
+                  <div className="rounded-lg border bg-white p-3">
+                    <div className="mb-2 text-sm text-gray-600">Select Service</div>
+                    {[
+                      { name: 'Haircut', price: '$35' },
+                      { name: 'Beard Trim', price: '$20' },
+                    ].map((s) => (
+                      <div
+                        key={s.name}
+                        className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
+                      >
+                        <span>{s.name}</span>
+                        <span className="font-semibold">{s.price}</span>
                       </div>
-                      <div className="flex justify-between items-center p-3 border rounded-lg">
-                        <span className="text-gray-600">Beard Trim</span>
-                        <span className="text-gray-600">$15</span>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                  <div className="bg-white rounded-xl p-6">
-                    <h4 className="font-medium text-gray-900 mb-3">Available Times</h4>
-                    <div className="grid grid-cols-3 gap-3">
-                      {['10:00', '10:30', '11:00', '11:30', '12:00', '12:30'].map((time) => (
+
+                  <div className="mt-3">
+                    <div className="mb-2 text-sm text-gray-600">Available Times</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {['10:00', '10:30', '11:00', '11:30', '12:00', '12:30'].map((t) => (
                         <button
-                          key={time}
-                          className="p-3 text-sm border rounded-lg hover:border-orange-500 transition-colors"
+                          key={t}
+                          className="rounded-lg border bg-white px-2 py-1 text-sm hover:bg-gray-50"
                         >
-                          {time}
+                          {t}
                         </button>
                       ))}
                     </div>
                   </div>
                 </div>
+              </StepCard>
+
+              <div>
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-700 font-semibold">
+                  2
+                </div>
+                <h3 className="mt-4 text-xl font-bold text-gray-900">Book Instantly</h3>
+                <p className="mt-2 text-gray-600">
+                  Choose your service and time, then secure your appointment with instant payment.
+                  No phone calls. Just quick, simple booking.
+                </p>
+                <ul className="mt-4 space-y-2">
+                  <Bullet>Real-time availability calendar</Bullet>
+                  <Bullet>Secure payment processing</Bullet>
+                  <Bullet>Instant confirmation via SMS</Bullet>
+                </ul>
               </div>
             </div>
 
             {/* Step 3 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-12 lg:gap-16">
-              <div className="lg:w-1/2">
-                <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mb-6">
-                  <span className="text-2xl font-bold text-orange-600">3</span>
+            <div className="grid items-center gap-8 md:grid-cols-2">
+              <div>
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-700 font-semibold">
+                  3
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">Get Your Cut</h3>
-                <p className="text-gray-600 text-lg leading-relaxed mb-6">
-                  Show up at your scheduled time and enjoy professional service. You'll receive reminder 
-                  notifications, and your barber will have all your details ready for a seamless experience.
+                <h3 className="mt-4 text-xl font-bold text-gray-900">Get Your Cut</h3>
+                <p className="mt-2 text-gray-600">
+                  Show up at your scheduled time and enjoy professional service. You'll get reminders,
+                  and your barber has everything ready for a smooth experience.
                 </p>
-                <ul className="space-y-4">
-                  <li className="flex items-center space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    <span className="text-gray-700">24-hour reminder notifications</span>
-                  </li>
-                  <li className="flex items-center space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    <span className="text-gray-700">Easy rescheduling and cancellation</span>
-                  </li>
-                  <li className="flex items-center space-x-3">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    <span className="text-gray-700">Rate and review your experience</span>
-                  </li>
+                <ul className="mt-4 space-y-2">
+                  <Bullet>24-hour reminder notifications</Bullet>
+                  <Bullet>Easy rescheduling/cancellation</Bullet>
+                  <Bullet>Rate and review your experience</Bullet>
                 </ul>
               </div>
-              <div className="lg:w-1/2">
-                <div className="bg-gray-100 rounded-2xl p-8">
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <MessageSquare className="h-5 w-5 text-green-600" />
-                      <span className="font-medium text-green-800">SMS Confirmation</span>
+
+              <StepCard align="right">
+                <div className="space-y-3">
+                  <div className="rounded-xl border bg-emerald-50 p-3 text-sm text-emerald-800">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <MessageSquare className="h-4 w-4" /> SMS Confirmation
                     </div>
-                    <p className="text-sm text-green-700">
-                      🎉 Booking Confirmed! Your Haircut at Elite Cuts is set for Tomorrow at 2:00 PM. 
-                      Total: $35. We'll remind you 24hrs before!
-                    </p>
+                    <div className="mt-1">
+                      Booking confirmed for <span className="font-medium">2:30 PM</span>. We'll remind
+                      you 24 hrs before.
+                    </div>
                   </div>
-                  <div className="bg-white rounded-xl p-6">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
-                        <Scissors className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">Your appointment is ready!</p>
-                        <p className="text-sm text-gray-600">Tomorrow at 2:00 PM</p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-3">
-                      <button className="flex-1 bg-orange-500 text-white py-3 px-4 rounded-lg text-sm font-medium">
+                  <div className="rounded-xl border bg-white p-3">
+                    <div className="text-sm text-gray-600">Your appointment is ready tomorrow at 2:30 PM</div>
+                    <div className="mt-2 flex gap-2">
+                      <button className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50">
+                        <Map className="mr-1 inline h-4 w-4" />
                         Get Directions
                       </button>
-                      <button className="flex-1 border border-gray-300 py-3 px-4 rounded-lg text-sm font-medium">
+                      <button className="rounded-lg border px-3 py-1.5 text-sm hover:bg-gray-50">
+                        <Phone className="mr-1 inline h-4 w-4" />
                         Call Barber
                       </button>
                     </div>
                   </div>
                 </div>
-              </div>
+              </StepCard>
             </div>
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
 
-      {/* For Barbers Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">For Barbers</h2>
-            <p className="text-xl text-gray-600">Grow your business with professional booking management</p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-            {/* Claim Your Profile */}
-            <div className="text-center">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <UserPlus className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Join by Invitation</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Sign up to join our exclusive network of professional barbers by invitation only.
-              </p>
-            </div>
-
-            {/* Set Up Services */}
-            <div className="text-center">
-              <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Calendar className="h-8 w-8 text-orange-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Manage Your Business</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Add your services, set pricing, upload photos of your work, and configure 
-                your availability. Full control over your booking experience.
-              </p>
-            </div>
-
-            {/* Start Earning */}
-            <div className="text-center">
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CreditCard className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Start Earning</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Connect your bank account and start accepting online payments. Money goes 
-                directly to you minus a small platform fee.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose Kutable?</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
-            <div className="text-center">
-              <Shield className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Secure & Reliable</h3>
-              <p className="text-gray-600">
-                Bank-level security with encrypted payments and verified barber profiles for your peace of mind.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <Clock className="h-12 w-12 text-green-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Save Time</h3>
-              <p className="text-gray-600">
-                No more phone tag or waiting in line. Book instantly and get confirmation right away.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <Star className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Quality Guaranteed</h3>
-              <p className="text-gray-600">
-                All barbers are verified professionals with authentic reviews from real customers.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <MessageSquare className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Stay Connected</h3>
-              <p className="text-gray-600">
-                Get SMS confirmations, reminders, and updates so you never miss an appointment.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <MapPin className="h-12 w-12 text-red-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Find Nearby</h3>
-              <p className="text-gray-600">
-                Discover great barbers in your area with location-based search and directions.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <CreditCard className="h-12 w-12 text-indigo-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Flexible Payment</h3>
-              <p className="text-gray-600">
-                Pay with any major credit card. Some services offer deposit options for convenience.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 bg-gray-900 text-white">
-        <div className="max-w-5xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
-          <p className="text-xl text-gray-300 mb-8">
-            Join thousands who trust Kutable for their grooming needs.
+      {/* For Barbers */}
+      <Section className="bg-gray-50">
+        <Container>
+          <h2 className="text-center text-2xl font-display font-bold text-gray-900 md:text-3xl">
+            For Barbers
+          </h2>
+          <p className="mx-auto mt-2 max-w-2xl text-center text-gray-600">
+            Grow your business with professional booking management.
           </p>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+
+          <div className="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-3">
+            <div className="group rounded-2xl border bg-white p-6 hover:shadow-md">
+              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500 text-white">
+                <Users className="h-6 w-6" />
+              </div>
+              <h3 className="font-semibold text-gray-900">Join by Invitation</h3>
+              <p className="mt-2 text-gray-600 text-sm">
+                Apply to join our network of professional barbers.
+              </p>
+            </div>
+            <div className="group rounded-2xl border bg-white p-6 hover:shadow-md">
+              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500 text-white">
+                <Scissors className="h-6 w-6" />
+              </div>
+              <h3 className="font-semibold text-gray-900">Manage Your Business</h3>
+              <p className="mt-2 text-gray-600 text-sm">
+                Add services, set pricing, upload photos, and control your schedule.
+              </p>
+            </div>
+            <div className="group rounded-2xl border bg-white p-6 hover:shadow-md">
+              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500 text-white">
+                <CreditCard className="h-6 w-6" />
+              </div>
+              <h3 className="font-semibold text-gray-900">Start Earning</h3>
+              <p className="mt-2 text-gray-600 text-sm">
+                Connect your bank via Stripe Connect and get paid automatically.
+              </p>
+            </div>
+          </div>
+        </Container>
+      </Section>
+
+      {/* Why Choose Kutable */}
+      <Section className="bg-white">
+        <Container>
+          <h2 className="text-center text-2xl font-display font-bold text-gray-900 md:text-3xl">
+            Why Choose Kutable?
+          </h2>
+        <p className="mx-auto mt-2 max-w-2xl text-center text-gray-600">
+            Everything you need to run a modern barbering business.
+          </p>
+
+          <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              { icon: Shield, title: 'Secure & Reliable', desc: 'Bank-level security with encrypted payments and verified barber profiles.' },
+              { icon: Clock, title: 'Save Time', desc: 'No more phone tag. Book instantly and get confirmation right away.' },
+              { icon: Star, title: 'Quality Guaranteed', desc: 'Barbers are verified pros with authentic reviews from real customers.' },
+              { icon: MessageSquare, title: 'Stay Connected', desc: 'SMS confirmations, reminders, and updates keep you on schedule.' },
+              { icon: MapPin, title: 'Find Nearby', desc: 'Discover great barbers with location-based search and directions.' },
+              { icon: TrendingUp, title: 'Flexible Payment', desc: 'Pay with any major card; some services support deposits.' },
+            ].map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="group rounded-2xl border bg-white p-6 hover:shadow-md">
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gray-900 text-white group-hover:scale-105 transition">
+                  <Icon className="h-6 w-6" />
+                </div>
+                <h3 className="font-semibold text-gray-900">{title}</h3>
+                <p className="mt-2 text-gray-600 text-sm">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </Container>
+      </Section>
+
+      {/* CTA */}
+      <Section className="relative overflow-hidden bg-gray-900 text-white">
+        <Container className="text-center">
+          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2 text-sm text-white/90">
+            Ready to Get Started?
+          </div>
+          <h2 className="mt-4 text-3xl font-display font-extrabold md:text-4xl">
+            Join Kutable and be bookable today
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-white/80">
+            Create your page in minutes. Zero membership — pay 1% only when you get booked.
+          </p>
+
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               to="/barbers"
-              className="bg-orange-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-orange-600 transition-colors flex items-center justify-center space-x-2"
+              className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 font-semibold text-gray-900 hover:opacity-90"
             >
-              <Search className="h-5 w-5" />
-              <span>Find Barbers</span>
+              <Search className="mr-2 h-4 w-4" />
+              Find Barbers
             </Link>
             <Link
-              to="/signup"
-              className="border-2 border-white text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white hover:text-gray-900 transition-colors flex items-center justify-center space-x-2"
+              to="/signup?type=barber"
+              className="inline-flex items-center justify-center rounded-xl border border-white/30 bg-white/10 px-5 py-3 font-semibold text-white hover:bg-white/20"
             >
-              <Scissors className="h-5 w-5" />
-              <span>Join as Barber</span>
+              <Scissors className="mr-2 h-4 w-4" />
+              Join as Barber
             </Link>
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
     </div>
   );
 };
