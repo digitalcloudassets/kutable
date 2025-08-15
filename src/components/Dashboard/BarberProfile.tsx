@@ -324,7 +324,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
     <div className="card-premium p-8 animate-fade-in-up">
       <div className="space-y-8">
         {/* Edit Toggle */}
-        <div className="flex justify-end">
+        <div className="flex justify-center">
           <button
             onClick={() => setIsEditing(!isEditing)}
             className="btn-primary"
