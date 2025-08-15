@@ -712,14 +712,27 @@ const BookingFlow: React.FC = () => {
                   clientId: currentClientId,
                   barberId: barber.id,
                   serviceId: selectedService.id,
-                  appointmentDate: format(selectedDate, 'yyyy-MM-dd'),
-                  appointmentTime: selectedTime,
-                  notes: customerInfo.notes,
-                  clientName: `${customerInfo.firstName} ${customerInfo.lastName}`,
-                  clientPhone: customerInfo.phone
-                }}
-                onComplete={handlePaymentSuccess}
-              />
+              {/* Center the calendar on mobile and cap its width for a bigger, comfy feel */}
+              <div
+                className="
+                  mx-auto w-full
+                  max-w-[22rem]        /* ~352px: comfortable on phones */
+                  sm:max-w-none        /* let larger screens use their normal width */
+                  text-center
+                "
+              >
+                {/* IMPORTANT: add the 'kutable-rdp' class to scope our CSS overrides */}
+                <div className="kutable-rdp">
+                  <DatePicker
+                    selected={selectedDate}
+                    onChange={(date) => date && setSelectedDate(date)}
+                    minDate={new Date()}
+                    maxDate={addDays(new Date(), 30)}
+                    inline
+                    className="w-full border border-gray-200 rounded-2xl shadow-sm mx-auto"
+                  />
+                </div>
+              </div>
 
               <div className="mt-8 flex justify-center">
                 <button

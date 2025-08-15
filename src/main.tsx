@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import './styles/daypicker.mobile.css';
 import { AuthProvider, useAuth } from './context/AuthProvider';
 import { performanceOptimizer, initializeWebVitals } from './utils/performanceOptimizations';
 import { initializeProductionOptimizations } from './utils/productionConfig';

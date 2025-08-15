@@ -1,0 +1,38 @@
+/* Mobile-first sizing & alignment for React Day Picker inside .kutable-rdp.
+   Safe: only applies when the wrapper class is present. */
+
+.kutable-rdp .rdp {
+  margin-inline: auto;
+  /* Larger, thumb-friendly cells on mobile */
+  --rdp-cell-size: 2.75rem;      /* default ~44px */
+  --rdp-accent-color: #2563eb;   /* your brand blue if you use it */
+  font-size: 1.05rem;
+}
+
+.kutable-rdp .rdp .rdp-caption_label {
+  font-weight: 700;
+}
+
+.kutable-rdp .rdp .rdp-nav_button {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+}
+
+.kutable-rdp .rdp .rdp-day {
+  border-radius: 0.65rem;
+}
+
+/* Improve contrast of the selected day */
+.kutable-rdp .rdp .rdp-day_selected,
+.kutable-rdp .rdp .rdp-day_selected:focus-visible {
+  color: #fff;
+}
+
+/* Tablet/desktop: revert to your standard density */
+@media (min-width: 640px) {
+  .kutable-rdp .rdp {
+    --rdp-cell-size: 2.25rem;    /* ~36px */
+    font-size: 1rem;
+  }
+}
