@@ -278,6 +278,7 @@ const AdminPage: React.FC = () => {
         onTabChange={setActiveTab}
         onRefresh={handleRefresh}
         refreshing={refreshing}
+        onExitAdmin={() => navigate('/')}
       />
 
       {/* Main Content */}
