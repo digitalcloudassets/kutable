@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { useMessaging } from '../hooks/useMessaging';
 import { useSupabaseConnection } from '../hooks/useSupabaseConnection';
+import { useStripeConnect } from '../hooks/useStripeConnect';
 import SupabaseConnectionBanner from '../components/Setup/SupabaseConnectionBanner';
 import ClientDashboardHeader from '../components/Dashboard/ClientDashboardHeader';
 import BarberDashboardHeader from '../components/Dashboard/BarberDashboardHeader';
@@ -26,6 +27,7 @@ const DashboardPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const { unreadCount } = useMessaging();
   const { isConnected } = useSupabaseConnection();
+  const { resumeOnReturn } = useStripeConnect();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -49,6 +51,9 @@ const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     handleUserTypeCheck();
+    
+    // Handle Stripe onboarding return
+    resumeOnReturn();
   }, [handleUserTypeCheck]);
 
   const refreshBarberData = useCallback(async () => {

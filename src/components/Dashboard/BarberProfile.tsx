@@ -39,6 +39,7 @@ import { NotificationManager } from '../../utils/notifications';
 import { generateUniqueSlug } from '../../utils/updateBarberSlugs';
 import { updateSingleBarberSlug } from '../../utils/updateBarberSlugs';
 import { uploadBarberAvatar, uploadBarberBanner } from '../../lib/uploadAvatar';
+import { useStripeConnect } from '../../hooks/useStripeConnect';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -70,6 +71,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [disconnectingStripe, setDisconnectingStripe] = useState(false);
   const [settingUpStripe, setSettingUpStripe] = useState(false);
+  const { status: stripeStatus, loading: stripeLoading, isFullyConnected, needsAction, refresh: refreshStripeStatus } = useStripeConnect(barber.stripe_account_id);
   const { user } = useAuth();
   const { isConnected } = useSupabaseConnection();
   
@@ -638,7 +640,6 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
           </div>
         )}
 
-        {/* Stripe Connection Status */}
         <div className="pt-8 border-t border-gray-100">
           <div className="flex items-center space-x-3 mb-6">
             <div className="bg-primary-500 p-2 rounded-xl">
@@ -647,7 +648,14 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
             <h3 className="text-2xl font-display font-bold text-gray-900">Payment Setup</h3>
           </div>
           
-          {barber.stripe_onboarding_completed ? (
+          {stripeLoading ? (
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6">
+              <div className="flex items-center space-x-3">
+                <Loader className="h-5 w-5 text-blue-600 animate-spin" />
+                <span className="text-lg font-semibold text-blue-800">Checking payment setup status...</span>
+              </div>
+            </div>
+          ) : isFullyConnected ? (
             <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
                 <div className="flex items-center space-x-3">
@@ -672,6 +680,50 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
               <p className="text-emerald-700 leading-relaxed">
                 Your payment processing is set up and ready. You can now accept bookings and receive payments directly to your bank account.
               </p>
+              {stripeStatus && (
+                <div className="mt-4 text-sm text-emerald-600">
+                  <p>✅ Charges: {stripeStatus.charges_enabled ? 'Enabled' : 'Disabled'}</p>
+                  <p>✅ Payouts: {stripeStatus.payouts_enabled ? 'Enabled' : 'Disabled'}</p>
+                </div>
+              )}
+            </div>
+          ) : needsAction && stripeStatus ? (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-yellow-500 p-2 rounded-xl">
+                    <AlertTriangle className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="text-lg font-semibold text-yellow-800">Payment Setup Needs Attention</span>
+                </div>
+              </div>
+              <p className="text-yellow-700 leading-relaxed mb-4">
+                Your Stripe account needs additional information or verification to fully enable payments.
+              </p>
+              
+              {stripeStatus.requirements_due.length > 0 && (
+                <div className="bg-white border border-yellow-300 rounded-xl p-4 mb-4">
+                  <h4 className="font-semibold text-yellow-900 mb-2">Requirements needed:</h4>
+                  <ul className="text-yellow-800 text-sm space-y-1">
+                    {stripeStatus.requirements_due.slice(0, 5).map((req, i) => (
+                      <li key={i}>• {req.replace(/_/g, ' ')}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              <button 
+                onClick={handleStripeConnect}
+                disabled={settingUpStripe}
+                className="bg-yellow-600 text-white px-6 py-3 rounded-xl hover:bg-yellow-700 transition-all duration-200 font-semibold flex items-center space-x-2 shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {settingUpStripe ? (
+                  <Loader className="h-5 w-5 animate-spin" />
+                ) : (
+                  <CreditCard className="h-5 w-5" />
+                )}
+                <span>{settingUpStripe ? 'Redirecting...' : 'Complete Setup'}</span>
+              </button>
             </div>
           ) : (
             <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
@@ -734,6 +786,18 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                   <CreditCard className="h-5 w-5" />
                 )}
                 <span>{settingUpStripe ? 'Setting up...' : 'Setup Payments'}</span>
+              </button>
+            </div>
+          )}
+          
+          {/* Refresh Button for Debugging */}
+          {import.meta.env.DEV && barber.stripe_account_id && (
+            <div className="mt-4">
+              <button
+                onClick={refreshStripeStatus}
+                className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                🔄 Refresh Stripe Status (Dev)
               </button>
             </div>
           )}
