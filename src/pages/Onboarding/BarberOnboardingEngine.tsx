@@ -57,7 +57,6 @@ export default function BarberOnboardingEngine() {
             .from('barber_profiles')
             .upsert(
               {
-                id: user.id,
                 user_id: user.id,
                 business_name: user.user_metadata?.business_name || `${user.user_metadata?.first_name || 'New'} Barber Shop`,
                 owner_name: `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`.trim() || 'Barber',
@@ -66,7 +65,7 @@ export default function BarberOnboardingEngine() {
                 is_active: false,
                 slug: `barber-${user.id.slice(0, 8)}`
               },
-              { onConflict: 'id' }
+              { onConflict: 'user_id' }
             );
         }
 
