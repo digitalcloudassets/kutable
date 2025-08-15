@@ -73,10 +73,15 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
                 <span className="text-gray-500 text-sm">({barber.total_reviews} reviews)</span>
               </div>
             </div>
+
+          {/* Edit Profile Button - Centered under rating */}
+          <div className="flex justify-center">
+            <EditProfileLinkButton />
+          </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex justify-center">
             <Link
               to={profileUrl}
               target="_blank"
@@ -86,7 +91,6 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
               <Eye className="h-4 w-4" />
               <span>View Public Profile</span>
             </Link>
-            <EditProfileLinkButton />
           </div>
           
           <ShareProfileLink 
