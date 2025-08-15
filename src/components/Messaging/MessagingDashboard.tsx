@@ -35,41 +35,39 @@ const MessagingDashboard: React.FC = () => {
         </div>
       )}
       
-    <div className="h-[600px] lg:h-[600px] min-h-[400px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="h-full flex">
-        {/* Conversation List - Desktop: Always visible, Mobile: Hidden when thread open */}
-        <div className={`w-full lg:w-1/5 xl:w-1/6 border-r border-gray-200 ${
-          showMobileThread ? 'hidden lg:block' : 'block'
-        }`}>
-          <div className="h-full flex flex-col">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-primary-50 to-accent-50 border-b border-gray-200 p-4">
-              <div className="flex items-center space-x-3">
-                <div className="bg-primary-500 p-2 rounded-xl">
-                  <MessageSquare className="h-5 w-5 text-white" />
-                </div>
-                <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
+    <section className="card-premium p-0">
+      <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] h-[calc(100vh-var(--site-header-h,80px)-160px)]">
+        {/* LEFT: conversation sidebar - Desktop only */}
+        <aside className={`border-r bg-white flex-col ${
+          showMobileThread ? 'hidden' : 'flex md:flex'
+        } md:flex`}>
+          {/* Sidebar header */}
+          <div className="p-4 border-b bg-gradient-to-r from-primary-50 to-accent-50">
+            <div className="flex items-center space-x-3">
+              <div className="bg-primary-500 p-2 rounded-xl">
+                <MessageSquare className="h-5 w-5 text-white" />
               </div>
-            </div>
-            
-            {/* Conversation List */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <ConversationList
-                onSelectConversation={handleSelectConversation}
-                selectedConversationId={selectedConversation?.bookingId}
-              />
+              <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
             </div>
           </div>
-        </div>
+          
+          {/* Conversation list */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <ConversationList
+              onSelectConversation={handleSelectConversation}
+              selectedConversationId={selectedConversation?.bookingId}
+            />
+          </div>
+        </aside>
 
-        {/* Message Thread - Desktop: Always visible when selected, Mobile: Full screen when open */}
-        <div className={`flex-1 ${
-          showMobileThread ? 'block' : 'hidden lg:block'
-        } h-full`}>
+        {/* RIGHT: chat pane */}
+        <div className={`flex flex-col bg-gray-50/50 ${
+          showMobileThread ? 'flex' : 'hidden md:flex'
+        }`}>
           {selectedConversation ? (
-            <div className="h-full flex flex-col">
+            <>
               {/* Mobile back button */}
-              <div className="lg:hidden bg-white border-b border-gray-200 p-3">
+              <div className="md:hidden bg-white border-b border-gray-200 p-3">
                 <button
                   onClick={handleBackToList}
                   className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
@@ -83,10 +81,10 @@ const MessagingDashboard: React.FC = () => {
                 conversation={selectedConversation}
                 onBack={handleBackToList}
               />
-            </div>
+            </>
           ) : (
             /* Empty State */
-            <div className="h-full flex items-center justify-center bg-gray-50 min-h-[300px]">
+            <div className="flex-1 flex items-center justify-center bg-gray-50 min-h-[300px]">
               <div className="text-center max-w-sm mx-auto px-4">
                 <div className="bg-gradient-to-br from-primary-100 to-accent-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
                   <Users className="h-10 w-10 text-primary-600" />
@@ -102,7 +100,7 @@ const MessagingDashboard: React.FC = () => {
           )}
         </div>
       </div>
-    </div>
+    </section>
     </>
   );
 };
