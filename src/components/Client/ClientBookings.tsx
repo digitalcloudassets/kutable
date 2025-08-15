@@ -283,7 +283,7 @@ const ClientBookings: React.FC = () => {
   };
 
   const startReschedule = async (booking: Booking) => {
-    setReschedulingBooking(booking.id);
+    setReschedulingBooking(booking);
     setRescheduleData({
       date: new Date(),
       time: '',
@@ -543,13 +543,13 @@ const ClientBookings: React.FC = () => {
                           <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4">
                             <div className="flex items-center space-x-2">
                               <div className="bg-primary-100 p-1.5 rounded-lg">
-                              <User className="h-4 w-4" />
+                                <User className="h-4 w-4" />
                               </div>
                               <span className="font-semibold text-gray-900 text-sm">{booking.services?.name}</span>
                             </div>
                             <div className="flex items-center space-x-2">
                               <div className="bg-gray-200 p-1.5 rounded-lg">
-                              <Clock className="h-4 w-4" />
+                                <Clock className="h-4 w-4" />
                               </div>
                               <span className="text-gray-600 font-medium text-sm">{booking.services?.duration_minutes} min</span>
                             </div>
@@ -558,7 +558,7 @@ const ClientBookings: React.FC = () => {
                           <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4">
                             <div className="flex items-center space-x-2">
                               <div className="bg-accent-100 p-1.5 rounded-lg">
-                              <Calendar className="h-4 w-4" />
+                                <Calendar className="h-4 w-4" />
                               </div>
                               <span className="font-semibold text-gray-900 text-sm">
                                 {format(new Date(booking.appointment_date), 'EEEE, MMMM d, yyyy')}
@@ -566,7 +566,7 @@ const ClientBookings: React.FC = () => {
                             </div>
                             <div className="flex items-center space-x-2">
                               <div className="bg-yellow-100 p-1.5 rounded-lg">
-                              <Clock className="h-4 w-4" />
+                                <Clock className="h-4 w-4" />
                               </div>
                               <span className="font-semibold text-gray-900 text-sm">{booking.appointment_time}</span>
                             </div>
@@ -575,7 +575,7 @@ const ClientBookings: React.FC = () => {
                           {booking.barber_profiles?.city && (
                             <div className="flex items-center space-x-2">
                               <div className="bg-gray-200 p-1.5 rounded-lg">
-                              <MapPin className="h-4 w-4" />
+                                <MapPin className="h-4 w-4" />
                               </div>
                               <span className="text-gray-600 font-medium text-sm">{booking.barber_profiles.city}, {booking.barber_profiles.state}</span>
                             </div>
@@ -586,7 +586,7 @@ const ClientBookings: React.FC = () => {
                               <p className="text-gray-700 text-sm">
                                 <strong>Notes:</strong> {booking.notes}
                               </p>
-                        <div className="btn-primary group-hover:scale-105 transition-all duration-200 w-full justify-center">
+                            </div>
                           )}
                         </div>
                       </div>
@@ -731,7 +731,7 @@ const ClientBookings: React.FC = () => {
                 Cancel
               </button>
               <button
-                onClick={handleReschedule}
+                onClick={() => handleReschedule(reschedulingBooking.id, rescheduleData.date, rescheduleData.time)}
                 disabled={!rescheduleData.time || rescheduling}
                 className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
