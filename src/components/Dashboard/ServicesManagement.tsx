@@ -412,33 +412,40 @@ const ServicesManagement: React.FC<ServicesManagementProps> = ({ barberId }) => 
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-6 text-sm text-gray-500">
-                    <div className="flex items-center space-x-1">
-                      <DollarSign className="h-4 w-4" />
-                      <span>${service.price}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Clock className="h-4 w-4" />
-                      <span>{service.duration_minutes} min</span>
-                    </div>
-                    {service.deposit_required && (
-                      <span className="text-orange-600">
-                        ${service.deposit_amount} deposit
+                <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                  {/* Left: meta */}
+                  <div className="min-w-0 flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <span className="inline-flex items-center text-gray-600">
+                      <DollarSign className="h-4 w-4 mr-1" />
+                      <span className="font-medium">{service.price}</span>
+                    </span>
+
+                    <span className="inline-flex items-center text-gray-600">
+                      <Clock className="h-4 w-4 mr-1" />
+                      <span className="ml-1">{service.duration_minutes}</span>
+                      <span className="ml-1">min</span>
+                    </span>
+
+                    {service.deposit_required && service.deposit_amount > 0 && (
+                      <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-700 text-xs font-semibold px-2.5 py-1 whitespace-nowrap">
+                        Deposit&nbsp;${service.deposit_amount}
                       </span>
                     )}
                   </div>
 
-                  <button
-                    onClick={() => toggleServiceStatus(service.id, service.is_active)}
-                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                      service.is_active
-                        ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                        : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    }`}
-                  >
-                    {service.is_active ? 'Deactivate' : 'Activate'}
-                  </button>
+                  {/* Right: actions (always stays inside the card) */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleServiceStatus(service.id, service.is_active)}
+                      className={`rounded-xl px-4 py-2 text-sm font-semibold transition-colors border ${
+                        service.is_active
+                          ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-200'
+                          : 'bg-green-50 text-green-700 hover:bg-green-100 border-green-200'
+                      }`}
+                    >
+                      {service.is_active ? 'Deactivate' : 'Activate'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
