@@ -10,7 +10,6 @@ type Props = {
 export default function ShareProfileLink({ slug, id, className }: Props) {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const url = slug ? `${origin}/barber/${slug}` : `${origin}/barber/${id ?? ''}`;
-  const displayUrl = slug ? `kutable.com/barber/${slug}` : `kutable.com/barber/${id ?? ''}`;
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -37,25 +36,34 @@ export default function ShareProfileLink({ slug, id, className }: Props) {
   }
 
   return (
-    <div className={className ?? 'mt-2 flex items-center gap-2 text-sm'}>
-      <div className="flex items-center gap-1 rounded-lg border px-2 py-1">
-        <LinkIcon className="h-4 w-4 text-gray-500" />
-        <span className="truncate max-w-[52vw] text-gray-700">{displayUrl}</span>
+    <div className={className ?? 'mt-2'}>
+      {/* Link pill centered */}
+      <div className="w-full flex justify-center">
+        <div className="flex items-center gap-2 rounded-xl border px-3 py-2 bg-white">
+          <LinkIcon className="h-4 w-4 text-gray-500 shrink-0" />
+          <span className="max-w-[82vw] sm:max-w-[520px] break-anywhere hyphens-auto text-gray-800 text-sm">
+            {url.replace(/^https?:\/\//, '')}
+          </span>
+        </div>
       </div>
-      <button onClick={copy} className="rounded-lg border px-2 py-1 text-gray-700 hover:bg-gray-50">
-        {copied ? (
-          <>
-            <Check className="h-4 w-4 inline" /> Copied
-          </>
-        ) : (
-          <>
-            <Copy className="h-4 w-4 inline" /> Copy
-          </>
-        )}
-      </button>
-      <button onClick={nativeShare} className="rounded-lg border px-2 py-1 text-gray-700 hover:bg-gray-50">
-        <Share2 className="h-4 w-4 inline" /> Share
-      </button>
+
+      {/* Actions underneath, centered */}
+      <div className="mt-2 flex items-center justify-center gap-2">
+        <button
+          onClick={copy}
+          className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          {copied ? 'Copied' : 'Copy'}
+        </button>
+        <button
+          onClick={nativeShare}
+          className="inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          <Share2 className="h-4 w-4" />
+          Share
+        </button>
+      </div>
     </div>
   );
 }

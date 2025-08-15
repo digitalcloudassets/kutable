@@ -693,6 +693,12 @@ textarea {
 }
 
 @layer utilities {
+  /* Text overflow utilities */
+  .text-ellipsis-1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .text-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .break-anywhere { overflow-wrap: anywhere; word-break: break-word; }
+  .hyphens-auto { hyphens: auto; }
+  
   @media (max-width: 640px) {
     .mobile-stack { @apply flex-col space-y-4 space-x-0; }
   }

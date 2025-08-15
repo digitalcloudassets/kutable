@@ -179,7 +179,7 @@ const BarberDashboard: React.FC = () => {
   };
 
   const handleEditProfile = () => {
-    onTriggerEditChange(true);
+    handleTriggerEditChange(true);
   };
 
   // Loading state
