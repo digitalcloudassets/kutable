@@ -24,21 +24,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn('[AuthProvider] Boot timeout → continuing without session');
         setLoading(false);
       }
-    }, 8000);
+    }, 5000); // shorter timeout is fine
 
     (async () => {
+      let initialSession: Session | null = null;
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const { data: sessRes, error } = await supabase.auth.getSession();
         if (error) throw error;
+        initialSession = sessRes?.session ?? null;
         if (!mounted) return;
-        setSession(data.session ?? null);
+        setSession(initialSession);
       } catch (err) {
         console.error('[AuthProvider] Boot error:', err);
         try { await repairAuthIfNeeded(err); } catch {}
       } finally {
         if (mounted) {
           setLoading(false);
-          console.log('[AuthProvider] READY →', { hasUser: !!(data?.session?.user) });
+          console.log('[AuthProvider] READY →', { hasUser: !!initialSession?.user });
         }
       }
     })();

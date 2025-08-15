@@ -90,7 +90,7 @@ const ClientBookings: React.FC = () => {
             event: '*', 
             schema: 'public', 
             table: 'bookings',
-            filter: `client_id=eq.${user.id}`
+            filter: `client_user_id=eq.${user.id}` // Use user_id as fallback
           },
           (payload) => {
             console.log('Booking realtime update:', payload);
@@ -115,7 +115,12 @@ const ClientBookings: React.FC = () => {
   }, [bookings, statusFilter, searchTerm]);
 
   const fetchBookings = async () => {
-    if (!user) return;
+    if (!user) {
+      // No user → nothing to fetch; return empty without throwing
+      setBookings([]);
+      setLoading(false);
+      return;
+    }
 
     if (!isConnected) {
       console.warn('Supabase not connected - cannot fetch bookings');
@@ -125,14 +130,18 @@ const ClientBookings: React.FC = () => {
     }
 
     try {
-      // Get or create client profile using centralized logic
-      const clientProfile = await getOrCreateClientProfile(user);
-      if (!clientProfile) {
-        throw new Error('Failed to get client profile');
+      // Try to get client profile, but don't hard-fail if missing/slow
+      let clientProfileId: string | null = null;
+      try {
+        const clientProfile = await getOrCreateClientProfile(user);
+        clientProfileId = clientProfile?.id ?? null;
+      } catch (profileError) {
+        console.warn('[ClientBookings] profile fetch error (continuing):', profileError);
+        // Continue without profile - we'll try direct user lookup
       }
 
-      // Fetch bookings with related data
-      const { data, error } = await supabase
+      // Build bookings query with graceful fallback
+      let query = supabase
         .from('bookings')
         .select(`
           id,
@@ -159,14 +168,39 @@ const ClientBookings: React.FC = () => {
             duration_minutes
           )
         `)
-        .eq('client_id', clientProfile.id)
         .order('appointment_date', { ascending: false })
         .order('appointment_time', { ascending: false });
 
+      if (clientProfileId) {
+        // Preferred: filter by client profile id when present
+        query = query.eq('client_id', clientProfileId);
+      } else {
+        // Fallback: try to find bookings by checking client_profiles table
+        console.warn('[ClientBookings] No client profile ID, attempting fallback lookup');
+        const { data: profileByUser } = await supabase
+          .from('client_profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (profileByUser?.id) {
+          query = query.eq('client_id', profileByUser.id);
+        } else {
+          // Last resort: return empty array if we can't find the profile
+          console.warn('[ClientBookings] No client profile found, showing empty bookings');
+          setBookings([]);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       setBookings(data || []);
     } catch (error) {
-      console.error('Error fetching bookings:', error);
+      console.warn('[ClientBookings] non-fatal error:', error);
+      // Soft-fail: return empty array to keep UI alive
+      setBookings([]);
     } finally {
       setLoading(false);
     }
