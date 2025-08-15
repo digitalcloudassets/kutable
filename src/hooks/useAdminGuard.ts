@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getUser } from '../lib/supabaseClient';
-import { repairAuthIfNeeded } from '../utils/authRepair';
+import { useProfile } from './useProfile';
 import { shouldBypassAdminGuards } from '../lib/devFlags';
 
 type AdminGuardState = {
@@ -15,63 +14,52 @@ export function useAdminGuard(): AdminGuardState {
     allowed: false,
     error: null,
   });
+  
+  const { profile, loading: profileLoading, error: profileError } = useProfile();
 
   useEffect(() => {
-    let mounted = true;
-    
-    (async () => {
-      // Bypass admin guards in preview environments to prevent network errors
-      if (shouldBypassAdminGuards()) {
-        if (mounted) {
-          setState({ loading: false, allowed: true, error: null });
-        }
-        return;
-      }
+    // Bypass admin guards in preview environments to prevent network errors
+    if (shouldBypassAdminGuards()) {
+      setState({ loading: false, allowed: true, error: null });
+      return;
+    }
 
-      try {
-        const user = await getUser();
-        
-        if (!mounted) return;
+    // Wait for profile to load
+    if (profileLoading) {
+      setState({ loading: true, allowed: false, error: null });
+      return;
+    }
 
-        if (!user) {
-          setState({ loading: false, allowed: false, error: 'No session' });
-          return;
-        }
+    if (profileError) {
+      setState({ loading: false, allowed: false, error: profileError });
+      return;
+    }
 
-        const email = (user.email ?? '').toLowerCase();
+    if (!profile) {
+      setState({ loading: false, allowed: false, error: 'No profile found' });
+      return;
+    }
 
-        // Only use whitelist if the env var exists.
-        const raw = (import.meta.env.VITE_ADMIN_EMAILS as string | undefined);
-        const whitelist = raw
-          ? raw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
-          : [];
+    // Use server-computed is_admin flag
+    const allowed = !!profile.is_admin;
+    setState({ 
+      loading: false, 
+      allowed, 
+      error: allowed ? null : 'Forbidden' 
+    });
+  }, [profileLoading, profile, profileError]);
 
-        const allowByEmail = raw ? whitelist.includes(email) : false;
+  return state;
+}
 
-        // Prefer secure app_metadata for admin gating
-        const app = (user as any).app_metadata ?? {};
-        const userMeta = (user as any).user_metadata ?? {};
-
-        // Only trust app_metadata in production; user_metadata allowed in DEV as fallback
-        const allowByMeta =
-          app.role === 'admin' ||
-          app.is_admin === true ||
-          (import.meta.env.DEV && (userMeta.role === 'admin' || userMeta.is_admin === true));
-
-        const allowed = allowByEmail || allowByMeta;
-
-        setState({ loading: false, allowed, error: allowed ? null : 'Forbidden' });
-      } catch (err: any) {
-        // Try to repair auth if it's an auth error
-        const repaired = await repairAuthIfNeeded(err);
-        
-        if (mounted) {
-          if (!repaired) {
-            setState({ loading: false, allowed: false, error: 'Authentication error' });
-          } else {
-            setState({ loading: false, allowed: false, error: err?.message ?? 'Admin guard error' });
-          }
-        }
+// Legacy hook properties for backwards compatibility
+export function useAdminGuardLegacy(): AdminGuardState & { errorMsg?: string } {
+  const result = useAdminGuard();
+  return {
+    ...result,
+    errorMsg: result.error
+  };
+}
       }
     })();
     

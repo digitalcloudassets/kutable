@@ -5,6 +5,10 @@ import { corsHeaders, withCors, handlePreflight } from '../_shared/cors.ts'
 
 const headers = corsHeaders(['POST', 'OPTIONS'])
 
+function parseList(v?: string) {
+  return (v || '').split(',').map(s => s.trim()).filter(Boolean)
+}
+
 interface EnsureProfileRequest {
   userId: string;
   email: string;
@@ -39,6 +43,12 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
     const { userId, email, userType, defaults }: EnsureProfileRequest = await req.json()
 
+    // Compute admin status from server environment
+    const ADMIN_UIDS = parseList(Deno.env.get('ADMIN_UIDS'))
+    const ADMIN_EMAILS = parseList(Deno.env.get('ADMIN_EMAILS'))
+    const normEmail = email.trim().toLowerCase()
+    const is_admin = ADMIN_UIDS.includes(userId) || ADMIN_EMAILS.includes(normEmail)
+
     if (!userId || !email) {
       return new Response(
         JSON.stringify({
@@ -67,6 +77,15 @@ Deno.serve(async (req) => {
     }
 
     if (existingClient) {
+      // Ensure is_admin is up to date
+      if (existingClient.is_admin !== is_admin) {
+        await supabase
+          .from('client_profiles')
+          .update({ is_admin })
+          .eq('id', existingClient.id)
+        existingClient.is_admin = is_admin
+      }
+      
       return new Response(
         JSON.stringify({
           success: true,
@@ -93,6 +112,15 @@ Deno.serve(async (req) => {
     }
 
     if (existingBarber) {
+      // Ensure is_admin is up to date
+      if (existingBarber.is_admin !== is_admin) {
+        await supabase
+          .from('barber_profiles')
+          .update({ is_admin })
+          .eq('id', existingBarber.id)
+        existingBarber.is_admin = is_admin
+      }
+      
       return new Response(
         JSON.stringify({
           success: true,
@@ -122,6 +150,7 @@ Deno.serve(async (req) => {
         is_active: false, // Will be activated after full setup
         slug: `barber-${userId.slice(0, 8)}`,
         profile_image_url: null,
+        is_admin,
         ...defaults
       }
 
@@ -158,6 +187,7 @@ Deno.serve(async (req) => {
         communication_consent: defaults?.communication_consent ?? false,
         sms_consent: defaults?.sms_consent ?? false,
         email_consent: defaults?.email_consent ?? false,
+        is_admin,
         ...defaults
       }
 

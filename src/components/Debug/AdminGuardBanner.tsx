@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { useAdminGuard } from '../../hooks/useAdminGuard';
+import { useProfile } from '../../hooks/useProfile';
 
 function isDebugOn() {
   // Show ONLY when explicitly enabled and not in production
@@ -13,7 +13,7 @@ export default function AdminGuardBanner() {
   if (!debug) return null;
 
   const { session /* optionally: hydrated */ } = useAuth();
-  const { loading, allowed, error } = useAdminGuard();
+  const { profile, loading: profileLoading, error: profileError } = useProfile();
   const { pathname } = useLocation();
 
   // ✅ Do NOT show anything when signed out
@@ -27,10 +27,10 @@ export default function AdminGuardBanner() {
   if (!inScopedArea) return null;
 
   // Wait for guard to finish
-  if (loading) return null;
+  if (profileLoading) return null;
 
   // Hide if allowed
-  if (allowed) return null;
+  if (profile?.is_admin) return null;
 
   // Dismiss state (per path)
   const key = `adminBanner:dismissed:${pathname}`;
@@ -39,9 +39,9 @@ export default function AdminGuardBanner() {
 
   // Map common reasons to friendly text
   const msg =
-    error === 'Forbidden'
+    profileError === 'Forbidden'
       ? 'Your account is signed in but not authorized for admin access.'
-      : error || 'Not authorized.';
+      : profileError || 'Not authorized.';
 
   return (
     <div className="mx-2 my-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 flex items-center justify-between">

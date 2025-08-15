@@ -4,7 +4,7 @@ import { User, LogOut, Menu, X, Scissors, Crown, MessageSquare } from 'lucide-re
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useMessaging } from '../../hooks/useMessaging';
-import { useAdminGuard } from '../../hooks/useAdminGuard';
+import { useProfile } from '../../hooks/useProfile';
 import { logger } from '../../utils/logger';
 import { chooseDashboard } from '../../utils/appScope';
 import AdminGuardBanner from '../Debug/AdminGuardBanner';
@@ -15,7 +15,7 @@ const Header: React.FC = () => {
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const { unreadCount } = useMessaging();
-  const { loading: adminLoading, allowed: isAdmin, error: adminError } = useAdminGuard();
+  const { profile } = useProfile();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -38,13 +38,9 @@ const Header: React.FC = () => {
 
   // Check admin route but don't early return
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAdmin = !!profile?.is_admin;
 
   // Optional: surface guard errors in dev only (when there's actually an error)
-  useEffect(() => {
-    if (adminError && adminError !== 'No session' && import.meta.env.DEV) {
-      logger.debug('Admin guard error:', adminError);
-    }
-  }, [adminError]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -134,7 +130,7 @@ const Header: React.FC = () => {
                     )}
                   </Link>
                   {/* Admin Link - Only show for verified admin users */}
-                  {isAdmin && !adminLoading && (
+                  {isAdmin && (
                     <Link
                       to="/admin"
                       className={`flex items-center space-x-2 font-medium transition-all duration-200 hover:scale-105 px-4 py-2 rounded-xl ${

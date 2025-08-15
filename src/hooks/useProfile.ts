@@ -29,7 +29,7 @@ export function useProfile() {
         // Check for barber profile first
         const { data: barberProfile, error: barberError } = await supabase
           .from('barber_profiles')
-          .select('*')
+          .select('*, is_admin')
           .eq('user_id', user.id)
           .maybeSingle()
 
@@ -45,7 +45,7 @@ export function useProfile() {
         // Check for client profile
         const { data: clientProfile, error: clientError } = await supabase
           .from('client_profiles')
-          .select('*')
+          .select('*, is_admin')
           .eq('user_id', user.id)
           .maybeSingle()
 

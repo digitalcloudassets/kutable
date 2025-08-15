@@ -9,8 +9,10 @@ import {
   Scissors,
   Camera,
   Clock,
-  MessageSquare
+  MessageSquare,
+  Shield
 } from 'lucide-react';
+import { useProfile } from '../../hooks/useProfile';
 import MobileTabBar from './MobileTabBar';
 
 interface DashboardNavigationProps {
@@ -35,11 +37,13 @@ const DashboardNavigation = React.memo<DashboardNavigationProps>(({
   unreadCount = 0
 }) => {
   const navigate = useNavigate();
+  const { profile } = useProfile();
   const [showScrollHint, setShowScrollHint] = React.useState(false);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   
   // Only show payments/Connect features for barbers
   const isBarber = userType === 'barber';
+  const isAdmin = !!profile?.is_admin;
 
   React.useEffect(() => {
     const container = scrollContainerRef.current;
@@ -78,7 +82,8 @@ const DashboardNavigation = React.memo<DashboardNavigationProps>(({
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'gallery', label: 'Gallery', icon: Camera },
     { id: 'hours', label: 'Hours', icon: Clock },
-    { id: 'privacy', label: 'Privacy', icon: Settings }
+    { id: 'privacy', label: 'Privacy', icon: Settings },
+    ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: Shield, action: 'navigate' as const, to: '/admin' }] : [])
   ];
 
   const navButtons = userType === 'client' ? clientNavButtons : barberNavButtons;

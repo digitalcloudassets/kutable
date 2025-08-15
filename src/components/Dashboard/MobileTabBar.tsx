@@ -14,9 +14,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
-  Shield
+  Shield,
+  Crown
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useProfile } from '../../hooks/useProfile';
 
 interface MobileTabBarProps {
   userType: 'client' | 'barber';
@@ -40,18 +42,22 @@ const MobileTabBar: React.FC<MobileTabBarProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { profile } = useProfile();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
 
   const getTabItems = () => {
+    const isAdmin = !!profile?.is_admin;
+    
     if (userType === 'client') {
       // Client: clean 3-tab layout (no scrolling needed)
       return [
         { id: 'bookings', label: 'Bookings', icon: Calendar },
         { id: 'messages', label: 'Messages', icon: MessageSquare },
-        { id: 'profile', label: 'Profile', icon: User }
+        { id: 'profile', label: 'Profile', icon: User },
+        ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: Crown, onClick: () => navigate('/admin') }] : [])
       ];
     } else {
       // Barber: all tabs in scrollable bar (no More menu)
@@ -63,7 +69,8 @@ const MobileTabBar: React.FC<MobileTabBarProps> = ({
         { id: 'gallery', label: 'Gallery', icon: ImageIcon },
         { id: 'hours', label: 'Hours', icon: Clock },
         { id: 'privacy', label: 'Privacy', icon: Shield },
-        { id: 'analytics', label: 'Analytics', icon: BarChart3 }
+        { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+        ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: Crown, onClick: () => navigate('/admin') }] : [])
       ];
     }
   };
