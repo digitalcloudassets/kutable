@@ -105,6 +105,7 @@ const ClientProfileSettings: React.FC = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [softError, setSoftError] = useState<string | null>(null);
   const [profile, setProfile] = useState<ClientProfileRow | null>(null);
+  const [consentJustUpdated, setConsentJustUpdated] = useState(false);
   
   const [editData, setEditData] = useState({
     first_name: '',
@@ -200,6 +201,34 @@ const ClientProfileSettings: React.FC = () => {
     return () => { alive = false; };
   }, [userId, user]); // 🔁 Only run when userId is available
 
+  // Handle profile refresh after consent updates
+  useEffect(() => {
+    if (!consentJustUpdated || !userId) return;
+    
+    let cancelled = false;
+    
+    const run = async () => {
+      try {
+        const result = await ensureOrFetchClientProfile(userId);
+        if (!cancelled && result) {
+          setProfile(result);
+          setClientProfile(result);
+        }
+      } catch (error) {
+        console.warn('Error refreshing profile after consent update:', error);
+      } finally {
+        if (!cancelled) {
+          setConsentJustUpdated(false);
+        }
+      }
+    };
+    
+    void run();
+    
+    return () => {
+      cancelled = true;
+    };
+  }, [consentJustUpdated, userId]);
 
   const handleSave = async () => {
     const uid = userId ?? null;
@@ -235,20 +264,7 @@ const ClientProfileSettings: React.FC = () => {
         preferred_contact: editData.preferred_contact,
         profile_image_url: editData.profile_image_url || null,
         updated_at: new Date().toISOString()
-     // Refresh profile data after consent update
-     (async () => {
-       try {
-         const result = await ensureOrFetchClientProfile(userId);
-         if (result) {
-           setProfile(result);
-           setClientProfile(result);
-         }
-       } catch (error) {
-         console.warn('Error refreshing profile after consent update:', error);
-       }
-     })();
-   }
-
+      };
 
       // Use upsert to handle both create and update cases
       const { data: savedProfile, error: saveError } = await supabase
@@ -722,19 +738,7 @@ const ClientProfileSettings: React.FC = () => {
                    email: clientProfile?.email_consent ?? false
                 }}
                 onConsentUpdate={() => {
-                  if (userId) {
-                    (async () => {
-                      try {
-                        const result = await ensureOrFetchClientProfile(userId);
-                        if (result) {
-                          setProfile(result);
-                          setClientProfile(result);
-                        }
-                      } catch (error) {
-                        console.warn('Error refreshing profile after consent update:', error);
-                      }
-                    })();
-                  }
+                  setConsentJustUpdated(true);
                 }}
               />
             </div>
