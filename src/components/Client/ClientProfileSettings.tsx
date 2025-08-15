@@ -701,7 +701,7 @@ const ClientProfileSettings: React.FC = () => {
             <h4 className="text-xl font-display font-bold text-gray-900 mb-6">Communication Preferences</h4>
             <div className="space-y-4">
               <ConsentManagement 
-                userId={user?.id}
+                userId={userId}
                 userType="client"
                 currentConsent={{
                    communication: clientProfile?.communication_consent ?? false,
