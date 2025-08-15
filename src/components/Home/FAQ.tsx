@@ -4,7 +4,7 @@ import { ChevronDown } from 'lucide-react';
 const faqs = [
   {
     q: 'Is there a monthly membership?',
-    a: 'No. Kutable has no monthly membership and no setup fee. We charge a simple 1% platform fee per booking.',
+    a: 'No. Kutable has no monthly membership and no setup fee. We charge a simple 1% platform fee (minimum $0.25) per booking.',
   },
   {
     q: 'How fast can I go live?',
@@ -20,7 +20,7 @@ const faqs = [
   },
   {
     q: 'What about payment processing fees?',
-    a: 'Stripe charges their standard 2.9% + $0.30 per transaction for payment processing. This is separate from Kutable\'s 1% platform fee.',
+    a: 'Stripe charges their standard 2.9% + $0.30 per transaction for payment processing. This is separate from Kutable\'s 1% platform fee (minimum $0.25).',
   },
   {
     q: 'Can I customize my booking page?',

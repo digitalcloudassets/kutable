@@ -739,7 +739,7 @@ const ProfileSetupPage: React.FC = () => {
                   <h3 className="font-semibold text-gray-900 mb-3">Platform Fees</h3>
                   <div className="space-y-2 text-sm text-gray-600">
                     <div className="flex justify-between">
-                      <span>Platform Fee:</span>
+                      <span>Platform Fee (min $0.25):</span>
                       <span>1%</span>
                     </div>
                     <div className="flex justify-between">
@@ -748,8 +748,8 @@ const ProfileSetupPage: React.FC = () => {
                     </div>
                     <div className="border-t pt-2 mt-2">
                       <div className="flex justify-between font-medium text-gray-900">
-                        <span>Combined Fee:</span>
-                        <span>~4% per transaction</span>
+                        <span>Total Fees:</span>
+                        <span>~4% + processing per transaction</span>
                       </div>
                     </div>
                   </div>

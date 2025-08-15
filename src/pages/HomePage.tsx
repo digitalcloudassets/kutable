@@ -345,7 +345,7 @@ const HomePage: React.FC = () => {
             <div className="text-center">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
                 <CheckCircle className="h-8 w-8 text-emerald-400 mx-auto mb-3" />
-                <div className="text-white font-semibold">1% Per Booking</div>
+                <div className="text-white font-semibold">1% Platform Fee</div>
                 <div className="text-white/70 text-sm">Only when you earn</div>
               </div>
             </div>

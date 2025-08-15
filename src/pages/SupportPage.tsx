@@ -70,7 +70,7 @@ const SupportPage: React.FC = () => {
     },
     {
       question: "What fees do barbers pay?",
-      answer: "Barbers pay only when they earn. There's a 4% total fee per transaction (1% platform fee + ~3% payment processing). No monthly fees, setup costs, or contracts.",
+      answer: "Barbers pay only when they earn. There's a total fee per transaction: 1% platform fee (minimum $0.25) + ~3% payment processing. No monthly fees, setup costs, or contracts.",
       category: "barber"
     },
     {

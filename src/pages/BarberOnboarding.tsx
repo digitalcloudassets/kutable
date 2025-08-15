@@ -167,7 +167,7 @@ const BarberOnboarding: React.FC = () => {
                   <li>• Secure payment processing for your business</li>
                   <li>• Automatic deposits to your bank account</li>
                   <li>• Industry-standard security and compliance</li>
-                  <li>• Required to accept online bookings on Kutable</li>
+                  <li>• 1% platform fee (min $0.25) + processing fees</li>
                 </ul>
               </div>
             </div>
