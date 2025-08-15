@@ -1,19 +1,26 @@
 import { useState, useEffect, useCallback } from 'react';
 import { messagingService, Conversation, Message } from '../services/MessagingService';
 import { useAuth } from './useAuth';
+import { useSupabaseConnection } from './useSupabaseConnection';
 
 export const useMessaging = () => {
   const { user } = useAuth();
+  const { isConnected } = useSupabaseConnection();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    if (user && isConnected) {
       loadConversations();
       loadUnreadCount();
+    } else {
+      // Clear data and stop loading when connection is not established
+      setConversations([]);
+      setUnreadCount(0);
+      setLoading(false);
     }
-  }, [user]);
+  }, [user, isConnected]);
 
   const loadConversations = useCallback(async () => {
     if (!user) return;
