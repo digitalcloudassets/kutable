@@ -20,7 +20,7 @@ const Header: React.FC = () => {
 
   // Optional: surface guard errors in dev only (when there's actually an error)
   useEffect(() => {
-    if (adminError && import.meta.env.DEV) {
+    if (adminError && adminError !== 'No session' && import.meta.env.DEV) {
       logger.debug('Admin guard error:', adminError);
     }
   }, [adminError]);

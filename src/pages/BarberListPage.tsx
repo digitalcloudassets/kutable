@@ -53,12 +53,12 @@ const BarberListPage: React.FC = () => {
 
   const loadBarberData = async () => {
     try {
-      logger.debug('📁 Loading verified barber profiles from database...');
+      logger.debug('📁 Loading active barber profiles from database...');
       
       const { data: dbProfiles, error } = await supabase
         .from('barber_profiles')
         .select('*')
-        .eq('is_claimed', true)
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -76,7 +76,7 @@ const BarberListPage: React.FC = () => {
         profile_image_url: profile.profile_image_url || 'https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=400'
       }));
 
-      logger.info(`✅ Found ${profiles.length} claimed barber profiles`);
+      logger.info(`✅ Found ${profiles.length} active barber profiles`);
       
       setBarbers(profiles);
       setFilteredBarbers(profiles);
@@ -428,19 +428,6 @@ const BarberListPage: React.FC = () => {
                     
                     {/* Status Badges */}
                     <div className="absolute top-3 right-3 flex space-x-2">
-                      {!barber.is_claimed && !isReservedSlug(barber.slug) && (
-                        <Link
-                          to={`/claim/${barber.id}`}
-                          disabled={claimingId === (barber.id || barber.slug)}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleClaimClick(barber);
-                          }}
-                          className="bg-accent-500 text-white text-xs px-3 py-2 rounded-full font-semibold hover:bg-accent-600 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {claimingId === (barber.id || barber.slug) ? 'Opening…' : 'Claim'}
-                        </Link>
-                      )}
                       {barber.is_claimed && (
                         <span className="bg-emerald-500 text-white text-xs px-3 py-2 rounded-full font-semibold shadow-lg">
                           Verified
