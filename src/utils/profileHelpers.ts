@@ -4,7 +4,7 @@ import { User } from '@supabase/supabase-js';
 // Centralized client profile management to prevent duplicates
 export const getOrCreateClientProfile = async (user: User) => {
   const uid = user?.id ?? null;
-  if (!user || !uid) {
+  if (!user || !uid || uid === 'undefined') {
     console.warn('[getOrCreateClientProfile] No user or user.id provided');
     return null;
   }

@@ -115,12 +115,12 @@ const ClientBookings: React.FC = () => {
   }, [bookings, statusFilter, searchTerm]);
 
   const fetchBookings = async () => {
-    const uid = user?.id ?? null;
-    if (!uid) {
-      setBookings([]);
-      setLoading(false);
-      return;
-    }
+   const uid = user?.id ?? null;
+   if (!uid) {
+     setBookings([]);
+     setLoading(false);
+     return;
+   }
 
     if (!isConnected) {
       console.warn('Supabase not connected - cannot fetch bookings');
@@ -144,40 +144,51 @@ const ClientBookings: React.FC = () => {
         return;
       }
 
-      // Query bookings by client_profile id
+     // Query bookings by client_profile id (no cross-table expansion to avoid RLS issues)
       const { data, error } = await supabase
         .from('bookings')
-        .select(`
-          id,
-          appointment_date,
-          appointment_time,
-          status,
-          total_amount,
-          deposit_amount,
-          notes,
-          created_at,
-          barber_profiles (
-            id,
-            slug,
-            business_name,
-            owner_name,
-            phone,
-            profile_image_url,
-            city,
-            state
-          ),
-          services (
-            name,
-            description,
-            duration_minutes
-          )
-        `)
+       .select('id, appointment_date, appointment_time, status, total_amount, deposit_amount, notes, created_at, barber_id, service_id')
         .eq('client_id', cp.id)
         .order('appointment_date', { ascending: false })
         .order('appointment_time', { ascending: false });
         
       if (error) throw error;
-      setBookings(data || []);
+     
+     // Fetch barber and service details separately to avoid RLS recursion
+     const enrichedBookings = [];
+     for (const booking of data || []) {
+       let barberData = null;
+       let serviceData = null;
+       
+       // Fetch barber profile (public read allowed for active profiles)
+       if (booking.barber_id) {
+         const { data: barber } = await supabase
+           .from('barber_profiles')
+           .select('id, slug, business_name, owner_name, phone, profile_image_url, city, state')
+           .eq('id', booking.barber_id)
+           .eq('is_active', true)
+           .maybeSingle();
+         barberData = barber;
+       }
+       
+       // Fetch service details
+       if (booking.service_id) {
+         const { data: service } = await supabase
+           .from('services')
+           .select('name, description, duration_minutes')
+           .eq('id', booking.service_id)
+           .maybeSingle();
+         serviceData = service;
+       }
+       
+       enrichedBookings.push({
+         ...booking,
+         barber_profiles: barberData,
+         services: serviceData
+       });
+     }
+     
+     setBookings(enrichedBookings);
     } catch (error) {
       console.warn('[ClientBookings] non-fatal error:', error);
       // Soft-fail: return empty array to keep UI alive

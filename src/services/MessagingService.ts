@@ -74,6 +74,11 @@ export class MessagingService {
       return [];
     }
 
+   // Guard against undefined userId
+   if (!userId) {
+     console.warn('getUserConversations called with undefined userId');
+     return [];
+   }
     try {
       console.log('Loading conversations for user:', userId);
       
@@ -698,6 +703,10 @@ export class MessagingService {
       return 0;
     }
 
+   // Guard against undefined userId
+   if (!userId) {
+     return 0;
+   }
     try {
       const { count, error } = await supabase
         .from('messages')

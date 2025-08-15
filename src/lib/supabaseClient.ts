@@ -16,6 +16,14 @@ export const supabase = (() => {
       flowType: 'pkce',
       storageKey: 'kutable-auth',
     },
+   global: { 
+     headers: { 'x-client-info': 'kutable-web' } 
+   },
+   functions: {
+     // Pin functions URL to avoid "Failed to fetch" in preview environments
+     url: import.meta.env.VITE_SUPABASE_FUNCTIONS_URL ||
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`,
+   },
   })
   return client
 })()

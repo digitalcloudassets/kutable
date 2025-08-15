@@ -235,7 +235,20 @@ const ClientProfileSettings: React.FC = () => {
         preferred_contact: editData.preferred_contact,
         profile_image_url: editData.profile_image_url || null,
         updated_at: new Date().toISOString()
-      };
+     // Refresh profile data after consent update
+     (async () => {
+       try {
+         const result = await ensureOrFetchClientProfile(userId);
+         if (result) {
+           setProfile(result);
+           setClientProfile(result);
+         }
+       } catch (error) {
+         console.warn('Error refreshing profile after consent update:', error);
+       }
+     })();
+   }
+
 
       // Use upsert to handle both create and update cases
       const { data: savedProfile, error: saveError } = await supabase
