@@ -35,7 +35,7 @@ const MessagingDashboard: React.FC = () => {
         </div>
       )}
       
-    <div className="h-[600px] lg:h-[600px] min-h-[400px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="h-[600px] lg:h-[600px] min-h-[400px] bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden app-full">
       <div className="h-full flex">
         {/* Conversation List - Desktop: Always visible, Mobile: Hidden when thread open */}
         <div className={`w-full lg:w-1/5 xl:w-1/6 border-r border-gray-200 ${
@@ -43,21 +43,25 @@ const MessagingDashboard: React.FC = () => {
         }`}>
           <div className="h-full flex flex-col">
             {/* Header */}
-            <div className="bg-gradient-to-r from-primary-50 to-accent-50 border-b border-gray-200 p-4">
+            <div className="bg-gradient-to-r from-primary-50 to-accent-50 border-b border-gray-200">
+              <div className="section-inner">
               <div className="flex items-center space-x-3">
                 <div className="bg-primary-500 p-2 rounded-xl">
                   <MessageSquare className="h-5 w-5 text-white" />
                 </div>
                 <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
               </div>
+              </div>
             </div>
             
             {/* Conversation List */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto">
+              <div className="section-inner">
               <ConversationList
                 onSelectConversation={handleSelectConversation}
                 selectedConversationId={selectedConversation?.bookingId}
               />
+              </div>
             </div>
           </div>
         </div>

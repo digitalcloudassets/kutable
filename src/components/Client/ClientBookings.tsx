@@ -599,14 +599,14 @@ const ClientBookings: React.FC = () => {
 
                   {/* Actions - Only show for cancelled or confirmed upcoming bookings */}
                   {(booking.status === 'cancelled' || (booking.status === 'confirmed' && upcoming)) && (
-                    <div className="flex flex-col sm:flex-row items-center gap-3 pt-3 border-t border-gray-100">
-                      {/* Action Buttons */}
-                      <div className="flex gap-3 ml-auto">
+                    <div className="pt-3 border-t border-gray-100">
+                      <div className="section-inner pt-0">
+                        <div className="booking-actions">
                         {/* Contact Barber */}
                         {booking.barber_profiles?.phone && (
                           <a
                             href={`tel:${booking.barber_profiles.phone}`}
-                            className="btn-secondary text-sm px-3 py-2"
+                            className="icon-btn border border-gray-200 bg-white hover:bg-gray-50"
                           >
                             <Phone className="h-4 w-4" />
                           </a>
@@ -617,7 +617,7 @@ const ClientBookings: React.FC = () => {
                           <button
                             onClick={() => cancelBooking(booking.id)}
                             disabled={cancellingBooking === booking.id}
-                            className="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-all duration-200 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                            className="icon-btn bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {cancellingBooking === booking.id ? (
                               <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
@@ -631,7 +631,7 @@ const ClientBookings: React.FC = () => {
                         {booking.status === 'confirmed' && upcoming && (
                           <button
                             onClick={() => setReschedulingBooking(booking)}
-                            className="btn-secondary text-primary-600 border-primary-200 hover:bg-primary-50 text-sm px-3 py-2"
+                            className="icon-btn border border-primary-200 bg-white hover:bg-primary-50 text-primary-600"
                           >
                             <Edit className="h-4 w-4" />
                           </button>
@@ -642,7 +642,7 @@ const ClientBookings: React.FC = () => {
                           <button
                             onClick={() => removeBooking(booking.id)}
                             disabled={removingBooking === booking.id}
-                            className="bg-gray-500 text-white px-3 py-2 rounded-lg hover:bg-gray-600 transition-all duration-200 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                            className="icon-btn bg-gray-500 text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {removingBooking === booking.id ? (
                               <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
@@ -651,6 +651,7 @@ const ClientBookings: React.FC = () => {
                             )}
                           </button>
                         )}
+                        </div>
                       </div>
                     </div>
                   )}

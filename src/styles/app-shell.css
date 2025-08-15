@@ -1,61 +1,79 @@
-/* Mobile-first full-bleed surfaces + nested-card flattening across ALL authed app pages. */
+/* Zero-gutter mode for the authed app on mobile. Edge-to-edge sections, no inner gutters,
+   auto-flatten nested cards. Desktop >= md keeps normal widths. */
 
-:root { --app-gap: 16px; --app-radius: 20px; }
+:root { --app-gap: 16px; --app-radius: 20px; --tabbar-h: 72px; }
 
-/* Make site "container" go edge-to-edge on phones ONLY when in app-shell */
-body.app-shell .container {
-  max-width: 100% !important;
-  padding-left: var(--app-gap);
-  padding-right: var(--app-gap);
-}
-@media (min-width: 768px) {
-  body.app-shell .container {
-    max-width: 720px !important;
-    padding-left: 0; padding-right: 0;
-  }
-}
+/* 👉 No global bottom spacer — let content meet the top edge of the tab bar */
+body.app-shell { padding-bottom: env(safe-area-inset-bottom); }
 
-/* Generic surface (matches your rounded-3xl border bg-white cards)  */
-body.app-shell .app-surface,
-body.app-shell .rounded-3xl.border.bg-white {
-  background: #fff;
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius: var(--app-radius);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-}
-
-/* Full-bleed sections on phones: connect to screen edges */
+/* 1) Containers go FULL BLEED on phones */
 @media (max-width: 767px) {
-  body.app-shell .app-bleed,
-  body.app-shell .rounded-3xl.border.bg-white.app-bleed {
-    margin-left: calc(-1 * var(--app-gap));
-    margin-right: calc(-1 * var(--app-gap));
-    border-radius: 0;
+  body.app-shell .container { max-width: 100% !important; padding-left: 0 !important; padding-right: 0 !important; }
+  /* Nuke common page padders; we want true edge-to-edge */
+  body.app-shell .px-4 { padding-left: 0 !important; padding-right: 0 !important; }
+  body.app-shell .px-3 { padding-left: 0 !important; padding-right: 0 !important; }
+  /* Header bar flush to edges but keep safe-area */
+  body.app-shell header, body.app-shell nav[role="navigation"] {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 }
 
-/* FLATTEN NESTED CARDS (your "app shell inside app shell" in Messages, etc.) */
+/* 2) Any card surface becomes a connected sheet on phones (unless opted-out) */
 @media (max-width: 767px) {
-  body.app-shell .app-bleed .app-bleed,
-  body.app-shell .app-bleed .rounded-3xl.border.bg-white.app-bleed {
-    margin-left: 0;
-    margin-right: 0;
-    border-radius: var(--app-radius);
-  }
-  /* If you have card-in-card, soften inner cards so it feels like one connected surface */
-  body.app-shell .app-bleed .rounded-3xl.border.bg-white {
-    border-left: 0; border-right: 0; border-radius: 0;
+  body.app-shell .rounded-3xl.border.bg-white:not(.app-inset),
+  body.app-shell .app-surface:not(.app-inset) {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
   }
 }
 
-/* Spacing rhythm for headings/lists inside sections (less cramped) */
-body.app-shell .app-pad { padding: 16px; }
-body.app-shell .app-pad-lg { padding: 20px; }
-body.app-shell .app-stack > * + * { margin-top: 16px; }
+/* 3) Nested cards auto-flatten (fix "app shell inside app shell" like Messages) */
+@media (max-width: 767px) {
+  body.app-shell .rounded-3xl.border.bg-white :is(.rounded-3xl.border.bg-white, .app-surface):not(.app-inset) {
+    border-left: 0 !important; border-right: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+  }
+}
 
-/* List separation that looks native */
+/* 4) Lists feel native: hairlines between rows */
 body.app-shell .app-list > * + * { border-top: 1px solid rgba(0,0,0,0.06); }
 body.app-shell .app-item { padding: 14px 16px; }
 
-/* Safe area so content never hides behind the bottom tab bar */
-body.app-shell { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+/* 5) Optional opt-out (use sparingly): restore inset card on mobile */
+@media (max-width: 767px) {
+  body.app-shell .app-inset {
+    margin-left: var(--app-gap) !important;
+    margin-right: var(--app-gap) !important;
+    border-radius: var(--app-radius) !important;
+    border-left: 1px solid rgba(0,0,0,0.06) !important;
+    border-right: 1px solid rgba(0,0,0,0.06) !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
+  }
+}
+
+/* inner padding so content isn't cramped (use this wrapper inside app-full) */
+body.app-shell .section-inner { padding: 16px; }
+
+/* —— Booking card actions: stable sizing & spacing —— */
+.booking-actions { display: flex; justify-content: flex-end; gap: 12px; }
+.booking-actions .icon-btn {
+  width: 48px; height: 48px; border-radius: 16px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* —— Messages thread: full-width sheet, no clipping —— */
+.thread-page { background: #fff; }
+.thread-header { position: sticky; top: 0; z-index: 10; background: #fff; }
+.thread-scroll { padding: 12px 16px 16px; }
+.thread-composer {
+  position: sticky;
+  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); /* sits just above the tab bar */
+  z-index: 20; background: #fff; border-top: 1px solid rgba(0,0,0,0.06);
+  padding: 10px 16px;
+}
+/* message bubbles never truncate; stay readable on flush layout */
+.chat-bubble { max-width: min(84vw, 560px); word-break: break-word; white-space: pre-wrap; }
