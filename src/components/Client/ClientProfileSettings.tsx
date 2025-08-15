@@ -502,7 +502,7 @@ const ClientProfileSettings: React.FC = () => {
           <div className="flex items-center space-x-6 pb-8 border-b border-gray-100">
             <div className="relative">
               <img
-                src={clientProfile?.profile_image_url || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=200'}
+                src={profile?.profile_image_url || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=200'}
                 alt="Profile"
                 className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-premium"
               />
@@ -512,14 +512,14 @@ const ClientProfileSettings: React.FC = () => {
             </div>
             <div>
               <h3 className="text-2xl font-display font-bold text-gray-900 mb-2">
-                {clientProfile?.first_name} {clientProfile?.last_name}
+                {profile?.first_name || editData.first_name} {profile?.last_name || editData.last_name}
               </h3>
               <div className="flex items-center space-x-3 mb-2">
                 <span className="bg-accent-100 text-accent-700 px-3 py-1 rounded-full text-sm font-semibold">Customer</span>
                 <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-semibold">Active</span>
               </div>
               <p className="text-gray-500 font-medium">
-                Member since {clientProfile?.created_at ? new Date(clientProfile.created_at).toLocaleDateString('en-US', { 
+                Member since {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { 
                   year: 'numeric', 
                   month: 'long' 
                 }) : 'Recently'}

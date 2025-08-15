@@ -121,6 +121,11 @@ const ClientBookings: React.FC = () => {
       setLoading(false);
       return;
     }
+      // No user → nothing to fetch; return empty without throwing
+      setBookings([]);
+      setLoading(false);
+      return;
+    }
 
     if (!isConnected) {
       console.warn('Supabase not connected - cannot fetch bookings');
@@ -133,7 +138,7 @@ const ClientBookings: React.FC = () => {
       // Try to get client profile, but don't hard-fail if missing/slow
       let clientProfileId: string | null = null;
       try {
-        const clientProfile = await getOrCreateClientProfile(user);
+        const clientProfile = await ensureOrFetchClientProfile(user.id);
         clientProfileId = clientProfile?.id ?? null;
       } catch (profileError) {
         console.warn('[ClientBookings] profile fetch error (continuing):', profileError);
@@ -200,7 +205,6 @@ const ClientBookings: React.FC = () => {
     } catch (error) {
       console.warn('[ClientBookings] non-fatal error:', error);
       // Soft-fail: return empty array to keep UI alive
-      setBookings([]);
     } finally {
       setLoading(false);
     }
