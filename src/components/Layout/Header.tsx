@@ -29,6 +29,7 @@ const Header: React.FC = () => {
         hasAdminGuard: !!isAdmin || adminLoading,
         adminErrorMsg: errorMsg
       });
+      });
     }
   }, [user, isAdmin, adminLoading, loading, errorMsg]);
 
