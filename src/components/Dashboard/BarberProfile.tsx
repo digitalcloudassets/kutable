@@ -323,17 +323,6 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
   return (
     <div className="card-premium p-8 animate-fade-in-up">
       <div className="space-y-8">
-        {/* Edit Toggle */}
-        <div className="flex justify-center">
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            className="btn-primary"
-          >
-            {isEditing ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
-            <span>{isEditing ? 'Cancel' : 'Edit Profile'}</span>
-          </button>
-        </div>
-
         {/* Profile Content */}
         {isEditing ? (
           /* Edit Mode */
@@ -526,6 +515,17 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                   </span>
                 </div>
               </div>
+            </div>
+
+            {/* Edit Toggle */}
+            <div className="flex justify-center pt-8 border-t border-gray-100">
+              <button
+                onClick={() => setIsEditing(!isIsEditing)}
+                className="btn-primary"
+              >
+                {isEditing ? <X className="h-4 w-4" /> : <Edit className="h-4 w-4" />}
+                <span>{isEditing ? 'Cancel' : 'Edit Profile'}</span>
+              </button>
             </div>
 
             {/* Banner Image Section */}
