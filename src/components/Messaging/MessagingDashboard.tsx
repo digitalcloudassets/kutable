@@ -35,18 +35,11 @@ const MessagingDashboard: React.FC = () => {
         </div>
       )}
       
-    <section className="p-0 bg-transparent md:bg-white md:rounded-2xl md:border md:border-gray-100 md:shadow-sm md:hover:shadow-lg md:transition-all md:duration-300 md:overflow-hidden app-bleed md:mx-0">
+    <section className="bg-white p-0 overflow-hidden md:rounded-2xl md:border md:border-gray-100 md:shadow-sm md:hover:shadow-lg md:transition-all md:duration-300 app-bleed md:mx-0">
 
-      {/* ============ MOBILE: native-like full-bleed overlay ============ */}
-      <div 
-        className="md:hidden fixed inset-x-0 z-40 bg-white"
-        style={{
-          top: 'var(--site-header-h, 80px)',
-          bottom: 'calc(var(--bottom-tabbar-h, 72px) + env(safe-area-inset-bottom))'
-        }}
-        aria-label="Mobile messages overlay"
-      >
-        <div className="flex h-full w-full flex-col bg-white">
+      {/* ============ MOBILE: restore the OLD layout ============ */}
+      <div className="md:hidden">
+        <div className="flex flex-col h-[calc(100vh-var(--site-header-h,80px)-96px)] bg-white">
           {/* Mobile header */}
           <div className="p-4 border-b bg-gradient-to-r from-primary-50 to-accent-50">
             <div className="flex items-center space-x-3">
@@ -57,17 +50,19 @@ const MessagingDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* List OR Thread */}
+          {/* Show conversation list or selected thread */}
           {!showMobileThread ? (
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-0 py-4">
+            /* Conversation List View */
+            <div className="flex-1 overflow-y-auto px-0 py-4">
               <ConversationList
                 onSelectConversation={handleSelectConversation}
                 selectedConversationId={selectedConversation?.bookingId}
               />
             </div>
           ) : selectedConversation ? (
+            /* Message Thread View */
             <>
-              {/* Back to list */}
+              {/* Mobile back button */}
               <div className="bg-white border-b border-gray-200 p-3">
                 <button
                   onClick={handleBackToList}
@@ -78,20 +73,21 @@ const MessagingDashboard: React.FC = () => {
                 </button>
               </div>
               
-              {/* Thread fills remaining height; composer can be sticky inside */}
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <MessageThread conversation={selectedConversation} onBack={handleBackToList} />
-              </div>
+              <MessageThread 
+                conversation={selectedConversation}
+                onBack={handleBackToList}
+              />
             </>
           ) : null}
         </div>
       </div>
 
-      {/* ============ DESKTOP: unchanged split view ============ */}
+      {/* ============ DESKTOP: keep the NEW layout ============ */}
       <div className="hidden md:block">
         <div className="grid grid-cols-[320px_1fr] h-[calc(100vh-var(--site-header-h,80px)-160px)]">
-          {/* LEFT: conversation sidebar */}
+          {/* LEFT: conversation sidebar - Desktop only */}
           <aside className="border-r bg-white flex-col flex">
+            {/* Sidebar header */}
             <div className="p-4 border-b bg-gradient-to-r from-primary-50 to-accent-50">
               <div className="flex items-center space-x-3">
                 <div className="bg-primary-500 p-2 rounded-xl">
@@ -100,6 +96,8 @@ const MessagingDashboard: React.FC = () => {
                 <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
               </div>
             </div>
+            
+            {/* Conversation list */}
             <div className="flex-1 overflow-y-auto p-4">
               <ConversationList
                 onSelectConversation={handleSelectConversation}
@@ -108,6 +106,7 @@ const MessagingDashboard: React.FC = () => {
             </div>
           </aside>
 
+          {/* RIGHT: chat pane */}
           <div className="flex flex-col bg-gray-50/50">
             {selectedConversation ? (
               <MessageThread 
@@ -115,6 +114,7 @@ const MessagingDashboard: React.FC = () => {
                 onBack={handleBackToList}
               />
             ) : (
+              /* Empty State */
               <div className="flex-1 flex items-center justify-center bg-gray-50 min-h-[300px]">
                 <div className="text-center max-w-sm mx-auto px-4">
                   <div className="bg-gradient-to-br from-primary-100 to-accent-100 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6">
