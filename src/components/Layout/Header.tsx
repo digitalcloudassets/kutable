@@ -9,18 +9,19 @@ import { logger } from '../../utils/logger';
 import AdminGuardBanner from '../Debug/AdminGuardBanner';
 
 const Header: React.FC = () => {
+  // ✅ Always call hooks at top-level, every render
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // ✅ Do not show the global site header anywhere under /admin
-  if (location.pathname.startsWith('/admin')) return null;
-  
   const { user, loading } = useAuth();
   const { unreadCount } = useMessaging();
   const { allowed: isAdmin, loading: adminLoading, error: adminError } = useAdminGuard();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  // ✅ Do not show the global site header anywhere under /admin
+  // Only return null AFTER all hooks are called
+  if (location.pathname.startsWith('/admin')) return null;
 
   // Optional: surface guard errors in dev only (when there's actually an error)
   useEffect(() => {
