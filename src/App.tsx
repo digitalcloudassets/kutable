@@ -32,6 +32,7 @@ import TermsOfServicePage from './pages/TermsOfServicePage';
 import BookingFlow from './components/Booking/BookingFlow';
 import LoginForm from './components/Auth/LoginForm';
 import SignUpForm from './components/Auth/SignUpForm';
+import SignUpSuccessPage from './pages/SignUpSuccessPage';
 import ForgotPassword from './components/Auth/ForgotPassword';
 import ResetPassword from './components/Auth/ResetPassword';
 
@@ -64,6 +65,7 @@ function App() {
               <Route path="/" element={<HomeGate />} />
               <Route path="/login" element={<LoginForm />} />
               <Route path="/signup" element={<SignUpForm />} />
+              <Route path="/signup-success" element={<SignUpSuccessPage />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/barbers" element={<BarberListPage />} />

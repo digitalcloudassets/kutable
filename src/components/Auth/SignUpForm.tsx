@@ -125,6 +125,8 @@ const SignUpForm: React.FC = () => {
       // Check if user came from claim flow
       // Navigate to onboarding for new users
       navigate(`/onboarding?type=${formData.userType}`);
+      // Redirect to success page instead of directly to onboarding
+      navigate(`/signup-success?email=${encodeURIComponent(cleanEmail)}&type=${formData.userType}`);
     } catch (error: any) {
       // Don't expose internal error details
       console.error('Signup error:', error);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, Loader, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
@@ -12,8 +12,9 @@ import {
 
 const LoginForm: React.FC = () => {
   const { isConnected: isSupabaseConnected } = useSupabaseConnection();
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
-    email: '',
+    email: searchParams.get('email') || '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -92,8 +93,9 @@ const LoginForm: React.FC = () => {
         // Record successful attempt
         bruteForceProtection.recordAttempt(identifier, true);
         
-        // Navigate to dashboard
-        navigate('/dashboard');
+        // Navigate to next URL or dashboard
+        const next = searchParams.get('next') || '/dashboard';
+        navigate(next);
       }
     } catch (error: any) {
       console.error('Login error:', error);
