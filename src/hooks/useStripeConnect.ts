@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { getConnectState, setConnectState, isConnectStateForUser } from '../lib/connectState'
 
 export interface StripeConnectStatus {
   id: string
@@ -10,14 +11,20 @@ export interface StripeConnectStatus {
   onboarding_complete: boolean
 }
 
-export function useStripeConnect(accountId?: string | null) {
+export function useStripeConnect(accountId?: string | null, userId?: string) {
   const [status, setStatus] = useState<StripeConnectStatus | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
-    if (!accountId) {
+    if (!accountId || !userId) {
       setStatus(null)
+      return
+    }
+    
+    // Only refresh if this Connect state belongs to the current user
+    if (!isConnectStateForUser(userId)) {
+      console.warn('Skipping Stripe status refresh - not current user\'s account')
       return
     }
     
@@ -55,15 +62,24 @@ export function useStripeConnect(accountId?: string | null) {
     } finally {
       setLoading(false)
     }
-  }, [accountId])
+  }, [accountId, userId])
 
   const resumeOnReturn = useCallback(() => {
+    if (!userId) return
+    
     const params = new URLSearchParams(window.location.search)
     const connected = params.get('stripe_setup') === 'complete' || params.get('connected') === '1'
     const refresh_flag = params.get('stripe_refresh') === 'true' || params.get('refresh') === '1'
     
     if (connected || refresh_flag) {
-      console.log('Detected return from Stripe onboarding, refreshing status...')
+      console.log('Detected return from Stripe onboarding for user:', userId)
+      
+      // Update Connect state for this user
+      setConnectState({ 
+        userId, 
+        accountId: accountId || undefined,
+        inProgress: false 
+      })
       
       // Small delay to allow Stripe webhooks to process
       setTimeout(() => {
@@ -79,10 +95,17 @@ export function useStripeConnect(accountId?: string | null) {
       newUrl.searchParams.delete('refresh')
       window.history.replaceState({}, '', newUrl.toString())
     }
-  }, [refresh])
+  }, [refresh, userId, accountId])
 
   useEffect(() => {
-    if (accountId) {
+    if (accountId && userId) {
+      // Persist minimal per-user state
+      setConnectState({ 
+        userId, 
+        accountId, 
+        inProgress: false 
+      })
+      
       refresh()
       resumeOnReturn()
       
@@ -103,7 +126,7 @@ export function useStripeConnect(accountId?: string | null) {
         if (interval) clearInterval(interval)
       }
     }
-  }, [accountId, refresh, resumeOnReturn])
+  }, [accountId, userId, refresh, resumeOnReturn])
 
   const needsAction = status ? (
     !!status.requirements_due?.length ||
