@@ -213,10 +213,12 @@ const ClientProfileSettings: React.FC = () => {
       NotificationManager.success('Profile photo updated successfully!');
     } catch (error) {
       console.error('Error uploading image:', error);
-      if (error instanceof Error && error.message.includes('Bucket not found')) {
-        NotificationManager.error('Storage setup required: Please create the "avatars" bucket in your Supabase Storage dashboard.');
+      if (error instanceof Error && 
+          (error.message.includes('Storage bucket not configured') || 
+           error.message.includes('Bucket not found'))) {
+        NotificationManager.error('Storage setup required: Please create the "avatars" bucket in your Supabase Storage dashboard with public access enabled.');
       } else {
-        NotificationManager.error('Failed to upload image. Please check your Supabase storage configuration.');
+        NotificationManager.error(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     } finally {
       setUploadingImage(false);
