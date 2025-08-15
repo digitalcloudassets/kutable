@@ -35,7 +35,7 @@ const MessagingDashboard: React.FC = () => {
         </div>
       )}
       
-    <section className="card-premium p-0">
+    <section className="bg-white p-0 overflow-hidden md:rounded-2xl md:border md:border-gray-100 md:shadow-sm md:hover:shadow-lg md:transition-all md:duration-300 app-bleed md:mx-0">
 
       {/* ============ MOBILE: restore the OLD layout ============ */}
       <div className="md:hidden">
@@ -53,7 +53,7 @@ const MessagingDashboard: React.FC = () => {
           {/* Show conversation list or selected thread */}
           {!showMobileThread ? (
             /* Conversation List View */
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto px-0 py-4">
               <ConversationList
                 onSelectConversation={handleSelectConversation}
                 selectedConversationId={selectedConversation?.bookingId}
