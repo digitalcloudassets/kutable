@@ -535,7 +535,7 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link
-                  to={profileUrl}
+                  to={`/barber/${barber.slug || barber.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-secondary justify-center"
@@ -545,10 +545,10 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                 </Link>
               </div>
               
-              <ShareProfileLink 
-                slug={barber.slug} 
-                id={barber.id} 
-                className="mt-4 flex items-center gap-2 text-sm justify-center"
+              <ShareProfileLink
+                slug={barber?.slug ?? null}
+                id={barber?.id ?? null}
+                className="mt-2"
               />
             </Surface>
 
