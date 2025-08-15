@@ -286,7 +286,43 @@ const SignUpForm: React.FC = () => {
               </div>
             </div>
 
-            {/* Avatar Upload (Client Only) */}
+            {/* Name Fields */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+               <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-2 text-center">
+                  First Name
+                </label>
+                <input
+                  id="firstName"
+                  type="text"
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange('firstName', e.target.value.slice(0, 50))}
+                  required
+                  autoComplete="given-name"
+                  spellCheck={false}
+                 className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
+                  placeholder="First name"
+                />
+              </div>
+              <div>
+               <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-2 text-center">
+                  Last Name
+                </label>
+                <input
+                  id="lastName"
+                  type="text"
+                  value={formData.lastName}
+                  onChange={(e) => handleInputChange('lastName', e.target.value.slice(0, 50))}
+                  required
+                  autoComplete="family-name"
+                  spellCheck={false}
+                 className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
+
+            {/* Avatar Upload (Client Only) - After Name Fields */}
             {formData.userType === 'client' && (
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-4 text-center">
@@ -330,42 +366,6 @@ const SignUpForm: React.FC = () => {
                 </div>
               </div>
             )}
-
-            {/* Name Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-               <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-2 text-center">
-                  First Name
-                </label>
-                <input
-                  id="firstName"
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value.slice(0, 50))}
-                  required
-                  autoComplete="given-name"
-                  spellCheck={false}
-                 className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
-                  placeholder="First name"
-                />
-              </div>
-              <div>
-               <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-2 text-center">
-                  Last Name
-                </label>
-                <input
-                  id="lastName"
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) => handleInputChange('lastName', e.target.value.slice(0, 50))}
-                  required
-                  autoComplete="family-name"
-                  spellCheck={false}
-                 className="w-full px-4 py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white placeholder-gray-400 text-center"
-                  placeholder="Last name"
-                />
-              </div>
-            </div>
 
             {/* Email */}
             <div>
