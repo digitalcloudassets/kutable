@@ -121,11 +121,6 @@ const ClientBookings: React.FC = () => {
       setLoading(false);
       return;
     }
-      // No user → nothing to fetch; return empty without throwing
-      setBookings([]);
-      setLoading(false);
-      return;
-    }
 
     if (!isConnected) {
       console.warn('Supabase not connected - cannot fetch bookings');
@@ -451,6 +446,10 @@ const ClientBookings: React.FC = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return isAfter(appointmentDate, today) || appointmentDate.getTime() === today.getTime();
+  };
+
+  const ensureOrFetchClientProfile = async (userId: string) => {
+    return await getOrCreateClientProfile(userId);
   };
 
   if (loading) {
