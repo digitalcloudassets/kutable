@@ -19,7 +19,7 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
         const { data: prof } = await supabase
           .from('barber_profiles')
           .select('id, business_name, owner_name, city, state, phone, stripe_onboarding_completed')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
           .maybeSingle();
 
         if (!prof) {
@@ -34,13 +34,13 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
         const { count: hours } = await supabase
           .from('availability')
           .select('id', { count: 'exact', head: true })
-          .eq('barber_id', prof.id)
+          .eq('barber_id', user.id)
           .eq('is_available', true);
           
         const { count: svc } = await supabase
           .from('services')
           .select('id', { count: 'exact', head: true })
-          .eq('barber_id', prof.id)
+          .eq('barber_id', user.id)
           .eq('is_active', true);
           
         const needHours = (hours || 0) === 0;

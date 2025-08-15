@@ -49,25 +49,31 @@ export default function BarberOnboardingEngine() {
         const { data: prof } = await supabase
           .from('barber_profiles')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
           .maybeSingle();
 
         if (!prof) {
-          await supabase.from('barber_profiles').insert({
-            user_id: user.id,
-            business_name: user.user_metadata?.business_name || `${user.user_metadata?.first_name || 'New'} Barber Shop`,
-            owner_name: `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`.trim() || 'Barber',
-            email: user.email || '',
-            is_claimed: true,
-            is_active: false,
-            slug: `barber-${user.id.slice(0, 8)}`
-          });
+          await supabase
+            .from('barber_profiles')
+            .upsert(
+              {
+                id: user.id,
+                user_id: user.id,
+                business_name: user.user_metadata?.business_name || `${user.user_metadata?.first_name || 'New'} Barber Shop`,
+                owner_name: `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`.trim() || 'Barber',
+                email: user.email || '',
+                is_claimed: true,
+                is_active: false,
+                slug: `barber-${user.id.slice(0, 8)}`
+              },
+              { onConflict: 'id' }
+            );
         }
 
         const { data: prof2 } = await supabase
           .from('barber_profiles')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
           .single();
 
         setProfile(prof2);
@@ -76,7 +82,7 @@ export default function BarberOnboardingEngine() {
         const { count: availabilityCount } = await supabase
           .from('availability')
           .select('id', { count: 'exact', head: true })
-          .eq('barber_id', prof2.id)
+          .eq('barber_id', user.id)
           .eq('is_available', true);
 
         setHasHours((availabilityCount || 0) > 0);
@@ -84,7 +90,7 @@ export default function BarberOnboardingEngine() {
         const { count: servicesCount } = await supabase
           .from('services')
           .select('id', { count: 'exact', head: true })
-          .eq('barber_id', prof2.id)
+          .eq('barber_id', user.id)
           .eq('is_active', true);
 
         setHasServices((servicesCount || 0) > 0);
@@ -236,15 +242,14 @@ function StepAccount({ profile, onSaved }: { profile: any, onSaved: () => void }
     
     setSaving(true);
     try {
-      const { error } = await supabase
+      await supabase
         .from('barber_profiles')
         .update({
           ...form,
           updated_at: new Date().toISOString()
         })
-        .eq('id', profile.id);
-        
-      if (error) throw error;
+        .eq('id', user.id);
+
       onSaved();
     } catch (error) {
       console.error('Error saving account info:', error);
@@ -365,11 +370,11 @@ function StepHours({ profileId, onSaved }: { profileId: string, onSaved: () => v
   async function save() {
     setSaving(true);
     try {
-      await supabase.from('availability').delete().eq('barber_id', profileId);
+      await supabase.from('availability').delete().eq('barber_id', user.id);
       const rows = Object.entries(availability)
         .filter(([_,d]) => d.isOpen)
         .map(([day,d]) => ({
-          barber_id: profileId, 
+          barber_id: user.id, 
           day_of_week: Number(day),
           start_time: d.startTime, 
           end_time: d.endTime, 
@@ -469,7 +474,7 @@ function StepServices({ profileId, onSaved }: { profileId: string, onSaved: () =
     setSaving(true);
     try {
       const { error } = await supabase.from('services').insert({
-        barber_id: profileId,
+        barber_id: user.id,
         name,
         description,
         duration_minutes: duration,

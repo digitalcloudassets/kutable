@@ -25,7 +25,8 @@ if (!supabaseFunctionsUrl) warn('VITE_SUPABASE_FUNCTIONS_URL not set (OK if you 
 export const env = {
   supabaseUrl,
   supabaseAnonKey,
-  supabaseFunctionsUrl,   // used by supabase.functions.invoke base
+  supabaseFunctionsUrl: (import.meta.env.VITE_SUPABASE_FUNCTIONS_URL as string) ||
+                       `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`,    // ✅ fallback
   stripePublishableKey,
   googleMapsApiKey,
   turnstileSiteKey,       // optional; leave blank to disable

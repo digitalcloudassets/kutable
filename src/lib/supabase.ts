@@ -42,8 +42,10 @@ export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey, {
   global: {
     headers: { 'x-client-info': 'kutable-web' },
   },
-  // Pin the Edge Functions base so functions.invoke(...) is stable across Netlify/Bolt/localhost
-  functions: env.supabaseFunctionsUrl ? { url: env.supabaseFunctionsUrl } : undefined,
 });
 
+// ✅ Pin Functions base URL to prevent invoke() going to wrong host
+if (env.supabaseFunctionsUrl) {
+  (supabase as any)._functionsUrl = env.supabaseFunctionsUrl;
+}</action>
 export type { Database } from './database.types';
