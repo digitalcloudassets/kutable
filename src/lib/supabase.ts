@@ -1,7 +1,29 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { env } from '../utils/env';
 import { isWebContainer } from './runtimeEnv';
 import { logger } from '../utils/logger';
+
+function hasWorkingLocalStorage(): boolean {
+  try {
+    if (typeof localStorage === 'undefined') return false;
+    const k = '__ktbl_probe__';
+    localStorage.setItem(k, '1');
+    localStorage.removeItem(k);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Minimal in-memory storage adapter for Supabase (Bolt-safe)
+const memoryStore = (() => {
+  const m = new Map<string, string>();
+  return {
+    getItem: (k: string) => m.get(k) ?? null,
+    setItem: (k: string, v: string) => { m.set(k, v); },
+    removeItem: (k: string) => { m.delete(k); },
+  };
+})();
 
 const supabaseUrl = env.supabaseUrl;
 const supabaseAnonKey = env.supabaseAnonKey;
@@ -27,7 +49,6 @@ if (shouldUseFallback) {
   const reason = !hasValidCredentials 
     ? 'Supabase not connected - using fallback mode'
     : 'WebContainer environment detected - using fallback mode';
-  logger.info(`📁 ${reason}`);
   logger.info(`📁 ${reason}`);
   
   // Create fallback client
@@ -93,12 +114,18 @@ if (shouldUseFallback) {
     }
   };
 } else {
+  const storageAdapter: any = hasWorkingLocalStorage() ? localStorage : memoryStore;
+
   supabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      storage: storageAdapter,             // Bolt-safe storage
     },
+    functions: env.supabaseFunctionsUrl
+      ? { url: env.supabaseFunctionsUrl }  // explicit base if provided
+      : undefined,
   });
 }
 

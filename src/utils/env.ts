@@ -27,6 +27,7 @@ export const env = {
   siteUrl,
   supabaseUrl: read('VITE_SUPABASE_URL', { required: true })!,
   supabaseAnonKey: read('VITE_SUPABASE_ANON_KEY', { required: true })!,
+  supabaseFunctionsUrl: read('VITE_SUPABASE_FUNCTIONS_URL') ?? null,
   stripePublishableKey: read('VITE_STRIPE_PUBLISHABLE_KEY'),
   googleMapsApiKey: read('VITE_GOOGLE_MAPS_API_KEY'),
   turnstileSiteKey: turnstileKey,
