@@ -130,18 +130,22 @@ const ClientBookings: React.FC = () => {
     }
 
     try {
-      // Try to get client profile, but don't hard-fail if missing/slow
-      let clientProfileId: string | null = null;
-      try {
-        const clientProfile = await ensureOrFetchClientProfile(uid);
-        clientProfileId = clientProfile?.id ?? null;
-      } catch (profileError) {
-        console.warn('[ClientBookings] profile fetch error (continuing):', profileError);
-        // Continue without profile - we'll try direct user lookup
+      // Get client profile first
+      const { data: cp, error: cpErr } = await supabase
+        .from('client_profiles')
+        .select('id')
+        .eq('user_id', uid)
+        .maybeSingle();
+
+      if (cpErr || !cp?.id) {
+        console.warn('[ClientBookings] No client profile found:', cpErr);
+        setBookings([]);
+        setLoading(false);
+        return;
       }
 
-      // Build bookings query with graceful fallback
-      let query = supabase
+      // Query bookings by client_profile id
+      const { data, error } = await supabase
         .from('bookings')
         .select(`
           id,
@@ -168,33 +172,10 @@ const ClientBookings: React.FC = () => {
             duration_minutes
           )
         `)
+        .eq('client_id', cp.id)
         .order('appointment_date', { ascending: false })
         .order('appointment_time', { ascending: false });
-
-      if (clientProfileId) {
-        // Preferred: filter by client profile id when present
-        query = query.eq('client_id', clientProfileId);
-      } else {
-        // Fallback: try to find bookings by checking client_profiles table
-        console.warn('[ClientBookings] No client profile ID, attempting fallback lookup');
-        const { data: profileByUser } = await supabase
-          .from('client_profiles')
-          .select('id')
-          .eq('user_id', uid)
-          .maybeSingle();
         
-        if (profileByUser?.id) {
-          query = query.eq('client_id', profileByUser.id);
-        } else {
-          // Last resort: return empty array if we can't find the profile
-          console.warn('[ClientBookings] No client profile found, showing empty bookings');
-          setBookings([]);
-          setLoading(false);
-          return;
-        }
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
       setBookings(data || []);
     } catch (error) {
