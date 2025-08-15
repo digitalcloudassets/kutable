@@ -100,6 +100,15 @@ const BookingFlow: React.FC = () => {
 
   const fetchBarberData = async () => {
     // Check Supabase connection first
+      // Check if Supabase is properly configured
+      if (!import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL === 'https://YOUR-PROJECT.supabase.co') {
+        throw new Error('Supabase URL not configured. Please update your .env file with your actual Supabase project URL.');
+      }
+      
+      if (!import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_PUBLIC_KEY') {
+        throw new Error('Supabase anonymous key not configured. Please update your .env file with your actual Supabase anonymous key.');
+      }
+
     if (!isConnected) {
       setConnectionError('Database connection not available. Please ensure Supabase is properly configured.');
       return;
@@ -138,7 +147,11 @@ const BookingFlow: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching barber data:', error);
-      // Provide more specific error handling
+      if (error instanceof Error && error.message.includes('Supabase')) {
+        setError(`Configuration Error: ${error.message}`);
+      } else {
+        setError('Error fetching barber data. Please check your connection and try again.');
+      }
       if (error instanceof TypeError && error.message === 'Failed to fetch') {
         setConnectionError('Unable to connect to the database. Please check your Supabase configuration and ensure the VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables are properly set.');
       } else {
