@@ -10,6 +10,8 @@ import {
   Scissors
 } from 'lucide-react';
 import { Database } from '../../lib/supabase';
+import EditProfileLinkButton from '../Profile/EditProfileLinkButton';
+import ShareProfileLink from '../Profile/ShareProfileLink';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
@@ -84,14 +86,14 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
               <Eye className="h-4 w-4" />
               <span>View Public Profile</span>
             </Link>
-            <button 
-              onClick={handleEditClick}
-              className="btn-primary justify-center"
-            >
-              <Edit className="h-4 w-4" />
-              <span>Edit Profile</span>
-            </button>
+            <EditProfileLinkButton />
           </div>
+          
+          <ShareProfileLink 
+            slug={barber.slug} 
+            id={barber.id} 
+            className="mt-4 flex items-center gap-2 text-sm justify-center"
+          />
         </div>
       </div>
     </div>

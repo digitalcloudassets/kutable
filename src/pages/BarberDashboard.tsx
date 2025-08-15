@@ -29,7 +29,6 @@ const BarberDashboard: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   
   const [barber, setBarber] = useState<Barber | null>(null);
-  const [triggerEdit, setTriggerEdit] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Derive active tab from URL
@@ -37,6 +36,15 @@ const BarberDashboard: React.FC = () => {
     const seg = pathname.replace(/\/+$/, '').split('/').pop() || 'profile';
     return (ALLOWED as readonly string[]).includes(seg) ? (seg as Tab) : 'profile';
   }, [pathname]);
+
+  // Derive triggerEdit from URL search params
+  const triggerEdit = searchParams.get('edit') === '1';
+  const onTriggerEditChange = (flag: boolean) => {
+    const next = new URLSearchParams(searchParams);
+    if (flag) next.set('edit', '1');
+    else next.delete('edit');
+    setSearchParams(next, { replace: true });
+  };
 
   const handleUserTypeCheck = useCallback(() => {
     if (!authLoading) {
@@ -167,11 +175,7 @@ const BarberDashboard: React.FC = () => {
   };
 
   const handleEditProfile = () => {
-    setTriggerEdit(true);
-  };
-
-  const handleTriggerEditChange = (value: boolean) => {
-    setTriggerEdit(value);
+    onTriggerEditChange(true);
   };
 
   // Loading state

@@ -13,6 +13,8 @@ import MessagingDashboard from '../Messaging/MessagingDashboard';
 import { Crown, Calendar, BarChart3 } from 'lucide-react';
 import MobileProfileActions from '../Profile/MobileProfileActions';
 import Surface from '../Layout/Surface';
+import EditProfileLinkButton from '../Profile/EditProfileLinkButton';
+import ShareProfileLink from '../Profile/ShareProfileLink';
 
 type Barber = Database['public']['Tables']['barber_profiles']['Row'];
 
