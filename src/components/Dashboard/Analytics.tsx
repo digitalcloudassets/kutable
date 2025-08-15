@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { formatUSD } from '../../lib/currency';
 import { 
   TrendingUp, 
   DollarSign, 
