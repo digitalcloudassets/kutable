@@ -148,7 +148,8 @@ const ClientProfileSettings: React.FC = () => {
 
     (async () => {
       // 🚫 Never hit Supabase with undefined user_id
-      if (!userId) {
+      const uid = userId ?? null;
+      if (!uid) {
         setLoading(false);          // clear any spinners
         setSoftError(null);         // don't show scary messages
         setProfile(null);           // nothing yet
@@ -160,7 +161,7 @@ const ClientProfileSettings: React.FC = () => {
 
       // Cap the whole operation so UI never hangs
       const result = await Promise.race([
-        ensureOrFetchClientProfile(userId),
+        ensureOrFetchClientProfile(uid),
         new Promise<null>(res => setTimeout(() => res(null), 4000)),
       ]);
 
