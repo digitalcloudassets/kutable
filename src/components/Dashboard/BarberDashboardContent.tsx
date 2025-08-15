@@ -6,6 +6,7 @@ import ConsentManagement from '../Client/ConsentManagement';
 import { Settings, Scissors, Camera, ImageIcon, Clock, Save } from 'lucide-react';
 import { MessageSquare } from 'lucide-react';
 import { Database } from '../../lib/supabase';
+import { supabase } from '../../lib/supabaseClient';
 import ServicesManagement from './ServicesManagement';
 import MediaUpload from '../Gallery/MediaUpload';
 import MediaGallery from '../Gallery/MediaGallery';
@@ -55,9 +56,6 @@ const BarberDashboardContent = React.memo<BarberDashboardContentProps>(({
   const handleConsentUpdate = useCallback(() => {
     onBarberUpdate();
   }, [onBarberUpdate]);
-  
-  // Import supabase and other necessary items for saving availability
-  const { supabase } = await import('../../lib/supabase');
 
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
