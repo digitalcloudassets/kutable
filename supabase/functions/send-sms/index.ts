@@ -31,7 +31,6 @@ serve(async (req) => {
 
     if (!to || !text) {
       slog.warn('SMS request missing required fields:', { hasTo: !!to, hasText: !!text });
-      slog.warn('SMS request missing required fields:', { hasTo: !!to, hasText: !!text });
       const resBody = { ok: false, error: "Missing to or body" };
       return new Response(JSON.stringify(resBody), {
         status: 200, // keep 200 to avoid breaking flows
@@ -64,7 +63,6 @@ serve(async (req) => {
     const raw = await twilioResp.text();
     if (!twilioResp.ok) {
       slog.warn('Twilio send failed:', { status: twilioResp.status, response: raw.slice(0, 500) });
-      slog.warn('Twilio send failed:', { status: twilioResp.status, response: raw.slice(0, 500) });
       await recordNotification({
         channel: "sms",
         recipient: to,
@@ -85,7 +83,6 @@ serve(async (req) => {
     slog.debug('Sending SMS:', { to, textPreview: text.slice(0, 50) + '...' });
     const data = JSON.parse(raw);
     slog.info('SMS sent successfully:', { to, sid: data?.sid });
-    slog.info('SMS sent successfully:', { to, sid: data?.sid });
     await recordNotification({
       channel: "sms",
       recipient: to,
@@ -100,7 +97,6 @@ serve(async (req) => {
       headers: { ...cors.headers, "Content-Type": "application/json", "X-Notification-Status": "sent" },
     });
   } catch (e) {
-    slog.error('SMS unexpected error:', e);
     slog.error('SMS unexpected error:', e);
     await recordNotification({
       channel: "sms",
