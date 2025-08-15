@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         console.error('Auth boot error:', err);
         try { await repairAuthIfNeeded(err); } catch {}
+        try {
           await repairAuthIfNeeded(err);
         } catch {}
       } finally {
