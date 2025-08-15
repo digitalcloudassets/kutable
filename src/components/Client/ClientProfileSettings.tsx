@@ -723,11 +723,17 @@ const ClientProfileSettings: React.FC = () => {
                 }}
                 onConsentUpdate={() => {
                   if (userId) {
-                    fetchClientProfile().then(() => {
-                      // Profile refreshed
-                    }).catch(error => {
-                      console.warn('Error refreshing profile after consent update:', error);
-                    });
+                    (async () => {
+                      try {
+                        const result = await ensureOrFetchClientProfile(userId);
+                        if (result) {
+                          setProfile(result);
+                          setClientProfile(result);
+                        }
+                      } catch (error) {
+                        console.warn('Error refreshing profile after consent update:', error);
+                      }
+                    })();
                   }
                 }}
               />
