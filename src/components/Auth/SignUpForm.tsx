@@ -24,8 +24,6 @@ const SignUpForm: React.FC = () => {
     userType: 'client' as 'client' | 'barber',
     communicationConsent: false,
   });
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [showPassword, setShowPassword] = useState({
     password: false,
     confirmPassword: false,
@@ -160,26 +158,6 @@ const SignUpForm: React.FC = () => {
         );
       }
 
-      // Avatar handling
-      if (avatarFile && userId) {
-        if (hasSession) {
-          // Upload now (authenticated)
-          const avatarUrl = await uploadAvatar(avatarFile, userId, 'clients');
-          await Promise.all([
-            supabase.from('client_profiles').update({ profile_image_url: avatarUrl }).eq('user_id', userId),
-            supabase.auth.updateUser({ data: { avatar_url: avatarUrl } }),
-          ]);
-        } else {
-          // No session yet (email confirm flow) – defer to first login
-          const buf = await avatarFile.arrayBuffer();
-          const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
-          localStorage.setItem(
-            'kutable:pendingAvatar',
-            JSON.stringify({ role: 'clients', userId, name: avatarFile.name, b64 })
-          );
-        }
-      }
-
       if (formData.userType === 'client') {
         if (hasSession) {
           navigate('/dashboard', { replace: true });
@@ -211,18 +189,6 @@ const SignUpForm: React.FC = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   return (
@@ -321,51 +287,6 @@ const SignUpForm: React.FC = () => {
                 />
               </div>
             </div>
-
-            {/* Avatar Upload (Client Only) - After Name Fields */}
-            {formData.userType === 'client' && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-4 text-center">
-                  Profile Photo (Optional)
-                </label>
-                <div className="text-center">
-                  {avatarPreview ? (
-                    <div className="relative inline-block">
-                      <img
-                        src={avatarPreview}
-                        alt="Avatar preview"
-                        className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-premium"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAvatarFile(null);
-                          setAvatarPreview('');
-                        }}
-                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="inline-block">
-                      <label className="cursor-pointer">
-                        <div className="w-24 h-24 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-primary-400 transition-colors">
-                          <Camera className="h-8 w-8 text-gray-400" />
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleAvatarChange}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-                  )}
-                  <p className="text-xs text-gray-500 mt-2">JPG, PNG • Max 5MB</p>
-                </div>
-              </div>
-            )}
 
             {/* Email */}
             <div>
