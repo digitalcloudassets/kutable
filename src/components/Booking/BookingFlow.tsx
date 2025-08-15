@@ -866,8 +866,8 @@ const BookingFlow: React.FC = () => {
   const stepIndex = ['service', 'datetime', 'details', 'payment', 'confirmation'].indexOf(step);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 page-container relative overflow-hidden">
-      {/* Background Elements */}
+    <div className="min-h-screen bg-gray-50 page-container">
+      <div className="kutable-flow py-8 pt-28">
       <div className="absolute inset-0">
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary-500/5 rounded-full blur-3xl animate-float"></div>
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent-500/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
