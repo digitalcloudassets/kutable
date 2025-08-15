@@ -863,6 +863,8 @@ const BookingFlow: React.FC = () => {
     );
   }
 
+  const stepIndex = ['service', 'datetime', 'details', 'payment', 'confirmation'].indexOf(step);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 page-container relative overflow-hidden">
       {/* Background Elements */}
@@ -897,6 +899,7 @@ const BookingFlow: React.FC = () => {
             current={['service', 'datetime', 'details', 'payment', 'confirmation'].indexOf(step) + 1} 
             total={5} 
           />
+        </div>
         <div className="mt-3">
           <BookingStepper current={stepIndex + 1} total={5} />
         </div>
