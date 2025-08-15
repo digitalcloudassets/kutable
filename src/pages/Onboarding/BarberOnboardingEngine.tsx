@@ -49,7 +49,7 @@ export default function BarberOnboardingEngine() {
         const { data: prof } = await supabase
           .from('barber_profiles')
           .select('*')
-          .eq('id', user.id)
+         .eq('user_id', user.id)
           .maybeSingle();
 
         if (!prof) {
@@ -72,8 +72,8 @@ export default function BarberOnboardingEngine() {
         const { data: prof2 } = await supabase
           .from('barber_profiles')
           .select('*')
-          .eq('id', user.id)
-          .single();
+         .eq('user_id', user.id)
+         .maybeSingle();
 
         setProfile(prof2);
 
@@ -81,7 +81,7 @@ export default function BarberOnboardingEngine() {
         const { count: availabilityCount } = await supabase
           .from('availability')
           .select('id', { count: 'exact', head: true })
-          .eq('barber_id', user.id)
+         .eq('barber_id', prof2?.id)
           .eq('is_available', true);
 
         setHasHours((availabilityCount || 0) > 0);
@@ -89,7 +89,7 @@ export default function BarberOnboardingEngine() {
         const { count: servicesCount } = await supabase
           .from('services')
           .select('id', { count: 'exact', head: true })
-          .eq('barber_id', user.id)
+         .eq('barber_id', prof2?.id)
           .eq('is_active', true);
 
         setHasServices((servicesCount || 0) > 0);
