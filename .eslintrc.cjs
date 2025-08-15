@@ -9,6 +9,8 @@ module.exports = {
   rules: {
     // Disallow console.* across the frontend, except warn/error in rare cases.
     "no-console": ["error", { allow: ["warn", "error"] }],
+    // Prevent duplicate imports
+    "no-duplicate-imports": "error",
     // Optional: keep codebase clean from accidental debugger
     "no-debugger": "error",
   },
