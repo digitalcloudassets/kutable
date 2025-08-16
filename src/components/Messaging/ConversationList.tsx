@@ -21,6 +21,22 @@ interface ConversationListProps {
 const ConversationList: React.FC<ConversationListProps> = ({
   onSelectConversation,
   selectedConversationId
+}) => {
+  const { user } = useAuth();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      loadConversations();
+    }
+  }, [user]);
+
+  const loadConversations = async () => {
+    if (!user) return;
+    
+    try {
       const conversationData = await messagingService.getUserConversations(user.id);
       setConversations(conversationData);
     } catch (error) {
@@ -110,16 +126,6 @@ const ConversationList: React.FC<ConversationListProps> = ({
                 </p>
               </div>
             )}
-            {/* Demo badge for Kutable */}
-            {(conversation.participant.name === 'Kutable' || 
-              conversation.booking.id?.includes('demo') ||
-              conversation.participant.id === '6455a63f-161e-4351-9f14-0ecbe01f0d3a') && (
-              <div className="flex-shrink-0">
-                <span className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  DEMO
-                </span>
-              </div>
-            )}
           </div>
         ) : (
           (filteredConversations ?? []).map((conversation) => {
@@ -173,6 +179,16 @@ const ConversationList: React.FC<ConversationListProps> = ({
                         </span>
                       </div>
                     )}
+                    {/* Demo badge for Kutable */}
+                    {(conversation.participant.name === 'Kutable' || 
+                      conversation.booking.id?.includes('demo') ||
+                      conversation.participant.id === '6455a63f-161e-4351-9f14-0ecbe01f0d3a') && (
+                      <div className="flex-shrink-0">
+                        <span className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                          DEMO
+                        </span>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Service and appointment info */}
@@ -211,6 +227,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
                   </span>
                 )}
               </div>
+            </div>
             );
           })
         )}
