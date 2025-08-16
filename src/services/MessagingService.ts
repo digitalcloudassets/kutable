@@ -112,6 +112,7 @@ export class MessagingService {
       const [{ data: clientProfiles, error: cErr }, { data: barberProfiles, error: bpErr }] = await Promise.all([
         supabase.from('client_profiles').select('user_id, first_name, last_name, profile_image_url')
           .in('user_id', clientIds),
+        // Get barber profiles by PROFILE id, but include their user_id for messaging
         supabase.from('barber_profiles').select('id, user_id, business_name, profile_image_url')
           .in('id', barberProfileIds),
       ]);
@@ -119,6 +120,7 @@ export class MessagingService {
       if (bpErr) throw bpErr;
 
       const clientByUserId = new Map((clientProfiles ?? []).map(p => [p.user_id, p]));
+      // Map barber PROFILE id -> profile row (which includes barber user_id)
       const barberByProfileId = new Map((barberProfiles ?? []).map(p => [p.id, p]));
 
       // 3) Get last message per booking + unread counts in one pass each
@@ -155,24 +157,22 @@ export class MessagingService {
       // 4) Map bookings to conversations
       const conversations: Conversation[] = bookings.map(b => {
         const iAmBarber = !!myBarberProfileId && b.barber_id === myBarberProfileId;
+        const type: 'barber' | 'client' = iAmBarber ? 'client' : 'barber';
 
         let name = 'Unknown';
         let avatar: string | null | undefined = null;
-        let type: 'barber' | 'client' = iAmBarber ? 'client' : 'barber';
         let otherUserId = '';
 
         if (type === 'client') {
-          // Other party is the client; booking.client_id is already the client's user_id
           const cp = clientByUserId.get(b.client_id);
           name = cp ? [cp.first_name, cp.last_name].filter(Boolean).join(' ') || 'Client' : 'Client';
           avatar = cp?.profile_image_url ?? null;
-          otherUserId = b.client_id;
+          otherUserId = b.client_id; // receiver_id when barber sends
         } else {
-          // Other party is the barber; we must convert booking.barber_id (profile) -> barber user_id
           const bp = barberByProfileId.get(b.barber_id);
           name = bp?.business_name || 'Barber';
           avatar = bp?.profile_image_url ?? null;
-          otherUserId = bp?.user_id ?? ''; // used as receiver_id in messaging
+          otherUserId = bp?.user_id ?? ''; // receiver_id when client sends
         }
 
         return {
@@ -203,11 +203,6 @@ export class MessagingService {
       console.error('Error fetching conversations:', e);
       return [];
     }
-  }
-
-  // Hook compatibility — keep this if the hook calls it
-  async enrichConversationsWithMessages(convos: Conversation[], _userId: string) {
-    return convos; // getUserConversations already provides lastMessage + unreadCount
   }
 
   // ========== Threads ==========
@@ -344,6 +339,11 @@ export class MessagingService {
       try { off(); } catch {}
     });
     this.subscriptions.clear();
+  }
+
+  // Hook compatibility - keep existing callers working
+  async enrichConversationsWithMessages(convos: Conversation[], _userId: string) {
+    return convos; // getUserConversations already provides lastMessage + unreadCount
   }
 }
 
