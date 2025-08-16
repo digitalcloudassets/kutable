@@ -10,6 +10,9 @@ import { slog } from '../_shared/logger.ts';
 
 const base = withSecurityHeaders(corsHeaders(['POST', 'OPTIONS']));
 
+// Development mode bypass for WebContainer environments
+const KUTABLE_DEV_MODE = Deno.env.get('KUTABLE_DEV_MODE') === 'true';
+
 type ReqBody = {
   barberId: string;
   amount: number;             // integer cents
@@ -39,6 +42,24 @@ function getClientIp(req: Request): string {
 }
 
 async function stripePost(path: string, body: URLSearchParams, key: string) {
+  // Development mode: mock Stripe API response
+  if (KUTABLE_DEV_MODE) {
+    const mockPaymentIntentId = `pi_dev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const mockClientSecret = `${mockPaymentIntentId}_secret_dev`;
+    
+    slog.info('Development mode: mocking Stripe API call', { path, mockPaymentIntentId });
+    
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        id: mockPaymentIntentId,
+        client_secret: mockClientSecret,
+        status: 'requires_payment_method'
+      }
+    };
+  }
+
   const r = await fetch(`https://api.stripe.com/v1/${path}`, {
     method: 'POST',
     headers: {
@@ -112,7 +133,7 @@ Deno.serve(async (req) => {
   slog.info('Creating payment intent for:', { barberId, amount, currency, metadata });
 
   // Verify Turnstile CAPTCHA token
-  if (TURNSTILE_ENABLED && captchaToken && captchaToken !== 'no-captcha-configured') {
+  if (!KUTABLE_DEV_MODE && TURNSTILE_ENABLED && captchaToken && captchaToken !== 'no-captcha-configured') {
     const clientIp = getClientIp(req);
     const verification = await verifyTurnstile(captchaToken, clientIp);
     
@@ -137,7 +158,7 @@ Deno.serve(async (req) => {
     if (!verification.bypassed) {
       slog.debug('Turnstile verification passed for payment intent creation');
     }
-  } else if (TURNSTILE_ENABLED && !captchaToken) {
+  } else if (!KUTABLE_DEV_MODE && TURNSTILE_ENABLED && !captchaToken) {
     // CAPTCHA token is required
     return resJson(400, { 
       success: false, 
@@ -151,6 +172,20 @@ Deno.serve(async (req) => {
 
     const { createClient } = await import('npm:@supabase/supabase-js@2');
     const db = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    // Development mode: mock barber lookup
+    if (KUTABLE_DEV_MODE) {
+      slog.info('Development mode: mocking barber lookup and Stripe call');
+      
+      const mockPaymentIntentId = `pi_dev_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const mockClientSecret = `${mockPaymentIntentId}_secret_dev`;
+      
+      return resJson(200, { 
+        success: true, 
+        clientSecret: mockClientSecret, 
+        paymentIntentId: mockPaymentIntentId 
+      });
+    }
 
     // Lookup connected account
     const { data: barber, error: barberErr } = await db
