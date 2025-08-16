@@ -186,7 +186,7 @@ export class MessagingService {
           participant: { id: otherAuthId, type, name, avatar },
           booking: {
             id: b.id,
-            serviceName: String(b.service_id ?? 'Service'),
+            serviceName: serviceById.get(b.service_id as any) || 'Service',
             appointmentDate: String(b.appointment_date),
             appointmentTime: String(b.appointment_time),
             status: String(b.status),
