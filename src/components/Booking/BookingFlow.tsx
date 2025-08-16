@@ -403,13 +403,9 @@ const BookingFlow: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 page-container relative overflow-hidden">
         {/* Background Elements */}
         <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-primary-500/5 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-accent-500/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
+        <div className="mb-8">
+          <BookingStepper current={currentStep} total={5} />
         </div>
-        
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          {/* Header */}
-          <div className="card-premium p-6 sm:p-8 mb-8 relative z-10 animate-fade-in-up">
             <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 text-center sm:text-left">
               <img
                 src={barber.profile_image_url || 'https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=100'}
