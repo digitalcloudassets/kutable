@@ -83,14 +83,6 @@ export class MessagingService {
     try {
       console.log('Loading conversations for user:', userId);
       
-      // Special handling for demo user accounts
-      const isDemoUser = userId === '12345678-1234-1234-1234-123456789012' || // Kutable demo user
-                         userId === '87654321-4321-4321-4321-210987654321';   // Pete Drake demo user
-      
-      if (isDemoUser) {
-        console.log('Loading conversations for demo user:', userId);
-      }
-
       // Get user's barber profile if they have one
       const { data: barberProfile } = await supabase
         .from('barber_profiles')
@@ -115,87 +107,35 @@ export class MessagingService {
       if (barberProfile) {
         console.log('Fetching bookings for barber profile:', barberProfile.id);
         
-        // Step 1: Query bookings only
         const { data: barberBookings, error: barberError } = await supabase
           .from('bookings')
-          .select('id, barber_id, client_id, appointment_date, appointment_time, status, service_id')
+          .select(`
+            id,
+            barber_id,
+            client_id,
+            appointment_date,
+            appointment_time,
+            status,
+            service_id,
+            client_profiles!inner (
+              id,
+              user_id,
+              first_name,
+              last_name,
+              profile_image_url,
+              email
+            ),
+            services (
+              name
+            )
+          `)
           .eq('barber_id', barberProfile.id)
           .in('status', ['pending', 'confirmed', 'completed']);
 
         if (barberError) throw barberError;
         
         console.log('Found barber bookings:', barberBookings?.length || 0);
-        
-        // Step 2: Fetch associated data separately to avoid RLS recursion
-        const enrichedBarberBookings = [];
-        for (const booking of barberBookings || []) {
-          let clientData = null;
-          let serviceData = null;
-          let barberData = null;
-          
-          console.log('Processing barber booking:', booking.id, 'client_id:', booking.client_id);
-          
-          // Fetch client profile separately
-          if (booking.client_id) {
-            const { data: clientProfile, error: clientFetchError } = await supabase
-              .from('client_profiles')
-              .select('id, user_id, first_name, last_name, profile_image_url, email')
-              .eq('id', booking.client_id)
-              .maybeSingle();
-              
-            if (clientFetchError) {
-              console.error('[MessagingService] Client profile fetch error:', clientFetchError, 'for client_id:', booking.client_id);
-            } else if (!clientProfile) {
-              console.warn('[MessagingService] No client profile found for client_id:', booking.client_id);
-            } else if (!clientProfile.user_id) {
-              console.error('[MessagingService] Client profile missing user_id:', {
-                clientId: booking.client_id,
-                profileId: clientProfile.id,
-                email: clientProfile.email,
-                name: `${clientProfile.first_name} ${clientProfile.last_name}`
-              });
-              // For demo purposes, assign the demo client user ID if this is Pete Drake
-              if (clientProfile.email === 'pete@petegdrake.com' || 
-                  (clientProfile.first_name === 'Pete' && clientProfile.last_name === 'Drake')) {
-                console.log('[MessagingService] Assigning demo user ID to Pete Drake profile');
-                clientProfile.user_id = '87654321-4321-4321-4321-210987654321';
-              }
-            } else {
-              clientData = clientProfile;
-            }
-            
-            // Assign clientData even if user_id was missing but we fixed it for demo
-            if (clientProfile && !clientData) {
-              clientData = clientProfile;
-            }
-          }
-          
-          // Fetch service data
-          if (booking.service_id) {
-            const { data: service } = await supabase
-              .from('services')
-              .select('name')
-              .eq('id', booking.service_id)
-              .maybeSingle();
-            serviceData = service;
-          }
-          
-          // Fetch barber data (current user)
-          const { data: barber } = await supabase
-            .from('barber_profiles')
-            .select('id, user_id, business_name, owner_name, profile_image_url')
-            .eq('id', barberProfile.id)
-            .maybeSingle();
-          barberData = barber;
-          
-          enrichedBarberBookings.push({
-            ...booking,
-            client_profiles: clientData,
-            services: serviceData,
-            barber_profiles: barberData
-          });
-        }
-        allBookings.push(...enrichedBarberBookings);
+        allBookings.push(...(barberBookings || []));
         console.log('Added barber bookings:', barberBookings?.length || 0);
       }
 
@@ -203,10 +143,28 @@ export class MessagingService {
       if (clientProfile) {
         console.log('Fetching bookings for client profile:', clientProfile.id);
         
-        // Step 1: Query bookings only
         const { data: clientBookings, error: clientError } = await supabase
           .from('bookings')
-          .select('id, barber_id, client_id, appointment_date, appointment_time, status, service_id')
+          .select(`
+            id,
+            barber_id,
+            client_id,
+            appointment_date,
+            appointment_time,
+            status,
+            service_id,
+            barber_profiles!inner (
+              id,
+              user_id,
+              business_name,
+              owner_name,
+              profile_image_url,
+              email
+            ),
+            services (
+              name
+            )
+          `)
           .eq('client_id', clientProfile.id)
           .in('status', ['pending', 'confirmed', 'completed'])
           .order('appointment_date', { ascending: false });
@@ -214,77 +172,7 @@ export class MessagingService {
         if (clientError) throw clientError;
         
         console.log('Found client bookings:', clientBookings?.length || 0);
-        
-        // Step 2: Fetch associated data separately to avoid RLS recursion
-        const enrichedClientBookings = [];
-        for (const booking of clientBookings || []) {
-          let barberData = null;
-          let serviceData = null;
-          let clientData = null;
-          
-          console.log('Processing client booking:', booking.id, 'barber_id:', booking.barber_id);
-          
-          // Fetch barber profile separately  
-          if (booking.barber_id) {
-            const { data: barberProfile, error: barberFetchError } = await supabase
-              .from('barber_profiles')
-              .select('id, user_id, business_name, owner_name, profile_image_url, email')
-              .eq('id', booking.barber_id)
-              .maybeSingle();
-            
-            if (barberFetchError) {
-              console.error('[MessagingService] Barber profile fetch error:', barberFetchError, 'for barber_id:', booking.barber_id);
-            } else if (!barberProfile) {
-              console.warn('[MessagingService] No barber profile found for barber_id:', booking.barber_id);
-            } else if (!barberProfile.user_id) {
-              // Special handling for Kutable profile - show as messageable even without user_id
-              if (barberProfile.id === 'e639f78f-abea-4a27-b995-f31032e25ab5') {
-                // For the Kutable demo profile, assign the demo user_id
-                barberData = {
-                  ...barberProfile,
-                  user_id: '12345678-1234-1234-1234-123456789012'
-                };
-                console.log('[MessagingService] Special handling for Kutable demo profile');
-              } else {
-                console.error('[MessagingService] Barber profile missing user_id:', {
-                  barberId: booking.barber_id,
-                  profileId: barberProfile.id,
-                  businessName: barberProfile.business_name,
-                  email: barberProfile.email
-                });
-                barberData = barberProfile;
-              }
-            } else {
-              barberData = barberProfile;
-            }
-          }
-          
-          // Fetch service data
-          if (booking.service_id) {
-            const { data: service } = await supabase
-              .from('services')
-              .select('name')
-              .eq('id', booking.service_id)
-              .maybeSingle();
-            serviceData = service;
-          }
-          
-          // Fetch client data (current user)
-          const { data: client } = await supabase
-            .from('client_profiles')
-            .select('id, user_id, first_name, last_name, profile_image_url')
-            .eq('id', clientProfile.id)
-            .maybeSingle();
-          clientData = client;
-          
-          enrichedClientBookings.push({
-            ...booking,
-            barber_profiles: barberData,
-            services: serviceData,
-            client_profiles: clientData
-          });
-        }
-        allBookings.push(...enrichedClientBookings);
+        allBookings.push(...(clientBookings || []));
         console.log('Added client bookings:', clientBookings?.length || 0);
       }
 
@@ -297,43 +185,20 @@ export class MessagingService {
 
       for (const booking of uniqueBookings) {
         const isBarber = barberProfile && booking.barber_id === barberProfile.id;
-        console.log('Processing booking:', booking.id, 'isBarber:', isBarber);
-        console.log('Client data:', booking.client_profiles);
-        console.log('Barber data:', booking.barber_profiles);
         
         let participant;
         // For barber: show client, for client: show barber
         if (isBarber && booking.client_profiles) {
           const clientUserId = booking.client_profiles.user_id;
-          // For demo purposes, ensure Pete Drake has proper user_id
-          const demoClientUserId = (booking.client_profiles.email === 'pete@petegdrake.com' || 
-                                   (booking.client_profiles.first_name === 'Pete' && booking.client_profiles.last_name === 'Drake'))
-                                 ? '87654321-4321-4321-4321-210987654321'
-                                 : clientUserId;
-                                 
           const clientName = `${booking.client_profiles.first_name || ''} ${booking.client_profiles.last_name || ''}`.trim();
-          console.log('[MessagingService] Setting client participant:', { 
-            clientUserId: demoClientUserId, 
-            clientName, 
-            avatar: booking.client_profiles.profile_image_url,
-            hasUserId: !!demoClientUserId,
-            clientId: booking.client_profiles.id
-          });
           participant = {
-            id: demoClientUserId, // Will be null if we couldn't fetch the profile
+            id: clientUserId,
             name: clientName || 'Client',
             type: 'client' as const,
             avatar: booking.client_profiles.profile_image_url || undefined
           };
         } else if (!isBarber && booking.barber_profiles) {
           const barberUserId = booking.barber_profiles.user_id;
-          console.log('[MessagingService] Setting barber participant:', { 
-            barberUserId, 
-            name: booking.barber_profiles.business_name, 
-            avatar: booking.barber_profiles.profile_image_url,
-            hasUserId: !!barberUserId,
-            barberId: booking.barber_profiles.id
-          });
           participant = {
             id: barberUserId,
             name: booking.barber_profiles.business_name || 'Barber',
@@ -342,12 +207,6 @@ export class MessagingService {
           };
         } else {
           // Fallback participant
-          console.warn('[MessagingService] Creating fallback participant for booking:', {
-            bookingId: booking.id,
-            isBarber,
-            hasClientProfiles: !!booking.client_profiles,
-            hasBarberProfiles: !!booking.barber_profiles
-          });
           participant = {
             id: null,
             name: 'Unknown',
@@ -356,17 +215,7 @@ export class MessagingService {
           };
         }
 
-        console.log('[MessagingService] Final participant for booking:', {
-          bookingId: booking.id,
-          participantId: participant.id,
-          participantName: participant.name,
-          participantType: participant.type,
-          isBarber,
-          barberUserId: booking.barber_profiles?.user_id,
-          clientUserId: booking.client_profiles?.user_id,
-          participantAvatar: participant.avatar
-        });
-
+        // Get last message for this booking
         const { data: lastMessage } = await supabase
           .from('messages')
           .select('*')
@@ -375,6 +224,7 @@ export class MessagingService {
           .limit(1)
           .maybeSingle();
 
+        // Get unread count for this booking
         const { count: unreadCount } = await supabase
           .from('messages')
           .select('*', { count: 'exact' })
@@ -396,11 +246,7 @@ export class MessagingService {
           }
         });
       }
-      console.log('[MessagingService] Final conversations loaded:', {
-        totalConversations: conversations.length,
-        conversationsWithParticipantId: conversations.filter(c => c.participant.id).length,
-        conversationsWithoutParticipantId: conversations.filter(c => !c.participant.id).length
-      });
+      
       return conversations.sort((a, b) => {
         if (a.lastMessage && b.lastMessage) {
           return new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime();
@@ -416,67 +262,6 @@ export class MessagingService {
     }
   }
 
-  async getMessages(bookingId: string, userId: string): Promise<Message[]> {
-    if (!isSupabaseConnected()) {
-      console.warn('Supabase not connected - messaging unavailable');
-      return [];
-    }
-
-    try {
-      // Verify user has access to this booking
-      const { data: booking } = await supabase
-        .from('bookings')
-        .select(`
-          id,
-          barber_profiles(user_id, business_name),
-          client_profiles(user_id, first_name, last_name)
-        `)
-        .eq('id', bookingId)
-        .single();
-
-      const hasAccess = booking.barber_profiles?.user_id === userId || 
-                       booking.client_profiles?.user_id === userId;
-
-      if (!hasAccess) {
-        throw new Error('Access denied');
-      }
-
-      const { data: messages, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('booking_id', bookingId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-
-      // Add sender/receiver profile info
-      const enrichedMessages: Message[] = (messages || []).map(message => {
-        const isFromBarber = message.sender_id === booking.barber_profiles?.user_id;
-        return {
-          ...message,
-          sender_profile: isFromBarber 
-            ? {
-                id: booking.barber_profiles?.user_id || '',
-                name: booking.barber_profiles?.business_name || '',
-                type: 'barber'
-              }
-            : {
-                id: booking.client_profiles?.user_id || '',
-                name: `${booking.client_profiles?.first_name} ${booking.client_profiles?.last_name}`,
-                type: 'client'
-              }
-        };
-      });
-
-
-      return enrichedMessages;
-
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      throw error;
-    }
-  }
-
   async getMessagesForBooking(bookingId: string): Promise<Message[]> {
     if (!isSupabaseConnected()) {
       return [];
@@ -487,18 +272,19 @@ export class MessagingService {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data: messages, error } = await supabase
         .from('messages')
         .select('id, booking_id, sender_id, receiver_id, message_text, created_at, read_at')
         .eq('booking_id', bookingId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return (data || []) as Message[];
+      return (messages || []) as Message[];
     } catch (error) {
       throw error;
     }
   }
+
 
   async sendMessage({ bookingId, receiverId, messageText }: SendMessageRequest): Promise<Message> {
     if (!isSupabaseConnected()) {
@@ -602,6 +388,8 @@ export class MessagingService {
       return () => {};
     }
 
+    console.log('Subscribing to realtime messages for booking:', bookingId);
+
     const channel = supabase
       .channel(`messages:booking:${bookingId}`)
       .on(
@@ -613,13 +401,17 @@ export class MessagingService {
           filter: `booking_id=eq.${bookingId}` 
         },
         (payload) => {
+          console.log('Realtime message received:', payload.new);
           const newMessage = payload.new as Message;
           onInsert(newMessage);
         }
       )
       .subscribe();
 
+    console.log('Realtime subscription created for booking:', bookingId);
+
     const unsubscribe = () => {
+      console.log('Unsubscribing from realtime messages for booking:', bookingId);
       supabase.removeChannel(channel);
     };
 

@@ -44,6 +44,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
         const unsubscribe = messagingService.subscribeToBookingMessages(
           conversation.bookingId,
           (newMessage) => {
+            console.log('New message received in thread:', newMessage);
             setMessages(prev => [...prev, newMessage]);
             scrollToBottom();
             
