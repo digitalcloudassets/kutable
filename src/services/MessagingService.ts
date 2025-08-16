@@ -219,7 +219,6 @@ export class MessagingService {
           bookingId: booking.id,
           lastMessage: lastMessage || undefined,
           unreadCount: unreadCount || 0,
-          participant = {
           participant,
           booking: {
             id: booking.id,
