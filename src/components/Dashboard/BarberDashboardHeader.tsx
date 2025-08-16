@@ -69,8 +69,8 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
           </div>
 
           {/* Business Info */}
-          <div>
-            <h2 className="text-2xl font-display font-bold text-gray-900 mb-2">{barber.business_name}</h2>
+          <div className="pb-8 border-b border-gray-100">
+            <div className="relative mx-auto mb-6">
             <div className="flex items-center justify-center gap-3 mb-4">
               <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
                 barber.is_active 
@@ -94,11 +94,6 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
                 <span className="text-gray-500 text-sm">({barber.total_reviews} reviews)</span>
               </div>
             </div>
-
-          {/* Edit Profile Button - Centered under rating */}
-          <div className="flex justify-center">
-            <EditProfileLinkButton />
-          </div>
           </div>
 
           {/* Action Buttons */}
@@ -115,18 +110,16 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
           </div>
           
           <ShareProfileLink 
-            slug={barber.slug} 
-            id={barber.id} 
-            className="mt-6"
-          />
-          
-          {/* Show note when slug isn't branded */}
+                <div className="flex items-center space-x-1">
           {(!barber.slug || /^barber-[0-9a-f]{8}$/i.test(barber.slug) || /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(barber.slug)) && (
             <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
               <div className="text-center">
                 <div className="bg-blue-500 p-2 rounded-xl inline-block mb-3">
                   <LinkIcon className="h-5 w-5 text-white" />
                 </div>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-3 mt-4">
                 <h4 className="font-semibold text-blue-800 mb-2">Get Your Branded Link</h4>
                 <p className="text-blue-700 text-sm leading-relaxed">
                   Update your business name to get a clean, shareable profile link like <code>kutable.com/barber/kutable</code>
