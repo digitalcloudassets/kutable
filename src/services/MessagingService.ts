@@ -189,7 +189,6 @@ export class MessagingService {
         let avatar: string | null | undefined = null;
         const type: 'barber' | 'client' = iAmBarber ? 'client' : 'barber';
         let otherUserId = '';
-        let otherUserId = '';
 
         if (type === 'client') {
           // Other party is the CLIENT; lookup by user_id (booking.client_id)
