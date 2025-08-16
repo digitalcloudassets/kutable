@@ -36,6 +36,20 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
   }
   return <>{children}</>;
 }
+
+function OnboardingGuard2({ children }: { children: React.ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [state, setState] = useState({ checked: false, needsOnboarding: false, targetPath: null });
+
+  const isOnOnboardingPath = location.pathname.startsWith('/onboarding');
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    let cancelled = false;
+
     if (!user) {
       if (!cancelled) setState({ checked: true, needsOnboarding: false, targetPath: null });
       return;
