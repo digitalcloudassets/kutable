@@ -91,21 +91,7 @@ export class MessagingService {
         myBarberProfileId = bp?.id ?? null;
       }
 
-      // 0) If user is a barber, resolve their barber_profile.id (not user_id)
-      let myBarberProfileId: string | null = null;
-      {
-        const { data: bp } = await supabase
-          .from('barber_profiles')
-          .select('id')
-          .eq('user_id', userId)
-          .maybeSingle();
-        myBarberProfileId = bp?.id ?? null;
-      }
-
       // 1) Load bookings where user is client OR (if barber) where barber_id == their profile id
-      const filters: string[] = [`client_id.eq.${userId}`];
-      if (myBarberProfileId) filters.push(`barber_id.eq.${myBarberProfileId}`);
-
       const filters: string[] = [`client_id.eq.${userId}`];
       if (myBarberProfileId) filters.push(`barber_id.eq.${myBarberProfileId}`);
 
@@ -229,15 +215,6 @@ export class MessagingService {
    * Compatibility shim for older hooks that still call this method.
    * Our getUserConversations already returns lastMessage & unreadCount,
    * so this simply returns the same array unchanged.
-   */
-  async enrichConversationsWithMessages(
-    conversations: Conversation[],
-    _userId: string
-  ): Promise<Conversation[]> {
-    return conversations;
-   * so this simply returns the same array unchanged.
-   */
-  }
   async enrichConversationsWithMessages(
     conversations: Conversation[],
     _userId: string
