@@ -114,7 +114,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
             <h3 className="text-lg font-medium text-gray-900 mb-2">No conversations</h3>
             <p className="text-gray-600">
               {conversations.length === 0 
-                ? 'Messages will appear here when you have active bookings with verified barber profiles'
+                ? 'Messages will appear here when you have active bookings with verified barbers'
                 : 'No conversations match your search'
               }
             </p>
@@ -122,7 +122,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
               <div className="mt-4">
                 <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
                   <strong>Note:</strong> Messaging is available for your active bookings with verified barbers.
-                  If a barber isn't verified yet, messaging will unlock once their account is verified.
+                  Messaging becomes available when both parties have completed their profiles.
                 </p>
               </div>
             )}
