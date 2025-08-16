@@ -215,13 +215,16 @@ export class MessagingService {
                 };
                 console.log('[MessagingService] Special handling for Kutable demo profile');
               } else if (!barberProfile.user_id) {
-              console.error('[MessagingService] Barber profile missing user_id:', {
-                barberId: booking.barber_id,
-                profileId: barberProfile.id,
-                businessName: barberProfile.business_name,
-                email: barberProfile.email
+                console.error('[MessagingService] Barber profile missing user_id:', {
+                  barberId: booking.barber_id,
+                  profileId: barberProfile.id,
+                  businessName: barberProfile.business_name,
+                  email: barberProfile.email
+                });
                 barberData = barberProfile;
-              });
+              } else {
+                barberData = barberProfile;
+              }
             } else {
               barberData = barberProfile;
             }
@@ -251,7 +254,7 @@ export class MessagingService {
             services: serviceData,
             client_profiles: clientData
           });
-          }
+        }
         allBookings.push(...enrichedClientBookings);
         console.log('Added client bookings:', clientBookings?.length || 0);
       }
