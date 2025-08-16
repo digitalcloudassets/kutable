@@ -433,8 +433,8 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
           /* View Mode */
           <div className="space-y-8">
             {/* Profile Header */}
-            <div className="flex flex-col sm:flex-row sm:items-start space-y-6 sm:space-y-0 sm:space-x-8 pb-8 border-b border-gray-100">
-              <div className="relative mx-auto sm:mx-0">
+            <div className="flex flex-col items-center space-y-6 pb-8 border-b border-gray-100 text-center">
+              <div className="relative">
                 <img
                   src={barber.profile_image_url || 'https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=200'}
                   alt={barber.business_name}
@@ -459,10 +459,10 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                 />
               </div>
 
-              <div className="flex-1 text-center sm:text-left">
+              <div className="flex-1">
                 <h3 className="text-2xl font-display font-bold text-gray-900 mb-2">{barber.business_name}</h3>
                 <p className="text-gray-600 text-lg font-medium mb-4">{barber.owner_name}</p>
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
+                <div className="flex flex-wrap items-center justify-center gap-4">
                   <div className="flex items-center space-x-2">
                     <div className="bg-yellow-100 p-1.5 rounded-lg">
                       <Star className="h-4 w-4 text-yellow-600" />
