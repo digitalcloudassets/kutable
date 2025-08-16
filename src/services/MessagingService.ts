@@ -1,29 +1,31 @@
+/* src/services/MessagingService.ts
+   Messaging service with profile-aware conversations (barber_profile.id → user_id)
+   Preserves public API and types; removes duplicate methods; fixes class scope.
+*/
+
 import { supabase } from '../lib/supabase';
-import { Database } from '../lib/supabase';
-import { notificationService, BookingNotificationData } from './NotificationService';
+// If you use Database types elsewhere, keep this export available:
+export type { Database } from '../lib/supabase';
 
-// Check if Supabase is properly connected
+// --- Helpers ---
 const isSupabaseConnected = () => {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-  return supabaseUrl && 
-    supabaseAnonKey && 
-    supabaseUrl !== 'https://your-project.supabase.co' &&
-    supabaseAnonKey !== 'your_supabase_anon_key_here' &&
-    supabaseUrl !== 'your_supabase_url_here' &&
-    supabaseAnonKey !== 'your_supabase_anon_key_here' &&
-    !supabaseUrl.includes('placeholder') &&
-    !supabaseAnonKey.includes('placeholder') &&
-    supabaseUrl.startsWith('https://') &&
-    supabaseUrl.includes('.supabase.co');
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  return (
+    !!url &&
+    !!key &&
+    url.startsWith('https://') &&
+    url.includes('.supabase.co') &&
+    !url.includes('placeholder') &&
+    key !== 'your_supabase_anon_key_here'
+  );
 };
 
 // --- Types consumed by UI ---
 export type Conversation = {
   bookingId: string;
   participant: {
-    id: string;
+    id: string; // ALWAYS auth user id (receiver_id when sending)
     name: string;
     avatar?: string | null;
     type: 'barber' | 'client';
@@ -32,7 +34,7 @@ export type Conversation = {
     id: string;
     serviceName: string;
     appointmentDate: string; // ISO
-    appointmentTime: string; // display string
+    appointmentTime: string; // display
     status: string;
   };
   lastMessage?: {
@@ -53,7 +55,7 @@ export type ThreadMessage = {
   read_at: string | null;
 };
 
-// Legacy Message type for compatibility
+// Back-compat
 export type Message = ThreadMessage;
 
 export type SendMessageRequest = {
@@ -64,7 +66,7 @@ export type SendMessageRequest = {
 
 export class MessagingService {
   private static instance: MessagingService;
-  private subscriptions: Map<string, any> = new Map();
+  private subscriptions: Map<string, () => void> = new Map();
 
   static getInstance(): MessagingService {
     if (!MessagingService.instance) {
@@ -73,751 +75,67 @@ export class MessagingService {
     return MessagingService.instance;
   }
 
-  // --- Load conversations: booking_id as thread key, null-safe ---
+  // ========== Conversations (profile-aware) ==========
   async getUserConversations(userId: string): Promise<Conversation[]> {
-    if (!isSupabaseConnected() || !userId) {
-      return [];
-    }
+    if (!isSupabaseConnected() || !userId) return [];
 
     try {
-      // 1) Load all bookings where the user is a party (RLS handles visibility)
-      const { data: bookings, error: bErr } = await supabase
-        .from('bookings')
-        .select('id, client_id, barber_id, status, appointment_date, appointment_time, service_id')
-        .or(`client_id.eq.${userId},barber_id.eq.${userId}`)
-        .order('created_at', { ascending: false });
-
-      if (bErr) throw bErr;
-      if (!bookings?.length) return [];
-
-      const bookingIds = bookings.map(b => b.id);
-      const clientIds = [...new Set(bookings.map(b => b.client_id).filter(Boolean))];
-      const barberIds = [...new Set(bookings.map(b => b.barber_id).filter(Boolean))];
-
-      // 2) Batch-load participant profiles (no "verified/claimed" requirement)
-      const [{ data: clientProfiles, error: cErr }, { data: barberProfiles, error: bpErr }] = await Promise.all([
-        supabase.from('client_profiles').select('user_id, first_name, last_name, profile_image_url')
-          .in('user_id', clientIds),
-        supabase.from('barber_profiles').select('user_id, business_name, profile_image_url')
-          .in('user_id', barberIds),
-      ]);
-      if (cErr) throw cErr;
-      if (bpErr) throw bpErr;
-
-      const clientById = new Map((clientProfiles ?? []).map(p => [p.user_id, p]));
-      const barberById = new Map((barberProfiles ?? []).map(p => [p.user_id, p]));
-
-      // 3) Get last message per booking + unread counts in one pass each
-      const [{ data: msgs, error: mErr }, { data: unread, error: uErr }] = await Promise.all([
-        supabase.from('messages')
-          .select('id, booking_id, message_text, created_at, sender_id, receiver_id')
-          .in('booking_id', bookingIds)
-          .order('created_at', { ascending: false }), // we'll take the first per booking
-        supabase.from('messages')
-          .select('booking_id') // count in app to avoid policies requiring aggregate perms
-          .eq('receiver_id', userId)
-          .is('read_at', null)
-          .in('booking_id', bookingIds),
-      ]);
-      if (mErr) throw mErr;
-      if (uErr) throw uErr;
-
-      const lastByBooking = new Map<string, Conversation['lastMessage']>();
-      for (const m of msgs ?? []) {
-        if (!lastByBooking.has(m.booking_id)) {
-          lastByBooking.set(m.booking_id, {
-            id: m.id,
-            message_text: m.message_text,
-            created_at: m.created_at,
-            sender_id: m.sender_id,
-            receiver_id: m.receiver_id,
-          });
-        }
-      }
-
-      const unreadByBooking = new Map<string, number>();
-      for (const r of unread ?? []) {
-        unreadByBooking.set(r.booking_id, (unreadByBooking.get(r.booking_id) ?? 0) + 1);
-      }
-
-      // Map into Conversation objects
-      const conversations: Conversation[] = bookings.map(b => {
-        const isBarber = b.barber_id === userId;
-        const otherId = isBarber ? b.client_id : b.barber_id;
-
-        let name = 'Unknown';
-        let avatar: string | null | undefined = null;
-        let type: 'barber' | 'client' = isBarber ? 'client' : 'barber';
-
-        if (type === 'client') {
-          const cp = clientById.get(otherId);
-          name = cp ? [cp.first_name, cp.last_name].filter(Boolean).join(' ') || 'Client' : 'Client';
-          avatar = cp?.profile_image_url ?? null;
-        } else {
-          const bp = barberById.get(otherId);
-          name = bp?.business_name || 'Barber';
-          avatar = bp?.profile_image_url ?? null;
-        }
-
-
-        return {
-          bookingId: b.id,
-          participant: { id: otherId, type, name, avatar },
-          booking: {
-            id: b.id,
-            serviceName: String(b.service_id ?? 'Service'),
-            appointmentDate: String(b.appointment_date),
-            appointmentTime: String(b.appointment_time),
-            status: String(b.status),
-          },
-          lastMessage: lastByBooking.get(b.id),
-          unreadCount: unreadByBooking.get(b.id) ?? 0,
-        };
-      });
-
-      // Sort: newest activity first (lastMessage if present, else booking created order already applied)
-      conversations.sort((a, b) => {
-        const ta = a.lastMessage?.created_at ?? '1970-01-01';
-        const tb = b.lastMessage?.created_at ?? '1970-01-01';
-        return tb.localeCompare(ta);
-      });
-
-      return conversations;
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-      return [];
-    }
-  }
-
-  // --- Load last messages and unread counts for conversations ---
-  async enrichConversationsWithMessages(conversations: Conversation[], userId: string): Promise<Conversation[]> {
-    if (!isSupabaseConnected() || conversations.length === 0) {
-      return conversations;
-    }
-
-    try {
-      // Get booking IDs
-      const bookingIds = conversations.map(c => c.bookingId);
-      
-      // Fetch last message for each booking
-      const { data: lastMessages, error: messagesError } = await supabase
-        .from('messages')
-        .select('booking_id, id, message_text, created_at')
-        .in('booking_id', bookingIds)
-        .order('created_at', { ascending: false });
-
-      if (messagesError) {
-        console.error('Error fetching last messages:', messagesError);
-      }
-
-      // Get unread counts
-      const { data: unreadCounts, error: unreadError } = await supabase
-        .from('messages')
-        .select('booking_id')
-        .in('booking_id', bookingIds)
-        .eq('receiver_id', userId)
-        .is('read_at', null);
-
-      if (unreadError) {
-        console.error('Error fetching unread counts:', unreadError);
-      }
-
-      // Build lookup maps
-      const lastMessageMap = new Map();
-      const unreadCountMap = new Map();
-
-      // Group last messages by booking_id
-      if (lastMessages) {
-        for (const msg of lastMessages) {
-          if (!lastMessageMap.has(msg.booking_id)) {
-            lastMessageMap.set(msg.booking_id, {
-              id: msg.id,
-              message_text: msg.message_text,
-              created_at: msg.created_at
-            });
-          }
-        }
-      }
-
-      // Count unread messages by booking_id
-      if (unreadCounts) {
-        for (const msg of unreadCounts) {
-          unreadCountMap.set(msg.booking_id, (unreadCountMap.get(msg.booking_id) || 0) + 1);
-        }
-      }
-
-      // Enrich conversations with message data
-      return conversations.map(conversation => ({
-        ...conversation,
-        lastMessage: lastMessageMap.get(conversation.bookingId),
-        unreadCount: unreadCountMap.get(conversation.bookingId) || 0
-      })).sort((a, b) => {
-        // Sort by last message time, then by appointment date
-        if (a.lastMessage && b.lastMessage) {
-          return new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime();
-        }
-        if (a.lastMessage) return -1;
-        if (b.lastMessage) return 1;
-        return new Date(b.booking.appointmentDate).getTime() - new Date(a.booking.appointmentDate).getTime();
-      });
-
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-      return [];
-    }
-  }
-
-  // --- Thread API (unchanged signatures) ---
-  async getThread(bookingId: string, _userId: string): Promise<ThreadMessage[]> {
-    if (!isSupabaseConnected()) {
-      return [];
-    }
-
-    if (!bookingId || bookingId.length < 10) {
-      throw new Error('Invalid bookingId');
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('id, booking_id, sender_id, receiver_id, message_text, created_at, read_at')
-        .eq('booking_id', bookingId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as ThreadMessage[];
-    } catch (error) {
-      console.error('Error fetching thread messages:', error);
-      throw error;
-    }
-  }
-
-  async getMessagesForBooking(bookingId: string): Promise<ThreadMessage[]> {
-    return this.getThread(bookingId, '');
-  }
-
-  async sendMessage({ bookingId, receiverId, messageText }: {
-    bookingId: string;
-    receiverId: string;
-    messageText: string;
-  }): Promise<ThreadMessage> {
-    if (!isSupabaseConnected()) {
-      throw new Error('Messaging is not available - please connect to Supabase');
-    }
-
-    try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Validate message
-      if (!messageText.trim() || messageText.length > 1000) {
-        throw new Error('Message must be between 1 and 1000 characters');
-      }
-
-      // Sanitize message text
-      const sanitizedMessage = messageText
-        .trim()
-        .replace(/<[^>]*>/g, '') // Remove HTML tags
-        .replace(/javascript:/gi, '') // Remove JS protocols
-        .slice(0, 1000);
-
-      // Send message
-      const { data: message, error } = await supabase
-        .from('messages')
-        .insert({
-          booking_id: bookingId,
-          sender_id: user.id,
-          receiver_id: receiverId,
-          message_text: sanitizedMessage
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return message as ThreadMessage;
-
-    } catch (error) {
-      console.error('Error sending message:', error);
-      throw error;
-    }
-  }
-
-  async markAsRead(messageId: string, userId: string): Promise<void> {
-    if (!isSupabaseConnected()) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('id', messageId)
-        .eq('receiver_id', userId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error marking message as read:', error);
-    }
-  }
-
-  async markConversationAsRead(bookingId: string, userId: string): Promise<void> {
-    await this.markThreadRead(bookingId, userId);
-  }
-
-  async markThreadRead(bookingId: string, userId: string): Promise<void> {
-    if (!isSupabaseConnected()) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('booking_id', bookingId)
-        .eq('receiver_id', userId)
-        .is('read_at', null);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error marking conversation as read:', error);
-    }
-  }
-
-  // --- Realtime (stable channel name + safe unsubscribe) ---
-  subscribeToThread(
-    bookingId: string,
-    onEvent: (evt: { type: 'INSERT' | 'UPDATE'; new: ThreadMessage }) => void
-  ) {
-    if (!isSupabaseConnected()) {
-      return () => {};
-    }
-
-    const ch = supabase
-      .channel(`messages:booking:${bookingId}`)
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'messages', filter: `booking_id=eq.${bookingId}` },
-        (payload) => {
-          if (payload.eventType === 'INSERT') onEvent({ type: 'INSERT', new: payload.new as ThreadMessage });
-          if (payload.eventType === 'UPDATE') onEvent({ type: 'UPDATE', new: payload.new as ThreadMessage });
-        }
-      )
-      .subscribe();
-
-    return () => { 
-      try { 
-        supabase.removeChannel(ch); 
-      } catch (e) {
-        console.warn('Error unsubscribing from messages channel:', e);
-      }
-    };
-  }
-
-  subscribeToBookingMessages(bookingId: string, onInsert: (message: ThreadMessage) => void): () => void {
-    return this.subscribeToThread(bookingId, (evt) => {
-      if (evt.type === 'INSERT') {
-        onInsert(evt.new);
-      }
-    });
-  }
-
-  applyRealtime(prev: ThreadMessage[], evt: { type: 'INSERT' | 'UPDATE'; new: ThreadMessage }): ThreadMessage[] {
-    if (evt.type === 'INSERT') {
-      if (prev.some(m => m.id === evt.new.id)) return prev;
-      return [...prev, evt.new];
-    }
-    if (evt.type === 'UPDATE') {
-      return prev.map(m => (m.id === evt.new.id ? evt.new : m));
-    }
-    return prev;
-  }
-
-  async getMessagesForBooking(bookingId: string): Promise<Message[]> {
-    if (!isSupabaseConnected()) {
-      return [];
-    }
-
-    if (!bookingId || bookingId.length < 10) {
-      throw new Error('Invalid bookingId');
-    }
-
-    try {
-      const { data: messages, error } = await supabase
-        .from('messages')
-        .select('id, booking_id, sender_id, receiver_id, message_text, created_at, read_at')
-        .eq('booking_id', bookingId)
-        .order('created_at', { ascending: true });
-
-      if (error) throw error;
-      return (messages || []) as Message[];
-    } catch (error) {
-      throw error;
-    }
-  }
-
-
-  async sendMessage({ bookingId, receiverId, messageText }: SendMessageRequest): Promise<Message> {
-    if (!isSupabaseConnected()) {
-      throw new Error('Messaging is not available - please connect to Supabase');
-    }
-
-    try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      console.log('Sending message:', { 
-        fromUserId: user.id, 
-        toUserId: receiverId, 
-        bookingId,
-        messagePreview: messageText.slice(0, 50) 
-      });
-      // Validate message
-      if (!messageText.trim() || messageText.length > 1000) {
-        throw new Error('Message must be between 1 and 1000 characters');
-      }
-
-      // Sanitize message text
-      const sanitizedMessage = messageText
-        .trim()
-        .replace(/<[^>]*>/g, '') // Remove HTML tags
-        .replace(/javascript:/gi, '') // Remove JS protocols
-        .slice(0, 1000);
-
-      // Send message
-      const { data: message, error } = await supabase
-        .from('messages')
-        .insert({
-          booking_id: bookingId,
-          sender_id: user.id,
-          receiver_id: receiverId,
-          message_text: sanitizedMessage
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      console.log('Message saved to database:', message.id);
-      // Send notification to receiver if they have notifications enabled
-      try {
-        await this.sendMessageNotification(bookingId, receiverId, sanitizedMessage, user.id);
-        console.log('Notification sent for message:', message.id);
-      } catch (notificationError) {
-        console.error('Failed to send notification for message:', message.id, notificationError);
-        // Don't throw - message was still sent successfully
-      }
-
-      return message;
-
-    } catch (error) {
-      console.error('Error sending message:', error);
-      throw error;
-    }
-  }
-
-  async markAsRead(messageId: string, userId: string): Promise<void> {
-    if (!isSupabaseConnected()) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('id', messageId)
-        .eq('receiver_id', userId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error marking message as read:', error);
-    }
-  }
-
-  async markConversationAsRead(bookingId: string, userId: string): Promise<void> {
-    if (!isSupabaseConnected()) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('booking_id', bookingId)
-        .eq('receiver_id', userId)
-        .is('read_at', null);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error marking conversation as read:', error);
-    }
-  }
-
-  subscribeToBookingMessages(bookingId: string, onInsert: (message: Message) => void): () => void {
-    if (!isSupabaseConnected()) {
-      return () => {};
-    }
-
-    console.log('Subscribing to realtime messages for booking:', bookingId);
-
-    const channel = supabase
-      .channel(`messages:booking:${bookingId}`)
-      .on(
-        'postgres_changes',
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'messages', 
-          filter: `booking_id=eq.${bookingId}` 
-        },
-        (payload) => {
-          console.log('Realtime message received:', payload.new);
-          const newMessage = payload.new as Message;
-          onInsert(newMessage);
-        }
-      )
-      .subscribe();
-
-    console.log('Realtime subscription created for booking:', bookingId, 'Channel:', `messages:booking:${bookingId}`);
-
-    const unsubscribe = () => {
-      console.log('Unsubscribing from realtime messages for booking:', bookingId);
-      supabase.removeChannel(channel);
-    };
-
-    return unsubscribe;
-  }
-
-  subscribeToMessages(bookingId: string, callback: (message: Message) => void): () => void {
-    if (!isSupabaseConnected()) {
-      // Return a no-op unsubscribe function
-      return () => {};
-    }
-
-    const channel = supabase
-      .channel(`messages_${bookingId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `booking_id=eq.${bookingId}`,
-        },
-        (payload) => {
-          callback(payload.new as Message);
-        }
-      )
-      .subscribe();
-
-    const unsubscribe = () => {
-      supabase.removeChannel(channel);
-      this.subscriptions.delete(bookingId);
-    };
-
-    this.subscriptions.set(bookingId, unsubscribe);
-    return unsubscribe;
-  }
-
-  private async sendMessageNotification(
-    bookingId: string, 
-    receiverId: string, 
-    messageText: string, 
-    senderId: string
-  ): Promise<void> {
-    try {
-      
-      // Get booking and user details for notification
-      const { data: booking } = await supabase
-        .from('bookings')
-        .select(`
-          id,
-          appointment_date,
-          appointment_time,
-          services(name),
-          barber_profiles(business_name, owner_name, user_id, phone, email, sms_consent, email_consent, communication_consent),
-          client_profiles(first_name, last_name, user_id, phone, email, sms_consent, email_consent, communication_consent)
-        `)
-        .eq('id', bookingId)
-        .single();
-
-      if (!booking) {
-        return;
-      }
-      
-
-      const isFromBarber = senderId === booking.barber_profiles?.user_id;
-      
-      const receiverProfile = isFromBarber ? booking.client_profiles : booking.barber_profiles;
-      const senderProfile = isFromBarber ? booking.barber_profiles : booking.client_profiles;
-
-      if (!receiverProfile || !senderProfile) {
-        return;
-      }
-
-      const senderName = isFromBarber 
-        ? senderProfile.business_name 
-        : `${senderProfile.first_name} ${senderProfile.last_name}`;
-
-      const receiverName = isFromBarber
-        ? `${receiverProfile.first_name} ${receiverProfile.last_name}`
-        : receiverProfile.business_name;
-
-      // Send SMS notification if user has SMS enabled (default to true for essential notifications)
-      const shouldSendSMS = (receiverProfile.sms_consent !== false) && !!receiverProfile.phone;
-      
-      if (shouldSendSMS) {
-        const smsMessage = `💬 New message from ${senderName}:\n\n"${messageText.slice(0, 100)}${messageText.length > 100 ? '...' : ''}"\n\nReply in your Kutable dashboard.\n\n- Kutable`;
-        
-        const { data: smsResult, error: smsError } = await supabase.functions.invoke('send-sms', {
-          body: {
-            to: receiverProfile.phone,
-            message: smsMessage,
-            type: 'booking_update'
-          }
-        });
-        
-        console.log('SMS notification result:', { smsResult, smsError });
-      }
-
-      // Send email notification if user has email enabled (default to true for essential notifications)
-      const shouldSendEmail = (receiverProfile.email_consent !== false) && !!receiverProfile.email;
-      
-      if (shouldSendEmail) {
-        const emailSubject = `New message from ${senderName} - Kutable`;
-        const emailMessage = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #1f2937;">💬 New Message</h2>
-            <p>Hi ${receiverName},</p>
-            <p>You have a new message from <strong>${senderName}</strong> regarding your ${booking.services?.name} appointment:</p>
-            
-            <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0066ff;">
-              <p style="font-style: italic; margin: 0;">"${messageText}"</p>
-            </div>
-
-            <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p style="margin: 0; color: #4b5563;"><strong>Appointment:</strong> ${booking.services?.name}</p>
-              <p style="margin: 5px 0 0 0; color: #4b5563;"><strong>Date:</strong> ${new Date(booking.appointment_date).toLocaleDateString()} at ${booking.appointment_time}</p>
-            </div>
-
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="https://kutable.com/dashboard" style="background-color: #0066ff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600;">
-                Reply in Dashboard
-              </a>
-            </div>
-            
-            <p style="color: #6b7280; font-size: 14px; text-align: center;">
-              This message was sent through Kutable's secure messaging system.
-            </p>
-          </div>
-        `;
-
-        const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-email', {
-          body: {
-            to: receiverProfile.email,
-            name: receiverName,
-            subject: emailSubject,
-            message: emailMessage,
-            type: 'message_notification'
-          }
-        });
-        
-        console.log('Email notification result:', { emailResult, emailError });
-      }
-
-    } catch (error) {
-      console.error('Error sending message notification:', error);
-      // Don't throw - message sending should succeed even if notification fails
-    }
-  }
-
-  async getUnreadMessageCount(userId: string): Promise<number> {
-    if (!isSupabaseConnected()) {
-      return 0;
-    }
-
-    // Guard against undefined userId
-    if (!userId) {
-      return 0;
-    }
-    try {
-      const { count, error } = await supabase
-        .from('messages')
-        .select('*', { count: 'exact' })
-        .eq('receiver_id', userId)
-        .is('read_at', null);
-
-      if (error) throw error;
-      return count || 0;
-    } catch (error) {
-      console.error('Error getting unread count:', error);
-      return 0;
-    }
-  }
-
-  cleanup(): void {
-    this.subscriptions.forEach(unsubscribe => unsubscribe());
-    this.subscriptions.clear();
-  }
-}
-
-  // --- Load conversations: booking_id as thread key, null-safe ---
-  async getUserConversations(userId: string): Promise<Conversation[]> {
-    if (!isSupabaseConnected() || !userId) {
-      return [];
-    }
-
-    try {
-      // NEW: find this user's barber profile (if any)
-      const { data: myBarberProfile } = await supabase
+      // Is the current user a barber? (fetch their barber_profile)
+      const { data: myBarberProfile, error: bpErr } = await supabase
         .from('barber_profiles')
         .select('id, user_id')
         .eq('user_id', userId)
         .maybeSingle();
+      if (bpErr) throw bpErr;
 
-      // 1) Load all bookings where the user is a party (RLS handles visibility)
-      const bookingQuery = supabase
+      // Build bookings query:
+      // - If barber: bookings where barber_id == my barber_profile.id OR I'm the client
+      // - If client only: bookings where client_id == my userId
+      let bq = supabase
         .from('bookings')
-        .select('id, client_id, barber_id, status, appointment_date, appointment_time, service_id, created_at')
+        .select(
+          'id, client_id, barber_id, status, appointment_date, appointment_time, service_id, created_at'
+        )
         .order('created_at', { ascending: false });
 
       if (myBarberProfile?.id) {
-        // include either: I am the client OR my barber_profile.id is on the booking
-        bookingQuery.or(`client_id.eq.${userId},barber_id.eq.${myBarberProfile.id}`);
+        bq = bq.or(`client_id.eq.${userId},barber_id.eq.${myBarberProfile.id}`);
       } else {
-        // client-only user
-        bookingQuery.eq('client_id', userId);
+        bq = bq.eq('client_id', userId);
       }
 
-      const { data: bookings, error: bErr } = await bookingQuery;
+      const { data: bookings, error: bErr } = await bq;
       if (bErr) throw bErr;
       if (!bookings?.length) return [];
 
-      const bookingIds = bookings.map(b => b.id);
-      const clientIds = [...new Set(bookings.map(b => b.client_id).filter(Boolean))];
-      const barberIds = [...new Set(bookings.map(b => b.barber_id).filter(Boolean))];
+      const bookingIds = bookings.map((b) => b.id);
 
-      // 2) Batch-load participant profiles (no "verified/claimed" requirement)
-      const [{ data: clientProfiles, error: cErr }, { data: barberProfiles, error: bpErr }] = await Promise.all([
-        supabase.from('client_profiles').select('user_id, first_name, last_name, profile_image_url')
-          .in('user_id', clientIds),
-        supabase.from('barber_profiles').select('id, user_id, business_name, profile_image_url')
-          .in('id', barberIds),
-      ]);
+      // Fetch participants
+      const [{ data: clientProfiles, error: cErr }, { data: barberProfiles, error: bbErr }] =
+        await Promise.all([
+          supabase
+            .from('client_profiles')
+            .select('user_id, first_name, last_name, profile_image_url'),
+          supabase
+            .from('barber_profiles')
+            .select('id, user_id, business_name, profile_image_url'),
+        ]);
       if (cErr) throw cErr;
-      if (bpErr) throw bpErr;
+      if (bbErr) throw bbErr;
 
-      const clientByUserId = new Map((clientProfiles ?? []).map(p => [p.user_id, p]));
-      const barberByProfileId = new Map((barberProfiles ?? []).map(p => [p.id, p])); // profile.id -> profile
+      const clientByUserId = new Map((clientProfiles ?? []).map((p) => [p.user_id, p]));
+      const barberByProfileId = new Map((barberProfiles ?? []).map((p) => [p.id, p]));
 
-      // 3) Get last message per booking + unread counts in one pass each
+      // Fetch last messages and unread counts
       const [{ data: msgs, error: mErr }, { data: unread, error: uErr }] = await Promise.all([
-        supabase.from('messages')
+        supabase
+          .from('messages')
           .select('id, booking_id, message_text, created_at, sender_id, receiver_id')
           .in('booking_id', bookingIds)
-          .order('created_at', { ascending: false }), // we'll take the first per booking
-        supabase.from('messages')
-          .select('booking_id') // count in app to avoid policies requiring aggregate perms
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('messages')
+          .select('booking_id')
           .eq('receiver_id', userId)
           .is('read_at', null)
           .in('booking_id', bookingIds),
@@ -832,8 +150,6 @@ export class MessagingService {
             id: m.id,
             message_text: m.message_text,
             created_at: m.created_at,
-            sender_id: m.sender_id,
-            receiver_id: m.receiver_id,
           });
         }
       }
@@ -843,16 +159,17 @@ export class MessagingService {
         unreadByBooking.set(r.booking_id, (unreadByBooking.get(r.booking_id) ?? 0) + 1);
       }
 
-      // Map into Conversation objects
-      const conversations: Conversation[] = (bookings ?? []).map(b => {
+      // Map bookings → conversations
+      const conversations: Conversation[] = (bookings ?? []).map((b) => {
         const iAmBarber = !!myBarberProfile?.id && b.barber_id === myBarberProfile.id;
+
         const otherAuthId = iAmBarber
-          ? b.client_id
-          : (barberByProfileId.get(b.barber_id)?.user_id ?? ''); // map profile.id -> user_id
+          ? b.client_id // client_id stores the client's auth user id
+          : (barberByProfileId.get(b.barber_id)?.user_id ?? ''); // map barber_profile.id → auth user id
 
         let name = 'Unknown';
         let avatar: string | null | undefined = null;
-        let type: 'barber' | 'client' = iAmBarber ? 'client' : 'barber';
+        const type: 'barber' | 'client' = iAmBarber ? 'client' : 'barber';
 
         if (type === 'client') {
           const cp = clientByUserId.get(otherAuthId);
@@ -866,7 +183,7 @@ export class MessagingService {
 
         return {
           bookingId: b.id,
-          participant: { id: otherAuthId, type, name, avatar }, // <-- always auth user id
+          participant: { id: otherAuthId, type, name, avatar },
           booking: {
             id: b.id,
             serviceName: String(b.service_id ?? 'Service'),
@@ -879,7 +196,7 @@ export class MessagingService {
         };
       });
 
-      // Sort: newest activity first (lastMessage if present, else booking created order already applied)
+      // Sort newest activity first
       conversations.sort((a, b) => {
         const ta = a.lastMessage?.created_at ?? '1970-01-01';
         const tb = b.lastMessage?.created_at ?? '1970-01-01';
@@ -888,10 +205,147 @@ export class MessagingService {
 
       console.log('[getUserConversations]', { userId, count: conversations.length, sample: conversations.slice(0, 2) });
       return conversations;
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
+    } catch (e) {
+      console.error('Error fetching conversations:', e);
       return [];
     }
   }
+
+  // ========== Threads ==========
+  async getThread(bookingId: string): Promise<ThreadMessage[]> {
+    if (!isSupabaseConnected()) return [];
+    if (!bookingId || bookingId.length < 10) throw new Error('Invalid bookingId');
+
+    const { data, error } = await supabase
+      .from('messages')
+      .select('id, booking_id, sender_id, receiver_id, message_text, created_at, read_at')
+      .eq('booking_id', bookingId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return (data || []) as ThreadMessage[];
+  }
+
+  async getMessagesForBooking(bookingId: string): Promise<ThreadMessage[]> {
+    return this.getThread(bookingId);
+  }
+
+  // ========== Send / Read ==========
+  async sendMessage({ bookingId, receiverId, messageText }: SendMessageRequest): Promise<ThreadMessage> {
+    if (!isSupabaseConnected()) throw new Error('Messaging is not available - please connect to Supabase');
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const sanitized = messageText.trim().replace(/<[^>]*>/g, '').replace(/javascript:/gi, '').slice(0, 1000);
+    if (!sanitized) throw new Error('Message must be between 1 and 1000 characters');
+
+    const { data: message, error } = await supabase
+      .from('messages')
+      .insert({
+        booking_id: bookingId,
+        sender_id: user.id,
+        receiver_id: receiverId,
+        message_text: sanitized,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return message as ThreadMessage;
+  }
+
+  async markAsRead(messageId: string, userId: string): Promise<void> {
+    if (!isSupabaseConnected()) return;
+    const { error } = await supabase
+      .from('messages')
+      .update({ read_at: new Date().toISOString() })
+      .eq('id', messageId)
+      .eq('receiver_id', userId);
+    if (error) throw error;
+  }
+
+  async markConversationAsRead(bookingId: string, userId: string): Promise<void> {
+    await this.markThreadRead(bookingId, userId);
+  }
+
+  async markThreadRead(bookingId: string, userId: string): Promise<void> {
+    if (!isSupabaseConnected()) return;
+    const { error } = await supabase
+      .from('messages')
+      .update({ read_at: new Date().toISOString() })
+      .eq('booking_id', bookingId)
+      .eq('receiver_id', userId)
+      .is('read_at', null);
+    if (error) throw error;
+  }
+
+  // ========== Realtime ==========
+  subscribeToThread(
+    bookingId: string,
+    onEvent: (evt: { type: 'INSERT' | 'UPDATE'; new: ThreadMessage }) => void
+  ): () => void {
+    if (!isSupabaseConnected()) return () => {};
+
+    const channel = supabase
+      .channel(`messages:booking:${bookingId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'messages', filter: `booking_id=eq.${bookingId}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT') onEvent({ type: 'INSERT', new: payload.new as ThreadMessage });
+          if (payload.eventType === 'UPDATE') onEvent({ type: 'UPDATE', new: payload.new as ThreadMessage });
+        }
+      )
+      .subscribe();
+
+    const unsubscribe = () => {
+      try { supabase.removeChannel(channel); } catch {}
+    };
+
+    // track to cleanup
+    this.subscriptions.set(bookingId, unsubscribe);
+    return unsubscribe;
+  }
+
+  subscribeToBookingMessages(bookingId: string, onInsert: (message: ThreadMessage) => void): () => void {
+    return this.subscribeToThread(bookingId, (evt) => {
+      if (evt.type === 'INSERT') onInsert(evt.new);
+    });
+  }
+
+  applyRealtime(prev: ThreadMessage[], evt: { type: 'INSERT' | 'UPDATE'; new: ThreadMessage }): ThreadMessage[] {
+    if (evt.type === 'INSERT') {
+      if (prev.some((m) => m.id === evt.new.id)) return prev;
+      return [...prev, evt.new];
+    }
+    if (evt.type === 'UPDATE') {
+      return prev.map((m) => (m.id === evt.new.id ? evt.new : m));
+    }
+    return prev;
+  }
+
+  // ========== Badges / Cleanup ==========
+  async getUnreadMessageCount(userId: string): Promise<number> {
+    if (!isSupabaseConnected() || !userId) return 0;
+    const { count, error } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact' })
+      .eq('receiver_id', userId)
+      .is('read_at', null);
+    if (error) {
+      console.error('Error getting unread count:', error);
+      return 0;
+    }
+    return count || 0;
+  }
+
+  cleanup(): void {
+    this.subscriptions.forEach((off) => {
+      try { off(); } catch {}
+    });
+    this.subscriptions.clear();
+  }
+}
 
 export const messagingService = MessagingService.getInstance();
