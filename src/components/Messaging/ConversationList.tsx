@@ -127,6 +127,14 @@ const ConversationList: React.FC<ConversationListProps> = ({
                 </p>
               </div>
             )}
+            {/* Demo badge for Kutable */}
+            {conversation.participant.id === 'kutable-demo-user' && (
+              <div className="flex-shrink-0">
+                <span className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  DEMO
+                </span>
+              </div>
+            )}
           </div>
         ) : (
           filteredConversations.map((conversation) => (

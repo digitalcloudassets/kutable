@@ -306,7 +306,7 @@ export class MessagingService {
             barberId: booking.barber_profiles.id
           });
           participant = {
-            id: barberUserId,
+            id: barberUserId || 'kutable-demo-user',
             name: booking.barber_profiles.business_name || 'Barber',
             type: 'barber' as const,
             avatar: booking.barber_profiles.profile_image_url || undefined
