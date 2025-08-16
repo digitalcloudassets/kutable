@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabase';
 import { repairAuthIfNeeded } from '../utils/authRepair';
 import { uploadAvatar } from '../lib/uploadAvatar';
 
