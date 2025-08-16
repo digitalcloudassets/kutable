@@ -83,112 +83,75 @@ export class MessagingService {
     try {
       console.log('Loading conversations for user:', userId);
       
-      // Get user's barber profile if they have one
-      const { data: barberProfile } = await supabase
-        .from('barber_profiles')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      console.log('User barber profile:', barberProfile?.id || 'none');
-      
-      // Get user's client profile
-      const { data: clientProfile } = await supabase
-        .from('client_profiles')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      console.log('User client profile:', clientProfile?.id || 'none');
-      
-      let allBookings: any[] = [];
-
-      // Get bookings where user is a barber
-      if (barberProfile) {
-        console.log('Fetching bookings for barber profile:', barberProfile.id);
-        
-        const { data: barberBookings, error: barberError } = await supabase
-          .from('bookings')
-          .select(`
+      // NEW: Single query approach using RLS to get all accessible bookings
+      // The RLS policies will automatically filter based on user participation
+      const { data: accessibleBookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          barber_id,
+          client_id,
+          appointment_date,
+          appointment_time,
+          status,
+          service_id,
+          barber_profiles!inner (
             id,
-            barber_id,
-            client_id,
-            appointment_date,
-            appointment_time,
-            status,
-            service_id,
-            client_profiles!inner (
-              id,
-              user_id,
-              first_name,
-              last_name,
-              profile_image_url,
-              email
-            ),
-            services (
-              name
-            )
-          `)
-          .eq('barber_id', barberProfile.id)
-          .in('status', ['pending', 'confirmed', 'completed']);
+            user_id,
+            business_name,
+            owner_name,
+            profile_image_url,
+            email
+          ),
+          client_profiles!inner (
+            id,
+            user_id,
+            first_name,
+            last_name,
+            profile_image_url,
+            email
+          ),
+          services!inner (
+            name
+          )
+        `)
+        .in('status', ['pending', 'confirmed', 'completed'])
+        .order('appointment_date', { ascending: false });
 
-        if (barberError) throw barberError;
-        
-        console.log('Found barber bookings:', barberBookings?.length || 0);
-        allBookings.push(...(barberBookings || []));
-        console.log('Added barber bookings:', barberBookings?.length || 0);
+      if (bookingsError) {
+        console.error('Error fetching accessible bookings:', bookingsError);
+        return [];
       }
 
-      // Get bookings where user is a client
-      if (clientProfile) {
-        console.log('Fetching bookings for client profile:', clientProfile.id);
-        
-        const { data: clientBookings, error: clientError } = await supabase
-          .from('bookings')
-          .select(`
-            id,
-            barber_id,
-            client_id,
-            appointment_date,
-            appointment_time,
-            status,
-            service_id,
-            barber_profiles!inner (
-              id,
-              user_id,
-              business_name,
-              owner_name,
-              profile_image_url,
-              email
-            ),
-            services (
-              name
-            )
-          `)
-          .eq('client_id', clientProfile.id)
-          .in('status', ['pending', 'confirmed', 'completed'])
-          .order('appointment_date', { ascending: false });
-
-        if (clientError) throw clientError;
-        
-        console.log('Found client bookings:', clientBookings?.length || 0);
-        allBookings.push(...(clientBookings || []));
-        console.log('Added client bookings:', clientBookings?.length || 0);
+      console.log('Found accessible bookings:', accessibleBookings?.length || 0);
+      if (accessibleBookings) {
+        console.log('Booking details:', accessibleBookings.map(b => ({
+          id: b.id,
+          barberUserId: b.barber_profiles?.user_id,
+          clientUserId: b.client_profiles?.user_id,
+          currentUserId: userId
+        })));
       }
-
-      // Deduplicate bookings (in case user is both barber and client)
-      const uniqueBookings = Array.from(
-        new Map(allBookings.map(booking => [booking.id, booking])).values()
-      );
-
       const conversations: Conversation[] = [];
 
-      for (const booking of uniqueBookings) {
-        const isBarber = barberProfile && booking.barber_id === barberProfile.id;
+      for (const booking of accessibleBookings || []) {
+        // Determine if current user is the barber or client
+        const isBarber = booking.barber_profiles?.user_id === userId;
+        const isClient = booking.client_profiles?.user_id === userId;
+        
+        console.log('Processing booking:', {
+          bookingId: booking.id,
+          isBarber,
+          isClient,
+          barberUserId: booking.barber_profiles?.user_id,
+          clientUserId: booking.client_profiles?.user_id,
+          currentUserId: userId
+        });
         
         let participant;
-        // For barber: show client, for client: show barber
-        if (isBarber && booking.client_profiles) {
+        
+        if (isBarber) {
+          // User is the barber, show the client as participant
           const clientUserId = booking.client_profiles.user_id;
           const clientName = `${booking.client_profiles.first_name || ''} ${booking.client_profiles.last_name || ''}`.trim();
           participant = {
@@ -197,7 +160,8 @@ export class MessagingService {
             type: 'client' as const,
             avatar: booking.client_profiles.profile_image_url || undefined
           };
-        } else if (!isBarber && booking.barber_profiles) {
+        } else if (isClient) {
+          // User is the client, show the barber as participant
           const barberUserId = booking.barber_profiles.user_id;
           participant = {
             id: barberUserId,
@@ -206,17 +170,25 @@ export class MessagingService {
             avatar: booking.barber_profiles.profile_image_url || undefined
           };
         } else {
-          // Fallback participant
-          participant = {
-            id: null,
-            name: 'Unknown',
-            type: isBarber ? 'client' as const : 'barber' as const,
-            avatar: undefined
-          };
+          // Skip bookings where user is neither barber nor client
+          console.log('Skipping booking - user is neither barber nor client');
+          continue;
         }
 
-        // Get last message for this booking
-        const { data: lastMessage } = await supabase
+        if (!participant) {
+          console.log('No participant found for booking:', booking.id);
+          continue;
+        }
+
+        console.log('Participant for booking:', {
+          bookingId: booking.id,
+          participantId: participant.id,
+          participantName: participant.name,
+          participantType: participant.type
+        });
+
+        // Get last message for this booking using the new index
+        const { data: lastMessage, error: messageError } = await supabase
           .from('messages')
           .select('*')
           .eq('booking_id', booking.id)
@@ -224,18 +196,38 @@ export class MessagingService {
           .limit(1)
           .maybeSingle();
 
-        // Get unread count for this booking
-        const { count: unreadCount } = await supabase
+        if (messageError) {
+          console.error('Error fetching last message for booking:', booking.id, messageError);
+        }
+
+        console.log('Last message for booking:', {
+          bookingId: booking.id,
+          hasMessage: !!lastMessage,
+          messageText: lastMessage?.message_text?.slice(0, 50)
+        });
+
+        // Get unread count for this user
+        const { count: unreadCount, error: unreadError } = await supabase
           .from('messages')
           .select('*', { count: 'exact' })
           .eq('booking_id', booking.id)
           .eq('receiver_id', userId)
           .is('read_at', null);
 
-        conversations.push({
+        if (unreadError) {
+          console.error('Error fetching unread count for booking:', booking.id, unreadError);
+        }
+
+        console.log('Unread count for booking:', {
+          bookingId: booking.id,
+          unreadCount: unreadCount || 0
+        });
+
+        const conversation: Conversation = {
           bookingId: booking.id,
           lastMessage: lastMessage || undefined,
           unreadCount: unreadCount || 0,
+          participant = {
           participant,
           booking: {
             id: booking.id,
@@ -244,8 +236,18 @@ export class MessagingService {
             appointmentTime: booking.appointment_time,
             status: booking.status
           }
+        };
+
+        conversations.push(conversation);
+        console.log('Added conversation:', {
+          bookingId: conversation.bookingId,
+          participantName: conversation.participant.name,
+          hasLastMessage: !!conversation.lastMessage,
+          unreadCount: conversation.unreadCount
         });
       }
+      
+      console.log('Final conversations count:', conversations.length);
       
       return conversations.sort((a, b) => {
         if (a.lastMessage && b.lastMessage) {
@@ -408,7 +410,7 @@ export class MessagingService {
       )
       .subscribe();
 
-    console.log('Realtime subscription created for booking:', bookingId);
+    console.log('Realtime subscription created for booking:', bookingId, 'Channel:', `messages:booking:${bookingId}`);
 
     const unsubscribe = () => {
       console.log('Unsubscribing from realtime messages for booking:', bookingId);
