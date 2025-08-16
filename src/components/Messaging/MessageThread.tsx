@@ -136,13 +136,13 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
 
     try {
       
-      const message = await messagingService.sendMessage({
+      const newMessage = await messagingService.sendMessage({
         bookingId: conversation.bookingId,
         receiverId,
         messageText: newMessage.trim()
       });
 
-      setMessages(prev => [...prev, message]);
+      setMessages(prev => [...prev, newMessage]);
       setNewMessage('');
       scrollToBottom();
       

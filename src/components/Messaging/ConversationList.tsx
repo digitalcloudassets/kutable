@@ -114,7 +114,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
             <h3 className="text-lg font-medium text-gray-900 mb-2">No conversations</h3>
             <p className="text-gray-600">
               {conversations.length === 0 
-                ? 'Messages will appear here when you have active bookings with claimed barber profiles'
+                ? 'Messages will appear here when you have active bookings with verified barber profiles'
                 : 'No conversations match your search'
               }
             </p>
