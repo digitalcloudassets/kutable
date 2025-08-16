@@ -326,22 +326,16 @@ export class MessagingService {
             avatar: booking.client_profiles.profile_image_url || undefined
           };
         } else if (!isBarber && booking.barber_profiles) {
-          // Special handling for Kutable demo profile
-          let barberUserId = booking.barber_profiles.user_id;
-          if (booking.barber_profiles.id === 'e639f78f-abea-4a27-b995-f31032e25ab5' && !barberUserId) {
-            barberUserId = '12345678-1234-1234-1234-123456789012';
-          }
-          
+          const barberUserId = booking.barber_profiles.user_id;
           console.log('[MessagingService] Setting barber participant:', { 
             barberUserId, 
             name: booking.barber_profiles.business_name, 
             avatar: booking.barber_profiles.profile_image_url,
             hasUserId: !!barberUserId,
-            isKutableDemo: booking.barber_profiles.id === 'e639f78f-abea-4a27-b995-f31032e25ab5',
             barberId: booking.barber_profiles.id
           });
           participant = {
-            id: barberUserId || '12345678-1234-1234-1234-123456789012',
+            id: barberUserId,
             name: booking.barber_profiles.business_name || 'Barber',
             type: 'barber' as const,
             avatar: booking.barber_profiles.profile_image_url || undefined
