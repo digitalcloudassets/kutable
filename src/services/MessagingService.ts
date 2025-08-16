@@ -761,4 +761,137 @@ export class MessagingService {
   }
 }
 
+  // --- Load conversations: booking_id as thread key, null-safe ---
+  async getUserConversations(userId: string): Promise<Conversation[]> {
+    if (!isSupabaseConnected() || !userId) {
+      return [];
+    }
+
+    try {
+      // NEW: find this user's barber profile (if any)
+      const { data: myBarberProfile } = await supabase
+        .from('barber_profiles')
+        .select('id, user_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      // 1) Load all bookings where the user is a party (RLS handles visibility)
+      const bookingQuery = supabase
+        .from('bookings')
+        .select('id, client_id, barber_id, status, appointment_date, appointment_time, service_id, created_at')
+        .order('created_at', { ascending: false });
+
+      if (myBarberProfile?.id) {
+        // include either: I am the client OR my barber_profile.id is on the booking
+        bookingQuery.or(`client_id.eq.${userId},barber_id.eq.${myBarberProfile.id}`);
+      } else {
+        // client-only user
+        bookingQuery.eq('client_id', userId);
+      }
+
+      const { data: bookings, error: bErr } = await bookingQuery;
+      if (bErr) throw bErr;
+      if (!bookings?.length) return [];
+
+      const bookingIds = bookings.map(b => b.id);
+      const clientIds = [...new Set(bookings.map(b => b.client_id).filter(Boolean))];
+      const barberIds = [...new Set(bookings.map(b => b.barber_id).filter(Boolean))];
+
+      // 2) Batch-load participant profiles (no "verified/claimed" requirement)
+      const [{ data: clientProfiles, error: cErr }, { data: barberProfiles, error: bpErr }] = await Promise.all([
+        supabase.from('client_profiles').select('user_id, first_name, last_name, profile_image_url')
+          .in('user_id', clientIds),
+        supabase.from('barber_profiles').select('id, user_id, business_name, profile_image_url')
+          .in('id', barberIds),
+      ]);
+      if (cErr) throw cErr;
+      if (bpErr) throw bpErr;
+
+      const clientByUserId = new Map((clientProfiles ?? []).map(p => [p.user_id, p]));
+      const barberByProfileId = new Map((barberProfiles ?? []).map(p => [p.id, p])); // profile.id -> profile
+
+      // 3) Get last message per booking + unread counts in one pass each
+      const [{ data: msgs, error: mErr }, { data: unread, error: uErr }] = await Promise.all([
+        supabase.from('messages')
+          .select('id, booking_id, message_text, created_at, sender_id, receiver_id')
+          .in('booking_id', bookingIds)
+          .order('created_at', { ascending: false }), // we'll take the first per booking
+        supabase.from('messages')
+          .select('booking_id') // count in app to avoid policies requiring aggregate perms
+          .eq('receiver_id', userId)
+          .is('read_at', null)
+          .in('booking_id', bookingIds),
+      ]);
+      if (mErr) throw mErr;
+      if (uErr) throw uErr;
+
+      const lastByBooking = new Map<string, Conversation['lastMessage']>();
+      for (const m of msgs ?? []) {
+        if (!lastByBooking.has(m.booking_id)) {
+          lastByBooking.set(m.booking_id, {
+            id: m.id,
+            message_text: m.message_text,
+            created_at: m.created_at,
+            sender_id: m.sender_id,
+            receiver_id: m.receiver_id,
+          });
+        }
+      }
+
+      const unreadByBooking = new Map<string, number>();
+      for (const r of unread ?? []) {
+        unreadByBooking.set(r.booking_id, (unreadByBooking.get(r.booking_id) ?? 0) + 1);
+      }
+
+      // Map into Conversation objects
+      const conversations: Conversation[] = (bookings ?? []).map(b => {
+        const iAmBarber = !!myBarberProfile?.id && b.barber_id === myBarberProfile.id;
+        const otherAuthId = iAmBarber
+          ? b.client_id
+          : (barberByProfileId.get(b.barber_id)?.user_id ?? ''); // map profile.id -> user_id
+
+        let name = 'Unknown';
+        let avatar: string | null | undefined = null;
+        let type: 'barber' | 'client' = iAmBarber ? 'client' : 'barber';
+
+        if (type === 'client') {
+          const cp = clientByUserId.get(otherAuthId);
+          name = cp ? [cp.first_name, cp.last_name].filter(Boolean).join(' ') || 'Client' : 'Client';
+          avatar = cp?.profile_image_url ?? null;
+        } else {
+          const bp = barberByProfileId.get(b.barber_id);
+          name = bp?.business_name || 'Barber';
+          avatar = bp?.profile_image_url ?? null;
+        }
+
+        return {
+          bookingId: b.id,
+          participant: { id: otherAuthId, type, name, avatar }, // <-- always auth user id
+          booking: {
+            id: b.id,
+            serviceName: String(b.service_id ?? 'Service'),
+            appointmentDate: String(b.appointment_date),
+            appointmentTime: String(b.appointment_time),
+            status: String(b.status),
+          },
+          lastMessage: lastByBooking.get(b.id),
+          unreadCount: unreadByBooking.get(b.id) ?? 0,
+        };
+      });
+
+      // Sort: newest activity first (lastMessage if present, else booking created order already applied)
+      conversations.sort((a, b) => {
+        const ta = a.lastMessage?.created_at ?? '1970-01-01';
+        const tb = b.lastMessage?.created_at ?? '1970-01-01';
+        return tb.localeCompare(ta);
+      });
+
+      console.log('[getUserConversations]', { userId, count: conversations.length, sample: conversations.slice(0, 2) });
+      return conversations;
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+      return [];
+    }
+  }
+
 export const messagingService = MessagingService.getInstance();
