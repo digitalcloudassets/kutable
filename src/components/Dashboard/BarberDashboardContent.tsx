@@ -6,7 +6,7 @@ import ConsentManagement from '../Client/ConsentManagement';
 import { Settings, Scissors, Camera, ImageIcon, Clock, Save } from 'lucide-react';
 import { MessageSquare } from 'lucide-react';
 import { Database } from '../../lib/supabase';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabase';
 import ServicesManagement from './ServicesManagement';
 import MediaUpload from '../Gallery/MediaUpload';
 import MediaGallery from '../Gallery/MediaGallery';

@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabase';
 
 export type UserRole = 'barber' | 'client' | 'unknown';
 export type OnboardingState = 'complete' | 'needs_profile' | 'needs_payouts';
