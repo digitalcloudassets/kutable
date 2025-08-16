@@ -360,3 +360,4 @@ export class MessagingService {
 }
 
 export const messagingService = MessagingService.getInstance();
+}
