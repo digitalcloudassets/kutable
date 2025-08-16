@@ -73,165 +73,169 @@ export class MessagingService {
     return MessagingService.instance;
   }
 
-  // --- Normalize conversation list (no "claimed" language, null-safe) ---
+  // --- Load conversations: booking_id as thread key, null-safe ---
   async getUserConversations(userId: string): Promise<Conversation[]> {
+    if (!isSupabaseConnected() || !userId) {
+      return [];
+    }
+
     try {
-      const { data: accessibleBookings, error: bookingsError } = await supabase
+      console.log('Loading conversations for user:', userId);
+      
+      // Query bookings where user is either the barber or client
+      const { data: rows, error } = await supabase
         .from('bookings')
         .select(`
           id,
-          barber_id,
-          client_id,
           appointment_date,
           appointment_time,
           status,
-          service_id,
-          barber_profiles!inner (
-            id,
+          barber_profiles!inner(
             user_id,
             business_name,
             owner_name,
-            profile_image_url,
-            email
+            profile_image_url
           ),
-          client_profiles!inner (
-            id,
+          client_profiles!inner(
             user_id,
             first_name,
             last_name,
-            profile_image_url,
-            email
+            profile_image_url
           ),
-          services!inner (
+          services!inner(
             name
           )
         `)
         .in('status', ['pending', 'confirmed', 'completed'])
         .order('appointment_date', { ascending: false });
 
-      if (bookingsError) {
-        console.error('Error fetching accessible bookings:', bookingsError);
+      if (error) {
+        console.error('Error fetching bookings:', error);
         return [];
       }
 
-      console.log('Found accessible bookings:', accessibleBookings?.length || 0);
-      if (accessibleBookings) {
-        console.log('Booking details:', accessibleBookings.map(b => ({
+      console.log('Found bookings via RLS:', rows?.length || 0);
+      
+      if (rows && rows.length > 0) {
+        console.log('Booking details:', rows.map(b => ({
           id: b.id,
           barberUserId: b.barber_profiles?.user_id,
           clientUserId: b.client_profiles?.user_id,
-          currentUserId: userId
+          currentUserId: userId,
+          isBarberMatch: b.barber_profiles?.user_id === userId,
+          isClientMatch: b.client_profiles?.user_id === userId
         })));
       }
-      const conversations: Conversation[] = [];
 
-      for (const booking of accessibleBookings || []) {
-        // Determine if current user is the barber or client
-        const isBarber = booking.barber_profiles?.user_id === userId;
-        const isClient = booking.client_profiles?.user_id === userId;
-        
-        console.log('Processing booking:', {
-          bookingId: booking.id,
-          isBarber,
-          isClient,
-          barberUserId: booking.barber_profiles?.user_id,
-          clientUserId: booking.client_profiles?.user_id,
-          currentUserId: userId
-        });
+      return (rows ?? []).map((booking: any) => {
+        const isBarberView = booking.barber_profiles?.user_id === userId;
         
         // Build the other chat participant (the person opposite the authed user)
-        const participant = isClient
+        const participant = isBarberView
           ? {
-              // client is viewing → show the barber as the participant
-              id: booking.barber_profiles?.user_id || null,
-              name: booking.barber_profiles?.business_name || 'Barber',
-              type: 'barber' as const,
-              avatar: booking.barber_profiles?.profile_image_url || undefined
-            }
-          : isBarber
-          ? {
-              // barber is viewing → show the client as the participant
-              id: booking.client_profiles?.user_id || null,
-              name: `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim() || 'Client',
+              // barber viewing → show client as participant
+              id: booking.client_profiles?.user_id ?? '',
+              name: `${booking.client_profiles?.first_name ?? ''} ${booking.client_profiles?.last_name ?? ''}`.trim() || 'Client',
+              avatar: booking.client_profiles?.profile_image_url ?? null,
               type: 'client' as const,
-              avatar: booking.client_profiles?.profile_image_url || undefined
             }
-          : null;
+          : {
+              // client viewing → show barber as participant  
+              id: booking.barber_profiles?.user_id ?? '',
+              name: booking.barber_profiles?.business_name ?? 'Barber',
+              avatar: booking.barber_profiles?.profile_image_url ?? null,
+              type: 'barber' as const,
+            };
 
-        if (!participant) {
-          console.log('Skipping booking - user is neither barber nor client');
-          continue;
-        }
-
-        console.log('Participant for booking:', {
-          bookingId: booking.id,
-          participantId: participant.id,
-          participantName: participant.name,
-          participantType: participant.type
-        });
-
-        // Get last message for this booking using the new index
-        const { data: lastMessage, error: messageError } = await supabase
-          .from('messages')
-          .select('*')
-          .eq('booking_id', booking.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (messageError) {
-          console.error('Error fetching last message for booking:', booking.id, messageError);
-        }
-
-        console.log('Last message for booking:', {
-          bookingId: booking.id,
-          hasMessage: !!lastMessage,
-          messageText: lastMessage?.message_text?.slice(0, 50)
-        });
-
-        // Get unread count for this user
-        const { count: unreadCount, error: unreadError } = await supabase
-          .from('messages')
-          .select('*', { count: 'exact' })
-          .eq('booking_id', booking.id)
-          .eq('receiver_id', userId)
-          .is('read_at', null);
-
-        if (unreadError) {
-          console.error('Error fetching unread count for booking:', booking.id, unreadError);
-        }
-
-        console.log('Unread count for booking:', {
-          bookingId: booking.id,
-          unreadCount: unreadCount || 0
-        });
-
+        // For now, set lastMessage and unreadCount to defaults
+        // These can be fetched separately for better performance
         const conversation: Conversation = {
           bookingId: booking.id,
-          lastMessage: lastMessage || undefined,
-          unreadCount: unreadCount || 0,
           participant,
           booking: {
             id: booking.id,
-            serviceName: booking.services?.name || 'Service',
+            serviceName: booking.services?.name ?? 'Service',
             appointmentDate: booking.appointment_date,
             appointmentTime: booking.appointment_time,
-            status: booking.status
-          }
+            status: booking.status,
+          },
+          lastMessage: undefined, // Will be fetched separately if needed
+          unreadCount: 0, // Will be fetched separately if needed
         };
 
-        conversations.push(conversation);
-        console.log('Added conversation:', {
-          bookingId: conversation.bookingId,
-          participantName: conversation.participant.name,
-          hasLastMessage: !!conversation.lastMessage,
-          unreadCount: conversation.unreadCount
-        });
+        return conversation;
+      }).filter(c => c.participant.id); // Filter out conversations with missing participant IDs
+      
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+      return [];
+    }
+  }
+
+  // --- Load last messages and unread counts for conversations ---
+  async enrichConversationsWithMessages(conversations: Conversation[], userId: string): Promise<Conversation[]> {
+    if (!isSupabaseConnected() || conversations.length === 0) {
+      return conversations;
+    }
+
+    try {
+      // Get booking IDs
+      const bookingIds = conversations.map(c => c.bookingId);
+      
+      // Fetch last message for each booking
+      const { data: lastMessages, error: messagesError } = await supabase
+        .from('messages')
+        .select('booking_id, id, message_text, created_at')
+        .in('booking_id', bookingIds)
+        .order('created_at', { ascending: false });
+
+      if (messagesError) {
+        console.error('Error fetching last messages:', messagesError);
       }
-      
-      console.log('Final conversations count:', conversations.length);
-      
-      return conversations.sort((a, b) => {
+
+      // Get unread counts
+      const { data: unreadCounts, error: unreadError } = await supabase
+        .from('messages')
+        .select('booking_id')
+        .in('booking_id', bookingIds)
+        .eq('receiver_id', userId)
+        .is('read_at', null);
+
+      if (unreadError) {
+        console.error('Error fetching unread counts:', unreadError);
+      }
+
+      // Build lookup maps
+      const lastMessageMap = new Map();
+      const unreadCountMap = new Map();
+
+      // Group last messages by booking_id
+      if (lastMessages) {
+        for (const msg of lastMessages) {
+          if (!lastMessageMap.has(msg.booking_id)) {
+            lastMessageMap.set(msg.booking_id, {
+              id: msg.id,
+              message_text: msg.message_text,
+              created_at: msg.created_at
+            }
+          }
+        }
+      }
+
+      // Count unread messages by booking_id
+      if (unreadCounts) {
+        for (const msg of unreadCounts) {
+          unreadCountMap.set(msg.booking_id, (unreadCountMap.get(msg.booking_id) || 0) + 1);
+        }
+      }
+
+      // Enrich conversations with message data
+      return conversations.map(conversation => ({
+        ...conversation,
+        lastMessage: lastMessageMap.get(conversation.bookingId),
+        unreadCount: unreadCountMap.get(conversation.bookingId) || 0
+      })).sort((a, b) => {
+        // Sort by last message time, then by appointment date
         if (a.lastMessage && b.lastMessage) {
           return new Date(b.lastMessage.created_at).getTime() - new Date(a.lastMessage.created_at).getTime();
         }
@@ -247,28 +251,32 @@ export class MessagingService {
   }
 
   // --- Thread API (unchanged signatures) ---
-  async getMessagesForBooking(bookingId: string): Promise<ThreadMessage[]> {
+  async getThread(bookingId: string, _userId: string): Promise<ThreadMessage[]> {
     if (!isSupabaseConnected()) {
       return [];
+    }
+
+    if (!bookingId || bookingId.length < 10) {
+      throw new Error('Invalid bookingId');
     }
 
     try {
       const { data, error } = await supabase
         .from('messages')
-        .select('*')
+        .select('id, booking_id, sender_id, receiver_id, message_text, created_at, read_at')
         .eq('booking_id', bookingId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return (data ?? []) as ThreadMessage[];
+      return (data || []) as ThreadMessage[];
     } catch (error) {
-      console.error('Error fetching messages:', error);
-      return [];
+      console.error('Error fetching thread messages:', error);
+      throw error;
     }
   }
 
-  async getThread(bookingId: string, _userId: string): Promise<ThreadMessage[]> {
-    return this.getMessagesForBooking(bookingId);
+  async getMessagesForBooking(bookingId: string): Promise<ThreadMessage[]> {
+    return this.getThread(bookingId, '');
   }
 
   async sendMessage({ bookingId, receiverId, messageText }: {
@@ -285,6 +293,13 @@ export class MessagingService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      console.log('Sending message:', { 
+        fromUserId: user.id, 
+        toUserId: receiverId, 
+        bookingId,
+        messagePreview: messageText.slice(0, 50) 
+      });
+      
       // Validate message
       if (!messageText.trim() || messageText.length > 1000) {
         throw new Error('Message must be between 1 and 1000 characters');
@@ -310,6 +325,8 @@ export class MessagingService {
         .single();
 
       if (error) throw error;
+      
+      console.log('Message saved successfully:', message.id);
       return message as ThreadMessage;
 
     } catch (error) {
@@ -368,24 +385,33 @@ export class MessagingService {
       return () => {};
     }
 
-    const ch = supabase
+    console.log('Subscribing to realtime messages for booking:', bookingId);
+    
+    const channel = supabase
       .channel(`messages:booking:${bookingId}`)
-      .on('postgres_changes',
+      .on(
+        'postgres_changes',
         { event: '*', schema: 'public', table: 'messages', filter: `booking_id=eq.${bookingId}` },
         (payload) => {
+          console.log('Realtime message event:', payload.eventType, payload.new);
           if (payload.eventType === 'INSERT') onEvent({ type: 'INSERT', new: payload.new as ThreadMessage });
           if (payload.eventType === 'UPDATE') onEvent({ type: 'UPDATE', new: payload.new as ThreadMessage });
         }
       )
       .subscribe();
 
-    return () => { 
-      try { 
-        supabase.removeChannel(ch); 
+    console.log('Realtime subscription created for booking:', bookingId);
+
+    const unsubscribe = () => {
+      console.log('Unsubscribing from realtime messages for booking:', bookingId);
+      try {
+        supabase.removeChannel(channel);
       } catch (e) {
-        console.warn('Error unsubscribing from messages channel:', e);
+        console.warn('Error unsubscribing:', e);
       }
     };
+    
+    return unsubscribe;
   }
 
   subscribeToBookingMessages(bookingId: string, onInsert: (message: ThreadMessage) => void): () => void {

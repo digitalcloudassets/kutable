@@ -31,7 +31,13 @@ export const useMessaging = () => {
 
     try {
       setLoading(true);
-      const conversationData = await messagingService.getUserConversations(uid);
+      console.log('useMessaging: Loading conversations for user:', uid);
+      let conversationData = await messagingService.getUserConversations(uid);
+      
+      // Enrich with message data
+      conversationData = await messagingService.enrichConversationsWithMessages(conversationData, uid);
+      
+      console.log('useMessaging: Loaded conversations:', conversationData.length);
       setConversations(conversationData);
     } catch (error) {
       console.error('Error loading conversations:', error);
