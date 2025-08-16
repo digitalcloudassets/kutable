@@ -75,6 +75,18 @@ export class MessagingService {
     return MessagingService.instance;
   }
 
+  /**
+   * Compatibility shim for older hooks that still call this method.
+   * Our getUserConversations already returns lastMessage & unreadCount,
+   * so this simply returns the same array unchanged.
+   */
+  async enrichConversationsWithMessages(
+    conversations: Conversation[],
+    _userId: string
+  ): Promise<Conversation[]> {
+    return conversations;
+  }
+
   // ========== Conversations (profile-aware) ==========
   async getUserConversations(userId: string): Promise<Conversation[]> {
     if (!isSupabaseConnected() || !userId) return [];
