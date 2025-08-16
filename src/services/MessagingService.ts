@@ -346,3 +346,5 @@ export class MessagingService {
     this.subscriptions.clear();
   }
 }
+
+export const messagingService = MessagingService.getInstance();
