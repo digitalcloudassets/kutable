@@ -74,9 +74,8 @@ function App() {
               <PostSignupRedirector />
 
               <main className="flex-1">
-                <OnboardingGuard>
-                  <Routes>
-                    <Route path="/" element={<HomeGate />} />
+                <Routes>
+                  <Route path="/" element={<HomeGate />} />
                     <Route path="/login" element={<LoginForm />} />
                     <Route path="/signup" element={<SignUpForm />} />
                     <Route path="/signup-success" element={<SignUpSuccessPage />} />
@@ -84,22 +83,22 @@ function App() {
                     <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/barbers" element={<BarberListPage />} />
                     <Route path="/barber/:slug" element={<BarberProfilePage />} />
-                    <Route 
-                      path="/dashboard" 
-                      element={
-                        <OnboardingGuard>
-                          <DashboardPage />
-                        </OnboardingGuard>
-                      } 
-                    />
-                    <Route 
-                      path="/dashboard/barber/*" 
-                      element={
-                        <OnboardingGuard>
-                          <BarberDashboard />
-                        </OnboardingGuard>
-                      } 
-                    />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <OnboardingGuard>
+                        <DashboardPage />
+                      </OnboardingGuard>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/barber/*"
+                    element={
+                      <OnboardingGuard>
+                        <BarberDashboard />
+                      </OnboardingGuard>
+                    }
+                  />
                     <Route path="/book/:barberSlug/:serviceId?" element={<BookingFlow />} />
                     <Route path="/onboarding" element={<OnboardingPage />} />
                     <Route path="/onboarding/barber" element={<BarberOnboardingEngine />} />
@@ -120,8 +119,7 @@ function App() {
                     <Route path="/support" element={<SupportPage />} />
                     <Route path="/privacy" element={<PrivacyPolicyPage />} />
                     <Route path="/terms" element={<TermsOfServicePage />} />
-                  </Routes>
-                </OnboardingGuard>
+                </Routes>
               </main>
 
               <Footer />
