@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { NotificationManager } from '../../utils/notifications';
 import { getCaptchaToken } from '../../lib/turnstile';
 import { TURNSTILE_ENABLED } from '../../utils/env';
-import { NotificationManager } from '../../utils/notifications';
+import { NotificationManager as AppNotify } from '../../utils/notifications';
 
 
 function CheckoutForm({
@@ -37,28 +37,28 @@ function CheckoutForm({
 
     setSubmitting(true);
     
-    try {
+        AppNotify.error(paymentError.message || 'Payment failed');
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         redirect: 'if_required', // stay in-app; 3DS will pop a modal if needed
-      });
+        AppNotify.error(errorMessage);
 
       if (error) {
-        NotificationManager.error(error.message || 'Payment failed');
+        AppNotify.error('Payments are temporarily unavailable. Please try again in a minute.');
         return;
       }
       
       if (paymentIntent && paymentIntent.status === 'succeeded') {
         NotificationManager.success('Payment successful!');
         onSuccess(paymentIntent.id);
-      } else if (paymentIntent?.status === 'processing') {
+        AppNotify.success('Payment successful! Booking confirmed.');
         NotificationManager.info('Payment processing — you\'ll be notified when it completes.');
         onSuccess(paymentIntent.id);
       } else {
         NotificationManager.error('Payment not completed.');
       }
     } catch (error: any) {
-      NotificationManager.error(error.message || 'Payment failed');
+      AppNotify.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
