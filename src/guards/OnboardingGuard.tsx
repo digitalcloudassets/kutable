@@ -11,6 +11,10 @@ export default function OnboardingGuard({ children }: Props) {
   const loc = useLocation();
   const [checking, setChecking] = React.useState(true);
 
+  // Allow the barber onboarding route unconditionally once authenticated
+  if (user && user.user_metadata?.user_type === 'barber' && loc.pathname.startsWith('/onboarding/barber')) {
+    return <>{children}</>;
+  }
   React.useEffect(() => {
     let alive = true;
 

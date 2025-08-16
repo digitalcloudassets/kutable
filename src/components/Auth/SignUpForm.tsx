@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, Scissors, Loader, AlertTriangle, Camera } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { uploadAvatar } from '../../lib/uploadAvatar';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
+import { ensureBarberProfile } from '../../utils/ensureBarberProfile';
 import { 
   validatePassword, 
   validateEmail, 
@@ -11,7 +11,6 @@ import {
   rateLimiter,
   bruteForceProtection 
 } from '../../utils/security';
-import { adminSignup } from '../../lib/adminSignup';
 
 const SignUpForm: React.FC = () => {
   const { isConnected: isSupabaseConnected } = useSupabaseConnection();
@@ -21,9 +20,9 @@ const SignUpForm: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    userType: 'client' as 'client' | 'barber',
     communicationConsent: false,
   });
+  const [accountType, setAccountType] = useState<'client' | 'barber'>('client');
   const [showPassword, setShowPassword] = useState({
     password: false,
     confirmPassword: false,
@@ -117,8 +116,9 @@ const SignUpForm: React.FC = () => {
         email: cleanEmail,
         password: cleanPassword,
         options: {
+          emailRedirectTo: `${window.location.origin}/signup-success`,
           data: {
-            user_type: formData.userType,
+            user_type: accountType,
             first_name: cleanFirstName,
             last_name: cleanLastName,
             communication_consent: formData.communicationConsent,
@@ -141,23 +141,28 @@ const SignUpForm: React.FC = () => {
       const userId = data.user?.id;
       const hasSession = !!data.session;
 
-      // The AuthGate will handle profile creation via ensure-profile
-      // No need to create profiles here anymore
-
-      if (formData.userType === 'client') {
+      if (accountType === 'barber') {
+        if (hasSession && data.session?.user) {
+          // Create barber profile immediately and go to onboarding
+          try {
+            await ensureBarberProfile(data.session.user);
+            navigate('/onboarding/barber?new=1', { replace: true });
+          } catch (error) {
+            console.error('Error creating barber profile:', error);
+            navigate('/onboarding/barber?new=1', { replace: true });
+          }
+        } else {
+          // Email confirmation required - redirect after confirm
+          localStorage.setItem('kutable:postSignup', '/onboarding/barber?new=1');
+          navigate(`/signup-success?email=${encodeURIComponent(cleanEmail)}&type=barber`, { replace: true });
+        }
+      } else {
+        // Client flow (unchanged)
         if (hasSession) {
           navigate('/dashboard', { replace: true });
         } else {
-          navigate(`/login?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/dashboard')}`, { replace: true });
+          navigate(`/signup-success?email=${encodeURIComponent(cleanEmail)}&type=client`, { replace: true });
         }
-        return;
-      }
-
-      // Barber: send to Stripe onboarding
-      if (hasSession) {
-        navigate('/onboarding/barber?step=account', { replace: true });
-      } else {
-        navigate(`/login?email=${encodeURIComponent(cleanEmail)}&next=${encodeURIComponent('/onboarding/barber?step=account')}`, { replace: true });
       }
 
     } catch (error: any) {
@@ -207,33 +212,35 @@ const SignUpForm: React.FC = () => {
 
             {/* Account Type Selection */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-4 text-center">
-                I am a...
+              <label className="block text-sm font-semibold text-gray-700 mb-3 text-center">
+                Account Type
               </label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => handleInputChange('userType', 'client')}
-                  className={`p-6 border-2 rounded-2xl text-center transition-all duration-200 hover:scale-105 ${
-                    formData.userType === 'client'
+                  onClick={() => setAccountType('client')}
+                  className={`p-4 border-2 rounded-xl text-center transition-all duration-200 hover:scale-105 ${
+                    accountType === 'client'
                       ? 'border-primary-500 bg-gradient-to-br from-primary-50 to-primary-100 text-primary-700 shadow-premium'
                       : 'border-gray-300 hover:border-primary-400 hover:bg-primary-50'
                   }`}
                 >
-                  <User className="h-6 w-6 mx-auto mb-2" />
-                  <span className="font-semibold">Client</span>
+                  <User className="h-5 w-5 mx-auto mb-2" />
+                  <span className="font-semibold text-sm">Client</span>
+                  <div className="text-xs text-gray-600 mt-1">Book appointments</div>
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleInputChange('userType', 'barber')}
-                  className={`p-6 border-2 rounded-2xl text-center transition-all duration-200 hover:scale-105 ${
-                    formData.userType === 'barber'
+                  onClick={() => setAccountType('barber')}
+                  className={`p-4 border-2 rounded-xl text-center transition-all duration-200 hover:scale-105 ${
+                    accountType === 'barber'
                       ? 'border-accent-500 bg-gradient-to-br from-accent-50 to-accent-100 text-accent-700 shadow-premium'
                       : 'border-gray-300 hover:border-accent-400 hover:bg-accent-50'
                   }`}
                 >
-                  <Scissors className="h-6 w-6 mx-auto mb-2" />
-                  <span className="font-semibold">Barber</span>
+                  <Scissors className="h-5 w-5 mx-auto mb-2" />
+                  <span className="font-semibold text-sm">Barber</span>
+                  <div className="text-xs text-gray-600 mt-1">Accept bookings</div>
                 </button>
               </div>
             </div>

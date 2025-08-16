@@ -18,6 +18,7 @@ import AppBoot from './providers/AppBoot';
 import OnboardingGuard from './guards/OnboardingGuard';
 
 import Header from './components/Layout/Header';
+import PostSignupRedirector from './components/Auth/PostSignupRedirector';
 import Footer from './components/Layout/Footer';
 
 import HomePage from './pages/HomePage';
@@ -70,6 +71,7 @@ function App() {
             <AppShellToggle />
             <div className="min-h-screen bg-gray-50 flex flex-col">
               <Header />
+              <PostSignupRedirector />
 
               <main className="flex-1">
                 <OnboardingGuard>
