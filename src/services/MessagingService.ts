@@ -83,6 +83,14 @@ export class MessagingService {
     try {
       console.log('Loading conversations for user:', userId);
       
+      // Special handling for demo user accounts
+      const isDemoUser = userId === '12345678-1234-1234-1234-123456789012' || // Kutable demo user
+                         userId === '87654321-4321-4321-4321-210987654321';   // Pete Drake demo user
+      
+      if (isDemoUser) {
+        console.log('Loading conversations for demo user:', userId);
+      }
+
       // Get user's barber profile if they have one
       const { data: barberProfile } = await supabase
         .from('barber_profiles')
@@ -105,6 +113,8 @@ export class MessagingService {
 
       // Get bookings where user is a barber
       if (barberProfile) {
+        console.log('Fetching bookings for barber profile:', barberProfile.id);
+        
         // Step 1: Query bookings only
         const { data: barberBookings, error: barberError } = await supabase
           .from('bookings')
@@ -114,12 +124,16 @@ export class MessagingService {
 
         if (barberError) throw barberError;
         
+        console.log('Found barber bookings:', barberBookings?.length || 0);
+        
         // Step 2: Fetch associated data separately to avoid RLS recursion
         const enrichedBarberBookings = [];
         for (const booking of barberBookings || []) {
           let clientData = null;
           let serviceData = null;
           let barberData = null;
+          
+          console.log('Processing barber booking:', booking.id, 'client_id:', booking.client_id);
           
           // Fetch client profile separately
           if (booking.client_id) {
@@ -140,7 +154,18 @@ export class MessagingService {
                 email: clientProfile.email,
                 name: `${clientProfile.first_name} ${clientProfile.last_name}`
               });
+              // For demo purposes, assign the demo client user ID if this is Pete Drake
+              if (clientProfile.email === 'pete@petegdrake.com' || 
+                  (clientProfile.first_name === 'Pete' && clientProfile.last_name === 'Drake')) {
+                console.log('[MessagingService] Assigning demo user ID to Pete Drake profile');
+                clientProfile.user_id = '87654321-4321-4321-4321-210987654321';
+              }
             } else {
+              clientData = clientProfile;
+            }
+            
+            // Assign clientData even if user_id was missing but we fixed it for demo
+            if (clientProfile && !clientData) {
               clientData = clientProfile;
             }
           }
@@ -176,6 +201,8 @@ export class MessagingService {
 
       // Get bookings where user is a client
       if (clientProfile) {
+        console.log('Fetching bookings for client profile:', clientProfile.id);
+        
         // Step 1: Query bookings only
         const { data: clientBookings, error: clientError } = await supabase
           .from('bookings')
@@ -186,12 +213,16 @@ export class MessagingService {
 
         if (clientError) throw clientError;
         
+        console.log('Found client bookings:', clientBookings?.length || 0);
+        
         // Step 2: Fetch associated data separately to avoid RLS recursion
         const enrichedClientBookings = [];
         for (const booking of clientBookings || []) {
           let barberData = null;
           let serviceData = null;
           let clientData = null;
+          
+          console.log('Processing client booking:', booking.id, 'barber_id:', booking.barber_id);
           
           // Fetch barber profile separately  
           if (booking.barber_id) {
@@ -208,21 +239,19 @@ export class MessagingService {
             } else if (!barberProfile.user_id) {
               // Special handling for Kutable profile - show as messageable even without user_id
               if (barberProfile.id === 'e639f78f-abea-4a27-b995-f31032e25ab5') {
-                // For the Kutable demo profile, we'll create a virtual user_id for messaging
+                // For the Kutable demo profile, assign the demo user_id
                 barberData = {
                   ...barberProfile,
-                  user_id: barberProfile.user_id || 'kutable-demo-user'
+                  user_id: '12345678-1234-1234-1234-123456789012'
                 };
                 console.log('[MessagingService] Special handling for Kutable demo profile');
-              } else if (!barberProfile.user_id) {
+              } else {
                 console.error('[MessagingService] Barber profile missing user_id:', {
                   barberId: booking.barber_id,
                   profileId: barberProfile.id,
                   businessName: barberProfile.business_name,
                   email: barberProfile.email
                 });
-                barberData = barberProfile;
-              } else {
                 barberData = barberProfile;
               }
             } else {
@@ -276,16 +305,22 @@ export class MessagingService {
         // For barber: show client, for client: show barber
         if (isBarber && booking.client_profiles) {
           const clientUserId = booking.client_profiles.user_id;
+          // For demo purposes, ensure Pete Drake has proper user_id
+          const demoClientUserId = (booking.client_profiles.email === 'pete@petegdrake.com' || 
+                                   (booking.client_profiles.first_name === 'Pete' && booking.client_profiles.last_name === 'Drake'))
+                                 ? '87654321-4321-4321-4321-210987654321'
+                                 : clientUserId;
+                                 
           const clientName = `${booking.client_profiles.first_name || ''} ${booking.client_profiles.last_name || ''}`.trim();
           console.log('[MessagingService] Setting client participant:', { 
-            clientUserId, 
+            clientUserId: demoClientUserId, 
             clientName, 
             avatar: booking.client_profiles.profile_image_url,
-            hasUserId: !!clientUserId,
+            hasUserId: !!demoClientUserId,
             clientId: booking.client_profiles.id
           });
           participant = {
-            id: clientUserId, // Will be null if we couldn't fetch the profile
+            id: demoClientUserId, // Will be null if we couldn't fetch the profile
             name: clientName || 'Client',
             type: 'client' as const,
             avatar: booking.client_profiles.profile_image_url || undefined
@@ -294,7 +329,7 @@ export class MessagingService {
           // Special handling for Kutable demo profile
           let barberUserId = booking.barber_profiles.user_id;
           if (booking.barber_profiles.id === 'e639f78f-abea-4a27-b995-f31032e25ab5' && !barberUserId) {
-            barberUserId = 'kutable-demo-user';
+            barberUserId = '12345678-1234-1234-1234-123456789012';
           }
           
           console.log('[MessagingService] Setting barber participant:', { 
@@ -306,7 +341,7 @@ export class MessagingService {
             barberId: booking.barber_profiles.id
           });
           participant = {
-            id: barberUserId || 'kutable-demo-user',
+            id: barberUserId || '12345678-1234-1234-1234-123456789012',
             name: booking.barber_profiles.business_name || 'Barber',
             type: 'barber' as const,
             avatar: booking.barber_profiles.profile_image_url || undefined
