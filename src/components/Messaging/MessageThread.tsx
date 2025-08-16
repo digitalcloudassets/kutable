@@ -38,31 +38,23 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     (async () => {
       try {
         setLoading(true);
+        console.log('MessageThread: Loading messages for booking:', conversation.bookingId);
         const msgs = await messagingService.getThread(conversation.bookingId, user.id);
+        console.log('MessageThread: Loaded messages:', msgs.length);
         setMessages(msgs);
 
         // Optional: mark read after initial fetch
-        try { 
-          await messagingService.markThreadRead(conversation.bookingId, user.id); 
-          if (refreshUnreadCount) {
-            await refreshUnreadCount();
-          }
+        try {
+          await messagingService.markConversationAsRead(conversation.bookingId, user.id);
+          if (refreshUnreadCount) await refreshUnreadCount();
         } catch (e) {
-          console.warn('Error marking as read:', e);
+          console.warn('Error marking conversation as read:', e);
         }
 
+        console.log('MessageThread: Setting up realtime subscription for booking:', conversation.bookingId);
         unsub = messagingService.subscribeToThread(conversation.bookingId, (evt) => {
+          console.log('MessageThread: Realtime event received:', evt.type);
           setMessages(prev => messagingService.applyRealtime(prev, evt));
-          
-          // Mark new messages as read if they're for us
-          if (evt.type === 'INSERT' && evt.new.receiver_id === user.id) {
-            setTimeout(() => {
-              messagingService.markAsRead(evt.new.id, user.id);
-              if (refreshUnreadCount) {
-                refreshUnreadCount();
-              }
-            }, 1000);
-          }
         });
       } catch (e) {
         console.error('Thread load error:', e);
@@ -72,11 +64,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     })();
 
     return () => {
-      try { 
-        unsub?.(); 
-      } catch (e) {
-        console.warn('Error unsubscribing:', e);
-      }
+      try { unsub?.(); } catch {}
     };
   }, [user, conversation?.bookingId, refreshUnreadCount]);
 
@@ -136,13 +124,13 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
 
     try {
       
-      const newMessage = await messagingService.sendMessage({
+      const message = await messagingService.sendMessage({
         bookingId: conversation.bookingId,
         receiverId,
         messageText: newMessage.trim()
       });
 
-      setMessages(prev => [...prev, newMessage]);
+      setMessages(prev => [...prev, message]);
       setNewMessage('');
       scrollToBottom();
       
