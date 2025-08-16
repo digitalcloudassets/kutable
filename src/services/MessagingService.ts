@@ -96,8 +96,7 @@ export class MessagingService {
       if (myBarberProfileId) filters.push(`barber_id.eq.${myBarberProfileId}`);
 
       const { data: bookings, error: bErr } = await supabase
-      {
-        const { data: bp } = await supabase
+        .from('bookings')
         .select('id, client_id, barber_id, status, appointment_date, appointment_time, service_id, created_at')
         .or(filters.join(','))
         .order('created_at', { ascending: false });
@@ -119,10 +118,11 @@ export class MessagingService {
       if (cErr) throw cErr;
       if (bpErr) throw bpErr;
 
+      const clientByUserId = new Map((clientProfiles ?? []).map(p => [p.user_id, p]));
       const barberByProfileId = new Map((barberProfiles ?? []).map(p => [p.id, p]));
 
       // 3) Get last message per booking + unread counts in one pass each
-      // 3) Get last message per booking + unread counts in one pass each
+      const [{ data: msgs, error: mErr }, { data: unread, error: uErr }] = await Promise.all([
         supabase.from('messages')
           .select('id, booking_id, message_text, created_at, sender_id, receiver_id')
           .in('booking_id', bookingIds)
@@ -345,3 +345,4 @@ export class MessagingService {
     });
     this.subscriptions.clear();
   }
+}
