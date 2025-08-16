@@ -77,6 +77,12 @@ export default function BarberOnboardingEngine() {
 
         setProfile(prof2);
 
+        // If user already completed or skipped, bounce to dashboard
+        if (localStorage.getItem('kutable:onboarding:v1') === 'done') {
+          navigate('/dashboard/barber', { replace: true });
+          return;
+        }
+
         // 2) Progress checks (infer from existing tables)
         const { count: availabilityCount } = await supabase
           .from('availability')
@@ -657,7 +663,9 @@ function StepPayouts() {
   }
   
   function skipToCompleted() {
-    navigate('/dashboard/barber/profile');
+    // Explicitly allow proceeding without Stripe
+    localStorage.setItem('kutable:onboarding:v1', 'done');
+    navigate('/dashboard/barber');
   }
   
   return (

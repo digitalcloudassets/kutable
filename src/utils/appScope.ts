@@ -6,7 +6,7 @@ export function inAuthedApp(pathname: string): boolean {
 }
 
 export function chooseDashboard(session: Session | null): string {
-  // Since we have a single dashboard route that handles user type internally,
-  // just return the dashboard route
+  const type = session?.user?.user_metadata?.user_type;
+  if (type === 'barber') return '/dashboard/barber';
   return '/dashboard';
 }

@@ -1,42 +1,41 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthProvider';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth';
-
-type GuardState = {
-  checked: boolean;        // we've finished checking DB
-  needsOnboarding: boolean;
-  targetPath: string | null;
-};
-
-const initialState: GuardState = {
-  checked: false,
-  needsOnboarding: false,
-  targetPath: null,
-};
 
 export default function OnboardingGuard({ children }: { children: React.ReactNode }) {
-  // ✅ Hooks always run in the same order/count
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
+  const [ok, setOk] = useState<boolean | null>(null);
 
-  const [state, setState] = useState<GuardState>(initialState);
-
-  // Compute whether the current path is already an allowed onboarding page
-  const isOnOnboardingPath = useMemo(() => {
-    const p = location.pathname;
-    return p.startsWith('/onboarding') || p.startsWith('/onboarding/barber');
-  }, [location.pathname]);
-
-  // DB check happens in an effect; never return early during render
   useEffect(() => {
+    if (loading) return;
+    if (!user) { setOk(false); return; }
+
+    const isBarber = user.user_metadata?.user_type === 'barber';
+    if (!isBarber) { setOk(true); return; }
+
     let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('barber_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!cancelled) setOk(!!data);
+    })();
+    return () => { cancelled = true; };
+  }, [user, loading]);
 
-    // If auth is still resolving, just wait (don't mutate state yet)
-    if (authLoading) return;
+  if (loading || ok === null) return <></>;
+  if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
 
-    // When signed out, nothing to enforce
+  // barber without profile -> onboarding
+  if (user.user_metadata?.user_type === 'barber' && !ok) {
+    return <Navigate to="/onboarding/barber" replace state={{ from: location }} />;
+  }
+  return <>{children}</>;
+}
     if (!user) {
       if (!cancelled) setState({ checked: true, needsOnboarding: false, targetPath: null });
       return;
