@@ -345,6 +345,11 @@ export class MessagingService {
   async enrichConversationsWithMessages(convos: Conversation[], _userId: string) {
     return convos; // getUserConversations already provides lastMessage + unreadCount
   }
+
+  // Hook compatibility - keep existing callers working
+  async enrichConversationsWithMessages(convos: Conversation[], _userId: string) {
+    return convos; // getUserConversations already provides lastMessage + unreadCount
+  }
 }
 
 export const messagingService = MessagingService.getInstance();
