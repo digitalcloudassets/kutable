@@ -136,7 +136,7 @@ export class MessagingService {
       if (bbErr) throw bbErr;
 
       const clientByUserId = new Map((clientProfiles ?? []).map((p) => [p.user_id, p]));
-      const barberByProfileId = new Map((barberProfiles ?? []).map((p) => [p.id, p]));
+      const barberByProfileId = new Map((barberProfiles ?? []).map((p) => [p.id, p]));      // key by barber_profiles.id
 
       // Fetch last messages and unread counts
       const [{ data: msgs, error: mErr }, { data: unread, error: uErr }] = await Promise.all([
@@ -175,27 +175,29 @@ export class MessagingService {
       const conversations: Conversation[] = (bookings ?? []).map((b) => {
         const iAmBarber = !!myBarberProfile?.id && b.barber_id === myBarberProfile.id;
 
-        const otherAuthId = iAmBarber
-          ? b.client_id // client_id stores the client's auth user id
-          : (barberByProfileId.get(b.barber_id)?.user_id ?? ''); // map barber_profile.id → auth user id
+        const otherProfileId = iAmBarber ? b.client_id : b.barber_id; // profile id of the OTHER party
 
         let name = 'Unknown';
         let avatar: string | null | undefined = null;
         const type: 'barber' | 'client' = iAmBarber ? 'client' : 'barber';
+        let otherUserId = '';
 
         if (type === 'client') {
-          const cp = clientByUserId.get(otherAuthId);
+          const cp = clientByUserId.get(otherProfileId);
           name = cp ? [cp.first_name, cp.last_name].filter(Boolean).join(' ') || 'Client' : 'Client';
           avatar = cp?.profile_image_url ?? null;
+          otherUserId = cp?.user_id ?? '';
         } else {
-          const bp = barberByProfileId.get(b.barber_id);
+          const bp = barberByProfileId.get(otherProfileId);
           name = bp?.business_name || 'Barber';
           avatar = bp?.profile_image_url ?? null;
+          otherUserId = bp?.user_id ?? '';
         }
 
         return {
           bookingId: b.id,
-          participant: { id: otherAuthId, type, name, avatar },
+          // IMPORTANT: id here must be the AUTH USER ID for messaging.receiver_id
+          participant: { id: otherUserId, type, name, avatar },
           booking: {
             id: b.id,
             serviceName: serviceById.get(b.service_id as any) || 'Service',
