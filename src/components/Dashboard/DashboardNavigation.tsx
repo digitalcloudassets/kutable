@@ -70,8 +70,7 @@ const DashboardNavigation = React.memo<DashboardNavigationProps>(({
   const clientNavButtons: NavButton[] = [
     { id: 'bookings', label: 'My Bookings', icon: Calendar },
     { id: 'messages', label: 'Messages', icon: MessageSquare },
-    { id: 'profile', label: 'My Profile', icon: User },
-    { id: 'barbers', label: 'Find Barbers', icon: Scissors, action: 'navigate', to: '/barbers' }
+    { id: 'profile', label: 'My Profile', icon: User }
   ];
 
   const barberNavButtons: NavButton[] = [
