@@ -57,7 +57,7 @@ const BarberListPage: React.FC = () => {
       
       const { data: dbProfiles, error } = await supabase
         .from('barber_profiles')
-        .select('*')
+        .select('id, slug, business_name, owner_name, phone, email, address, city, state, zip_code, bio, profile_image_url, banner_image_url, is_claimed, is_active, average_rating, total_reviews')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 

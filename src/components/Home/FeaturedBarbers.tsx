@@ -16,10 +16,9 @@ const FeaturedBarbers: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('barber_profiles')
-          .select('*')
-          .eq('is_claimed', true)
+          .select('id, user_id, business_name, owner_name, slug, profile_image_url, banner_image_url, bio, city, state, average_rating, total_reviews, created_at')
           .eq('is_active', true)
-          .order('average_rating', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(6);
 
         if (error) throw error;
