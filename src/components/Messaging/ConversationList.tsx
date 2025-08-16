@@ -121,14 +121,14 @@ const ConversationList: React.FC<ConversationListProps> = ({
             {conversations.length === 0 && (
               <div className="mt-4">
                 <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
-                  <strong>Note:</strong> You can only message barbers who have claimed their profiles. 
-                  Unclaimed profiles don't have messaging enabled yet.
+                  <strong>Note:</strong> Messaging is available for your active bookings with verified barbers.
+                  If a barber isn't verified yet, messaging will unlock once their account is verified.
                 </p>
               </div>
             )}
           </div>
         ) : (
-          (filteredConversations ?? []).map((conversation) => {
+          filteredConversations.map((conversation) => {
             const isActive = conversation.bookingId === selectedConversationId;
             
             return (
@@ -179,10 +179,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
                         </span>
                       </div>
                     )}
-                    {/* Demo badge for Kutable */}
-                    {(conversation.participant.name === 'Kutable' || 
-                      conversation.booking.id?.includes('demo') ||
-                      conversation.participant.id === '6455a63f-161e-4351-9f14-0ecbe01f0d3a') && (
+                    {/* Demo badge */}
+                    {conversation.participant.id === '6455a63f-161e-4351-9f14-0ecbe01f0d3a' && (
                       <div className="flex-shrink-0">
                         <span className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                           DEMO

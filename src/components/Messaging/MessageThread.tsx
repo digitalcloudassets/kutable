@@ -31,84 +31,58 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const initializeMessaging = async () => {
-      if (conversation && user) {
-        loadMessages();
-        markAsRead();
-        // Refresh unread count and conversations when viewing thread
-        if (refreshUnreadCount) {
-          await refreshUnreadCount();
-        }
-        
-        // Subscribe to real-time updates using the new method
-        const unsubscribe = messagingService.subscribeToBookingMessages(
-          conversation.bookingId,
-          (newMessage) => {
-            console.log('New message received in thread:', newMessage);
-            setMessages(prev => [...prev, newMessage]);
-            scrollToBottom();
-            
-            // Mark as read if it's for us
-            if (newMessage.receiver_id === user.id) {
-              setTimeout(() => {
-                messagingService.markAsRead(newMessage.id, user.id);
-                // Refresh unread count after marking as read
-                if (refreshUnreadCount) {
-                  refreshUnreadCount();
-                }
-              }, 1000);
-            }
+    if (!user || !conversation?.bookingId) return;
+
+    let unsub: undefined | (() => void);
+
+    (async () => {
+      try {
+        setLoading(true);
+        const msgs = await messagingService.getThread(conversation.bookingId, user.id);
+        setMessages(msgs);
+
+        // Optional: mark read after initial fetch
+        try { 
+          await messagingService.markThreadRead(conversation.bookingId, user.id); 
+          if (refreshUnreadCount) {
+            await refreshUnreadCount();
           }
-        );
+        } catch (e) {
+          console.warn('Error marking as read:', e);
+        }
 
-        return unsubscribe;
+        unsub = messagingService.subscribeToThread(conversation.bookingId, (evt) => {
+          setMessages(prev => messagingService.applyRealtime(prev, evt));
+          
+          // Mark new messages as read if they're for us
+          if (evt.type === 'INSERT' && evt.new.receiver_id === user.id) {
+            setTimeout(() => {
+              messagingService.markAsRead(evt.new.id, user.id);
+              if (refreshUnreadCount) {
+                refreshUnreadCount();
+              }
+            }, 1000);
+          }
+        });
+      } catch (e) {
+        console.error('Thread load error:', e);
+      } finally {
+        setLoading(false);
       }
-    };
-
-    let unsubscribe: (() => void) | undefined;
-    
-    initializeMessaging().then((cleanup) => {
-      unsubscribe = cleanup;
-    });
+    })();
 
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
+      try { 
+        unsub?.(); 
+      } catch (e) {
+        console.warn('Error unsubscribing:', e);
       }
     };
-  }, [conversation, user, refreshUnreadCount]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const loadMessages = async () => {
-    if (!user || !conversation) return;
-
-    try {
-      setLoading(true);
-      const messageData = await messagingService.getMessagesForBooking(conversation.bookingId);
-      setMessages(messageData);
-    } catch (error) {
-      setError('Failed to load messages');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const markAsRead = async () => {
-    if (!user || !conversation) return;
-    
-    try {
-      await messagingService.markConversationAsRead(conversation.bookingId, user.id);
-      // Refresh unread count after marking as read
-      if (refreshUnreadCount) {
-        await refreshUnreadCount();
-      }
-    } catch (error) {
-      console.error('Error marking conversation as read:', error);
-    }
-  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -133,7 +107,6 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     setError('');
 
     try {
-      
       const message = await messagingService.sendMessage({
         bookingId: conversation.bookingId,
         receiverId,
