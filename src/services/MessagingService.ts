@@ -211,6 +211,15 @@ export class MessagingService {
     }
   }
 
+  // No-op for backwards compatibility with useMessaging hook
+  async enrichConversationsWithMessages(
+    conversations: Conversation[],
+    _userId: string
+  ): Promise<Conversation[]> {
+    // getUserConversations already returns lastMessage + unreadCount
+    return conversations;
+  }
+
   // ========== Threads ==========
   async getThread(bookingId: string): Promise<ThreadMessage[]> {
     if (!isSupabaseConnected()) return [];
