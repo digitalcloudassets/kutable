@@ -2,6 +2,7 @@ import { createClient, type AuthError, type Session } from '@supabase/supabase-j
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+const SUPABASE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL;
 
 function getProjectRefFromUrl(url?: string) {
   try {
@@ -29,6 +30,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
   },
+  functions: {
+    url: SUPABASE_FUNCTIONS_URL || undefined
+  }
 });
 
 /**

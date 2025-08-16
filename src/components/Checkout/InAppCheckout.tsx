@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { NotificationManager } from '../../utils/notifications';
 import { getCaptchaToken } from '../../lib/turnstile';
 import { TURNSTILE_ENABLED } from '../../utils/env';
+import { NotificationManager } from '../../utils/notifications';
 
 
 function CheckoutForm({
@@ -172,16 +173,25 @@ export default function InAppCheckout({
         // Get CAPTCHA token before creating payment intent
         const token = TURNSTILE_ENABLED ? await getCaptchaToken('create_payment_intent') : 'no-captcha-configured';
         
-        const { data, error } = await supabase.functions.invoke('create-payment-intent', {
-          body: { 
-            barberId, 
-            amount, 
-            currency, 
-            customerEmail, 
-            metadata: metadata || {},
-            captchaToken: token
-          },
-        });
+        let data, error;
+        try {
+          const response = await supabase.functions.invoke('create-payment-intent', {
+            body: { 
+              barberId, 
+              amount, 
+              currency, 
+              customerEmail, 
+              metadata: metadata || {},
+              captchaToken: token
+            },
+          });
+          data = response.data;
+          error = response.error;
+        } catch (err: any) {
+          console.error('Calling Supabase Edge Function failed:', err);
+          NotificationManager.error('Payments are temporarily unavailable. Please try again in a minute.');
+          return;
+        }
         
         if (error) {
           console.error('Payment intent error:', error);
