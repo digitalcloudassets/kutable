@@ -94,6 +94,7 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
                 <span className="text-gray-500 text-sm">({barber.total_reviews} reviews)</span>
               </div>
             </div>
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -110,6 +111,8 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
           </div>
           
           <ShareProfileLink 
+            profileUrl={profileUrl}
+          />
                 <div className="flex items-center space-x-1">
           {(!barber.slug || /^barber-[0-9a-f]{8}$/i.test(barber.slug) || /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(barber.slug)) && (
             <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
@@ -127,6 +130,7 @@ const BarberDashboardHeader = React.memo<BarberDashboardHeaderProps>(({
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>
