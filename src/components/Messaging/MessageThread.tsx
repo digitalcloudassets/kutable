@@ -78,6 +78,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
         console.warn('Error unsubscribing:', e);
       }
     };
+  }, [user, conversation?.bookingId, refreshUnreadCount]);
 
   useEffect(() => {
     scrollToBottom();
@@ -107,6 +108,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     setError('');
 
     try {
+      
       const message = await messagingService.sendMessage({
         bookingId: conversation.bookingId,
         receiverId,
