@@ -21,23 +21,6 @@ interface ConversationListProps {
 const ConversationList: React.FC<ConversationListProps> = ({
   onSelectConversation,
   selectedConversationId
-}) => {
-  const { user } = useAuth();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  useEffect(() => {
-    if (user) {
-      loadConversations();
-    }
-  }, [user]);
-
-  const loadConversations = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
       const conversationData = await messagingService.getUserConversations(user.id);
       setConversations(conversationData);
     } catch (error) {
@@ -107,7 +90,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
 
       {/* Conversations */}
       <div className="space-y-2">
-        {filteredConversations.length === 0 ? (
+        {(filteredConversations ?? []).length === 0 ? (
           <div className="text-center py-12">
             <div className="bg-gray-100 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4">
               <MessageSquare className="h-8 w-8 text-gray-400" />
@@ -139,12 +122,15 @@ const ConversationList: React.FC<ConversationListProps> = ({
             )}
           </div>
         ) : (
-          filteredConversations.map((conversation) => (
+          (filteredConversations ?? []).map((conversation) => {
+            const isActive = conversation.bookingId === selectedConversationId;
+            
+            return (
             <div
               key={conversation.bookingId}
               onClick={() => onSelectConversation(conversation)}
               className={`bg-white rounded-xl p-4 border cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.01] ${
-                selectedConversationId === conversation.bookingId
+                isActive
                   ? 'border-primary-500 bg-primary-50 shadow-md'
                   : 'border-gray-100 hover:border-primary-300'
               }`}
@@ -225,8 +211,8 @@ const ConversationList: React.FC<ConversationListProps> = ({
                   </span>
                 )}
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
