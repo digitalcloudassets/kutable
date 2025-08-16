@@ -117,7 +117,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     e.preventDefault();
     if (!newMessage.trim() || sending || !user) return;
 
-    // Check if participant has a valid user ID
+    // Check if participant has a valid user ID (with special handling for demo)
     if (!conversation.participant.id) {
       const errorMessage = conversation.participant.type === 'barber' 
         ? 'This barber profile hasn\'t been claimed yet. Messages can only be sent to claimed profiles.'
@@ -125,6 +125,12 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       setError(errorMessage);
       return;
     }
+    
+    // Special handling for Kutable demo messaging
+    const receiverId = conversation.participant.id === 'kutable-demo-user' 
+      ? user.id // For demo purposes, send to self to simulate barber response
+      : conversation.participant.id;
+      
     setSending(true);
     setError('');
 
@@ -132,7 +138,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       
       const message = await messagingService.sendMessage({
         bookingId: conversation.bookingId,
-        receiverId: conversation.participant.id,
+        receiverId,
         messageText: newMessage.trim()
       });
 
@@ -142,6 +148,23 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       
       // Mark conversation as read since user is actively participating
       await messagingService.markConversationAsRead(conversation.bookingId, user.id);
+      
+      // For Kutable demo, simulate a barber response after a delay
+      if (conversation.participant.id === 'kutable-demo-user') {
+        setTimeout(async () => {
+          try {
+            const demoResponse = await messagingService.sendMessage({
+              bookingId: conversation.bookingId,
+              receiverId: user.id,
+              messageText: "Thanks for your message! This is a demo response from the Kutable barber. In the real app, barbers would respond directly."
+            });
+            setMessages(prev => [...prev, demoResponse]);
+            scrollToBottom();
+          } catch (error) {
+            console.error('Demo response error:', error);
+          }
+        }, 2000);
+      }
       
       // Refresh conversations and unread count
       if (refreshConversations) {
@@ -338,7 +361,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
         )}
         
         <form onSubmit={handleSendMessage} className="flex space-x-3">
-          {!conversation.participant.id ? (
+          {!conversation.participant.id && conversation.participant.type !== 'barber' ? (
             <div className="flex-1 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm flex items-center space-x-2">
               <AlertCircle className="h-4 w-4" />
               <span>
@@ -347,6 +370,36 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
                   : 'Client doesn\'t have a user account linked. They may need to sign up first.'}
               </span>
             </div>
+          ) : conversation.participant.id === 'kutable-demo-user' ? (
+            <>
+              <div className="flex-1">
+                <textarea
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Send a demo message to Kutable..."
+                  className="w-full px-3 sm:px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all duration-200 text-base"
+                  rows={newMessage.includes('\n') ? 3 : 1}
+                  maxLength={1000}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage(e);
+                    }
+                  }}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={!newMessage.trim() || sending}
+                className="bg-primary-500 text-white p-2.5 sm:p-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+              >
+                {sending ? (
+                  <Loader className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+                )}
+              </button>
+            </>
           ) : (
             <>
           <div className="flex-1">
@@ -357,7 +410,6 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
               className="w-full px-3 sm:px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none transition-all duration-200 text-base"
               rows={newMessage.includes('\n') ? 3 : 1}
               maxLength={1000}
-              disabled={!conversation.participant.id}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -368,7 +420,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
           </div>
           <button
             type="submit"
-            disabled={!newMessage.trim() || sending || !conversation.participant.id}
+            disabled={!newMessage.trim() || sending}
             className="bg-primary-500 text-white p-2.5 sm:p-3 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           >
             {sending ? (
@@ -381,10 +433,10 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
           )}
         </form>
         
-        {/* Debug info for missing participant ID */}
-        {!conversation.participant.id && import.meta.env.DEV && (
-          <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded">
-            Debug: Missing participant.id - Participant type: {conversation.participant.type}, Name: {conversation.participant.name}
+        {/* Demo notification */}
+        {conversation.participant.id === 'kutable-demo-user' && (
+          <div className="mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded">
+            💡 Demo Mode: This is the Kutable example profile. Messages will receive automated demo responses.
           </div>
         )}
       </div>

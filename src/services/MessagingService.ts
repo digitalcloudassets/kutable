@@ -206,11 +206,21 @@ export class MessagingService {
             } else if (!barberProfile) {
               console.warn('[MessagingService] No barber profile found for barber_id:', booking.barber_id);
             } else if (!barberProfile.user_id) {
+              // Special handling for Kutable profile - show as messageable even without user_id
+              if (barberProfile.id === 'e639f78f-abea-4a27-b995-f31032e25ab5') {
+                // For the Kutable demo profile, we'll create a virtual user_id for messaging
+                barberData = {
+                  ...barberProfile,
+                  user_id: barberProfile.user_id || 'kutable-demo-user'
+                };
+                console.log('[MessagingService] Special handling for Kutable demo profile');
+              } else if (!barberProfile.user_id) {
               console.error('[MessagingService] Barber profile missing user_id:', {
                 barberId: booking.barber_id,
                 profileId: barberProfile.id,
                 businessName: barberProfile.business_name,
                 email: barberProfile.email
+                barberData = barberProfile;
               });
             } else {
               barberData = barberProfile;
@@ -278,16 +288,22 @@ export class MessagingService {
             avatar: booking.client_profiles.profile_image_url || undefined
           };
         } else if (!isBarber && booking.barber_profiles) {
-          const barberUserId = booking.barber_profiles.user_id;
+          // Special handling for Kutable demo profile
+          let barberUserId = booking.barber_profiles.user_id;
+          if (booking.barber_profiles.id === 'e639f78f-abea-4a27-b995-f31032e25ab5' && !barberUserId) {
+            barberUserId = 'kutable-demo-user';
+          }
+          
           console.log('[MessagingService] Setting barber participant:', { 
             barberUserId, 
             name: booking.barber_profiles.business_name, 
             avatar: booking.barber_profiles.profile_image_url,
             hasUserId: !!barberUserId,
+            isKutableDemo: booking.barber_profiles.id === 'e639f78f-abea-4a27-b995-f31032e25ab5',
             barberId: booking.barber_profiles.id
           });
           participant = {
-            id: barberUserId, // Will be null if we couldn't fetch the profile
+            id: barberUserId,
             name: booking.barber_profiles.business_name || 'Barber',
             type: 'barber' as const,
             avatar: booking.barber_profiles.profile_image_url || undefined
