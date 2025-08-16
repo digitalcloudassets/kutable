@@ -84,6 +84,33 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     scrollToBottom();
   }, [messages]);
 
+  const loadMessages = async () => {
+    if (!user || !conversation) return;
+
+    try {
+      setLoading(true);
+      const messageData = await messagingService.getMessagesForBooking(conversation.bookingId);
+      setMessages(messageData);
+    } catch (error) {
+      setError('Failed to load messages');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markAsRead = async () => {
+    if (!user || !conversation) return;
+    
+    try {
+      await messagingService.markConversationAsRead(conversation.bookingId, user.id);
+      // Refresh unread count after marking as read
+      if (refreshUnreadCount) {
+        await refreshUnreadCount();
+      }
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -108,6 +135,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     setError('');
 
     try {
+      
       const message = await messagingService.sendMessage({
         bookingId: conversation.bookingId,
         receiverId,
