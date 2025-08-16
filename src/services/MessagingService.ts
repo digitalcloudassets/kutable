@@ -80,92 +80,109 @@ export class MessagingService {
     }
 
     try {
-      console.log('Loading conversations for user:', userId);
-      
-      // Query bookings where user is either the barber or client
-      const { data: rows, error } = await supabase
+      // 1) Bookings for either role
+      const { data: bookings, error: bookingsErr } = await supabase
         .from('bookings')
-        .select(`
-          id,
-          appointment_date,
-          appointment_time,
-          status,
-          barber_profiles!inner(
-            user_id,
-            business_name,
-            owner_name,
-            profile_image_url
-          ),
-          client_profiles!inner(
-            user_id,
-            first_name,
-            last_name,
-            profile_image_url
-          ),
-          services!inner(
-            name
-          )
-        `)
-        .in('status', ['pending', 'confirmed', 'completed'])
-        .order('appointment_date', { ascending: false });
+        .select('id, client_id, barber_id, status, appointment_date, appointment_time, service_id, created_at')
+        .or(`client_id.eq.${userId},barber_id.eq.${userId}`)
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching bookings:', error);
-        return [];
+      if (bookingsErr) throw bookingsErr;
+      if (!bookings || bookings.length === 0) return [];
+
+      // 2) Profile lookups
+      const barberIds = Array.from(new Set(bookings.map(b => b.barber_id).filter(Boolean)));
+      const clientIds = Array.from(new Set(bookings.map(b => b.client_id).filter(Boolean)));
+
+      const [{ data: barberProfiles }, { data: clientProfiles }] = await Promise.all([
+        barberIds.length
+          ? supabase.from('barber_profiles')
+              .select('user_id, business_name, profile_image_url')
+              .in('user_id', barberIds)
+          : Promise.resolve({ data: [] as any[] }),
+        clientIds.length
+          ? supabase.from('client_profiles')
+              .select('user_id, first_name, last_name, email, profile_image_url')
+              .in('user_id', clientIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+
+      const barberMap = new Map((barberProfiles ?? []).map((b: any) => [b.user_id, b]));
+      const clientMap = new Map((clientProfiles ?? []).map((c: any) => [c.user_id, c]));
+
+      // 3) Latest message per booking
+      const bookingIds = bookings.map(b => b.id);
+      const latestByBooking = new Map<string, any>();
+      if (bookingIds.length) {
+        const { data: msgs } = await supabase
+          .from('messages')
+          .select('id, booking_id, sender_id, message_text, created_at')
+          .in('booking_id', bookingIds)
+          .order('created_at', { ascending: false });
+
+        for (const m of (msgs ?? [])) {
+          if (!latestByBooking.has(m.booking_id)) {
+            latestByBooking.set(m.booking_id, m);
+          }
+        }
       }
 
-      console.log('Found bookings via RLS:', rows?.length || 0);
-      
-      if (rows && rows.length > 0) {
-        console.log('Booking details:', rows.map(b => ({
-          id: b.id,
-          barberUserId: b.barber_profiles?.user_id,
-          clientUserId: b.client_profiles?.user_id,
-          currentUserId: userId,
-          isBarberMatch: b.barber_profiles?.user_id === userId,
-          isClientMatch: b.client_profiles?.user_id === userId
-        })));
+      // 4) Optional: service names
+      const serviceIds = Array.from(new Set(bookings.map(b => b.service_id).filter(Boolean)));
+      const serviceNameById = new Map<string, string>();
+      if (serviceIds.length) {
+        const { data: services } = await supabase
+          .from('services')
+          .select('id, name')
+          .in('id', serviceIds);
+        for (const s of (services ?? [])) serviceNameById.set(s.id, s.name);
       }
 
-      return (rows ?? []).map((booking: any) => {
-        const isBarberView = booking.barber_profiles?.user_id === userId;
-        
-        // Build the other chat participant (the person opposite the authed user)
-        const participant = isBarberView
-          ? {
-              // barber viewing → show client as participant
-              id: booking.client_profiles?.user_id ?? '',
-              name: `${booking.client_profiles?.first_name ?? ''} ${booking.client_profiles?.last_name ?? ''}`.trim() || 'Client',
-              avatar: booking.client_profiles?.profile_image_url ?? null,
-              type: 'client' as const,
-            }
-          : {
-              // client viewing → show barber as participant  
-              id: booking.barber_profiles?.user_id ?? '',
-              name: booking.barber_profiles?.business_name ?? 'Barber',
-              avatar: booking.barber_profiles?.profile_image_url ?? null,
-              type: 'barber' as const,
-            };
+      // 5) Build conversations
+      const results: Conversation[] = bookings.map((b: any) => {
+        const iAmClient = b.client_id === userId;
+        let participant: Conversation['participant'];
 
-        // For now, set lastMessage and unreadCount to defaults
-        // These can be fetched separately for better performance
-        const conversation: Conversation = {
-          bookingId: booking.id,
+        if (iAmClient) {
+          const barb = barberMap.get(b.barber_id);
+          const name = (barb?.business_name ?? 'Barber').toString();
+          participant = {
+            id: b.barber_id,
+            type: 'barber',
+            name,
+            avatar: barb?.profile_image_url ?? null,
+          };
+        } else {
+          const cli = clientMap.get(b.client_id);
+          const full = [cli?.first_name, cli?.last_name].filter(Boolean).join(' ').trim();
+          const emailPrefix = cli?.email ? String(cli.email).split('@')[0] : 'Client';
+          participant = {
+            id: b.client_id,
+            type: 'client',
+            name: full || emailPrefix,
+            avatar: cli?.profile_image_url ?? null,
+          };
+        }
+
+        const lastMessage = latestByBooking.get(b.id) || undefined;
+
+        return {
+          bookingId: b.id,
+          unreadCount: 0,
+          lastMessage,
           participant,
           booking: {
-            id: booking.id,
-            serviceName: booking.services?.name ?? 'Service',
-            appointmentDate: booking.appointment_date,
-            appointmentTime: booking.appointment_time,
-            status: booking.status,
+            id: b.id,
+            status: b.status,
+            appointmentDate: b.appointment_date ?? null,
+            appointmentTime: b.appointment_time ?? null,
+            serviceName: (b.service_id && serviceNameById.get(b.service_id)) ?? null,
           },
-          lastMessage: undefined, // Will be fetched separately if needed
-          unreadCount: 0, // Will be fetched separately if needed
         };
+      });
 
-        return conversation;
-      }).filter(c => c.participant.id); // Filter out conversations with missing participant IDs
-      
+      console.log('[getUserConversations]', { userId, count: results.length, sample: results.slice(0, 2) });
+      return results;
     } catch (error) {
       console.error('Error fetching conversations:', error);
       return [];

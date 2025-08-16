@@ -76,7 +76,6 @@ function App() {
               <main className="flex-1">
                 <Routes>
                   <Route path="/" element={<HomeGate />} />
-                    <Route path="/login" element={<LoginForm />} />
                     <Route path="/signup" element={<SignUpForm />} />
                     <Route path="/signup-success" element={<SignUpSuccessPage />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -120,7 +119,6 @@ function App() {
                     <Route path="/privacy" element={<PrivacyPolicyPage />} />
                     <Route path="/terms" element={<TermsOfServicePage />} />
                 </Routes>
-              </main>
 
               <Footer />
 
