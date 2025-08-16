@@ -80,109 +80,109 @@ export class MessagingService {
     }
 
     try {
-      // 1) Bookings for either role
-      const { data: bookings, error: bookingsErr } = await supabase
+      // 1) Load all bookings where the user is a party (RLS handles visibility)
+      const { data: bookings, error: bErr } = await supabase
         .from('bookings')
-        .select('id, client_id, barber_id, status, appointment_date, appointment_time, service_id, created_at')
+        .select('id, client_id, barber_id, status, appointment_date, appointment_time, service_id')
         .or(`client_id.eq.${userId},barber_id.eq.${userId}`)
         .order('created_at', { ascending: false });
 
-      if (bookingsErr) throw bookingsErr;
-      if (!bookings || bookings.length === 0) return [];
+      if (bErr) throw bErr;
+      if (!bookings?.length) return [];
 
-      // 2) Profile lookups
-      const barberIds = Array.from(new Set(bookings.map(b => b.barber_id).filter(Boolean)));
-      const clientIds = Array.from(new Set(bookings.map(b => b.client_id).filter(Boolean)));
-
-      const [{ data: barberProfiles }, { data: clientProfiles }] = await Promise.all([
-        barberIds.length
-          ? supabase.from('barber_profiles')
-              .select('user_id, business_name, profile_image_url')
-              .in('user_id', barberIds)
-          : Promise.resolve({ data: [] as any[] }),
-        clientIds.length
-          ? supabase.from('client_profiles')
-              .select('user_id, first_name, last_name, email, profile_image_url')
-              .in('user_id', clientIds)
-          : Promise.resolve({ data: [] as any[] }),
-      ]);
-
-      const barberMap = new Map((barberProfiles ?? []).map((b: any) => [b.user_id, b]));
-      const clientMap = new Map((clientProfiles ?? []).map((c: any) => [c.user_id, c]));
-
-      // 3) Latest message per booking
       const bookingIds = bookings.map(b => b.id);
-      const latestByBooking = new Map<string, any>();
-      if (bookingIds.length) {
-        const { data: msgs } = await supabase
-          .from('messages')
-          .select('id, booking_id, sender_id, message_text, created_at')
+      const clientIds = [...new Set(bookings.map(b => b.client_id).filter(Boolean))];
+      const barberIds = [...new Set(bookings.map(b => b.barber_id).filter(Boolean))];
+
+      // 2) Batch-load participant profiles (no "verified/claimed" requirement)
+      const [{ data: clientProfiles, error: cErr }, { data: barberProfiles, error: bpErr }] = await Promise.all([
+        supabase.from('client_profiles').select('user_id, first_name, last_name, profile_image_url')
+          .in('user_id', clientIds),
+        supabase.from('barber_profiles').select('user_id, business_name, profile_image_url')
+          .in('user_id', barberIds),
+      ]);
+      if (cErr) throw cErr;
+      if (bpErr) throw bpErr;
+
+      const clientById = new Map((clientProfiles ?? []).map(p => [p.user_id, p]));
+      const barberById = new Map((barberProfiles ?? []).map(p => [p.user_id, p]));
+
+      // 3) Get last message per booking + unread counts in one pass each
+      const [{ data: msgs, error: mErr }, { data: unread, error: uErr }] = await Promise.all([
+        supabase.from('messages')
+          .select('id, booking_id, message_text, created_at, sender_id, receiver_id')
           .in('booking_id', bookingIds)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false }), // we'll take the first per booking
+        supabase.from('messages')
+          .select('booking_id') // count in app to avoid policies requiring aggregate perms
+          .eq('receiver_id', userId)
+          .is('read_at', null)
+          .in('booking_id', bookingIds),
+      ]);
+      if (mErr) throw mErr;
+      if (uErr) throw uErr;
 
-        for (const m of (msgs ?? [])) {
-          if (!latestByBooking.has(m.booking_id)) {
-            latestByBooking.set(m.booking_id, m);
-          }
+      const lastByBooking = new Map<string, Conversation['lastMessage']>();
+      for (const m of msgs ?? []) {
+        if (!lastByBooking.has(m.booking_id)) {
+          lastByBooking.set(m.booking_id, {
+            id: m.id,
+            message_text: m.message_text,
+            created_at: m.created_at,
+            sender_id: m.sender_id,
+            receiver_id: m.receiver_id,
+          });
         }
       }
 
-      // 4) Optional: service names
-      const serviceIds = Array.from(new Set(bookings.map(b => b.service_id).filter(Boolean)));
-      const serviceNameById = new Map<string, string>();
-      if (serviceIds.length) {
-        const { data: services } = await supabase
-          .from('services')
-          .select('id, name')
-          .in('id', serviceIds);
-        for (const s of (services ?? [])) serviceNameById.set(s.id, s.name);
+      const unreadByBooking = new Map<string, number>();
+      for (const r of unread ?? []) {
+        unreadByBooking.set(r.booking_id, (unreadByBooking.get(r.booking_id) ?? 0) + 1);
       }
 
-      // 5) Build conversations
-      const results: Conversation[] = bookings.map((b: any) => {
-        const iAmClient = b.client_id === userId;
-        let participant: Conversation['participant'];
+      // Map into Conversation objects
+      const conversations: Conversation[] = bookings.map(b => {
+        const isBarber = b.barber_id === userId;
+        const otherId = isBarber ? b.client_id : b.barber_id;
 
-        if (iAmClient) {
-          const barb = barberMap.get(b.barber_id);
-          const name = (barb?.business_name ?? 'Barber').toString();
-          participant = {
-            id: b.barber_id,
-            type: 'barber',
-            name,
-            avatar: barb?.profile_image_url ?? null,
-          };
+        let name = 'Unknown';
+        let avatar: string | null | undefined = null;
+        let type: 'barber' | 'client' = isBarber ? 'client' : 'barber';
+
+        if (type === 'client') {
+          const cp = clientById.get(otherId);
+          name = cp ? [cp.first_name, cp.last_name].filter(Boolean).join(' ') || 'Client' : 'Client';
+          avatar = cp?.profile_image_url ?? null;
         } else {
-          const cli = clientMap.get(b.client_id);
-          const full = [cli?.first_name, cli?.last_name].filter(Boolean).join(' ').trim();
-          const emailPrefix = cli?.email ? String(cli.email).split('@')[0] : 'Client';
-          participant = {
-            id: b.client_id,
-            type: 'client',
-            name: full || emailPrefix,
-            avatar: cli?.profile_image_url ?? null,
-          };
+          const bp = barberById.get(otherId);
+          name = bp?.business_name || 'Barber';
+          avatar = bp?.profile_image_url ?? null;
         }
 
-        const lastMessage = latestByBooking.get(b.id) || undefined;
 
         return {
           bookingId: b.id,
-          unreadCount: 0,
-          lastMessage,
-          participant,
+          participant: { id: otherId, type, name, avatar },
           booking: {
             id: b.id,
-            status: b.status,
-            appointmentDate: b.appointment_date ?? null,
-            appointmentTime: b.appointment_time ?? null,
-            serviceName: (b.service_id && serviceNameById.get(b.service_id)) ?? null,
+            serviceName: String(b.service_id ?? 'Service'),
+            appointmentDate: String(b.appointment_date),
+            appointmentTime: String(b.appointment_time),
+            status: String(b.status),
           },
+          lastMessage: lastByBooking.get(b.id),
+          unreadCount: unreadByBooking.get(b.id) ?? 0,
         };
       });
 
-      console.log('[getUserConversations]', { userId, count: results.length, sample: results.slice(0, 2) });
-      return results;
+      // Sort: newest activity first (lastMessage if present, else booking created order already applied)
+      conversations.sort((a, b) => {
+        const ta = a.lastMessage?.created_at ?? '1970-01-01';
+        const tb = b.lastMessage?.created_at ?? '1970-01-01';
+        return tb.localeCompare(ta);
+      });
+
+      return conversations;
     } catch (error) {
       console.error('Error fetching conversations:', error);
       return [];
