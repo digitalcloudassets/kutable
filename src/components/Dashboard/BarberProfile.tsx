@@ -479,13 +479,6 @@ const BarberProfile: React.FC<BarberProfileProps> = ({
                   </span>
                 </div>
                
-               {/* Brand Link */}
-               <div className="mt-6">
-                 <ShareProfileLink 
-                   slug={barber.slug} 
-                   id={barber.id} 
-                 />
-               </div>
               </div>
             </div>
 
