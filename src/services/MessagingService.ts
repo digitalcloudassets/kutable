@@ -237,6 +237,7 @@ export class MessagingService {
     return conversations;
    * so this simply returns the same array unchanged.
    */
+  }
   async enrichConversationsWithMessages(
     conversations: Conversation[],
     _userId: string
