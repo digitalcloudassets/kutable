@@ -75,13 +75,27 @@ function App() {
 
               <main className="flex-1">
                 <Routes>
+                  {/* Public routes */}
                   <Route path="/" element={<HomeGate />} />
-                    <Route path="/signup" element={<SignUpForm />} />
-                    <Route path="/signup-success" element={<SignUpSuccessPage />} />
-                    <Route path="/forgot-password" element={<ForgotPassword />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    <Route path="/barbers" element={<BarberListPage />} />
-                    <Route path="/barber/:slug" element={<BarberProfilePage />} />
+                  <Route path="/login" element={<LoginForm />} />
+                  <Route path="/signup" element={<SignUpForm />} />
+                  <Route path="/signup-success" element={<SignUpSuccessPage />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/barbers" element={<BarberListPage />} />
+                  <Route path="/barber/:slug" element={<BarberProfilePage />} />
+                  <Route path="/book/:barberSlug/:serviceId?" element={<BookingFlow />} />
+                  <Route path="/how-it-works" element={<HowItWorksPage />} />
+                  <Route path="/pricing" element={<PricingPage />} />
+                  <Route path="/support" element={<SupportPage />} />
+                  <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                  <Route path="/terms" element={<TermsOfServicePage />} />
+
+                  {/* Onboarding routes (public entry points) */}
+                  <Route path="/onboarding" element={<OnboardingPage />} />
+                  <Route path="/onboarding/barber" element={<BarberOnboardingEngine />} />
+
+                  {/* Dashboard routes (gated by onboarding) */}
                   <Route
                     path="/dashboard"
                     element={
@@ -98,27 +112,24 @@ function App() {
                       </OnboardingGuard>
                     }
                   />
-                    <Route path="/book/:barberSlug/:serviceId?" element={<BookingFlow />} />
-                    <Route path="/onboarding" element={<OnboardingPage />} />
-                    <Route path="/onboarding/barber" element={<BarberOnboardingEngine />} />
-                    <Route
-                      path="/admin"
-                      element={
-                        <ProtectedAdminRoute>
-                          <AdminPage />
-                        </ProtectedAdminRoute>
-                      }
-                    />
-                    <Route
-                      path="/booking-success/:bookingId"
-                      element={<div className="p-8">Booking success page coming soon...</div>}
-                    />
-                    <Route path="/how-it-works" element={<HowItWorksPage />} />
-                    <Route path="/pricing" element={<PricingPage />} />
-                    <Route path="/support" element={<SupportPage />} />
-                    <Route path="/privacy" element={<PrivacyPolicyPage />} />
-                    <Route path="/terms" element={<TermsOfServicePage />} />
+
+                  {/* Admin (already protected) */}
+                  <Route
+                    path="/admin"
+                    element={
+                      <ProtectedAdminRoute>
+                        <AdminPage />
+                      </ProtectedAdminRoute>
+                    }
+                  />
+
+                  {/* Booking success placeholder */}
+                  <Route
+                    path="/booking-success/:bookingId"
+                    element={<div className="p-8">Booking success page coming soon...</div>}
+                  />
                 </Routes>
+              </main>
 
               <Footer />
 
