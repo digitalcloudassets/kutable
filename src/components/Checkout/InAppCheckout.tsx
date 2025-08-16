@@ -37,11 +37,11 @@ function CheckoutForm({
 
     setSubmitting(true);
     
-        AppNotify.error(paymentError.message || 'Payment failed');
+    try {
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         redirect: 'if_required', // stay in-app; 3DS will pop a modal if needed
-        AppNotify.error(errorMessage);
+      });
 
       if (error) {
         AppNotify.error('Payments are temporarily unavailable. Please try again in a minute.');
@@ -52,12 +52,12 @@ function CheckoutForm({
         NotificationManager.success('Payment successful!');
         onSuccess(paymentIntent.id);
         AppNotify.success('Payment successful! Booking confirmed.');
+      } else {
         NotificationManager.info('Payment processing — you\'ll be notified when it completes.');
         onSuccess(paymentIntent.id);
-      } else {
-        NotificationManager.error('Payment not completed.');
       }
     } catch (error: any) {
+      const errorMessage = error?.message || 'Payment failed';
       AppNotify.error(errorMessage);
     } finally {
       setSubmitting(false);
@@ -196,13 +196,6 @@ export default function InAppCheckout({
         if (error) {
           console.error('Payment intent error:', error);
           let errorMessage = error?.context?.error || error?.message || 'Unable to initialize payment';
-          
-          // Handle CAPTCHA-specific errors
-          if (errorMessage.includes('captcha_required')) {
-            errorMessage = 'Security verification required. Please try again.';
-          } else if (errorMessage.includes('captcha_failed')) {
-            errorMessage = 'Security verification failed. Please refresh and try again.';
-          }
           
           // Handle CAPTCHA-specific errors
           if (errorMessage.includes('captcha_required')) {
