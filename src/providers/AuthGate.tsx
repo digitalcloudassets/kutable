@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthProvider';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabase';
 
 type Props = { children: React.ReactNode };
 
