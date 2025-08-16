@@ -128,7 +128,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
               </div>
             )}
             {/* Demo badge for Kutable */}
-            {conversation.participant.id === '12345678-1234-1234-1234-123456789012' && (
+            {conversation.participant.id === '6455a63f-161e-4351-9f14-0ecbe01f0d3a' && (
               <div className="flex-shrink-0">
                 <span className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                   DEMO

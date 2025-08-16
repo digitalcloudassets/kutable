@@ -126,10 +126,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       return;
     }
     
-    // Special handling for Kutable demo messaging
-    const receiverId = conversation.participant.id === '12345678-1234-1234-1234-123456789012' 
-      ? user.id // For demo purposes, send to self to simulate barber response
-      : conversation.participant.id;
+    const receiverId = conversation.participant.id;
       
     setSending(true);
     setError('');
@@ -145,26 +142,6 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
       setMessages(prev => [...prev, message]);
       setNewMessage('');
       scrollToBottom();
-      
-      // Mark conversation as read since user is actively participating
-      await messagingService.markConversationAsRead(conversation.bookingId, user.id);
-      
-      // For Kutable demo, simulate a barber response after a delay
-      if (conversation.participant.id === '12345678-1234-1234-1234-123456789012') {
-        setTimeout(async () => {
-          try {
-            const demoResponse = await messagingService.sendMessage({
-              bookingId: conversation.bookingId,
-              receiverId: user.id,
-              messageText: "Thanks for your message! This is a demo response from the Kutable barber. In the real app, barbers would respond directly."
-            });
-            setMessages(prev => [...prev, demoResponse]);
-            scrollToBottom();
-          } catch (error) {
-            console.error('Demo response error:', error);
-          }
-        }, 2000);
-      }
       
       // Refresh conversations and unread count
       if (refreshConversations) {
@@ -432,13 +409,6 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
           </>
           )}
         </form>
-        
-        {/* Demo notification */}
-        {conversation.participant.id === '12345678-1234-1234-1234-123456789012' && (
-          <div className="mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded">
-            💡 Demo Mode: This is the Kutable example profile. Messages will receive automated demo responses.
-          </div>
-        )}
       </div>
     </div>
   );
