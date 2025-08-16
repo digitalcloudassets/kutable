@@ -148,35 +148,27 @@ export class MessagingService {
           currentUserId: userId
         });
         
-        let participant;
-        
-        if (isBarber) {
-          // User is the barber, show the client as participant
-          const clientUserId = booking.client_profiles.user_id;
-          const clientName = `${booking.client_profiles.first_name || ''} ${booking.client_profiles.last_name || ''}`.trim();
-          participant = {
-            id: clientUserId,
-            name: clientName || 'Client',
-            type: 'client' as const,
-            avatar: booking.client_profiles.profile_image_url || undefined
-          };
-        } else if (isClient) {
-          // User is the client, show the barber as participant
-          const barberUserId = booking.barber_profiles.user_id;
-          participant = {
-            id: barberUserId,
-            name: booking.barber_profiles.business_name || 'Barber',
-            type: 'barber' as const,
-            avatar: booking.barber_profiles.profile_image_url || undefined
-          };
-        } else {
-          // Skip bookings where user is neither barber nor client
-          console.log('Skipping booking - user is neither barber nor client');
-          continue;
-        }
+        // Build the other chat participant (the person opposite the authed user)
+        const participant = isClient
+          ? {
+              // client is viewing → show the barber as the participant
+              id: booking.barber_profiles?.user_id || null,
+              name: booking.barber_profiles?.business_name || 'Barber',
+              type: 'barber' as const,
+              avatar: booking.barber_profiles?.profile_image_url || undefined
+            }
+          : isBarber
+          ? {
+              // barber is viewing → show the client as the participant
+              id: booking.client_profiles?.user_id || null,
+              name: `${booking.client_profiles?.first_name || ''} ${booking.client_profiles?.last_name || ''}`.trim() || 'Client',
+              type: 'client' as const,
+              avatar: booking.client_profiles?.profile_image_url || undefined
+            }
+          : null;
 
         if (!participant) {
-          console.log('No participant found for booking:', booking.id);
+          console.log('Skipping booking - user is neither barber nor client');
           continue;
         }
 
@@ -228,7 +220,6 @@ export class MessagingService {
           lastMessage: lastMessage || undefined,
           unreadCount: unreadCount || 0,
           participant = {
-          }
           participant,
           booking: {
             id: booking.id,
