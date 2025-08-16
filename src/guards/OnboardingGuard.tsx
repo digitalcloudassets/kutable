@@ -1,102 +1,109 @@
-import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthProvider';
-import { decideRoleAndState, type UserRole } from '../utils/onboarding';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../hooks/useAuth';
 
-type Props = { children: React.ReactNode };
+type GuardState = {
+  checked: boolean;        // we've finished checking DB
+  needsOnboarding: boolean;
+  targetPath: string | null;
+};
 
-export default function OnboardingGuard({ children }: Props) {
-  const { user, loading } = useAuth();
-  const nav = useNavigate();
-  const loc = useLocation();
-  const [checking, setChecking] = React.useState(true);
+const initialState: GuardState = {
+  checked: false,
+  needsOnboarding: false,
+  targetPath: null,
+};
 
-  // Allow the barber onboarding route unconditionally once authenticated
-  if (user && user.user_metadata?.user_type === 'barber' && loc.pathname.startsWith('/onboarding/barber')) {
-    return <>{children}</>;
-  }
-  React.useEffect(() => {
-    let alive = true;
+export default function OnboardingGuard({ children }: { children: React.ReactNode }) {
+  // ✅ Hooks always run in the same order/count
+  const { user, loading: authLoading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-    const run = async () => {
-      // wait for auth settle (max 4s)
-      const start = Date.now();
-      while (loading && Date.now() - start < 4000) {
-        await new Promise(r => setTimeout(r, 50));
-      }
+  const [state, setState] = useState<GuardState>(initialState);
 
-      const uid = user?.id ?? null;
-      if (!uid) { 
-        setChecking(false); 
-        return; // let login UI handle it
-      }
+  // Compute whether the current path is already an allowed onboarding page
+  const isOnOnboardingPath = useMemo(() => {
+    const p = location.pathname;
+    return p.startsWith('/onboarding') || p.startsWith('/onboarding/barber');
+  }, [location.pathname]);
 
-      /** 🚨 TEMP BYPASS: allow specific barber(s) to enter unconditionally */
-      const ALLOW_UIDS = new Set<string>([
-        // Add your barber's auth.users.id here
-        // 'YOUR_BARBER_AUTH_USER_ID',
-      ]);
-      const ALLOW_EMAILS = new Set<string>([
-        'pete@kutable.com', // Add barber emails here
-      ]);
+  // DB check happens in an effect; never return early during render
+  useEffect(() => {
+    let cancelled = false;
 
-      if (ALLOW_UIDS.has(uid) || ALLOW_EMAILS.has((user.email ?? '').toLowerCase())) {
-        localStorage.setItem('kutable:lastRole', 'barber');
-        localStorage.setItem('kutable:returning', '1');
-        setChecking(false);
-        return;
-      }
+    // If auth is still resolving, just wait (don't mutate state yet)
+    if (authLoading) return;
 
+    // When signed out, nothing to enforce
+    if (!user) {
+      if (!cancelled) setState({ checked: true, needsOnboarding: false, targetPath: null });
+      return;
+    }
+
+    // Signed in: figure out which profile they need
+    (async () => {
       try {
-        const lastRolePref = (localStorage.getItem('kutable:lastRole') as UserRole | null) ?? undefined;
-        const { role, state } = await decideRoleAndState(uid, lastRolePref);
+        // Infer intended role from metadata; default to "client"
+        const intended = (user.user_metadata?.user_type as 'barber' | 'client' | undefined) ?? 'client';
 
-        console.log('[OnboardingGuard] decision', {
-          uid, email: user.email, role, state, path: loc.pathname, search: loc.search
-        });
+        if (intended === 'barber') {
+          const { data, error } = await supabase
+            .from('barber_profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
 
-        // mark returning once they pass guard
-        localStorage.setItem('kutable:returning', '1');
-
-        const onOnboarding = loc.pathname.startsWith('/onboarding') || loc.search.includes('step=');
-
-        // Route rules:
-        // - Barbers → payouts if needed; else let them in
-        // - Clients → let them in
-        // - Unknown → onboarding
-        if (role === 'barber' && state === 'needs_payouts' && !onOnboarding) {
-          nav('/onboarding/barber?step=payouts', { replace: true });
-          return;
-        }
-        if (role === 'unknown' && state === 'needs_profile' && !onOnboarding) {
-          nav('/onboarding', { replace: true });
+          const needs = !!error || !data;
+          if (!cancelled) {
+            setState({
+              checked: true,
+              needsOnboarding: needs,
+              targetPath: needs ? '/onboarding/barber' : null,
+            });
+          }
           return;
         }
 
-        setChecking(false);
-      } catch (e) {
-        console.warn('[OnboardingGuard] fail-open due to error:', e);
-        setChecking(false);
+        // client path
+        const { data, error } = await supabase
+          .from('client_profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        const needs = !!error || !data;
+        if (!cancelled) {
+          setState({
+            checked: true,
+            needsOnboarding: needs,
+            targetPath: needs ? '/onboarding' : null,
+          });
+        }
+      } catch (_e) {
+        // If the probe fails, don't block the app—just let them through
+        if (!cancelled) {
+          setState({ checked: true, needsOnboarding: false, targetPath: null });
+        }
       }
-    };
+    })();
 
-    run();
-    return () => { alive = false; };
-  }, [user?.id, loading, nav, loc.pathname, loc.search]);
+    return () => { cancelled = true; };
+  }, [authLoading, user]);
 
-  if (checking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-100 border-t-primary-500 mx-auto"></div>
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500 to-accent-500 opacity-20 blur-lg"></div>
-          </div>
-          <p className="text-gray-600 font-medium">Preparing your workspace…</p>
-        </div>
-      </div>
-    );
-  }
+  // Navigate only from an effect to avoid render-phase side effects
+  useEffect(() => {
+    if (!state.checked) return;
+    if (!state.needsOnboarding || !state.targetPath) return;
 
+    // Avoid redirect loops: if we're already on the proper onboarding path, do nothing
+    if (isOnOnboardingPath && location.pathname.startsWith(state.targetPath)) return;
+
+    navigate(state.targetPath, { replace: true });
+  }, [state, isOnOnboardingPath, location.pathname, navigate]);
+
+  // ✅ Always render children (no early returns = stable hook order)
+  // If a redirect is needed, the effect above will handle it.
   return <>{children}</>;
 }
