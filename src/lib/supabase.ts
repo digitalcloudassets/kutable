@@ -42,5 +42,17 @@ export async function validateSession() {
   return { isValid: true, session: data.session };
 }
 
+// Helper functions for compatibility
+export async function getUser() {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) throw error;
+    return data.user ?? null;
+  } catch (error) {
+    console.warn('User retrieval error:', error);
+    return null;
+  }
+}
+
 // Re-export database types for compatibility
 export type { Database } from './supabaseClient';

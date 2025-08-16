@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, Scissors, Loader, AlertTriangle, Camera } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabase';
 import { uploadAvatar } from '../../lib/uploadAvatar';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { 

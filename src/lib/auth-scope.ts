@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { supabase } from './supabase';
 import { clearConnectState, getConnectState } from './connectState';
 
 let currentUserId: string | null = null;

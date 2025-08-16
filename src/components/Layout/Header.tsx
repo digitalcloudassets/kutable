@@ -57,6 +57,11 @@ const Header: React.FC = () => {
       const ref = import.meta.env.VITE_SUPABASE_URL?.replace(/^https?:\/\//,'').split('.')[0];
       Object.keys(localStorage).forEach(k => { if (ref && k.startsWith(`sb-${ref}-auth-token`)) localStorage.removeItem(k); });
     } catch {}
+    // belt-and-suspenders clear
+    try {
+      const ref = import.meta.env.VITE_SUPABASE_URL?.replace(/^https?:\/\//,'').split('.')[0];
+      Object.keys(localStorage).forEach(k => { if (ref && k.startsWith(`sb-${ref}-auth-token`)) localStorage.removeItem(k); });
+    } catch {}
       setMobileMenuOpen(false);
       navigate('/');
   };
