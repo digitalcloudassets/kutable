@@ -293,13 +293,6 @@ export class MessagingService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      console.log('Sending message:', { 
-        fromUserId: user.id, 
-        toUserId: receiverId, 
-        bookingId,
-        messagePreview: messageText.slice(0, 50) 
-      });
-      
       // Validate message
       if (!messageText.trim() || messageText.length > 1000) {
         throw new Error('Message must be between 1 and 1000 characters');
@@ -325,8 +318,6 @@ export class MessagingService {
         .single();
 
       if (error) throw error;
-      
-      console.log('Message saved successfully:', message.id);
       return message as ThreadMessage;
 
     } catch (error) {
@@ -385,33 +376,24 @@ export class MessagingService {
       return () => {};
     }
 
-    console.log('Subscribing to realtime messages for booking:', bookingId);
-    
-    const channel = supabase
+    const ch = supabase
       .channel(`messages:booking:${bookingId}`)
-      .on(
-        'postgres_changes',
+      .on('postgres_changes',
         { event: '*', schema: 'public', table: 'messages', filter: `booking_id=eq.${bookingId}` },
         (payload) => {
-          console.log('Realtime message event:', payload.eventType, payload.new);
           if (payload.eventType === 'INSERT') onEvent({ type: 'INSERT', new: payload.new as ThreadMessage });
           if (payload.eventType === 'UPDATE') onEvent({ type: 'UPDATE', new: payload.new as ThreadMessage });
         }
       )
       .subscribe();
 
-    console.log('Realtime subscription created for booking:', bookingId);
-
-    const unsubscribe = () => {
-      console.log('Unsubscribing from realtime messages for booking:', bookingId);
-      try {
-        supabase.removeChannel(channel);
+    return () => { 
+      try { 
+        supabase.removeChannel(ch); 
       } catch (e) {
-        console.warn('Error unsubscribing:', e);
+        console.warn('Error unsubscribing from messages channel:', e);
       }
     };
-    
-    return unsubscribe;
   }
 
   subscribeToBookingMessages(bookingId: string, onInsert: (message: ThreadMessage) => void): () => void {
