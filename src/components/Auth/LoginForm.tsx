@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, User, Loader, AlertTriangle } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabase';
 import { repairAuthIfNeeded } from '../../utils/authRepair';
 import { useSupabaseConnection } from '../../hooks/useSupabaseConnection';
 import { 

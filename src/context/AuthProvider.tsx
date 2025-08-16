@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
-import { repairAuthIfNeeded } from '../utils/authRepair';
+import { supabase, validateSession, clearSupabaseSessionStorage } from '../lib/supabase';
 import { uploadAvatar } from '../lib/uploadAvatar';
 
 type AuthCtx = {
@@ -52,7 +51,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(initialSession);
       } catch (err) {
         console.error('[AuthProvider] Boot error:', err);
-        try { await repairAuthIfNeeded(err); } catch {}
+        try { 
+          const res = await validateSession();
+          if (!mounted) return;
+          setSession(res.session ?? null);
+        } catch {}
       } finally {
         if (mounted) {
           setLoading(false);
