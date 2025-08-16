@@ -75,82 +75,56 @@ export class MessagingService {
     return MessagingService.instance;
   }
 
-  /**
-   * Compatibility shim for older hooks that still call this method.
-   * Our getUserConversations already returns lastMessage & unreadCount,
-   * so this simply returns the same array unchanged.
-   */
-  async enrichConversationsWithMessages(
-    conversations: Conversation[],
-    _userId: string
-  ): Promise<Conversation[]> {
-    return conversations;
-  }
-
   // ========== Conversations (profile-aware) ==========
   async getUserConversations(userId: string): Promise<Conversation[]> {
     if (!isSupabaseConnected() || !userId) return [];
 
     try {
-      // 0) If the current user is a barber, get their barber_profile.id
-      const { data: myBarberProfile, error: bpErr } = await supabase
-        .from('barber_profiles')
-        .select('id, user_id')
-        .eq('user_id', userId)
-        .maybeSingle();
-      if (bpErr) throw bpErr;
-
-      // 1) Build bookings query using correct ID types:
-      //    - barber_id is a PROFILE id (barber_profiles.id)
-      //    - client_id is a USER id (auth.users.id)
-      let bq = supabase
-        .from('bookings')
-        .select(
-          'id, client_id, barber_id, status, appointment_date, appointment_time, service_id, created_at'
-        )
-        .order('created_at', { ascending: false });
-
-      if (myBarberProfile?.id) {
-        bq = bq.or(`client_id.eq.${userId},barber_id.eq.${myBarberProfile.id}`);
-      } else {
-        bq = bq.eq('client_id', userId);
+      // 0) If user is a barber, resolve their barber_profile.id (not user_id)
+      let myBarberProfileId: string | null = null;
+      {
+        const { data: bp } = await supabase
+          .from('barber_profiles')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+        myBarberProfileId = bp?.id ?? null;
       }
 
-      const { data: bookings, error: bErr } = await bq;
+      // 1) Load bookings where user is client OR (if barber) where barber_id == their profile id
+      const filters: string[] = [`client_id.eq.${userId}`];
+      if (myBarberProfileId) filters.push(`barber_id.eq.${myBarberProfileId}`);
+
+      const { data: bookings, error: bErr } = await supabase
+        .from('bookings')
+        .select('id, client_id, barber_id, status, appointment_date, appointment_time, service_id, created_at')
+        .or(filters.join(','))
+        .order('created_at', { ascending: false });
+
       if (bErr) throw bErr;
       if (!bookings?.length) return [];
 
-      const bookingIds = bookings.map((b) => b.id);
-
-      // 2) Collect IDs we actually need
-      const clientUserIds = [...new Set(bookings.map(b => b.client_id).filter(Boolean))];
+      const bookingIds = bookings.map(b => b.id);
+      const clientIds = [...new Set(bookings.map(b => b.client_id).filter(Boolean))];
+      // NOTE: these are BARBER PROFILE IDs (not user_ids)
       const barberProfileIds = [...new Set(bookings.map(b => b.barber_id).filter(Boolean))];
-      const serviceIds = [...new Set(bookings.map(b => b.service_id).filter(Boolean))];
 
-      // 3) Batch fetch participants and services
-      const [{ data: clientProfiles, error: cErr }, { data: barberProfiles, error: bbErr }, { data: services, error: sErr }] =
-        await Promise.all([
-          supabase
-            .from('client_profiles')
-            .select('user_id, first_name, last_name, profile_image_url')
-            .in('user_id', clientUserIds),
-          supabase
-            .from('barber_profiles')
-            .select('id, user_id, business_name, profile_image_url')
-            .in('id', barberProfileIds),
-          serviceIds.length
-            ? supabase.from('services').select('id, name').in('id', serviceIds)
-            : Promise.resolve({ data: [] } as any),
-        ]);
+      // 2) Batch-load participant profiles
+      const [{ data: clientProfiles, error: cErr }, { data: barberProfiles, error: bpErr }] = await Promise.all([
+        supabase.from('client_profiles').select('user_id, first_name, last_name, profile_image_url')
+          .in('user_id', clientIds),
+        // Get barber profiles by PROFILE id, but include their user_id for messaging
+        supabase.from('barber_profiles').select('id, user_id, business_name, profile_image_url')
+          .in('id', barberProfileIds),
+      ]);
       if (cErr) throw cErr;
-      if (bbErr) throw bbErr;
-      if (sErr) throw sErr;
+      if (bpErr) throw bpErr;
 
-      const clientByUserId = new Map((clientProfiles ?? []).map((p) => [p.user_id, p]));
-      const barberByProfileId = new Map((barberProfiles ?? []).map((p) => [p.id, p]));
-      const serviceById = new Map((services ?? []).map((s) => [s.id, s.name]));
+      const clientByUserId = new Map((clientProfiles ?? []).map(p => [p.user_id, p]));
+      // Map barber PROFILE id -> profile row (which includes barber user_id)
+      const barberByProfileId = new Map((barberProfiles ?? []).map(p => [p.id, p]));
 
-      // 4) Fetch last messages and unread counts
+      // 3) Get last message per booking + unread counts in one pass each
       const [{ data: msgs, error: mErr }, { data: unread, error: uErr }] = await Promise.all([
         supabase
           .from('messages')
@@ -183,37 +157,35 @@ export class MessagingService {
         unreadByBooking.set(r.booking_id, (unreadByBooking.get(r.booking_id) ?? 0) + 1);
       }
 
-      // 5) Map bookings → conversations
-      const conversations: Conversation[] = (bookings ?? []).map((b) => {
+      // 4) Map bookings → conversations
+      const conversations: Conversation[] = bookings.map(b => {
+        const iAmBarber = !!myBarberProfileId && b.barber_id === myBarberProfileId;
+
         let name = 'Unknown';
         let avatar: string | null | undefined = null;
         const type: 'barber' | 'client' = iAmBarber ? 'client' : 'barber';
         let otherUserId = '';
 
         if (type === 'client') {
-          // Other party is the CLIENT; lookup by user_id (booking.client_id)
+          // Other party is the client; booking.client_id is already the client's user_id
           const cp = clientByUserId.get(b.client_id);
           name = cp ? [cp.first_name, cp.last_name].filter(Boolean).join(' ') || 'Client' : 'Client';
           avatar = cp?.profile_image_url ?? null;
-          otherUserId = cp?.user_id ?? b.client_id; // fallback to booking value (already a user_id)
-          otherUserId = cp?.user_id ?? '';
+          otherUserId = b.client_id;
         } else {
-          // Other party is the BARBER; lookup by PROFILE id (booking.barber_id) to get their user_id
-          const bp = barberByProfileId.get(otherProfileId);
+          // Other party is the barber; we must convert booking.barber_id (profile) -> barber user_id
+          const bp = barberByProfileId.get(b.barber_id);
           name = bp?.business_name || 'Barber';
           avatar = bp?.profile_image_url ?? null;
-          otherUserId = bp?.user_id ?? ''; // must be a user_id for messaging.receiver_id
-          otherUserId = bp?.user_id ?? '';
+          otherUserId = bp?.user_id ?? ''; // used as receiver_id in messaging
         }
 
         return {
           bookingId: b.id,
-          // IMPORTANT: participant.id must be the AUTH USER ID (for receiver_id)
-          participant: { id: otherUserId, type, name, avatar },
           participant: { id: otherUserId, type, name, avatar },
           booking: {
             id: b.id,
-            serviceName: serviceById.get(b.service_id as any) || 'Service',
+            serviceName: String(b.service_id ?? 'Service'),
             appointmentDate: String(b.appointment_date),
             appointmentTime: String(b.appointment_time),
             status: String(b.status),
@@ -247,14 +219,6 @@ export class MessagingService {
     conversations: Conversation[],
     _userId: string
   ): Promise<Conversation[]> {
-    return conversations;
-  }
-  // No-op for backwards compatibility with useMessaging hook
-  async enrichConversationsWithMessages(
-    conversations: Conversation[],
-    _userId: string
-  ): Promise<Conversation[]> {
-    // getUserConversations already returns lastMessage + unreadCount
     return conversations;
   }
 
