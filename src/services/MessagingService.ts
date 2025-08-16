@@ -251,28 +251,32 @@ export class MessagingService {
   }
 
   // --- Thread API (unchanged signatures) ---
-  async getMessagesForBooking(bookingId: string): Promise<ThreadMessage[]> {
+  async getThread(bookingId: string, _userId: string): Promise<ThreadMessage[]> {
     if (!isSupabaseConnected()) {
       return [];
+    }
+
+    if (!bookingId || bookingId.length < 10) {
+      throw new Error('Invalid bookingId');
     }
 
     try {
       const { data, error } = await supabase
         .from('messages')
-        .select('*')
+        .select('id, booking_id, sender_id, receiver_id, message_text, created_at, read_at')
         .eq('booking_id', bookingId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return (data ?? []) as ThreadMessage[];
+      return (data || []) as ThreadMessage[];
     } catch (error) {
-      console.error('Error fetching messages:', error);
-      return [];
+      console.error('Error fetching thread messages:', error);
+      throw error;
     }
   }
 
-  async getThread(bookingId: string, _userId: string): Promise<ThreadMessage[]> {
-    return this.getMessagesForBooking(bookingId);
+  async getMessagesForBooking(bookingId: string): Promise<ThreadMessage[]> {
+    return this.getThread(bookingId, '');
   }
 
   async sendMessage({ bookingId, receiverId, messageText }: {
@@ -289,6 +293,13 @@ export class MessagingService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      console.log('Sending message:', { 
+        fromUserId: user.id, 
+        toUserId: receiverId, 
+        bookingId,
+        messagePreview: messageText.slice(0, 50) 
+      });
+      
       // Validate message
       if (!messageText.trim() || messageText.length > 1000) {
         throw new Error('Message must be between 1 and 1000 characters');
@@ -314,6 +325,8 @@ export class MessagingService {
         .single();
 
       if (error) throw error;
+      
+      console.log('Message saved successfully:', message.id);
       return message as ThreadMessage;
 
     } catch (error) {
@@ -372,24 +385,33 @@ export class MessagingService {
       return () => {};
     }
 
-    const ch = supabase
+    console.log('Subscribing to realtime messages for booking:', bookingId);
+    
+    const channel = supabase
       .channel(`messages:booking:${bookingId}`)
-      .on('postgres_changes',
+      .on(
+        'postgres_changes',
         { event: '*', schema: 'public', table: 'messages', filter: `booking_id=eq.${bookingId}` },
         (payload) => {
+          console.log('Realtime message event:', payload.eventType, payload.new);
           if (payload.eventType === 'INSERT') onEvent({ type: 'INSERT', new: payload.new as ThreadMessage });
           if (payload.eventType === 'UPDATE') onEvent({ type: 'UPDATE', new: payload.new as ThreadMessage });
         }
       )
       .subscribe();
 
-    return () => { 
-      try { 
-        supabase.removeChannel(ch); 
+    console.log('Realtime subscription created for booking:', bookingId);
+
+    const unsubscribe = () => {
+      console.log('Unsubscribing from realtime messages for booking:', bookingId);
+      try {
+        supabase.removeChannel(channel);
       } catch (e) {
-        console.warn('Error unsubscribing from messages channel:', e);
+        console.warn('Error unsubscribing:', e);
       }
     };
+    
+    return unsubscribe;
   }
 
   subscribeToBookingMessages(bookingId: string, onInsert: (message: ThreadMessage) => void): () => void {
@@ -410,6 +432,30 @@ export class MessagingService {
     }
     return prev;
   }
+
+  async getMessagesForBooking(bookingId: string): Promise<Message[]> {
+    if (!isSupabaseConnected()) {
+      return [];
+    }
+
+    if (!bookingId || bookingId.length < 10) {
+      throw new Error('Invalid bookingId');
+    }
+
+    try {
+      const { data: messages, error } = await supabase
+        .from('messages')
+        .select('id, booking_id, sender_id, receiver_id, message_text, created_at, read_at')
+        .eq('booking_id', bookingId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return (messages || []) as Message[];
+    } catch (error) {
+      throw error;
+    }
+  }
+
 
   async sendMessage({ bookingId, receiverId, messageText }: SendMessageRequest): Promise<Message> {
     if (!isSupabaseConnected()) {
@@ -469,6 +515,78 @@ export class MessagingService {
       console.error('Error sending message:', error);
       throw error;
     }
+  }
+
+  async markAsRead(messageId: string, userId: string): Promise<void> {
+    if (!isSupabaseConnected()) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('id', messageId)
+        .eq('receiver_id', userId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+    }
+  }
+
+  async markConversationAsRead(bookingId: string, userId: string): Promise<void> {
+    if (!isSupabaseConnected()) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('booking_id', bookingId)
+        .eq('receiver_id', userId)
+        .is('read_at', null);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
+    }
+  }
+
+  subscribeToBookingMessages(bookingId: string, onInsert: (message: Message) => void): () => void {
+    if (!isSupabaseConnected()) {
+      return () => {};
+    }
+
+    console.log('Subscribing to realtime messages for booking:', bookingId);
+
+    const channel = supabase
+      .channel(`messages:booking:${bookingId}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'messages', 
+          filter: `booking_id=eq.${bookingId}` 
+        },
+        (payload) => {
+          console.log('Realtime message received:', payload.new);
+          const newMessage = payload.new as Message;
+          onInsert(newMessage);
+        }
+      )
+      .subscribe();
+
+    console.log('Realtime subscription created for booking:', bookingId, 'Channel:', `messages:booking:${bookingId}`);
+
+    const unsubscribe = () => {
+      console.log('Unsubscribing from realtime messages for booking:', bookingId);
+      supabase.removeChannel(channel);
+    };
+
+    return unsubscribe;
   }
 
   subscribeToMessages(bookingId: string, callback: (message: Message) => void): () => void {
