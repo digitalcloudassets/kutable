@@ -108,7 +108,6 @@ const MessageThread: React.FC<MessageThreadProps> = ({ conversation, onBack }) =
     setError('');
 
     try {
-      
       const message = await messagingService.sendMessage({
         bookingId: conversation.bookingId,
         receiverId,
